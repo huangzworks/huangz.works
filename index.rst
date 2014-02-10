@@ -16,8 +16,6 @@ huangz/homepage
 联系方式
 ----------
 
-- 豆瓣： `douban.com/people/i_m_huangz <http://www.douban.com/people/i_m_huangz>`_
-
 - 微博： `weibo.com/huangz1990 <http://weibo.com/huangz1990>`_
 
 - twitter： `twitter.com/huangz1990 <https://twitter.com/huangz1990>`_
@@ -53,3 +51,5 @@ huangz/homepage
 - 笔记： `note.huangz.me <http://note.huangz.me>`_
 
 - github： `github.com/huangz1990 <https://github.com/huangz1990>`_
+
+- 豆瓣： `douban.com/people/i_m_huangz <http://www.douban.com/people/i_m_huangz>`_
