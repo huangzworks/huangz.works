@@ -166,8 +166,12 @@
       {%- if render_sidebar %}
         <div class="bodywrapper">
       {%- endif %}
+          <div class="share_self">
+            <iframe width="360" height="666" frameborder="0" scrolling="no" src="http://widget.weibo.com/weiboshow/index.php?language=&width=360&height=800&fansRow=1&ptype=1&speed=0&skin=1&isTitle=1&noborder=1&isWeibo=1&isFans=1&uid=3219474004&verifier=af953772&dpc=1"></iframe>
+          </div>
           <div class="body">
             {% block body %} {% endblock %}
+            <p>&copy; Copyright 2014, huangz. </p>
           </div>
       {%- if render_sidebar %}
         </div>
@@ -181,6 +185,7 @@
 {%- endblock %}
 
 {%- block footer %}
+    <!--
     <div class="footer">
     {%- if show_copyright %}
       {%- if hasdoc('copyright') %}
@@ -190,6 +195,7 @@
       {%- endif %}
     {%- endif %}
     </div>
+    -->
 {%- endblock %}
 
   </body>
