@@ -550,7 +550,7 @@ span.eqno {
 
 div.body {
     float: left;
-
+    width: 600px;
 }
 
 div.share_self {
