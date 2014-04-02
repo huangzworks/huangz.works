@@ -20,7 +20,7 @@ huangz/homepage
 
 - twitter： `twitter.com/huangz1990 <https://twitter.com/huangz1990>`_
 
-- Gmail： huangz1990
+- email： huangz1990@gmail.com
 
 
 著作
