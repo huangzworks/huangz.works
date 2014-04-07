@@ -36,7 +36,7 @@ huangz/homepage
 翻译
 -------
 
-- project RIA （正在翻译中，预定 2014 年 4 月完成，将由出版社出版）
+- project RIA （正在翻译中，预定 2014 年 6 月完成，将由出版社出版）
 
 - `Redis 命令参考 <http://www.redisdoc.com/>`_
 
