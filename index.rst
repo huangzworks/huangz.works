@@ -26,6 +26,8 @@ huangz/homepage
 著作
 -------
 
+- project R.R. （策划中，预计 2014 年7 月份开始进行， 2015 年完成）
+
 - `《Redis 设计与实现》新版 <http://www.douban.com/people/i_m_huangz/status/1366058941/>`_\ （正在排版中，将由机械工业出版社出版）
 
 - `Redis 设计与实现 <http://www.redisbook.com/>`_
