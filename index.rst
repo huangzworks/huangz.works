@@ -30,7 +30,7 @@ huangz/homepage
 
 - `《Redis 设计与实现》新版 <http://www.douban.com/people/i_m_huangz/status/1366058941/>`_\ （正在排版中，将由机械工业出版社出版）
 
-- `Redis 设计与实现 <http://www.redisbook.com/>`_
+- `Redis 设计与实现 <http://origin.redisbook.com/>`_
 
 - `SICP 解题集 <http://sicp.rtfd.org/>`_
 
