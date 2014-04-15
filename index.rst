@@ -52,7 +52,7 @@ huangz/homepage
 视频
 --------
 
-- 《Redis 多机特性工作原理简介：关于复制、Sentinel 和集群》 —— 制作中，预定将于 2014 年 4 月在 `小象学院 <http://www.chinahadoop.cn>`_ 发布。
+- `《Redis 多机特性工作原理简介：关于复制、Sentinel 和集群》 <http://www.chinahadoop.cn/course/31>`_
 
 更多
 --------
