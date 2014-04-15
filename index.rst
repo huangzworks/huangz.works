@@ -49,10 +49,17 @@ huangz/homepage
 - `《Python Storm ORM 教程》 <https://strom-orm-tutorial.readthedocs.org>`_
 
 
+源码注释
+----------
+
+- `Redis 2.6 源码注释 <https://github.com/huangz1990/annotated_redis_source>`_
+
+
 视频
 --------
 
 - `《Redis 多机特性工作原理简介：关于复制、Sentinel 和集群》 <http://www.chinahadoop.cn/course/31>`_
+
 
 更多
 --------
