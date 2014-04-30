@@ -20,6 +20,8 @@ huangz/homepage
 
 - twitter： `twitter.com/huangz1990 <https://twitter.com/huangz1990>`_
 
+- 豆瓣： `douban.com/people/i_m_huangz <http://www.douban.com/people/i_m_huangz>`_
+
 - email： huangz1990@gmail.com
 
 
@@ -70,4 +72,3 @@ huangz/homepage
 
 - github： `github.com/huangz1990 <https://github.com/huangz1990>`_
 
-- 豆瓣： `douban.com/people/i_m_huangz <http://www.douban.com/people/i_m_huangz>`_
