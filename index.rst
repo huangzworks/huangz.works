@@ -12,7 +12,6 @@ huangz/homepage
 作者、译者、程序员，
 现居广东清远。
 
-
 联系方式
 ----------
 
@@ -30,7 +29,7 @@ huangz/homepage
 
 - project R.R. （策划中，预计 2014 年7 月份开始进行， 2015 年完成）
 
-- `《Redis 设计与实现》新版 <http://redisbook1e.readthedocs.org/>`_\ （正在排版中，预计 5 月印刷，6 月发售）
+- `《Redis 设计与实现》新版 <http://RedisBook.com/>`_\ （正在排版中，预计 5 月印刷，6 月发售）
 
 - `《Redis 设计与实现》第一版 <http://origin.redisbook.com/>`_
 
