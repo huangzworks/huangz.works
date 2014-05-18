@@ -12,16 +12,11 @@ huangz/homepage
 作者、译者、程序员，
 现居广东清远。
 
-联系方式
-----------
-
-- 微博： `weibo.com/huangz1990 <http://weibo.com/huangz1990>`_
-
-- twitter： `twitter.com/huangz1990 <https://twitter.com/huangz1990>`_
-
-- 豆瓣： `douban.com/people/i_m_huangz <http://www.douban.com/people/i_m_huangz>`_
-
-- email： huangz1990@gmail.com
+联系方式：
+`微博 <http://weibo.com/huangz1990>`_ 、
+`twitter <https://twitter.com/huangz1990>`_ 、
+`豆瓣 <http://www.douban.com/people/i_m_huangz>`_ 、
+huangz1990@gmail.com
 
 
 著作
