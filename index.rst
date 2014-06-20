@@ -22,9 +22,9 @@ huangz1990@gmail.com
 著作
 -------
 
-- project R.R. （策划中，预计 2014 年7 月份开始进行， 2015 年完成）
+- project R.R. —— 策划中，预计 2014 年7 月份开始进行， 2015 年完成。
 
-- `《Redis 设计与实现》新版 <http://RedisBook.com/>`_\ （正在发售中）
+- `《Redis 设计与实现》新版 <http://RedisBook.com/>`_\  —— 现正发售中。
 
 - `《Redis 设计与实现》第一版 <http://origin.redisbook.com/>`_
 
@@ -34,7 +34,7 @@ huangz1990@gmail.com
 翻译
 -------
 
-- 《Redis in Action》（正在翻译中，预计 2014 年 7 月完成，将由人民邮电出版社出版，中文名为《Redis 实战》）
+- 《Redis in Action》 —— 正在翻译中，预计 2014 年 7 月完成，将由人民邮电出版社出版，中文名为《Redis 实战》。
 
 - `《Redis 命令参考》 <http://www.redisdoc.com/>`_
 
@@ -53,10 +53,16 @@ huangz1990@gmail.com
 - Redis 3.0 源码注释（\ `待发布 <http://www.douban.com/people/i_m_huangz/status/1397569004/>`_\ ）
 
 
-视频
+课程
 --------
 
-- 《Redis 多机特性工作原理简介：关于复制、Sentinel 和集群》（\ `在线观看 <http://www.chinahadoop.cn/course/31>`_ 、 `下载视频 <http://pan.baidu.com/s/1pJx1NyN>`_ 、 `下载演示稿 <http://pan.baidu.com/s/1y8pWy>`_\ ）
+- `《Redis 从入门到精通》 <http://www.chinahadoop.cn/course/53>`_ —— 
+  由浅入深地介绍 Redis 的各个方面，学习 Redis 一步到位，7 月 28 日开课，现正接受报名。
+
+- 《Redis 多机特性工作原理简介：关于复制、Sentinel 和集群》 —— 
+  `在线观看 <http://www.chinahadoop.cn/course/31>`_ 、
+  `下载视频 <http://pan.baidu.com/s/1pJx1NyN>`_ 、
+  `下载演示稿 <http://pan.baidu.com/s/1y8pWy>`_\ 。
 
 
 更多
