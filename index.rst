@@ -50,7 +50,7 @@ huangz1990@gmail.com
 
 - `Redis 2.6 源码注释 <https://github.com/huangz1990/annotated_redis_source>`_
 
-- Redis 3.0 源码注释（\ `待发布 <http://www.douban.com/people/i_m_huangz/status/1397569004/>`_\ ）
+- `Redis 3.0 源码注释 <https://github.com/huangz1990/redis-3.0-annotated>`_ 
 
 
 课程
