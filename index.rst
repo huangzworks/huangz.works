@@ -26,6 +26,8 @@ huangz1990@gmail.com
 
 - `《Redis 设计与实现》新版 <http://RedisBook.com/>`_\  —— 现正发售中。
 
+  .. image:: cover/redisbook1e.jpg
+
 - `《Redis 设计与实现》第一版 <http://origin.redisbook.com/>`_
 
 - `《SICP 解题集》 <http://sicp.rtfd.org/>`_
@@ -35,6 +37,8 @@ huangz1990@gmail.com
 -------
 
 - `《Redis in Action》 <http://RedisInAction.com>`_ —— 正在翻译中，预计 2014 年 7 月完成，将由人民邮电出版社出版，中文名为《Redis 实战》。
+
+  .. image:: cover/riacn.png
 
 - `《Redis 命令参考》 <http://www.redisdoc.com/>`_
 
@@ -58,6 +62,8 @@ huangz1990@gmail.com
 
 - `《Redis 从入门到精通》 <http://www.chinahadoop.cn/course/53>`_ —— 
   由浅入深地介绍 Redis 的各个方面，学习 Redis 一步到位，7 月 28 日开课，现正接受报名。
+
+  .. image:: cover/redis-introduction.jpg
 
 - 《Redis 多机特性工作原理简介：关于复制、Sentinel 和集群》 —— 
   `在线观看 <http://www.chinahadoop.cn/course/31>`_ 、
