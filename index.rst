@@ -26,7 +26,7 @@ huangz1990@gmail.com
 著作
 -------
 
-- project R.R. —— 策划中，预计 2014 年7 月份开始进行， 2015 年完成。
+- project R.R. —— 进行中，预计 2015 年完成。
 
 - `《Redis 设计与实现》新版 <http://RedisBook.com/>`_\  —— 现正发售中。
 
