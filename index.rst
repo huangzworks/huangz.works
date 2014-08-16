@@ -11,11 +11,6 @@ huangz/homepage
 1990 年出生，
 现居广东清远。
 
-自由职业者，
-最近主要在进行写作和翻译工作，
-偶尔写点 Hello World 代码自娱自乐。
-
-
 联系方式：
 `微博 <http://weibo.com/huangz1990>`_ 、
 `twitter <https://twitter.com/huangz1990>`_ 、
