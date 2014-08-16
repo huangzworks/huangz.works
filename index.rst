@@ -35,10 +35,6 @@ huangz1990@gmail.com
 翻译
 -------
 
-- `《Redis in Action》 <http://RedisInAction.com>`_ —— 正在翻译中，将由人民邮电出版社出版，中文名为《Redis 实战》。
-
-  .. image:: cover/riacn.png
-
 - `《Redis 命令参考》 <http://www.redisdoc.com/>`_
 
 - `《Clojure API 文档》 <http://clojure-api-cn.rtfd.org/>`_ （多人协作项目）
