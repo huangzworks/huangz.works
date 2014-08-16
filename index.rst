@@ -73,9 +73,5 @@ huangz1990@gmail.com
 更多
 --------
 
-- 博客： `blog.huangz.me <http://blog.huangz.me>`_ 
-
-- 笔记： `note.huangz.me <http://note.huangz.me>`_
-
 - github： `github.com/huangz1990 <https://github.com/huangz1990>`_
 
