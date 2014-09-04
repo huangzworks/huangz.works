@@ -35,6 +35,10 @@ huangz1990@gmail.com
 翻译
 -------
 
+- `《Redis in Action》中文版《Redis 实战》 <http://redisinaction.com/>`_
+
+  .. image:: cover/ria.png
+
 - `《Redis 命令参考》 <http://www.redisdoc.com/>`_
 
 - `《Clojure API 文档》 <http://clojure-api-cn.rtfd.org/>`_ （多人协作项目）
