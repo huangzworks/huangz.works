@@ -45,7 +45,7 @@ huangz1990@gmail.com
 
 - `《Real World Haskell》 <http://rwh.rtfd.org/>`_ （多人协作项目）
 
-- `《Python Storm ORM 教程》 <https://strom-orm-tutorial.readthedocs.org>`_
+- `《Python Storm ORM 教程》 <http://python-storm-tutorial.readthedocs.org/>`_
 
 
 源码注释
