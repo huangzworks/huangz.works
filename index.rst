@@ -60,7 +60,7 @@ huangz1990@gmail.com
 --------
 
 - `《Redis 从入门到精通》 <http://www.chinahadoop.cn/course/53>`_ —— 
-  由浅入深地介绍 Redis 的各个方面，学习 Redis 一步到位，7 月 28 日开课，现正接受报名。
+  由浅入深地介绍 Redis 各个方面的知识，学习 Redis 一步到位，现正接受报名。
 
   .. image:: cover/redis-introduction.jpg
 
