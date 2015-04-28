@@ -37,6 +37,8 @@ huangz1990@gmail.com
 翻译
 -------
 
+- `《Disque 使用教程》 <http://disquebook.com/>`_
+
 - `《Redis in Action》中文版《Redis 实战》 <http://redisinaction.com/>`_ —— 翻译进行中。
 
   .. image:: cover/ria.png
