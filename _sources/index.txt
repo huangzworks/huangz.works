@@ -63,10 +63,7 @@ huangz1990@gmail.com
 课程
 --------
 
-- `《Redis 从入门到精通》 <http://www.chinahadoop.cn/course/53>`_ —— 
-  由浅入深地介绍 Redis 各个方面的知识，学习 Redis 一步到位，现正接受报名。
-
-  .. image:: cover/redis-introduction.jpg
+- `《Redis 从入门到精通》 <http://www.chinahadoop.cn/course/53>`_
 
 - 《Redis 多机特性工作原理简介：关于复制、Sentinel 和集群》 —— 
   `在线观看 <http://www.chinahadoop.cn/course/31>`_ 、
