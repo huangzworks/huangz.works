@@ -11,6 +11,12 @@ huangz/homepage
 1990 年出生，
 现居广东清远。
 
+自由职业者，
+目前作为程序员、作者和译者进行活动中。
+
+著有《Redis设计与实现》，
+译有《Redis实战》、《Redis命令参考》、《Disque使用教程》等。
+
 联系方式：
 `微博 <http://weibo.com/huangz1990>`_ 、
 `twitter <https://twitter.com/huangz1990>`_ 、
@@ -39,7 +45,7 @@ huangz1990@gmail.com
 
 - `《Disque 使用教程》 <http://disquebook.com/>`_
 
-- `《Redis in Action》中文版《Redis 实战》 <http://redisinaction.com/>`_ —— 翻译已完成，正在进行编辑加工。
+- `《Redis in Action》中文版《Redis 实战》 <http://redisinaction.com/>`_ —— 正在进行排版，即将印刷并销售。
 
   .. image:: cover/ria.png
 
