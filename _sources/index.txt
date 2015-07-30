@@ -29,8 +29,6 @@ huangz1990@gmail.com
 
 - `project R.M. <http://www.douban.com/people/i_m_huangz/status/1563865857/>`_ —— 进行中，预计 2016 年上半年完成。
 
-- project N.R.C.R —— 进行中，预计 2015 年下半年完成。
-
 - `《Redis 设计与实现》新版 <http://RedisBook.com/>`_\  —— 现正发售中。
 
   .. image:: cover/redisbook1e.jpg
