@@ -51,7 +51,9 @@ huangz1990@gmail.com
 
 - `《Clojure API 文档》 <http://clojure-api-cn.rtfd.org/>`_ （多人协作项目）
 
-- `《Real World Haskell》 <http://rwh.rtfd.org/>`_ （多人协作项目）
+- `《Real World Haskell》中文版 <http://rwh.rtfd.org/>`_ （多人协作项目）
+
+  .. image:: cover/real-world-haskell.jpg
 
 - `《Python Storm ORM 教程》 <http://python-storm-tutorial.readthedocs.org/>`_
 
