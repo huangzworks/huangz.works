@@ -47,7 +47,9 @@ huangz1990@gmail.com
 
   .. image:: cover/ria.png
 
-- `《Redis 命令参考》 <http://www.redisdoc.com/>`_
+- `《Redis 命令参考》 <http://www.redisdoc.com/>`_ —— Redis 官方文档的中文翻译版。
+
+  .. image:: cover/redis-logo.png
 
 - `《Clojure API 文档》 <http://clojure-api-cn.rtfd.org/>`_ （多人协作项目）
 
