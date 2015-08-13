@@ -13,7 +13,7 @@
 
 li {
     list-style-type: none;
-    margin-bottom: 5px;
+    margin-bottom: 15px;
 }
 
 a {
@@ -98,7 +98,7 @@ div.sphinxsidebar #searchbox input[type="submit"] {
 
 img {
     border: 0;
-    box-shadow: 0px 0px 9px #333;                                                                                                             
+    box-shadow: 0px 0px 9px #333;
 }
 
 /* -- search page ----------------------------------------------------------- */
@@ -224,6 +224,7 @@ div.body td {
 
 .first {
     margin-top: 0 !important;
+    margin-bottom: 10px;
 }
 
 p.rubric {
