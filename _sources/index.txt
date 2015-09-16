@@ -40,7 +40,7 @@ huangz1990@gmail.com
 
 - `《Disque 使用教程》 <http://disquebook.com/>`_
 
-- `《Redis in Action》中文版《Redis 实战》 <http://redisinaction.com/>`_ —— 正在进行排版，即将印刷并销售。
+- `《Redis 实战》（《Redis in Action》中文版） <http://redisinaction.com/>`_ —— 正在进行排版，即将印刷并销售。
 
   .. image:: cover/ria.png
 
