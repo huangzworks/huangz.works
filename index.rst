@@ -40,6 +40,8 @@ huangz1990@gmail.com
 
 - `《PostgreSQL 数据库文档》 <http://pgsqlcn.com/>`_ —— PostgreSQL 官方手册的中文翻译版。
 
+  .. image:: cover/pglogo.png
+
 - `《Disque 使用教程》 <http://disquebook.com/>`_
 
 - `《Redis 实战》（《Redis in Action》中文版） <http://redisinaction.com/>`_ —— 现正发售中。 
