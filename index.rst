@@ -24,6 +24,8 @@ huangz1990@gmail.com
 著作
 -------
 
+- `project Ele <http://www.douban.com/people/i_m_huangz/status/1785407565/>`_ —— 进行中，预计 2017 年完成。
+
 - `project R.M. <http://www.douban.com/people/i_m_huangz/status/1563865857/>`_ —— 进行中，预计 2016 年上半年完成。
 
 - `《Redis 命令速查表》 <https://selfstore.io/products/538>`_\ —— 现正发售中。
