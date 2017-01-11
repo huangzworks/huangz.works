@@ -26,7 +26,7 @@ huangz1990@gmail.com
 
 - `project Ele <http://www.douban.com/people/i_m_huangz/status/1785407565/>`_ —— 进行中，预计 2017 年完成。
 
-- `《Redis使用教程》 <http://RedisGuide.com/>`_ —— 进行中，预计将于 2016 年第 4 季度发售。
+- `《Redis使用教程》 <http://RedisGuide.com/>`_ —— 进行中，预计将于 2017 年发售。
 
   .. image:: cover/redisguide.jpg
 
