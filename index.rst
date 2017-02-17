@@ -20,7 +20,6 @@ huangz/homepage
 `豆瓣 <http://www.douban.com/people/i_m_huangz>`_ 、
 huangz1990@gmail.com
 
-
 著作
 -------
 
@@ -84,6 +83,21 @@ huangz1990@gmail.com
   `在线观看 <http://www.chinahadoop.cn/course/31>`_ 、
   `下载视频 <http://pan.baidu.com/s/1pJx1NyN>`_ 、
   `下载演示稿 <http://pan.baidu.com/s/1y8pWy>`_\ 。
+
+
+QQ 群
+---------
+
+- 为了更好地与大家进行技术讨论，
+  我建立了以下 QQ 群，
+  欢迎有兴趣的朋友加入：
+
+  - IT 技术讨论 1 群，群号 398976550
+
+  - IT 技术讨论 2 群，群号 186200307
+
+- 因为 1 群目前人数已经饱和，
+  推荐朋友们优先加入 2 群。
 
 
 更多
