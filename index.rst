@@ -47,7 +47,7 @@ huangz1990@gmail.com
 
   .. image:: cover/pglogo.png
 
-- `《Disque 使用教程》 <http://disquebook.com/>`_
+- `《Disque 使用教程》 <http://disque.huangz.me/>`_
 
 - `《Redis 实战》（《Redis in Action》中文版） <http://redisinaction.com/>`_ —— 现正发售中。 
 
