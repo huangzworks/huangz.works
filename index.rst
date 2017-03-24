@@ -43,6 +43,10 @@ huangz1990@gmail.com
 翻译
 -------
 
+- `《Go 标准库中文文档》 <http://cngolib.com/>`_ —— Go 语言标准库文档的中文翻译版。
+
+  .. image:: cover/cngolib.png
+
 - `《PostgreSQL 数据库文档》 <http://pgsqlcn.com/>`_ —— PostgreSQL 官方手册的中文翻译版。
 
   .. image:: cover/pglogo.png
