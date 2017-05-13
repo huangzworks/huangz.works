@@ -43,6 +43,10 @@ huangz1990@gmail.com
 翻译
 -------
 
+- `《Go web 编程》 <http://gwpcn.com/>`_ —— 翻译进行中，预计 2017 年下半年发售。
+
+  .. image:: cover/gwp.png
+
 - `《Go 标准库中文文档》 <http://cngolib.com/>`_ —— Go 语言标准库文档的中文翻译版。
 
   .. image:: cover/cngolib.png
