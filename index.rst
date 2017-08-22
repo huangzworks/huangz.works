@@ -43,7 +43,7 @@ huangz1990@gmail.com
 翻译
 -------
 
-- `《Go web 编程》 <http://gwpcn.com/>`_ —— 翻译进行中，预计 2017 年下半年发售。
+- `《Go Web 编程》 <http://gwpcn.com/>`_ —— 已翻译完成，等待编辑和排版。
 
   .. image:: cover/gwp.png
 
