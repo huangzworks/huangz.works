@@ -29,7 +29,7 @@ huangz1990@gmail.com
 
   .. image:: cover/redisguide.jpg
 
-- `《Redis 命令速查表》 <https://selfstore.io/products/538>`_\ —— 现正发售中。
+- `《Redis 命令速查表》 <http://blog.huangz.me/2017/release-redis-cheatsheet-as-free.html>`_
 
 - `《Redis 设计与实现》新版 <http://RedisBook.com/>`_\  —— 现正发售中。
 
@@ -43,7 +43,7 @@ huangz1990@gmail.com
 翻译
 -------
 
-- `《Go Web 编程》 <http://gwpcn.com/>`_ —— 已翻译完成，等待编辑和排版。
+- `《Go Web 编程》 <http://gwpcn.com/>`_ —— 现正发售中。
 
   .. image:: cover/gwp.png
 
