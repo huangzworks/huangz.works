@@ -11,8 +11,8 @@ huangz/homepage
 1990 年出生，
 现居广东清远。
 
-著有《Redis设计与实现》，
-译有《Redis实战》、《Redis命令参考》、《Disque使用教程》等。
+著有《Redis 设计与实现》，
+译有《Go Web 编程》、《Redis 实战》等。
 
 联系方式：
 `微博 <http://weibo.com/huangz1990>`_ 、
