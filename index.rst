@@ -12,85 +12,89 @@ huangz/homepage
 现居广东清远。
 
 著有《Redis 设计与实现》，
-译有《Go Web 编程》、《Redis 实战》等。
+译有《Go Web 编程》、《Redis 实战》。
 
 联系方式：
 `微博 <http://weibo.com/huangz1990>`_ 、
 `twitter <https://twitter.com/huangz1990>`_ 、
 `豆瓣 <http://www.douban.com/people/i_m_huangz>`_ 、
-huangz1990@gmail.com
+huangz1990@gmail.com 
+
+商业合作、技术交流等正式联系请尽量通过电子邮件进行，
+非常感谢！
+
 
 著作
 -------
 
-- `project Ele <http://www.douban.com/people/i_m_huangz/status/1785407565/>`_ —— 进行中，预计 2017 年完成。
-
-- `《Redis使用教程》 <http://RedisGuide.com/>`_ —— 进行中，预计将于 2017 年发售。
+- `《Redis 使用教程》 <http://RedisGuide.com/>`_
 
   .. image:: cover/redisguide.jpg
 
-- `《Redis 命令速查表》 <http://blog.huangz.me/2017/release-redis-cheatsheet-as-free.html>`_
 
-- `《Redis 设计与实现》新版 <http://RedisBook.com/>`_\  —— 现正发售中。
+- `《Redis 设计与实现》 <http://RedisBook.com/>`_
 
   .. image:: cover/redisbook1e.jpg
 
-- `《Redis 设计与实现》第一版 <http://origin.redisbook.com/>`_
 
-- `《SICP 解题集》 <http://sicp.rtfd.org/>`_
-
-
-翻译
+译作
 -------
 
-- `《Go Web 编程》 <http://gwpcn.com/>`_ —— 现正发售中。
+- `《Go Web 编程》 <http://gwpcn.com/>`_
 
-  .. image:: cover/gwp.png
+  .. image:: cover/gwp.jpg
+
+- `《Redis 实战》 <http://redisinaction.com/>`_
+
+  .. image:: cover/ria.png
+
+
+开源文档
+----------
+
+- `《Redis 命令参考》 <http://www.redisdoc.com/>`_ —— Redis 官方文档中文翻译版。
+
+  .. image:: cover/redis-logo.png
+
+- `《Redis 设计与实现》网络版 <http://origin.redisbook.com/>`_
+
+- `《SICP 解题集》 <https://sicp.readthedocs.io>`_
 
 - `《Go 标准库中文文档》 <http://cngolib.com/>`_ —— Go 语言标准库文档的中文翻译版。
 
   .. image:: cover/cngolib.png
 
-- `《PostgreSQL 数据库文档》 <http://pgsqlcn.com/>`_ —— PostgreSQL 官方手册的中文翻译版。
-
-  .. image:: cover/pglogo.png
-
-- `《Disque 使用教程》 <http://disque.huangz.me/>`_
-
-- `《Redis 实战》（《Redis in Action》中文版） <http://redisinaction.com/>`_ —— 现正发售中。 
-
-  .. image:: cover/ria.png
-
-- `《Redis 命令参考》 <http://www.redisdoc.com/>`_ —— Redis 官方文档的中文翻译版。
-
-  .. image:: cover/redis-logo.png
-
-- `《Clojure API 文档》 <http://clojure-api-cn.rtfd.org/>`_ （多人协作项目）
-
 - `《Real World Haskell》中文版 <http://cnhaskell.com/>`_ （多人协作项目）
 
   .. image:: cover/real-world-haskell.jpg
 
+- `《Redis 命令速查表》 <http://blog.huangz.me/2017/release-redis-cheatsheet-as-free.html>`_
+
+- `《PostgreSQL 数据库文档》 <https://huangz1990.github.io/pgsqlcn/>`_
+
+- `《Disque 使用教程》 <http://disque.huangz.me/>`_
+
+- `《Clojure API 文档》 <http://clojure-api-cn.rtfd.org/>`_ （多人协作项目）
+
 - `《Python Storm ORM 教程》 <http://python-storm-tutorial.readthedocs.org/>`_
 
 
-源码注释
-----------
+演讲
+--------
 
-- `Redis 3.0 源码注释 <https://github.com/huangz1990/redis-3.0-annotated>`_ 
-
-- `Redis 2.6 源码注释 <https://github.com/huangz1990/annotated_redis_source>`_
+- `《使用 Go 和 Redis 构建有趣的应用》 <http://www.itdks.com/dakashuo/new/eventlist/detail/1262>`_ @ 2017 年广州 Gopher Meetup （\ `下载演示稿 <https://github.com/huangz1990/2017-guangzhou-gopher-meetup>`_\ ）
 
 
 课程
 --------
 
+
 - `《Redis 从入门到精通》 <http://www.chinahadoop.cn/course/115>`_
 
-- 《Redis 多机特性工作原理简介：关于复制、Sentinel 和集群》 —— 
-  `在线观看 <http://www.chinahadoop.cn/course/31>`_ 、
+- 《Redis 多机特性工作原理简介：关于复制、Sentinel 和集群》
+  （\ `在线观看 <http://www.chinahadoop.cn/course/31>`_ 、
   `下载视频 <http://pan.baidu.com/s/1pJx1NyN>`_ 、
-  `下载演示稿 <http://pan.baidu.com/s/1y8pWy>`_\ 。
+  `下载演示稿 <http://pan.baidu.com/s/1y8pWy>`_\ ）
 
 
 QQ 群
