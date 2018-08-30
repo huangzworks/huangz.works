@@ -52,21 +52,15 @@ huangz1990@gmail.com
 开源文档
 ----------
 
-- `《Redis 命令参考》 <http://www.redisdoc.com/>`_ —— Redis 官方文档中文翻译版。
-
-  .. image:: cover/redis-logo.png
+- `《Redis 命令参考》 <http://www.redisdoc.com/>`_
 
 - `《Redis 设计与实现》网络版 <http://origin.redisbook.com/>`_
 
 - `《SICP 解题集》 <https://sicp.readthedocs.io>`_
 
-- `《Go 标准库中文文档》 <http://cngolib.com/>`_ —— Go 语言标准库文档的中文翻译版。
+- `《Go 标准库中文文档》 <http://cngolib.com/>`_
 
-  .. image:: cover/cngolib.png
-
-- `《Real World Haskell》中文版 <http://cnhaskell.com/>`_ （多人协作项目）
-
-  .. image:: cover/real-world-haskell.jpg
+- `《Real World Haskell》中文版 <http://cnhaskell.com/>`_
 
 - `《Redis 命令速查表》 <http://blog.huangz.me/2017/release-redis-cheatsheet-as-free.html>`_
 
@@ -74,7 +68,7 @@ huangz1990@gmail.com
 
 - `《Disque 使用教程》 <http://disque.huangz.me/>`_
 
-- `《Clojure API 文档》 <http://clojure-api-cn.rtfd.org/>`_ （多人协作项目）
+- `《Clojure API 文档》 <http://clojure-api-cn.rtfd.org/>`_
 
 - `《Python Storm ORM 教程》 <http://python-storm-tutorial.readthedocs.org/>`_
 
