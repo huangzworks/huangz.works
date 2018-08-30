@@ -27,26 +27,25 @@ huangz1990@gmail.com
 著作
 -------
 
-- `《Redis 使用教程》 <http://RedisGuide.com/>`_
-
   .. image:: cover/redisguide.jpg
 
-
-- `《Redis 设计与实现》 <http://RedisBook.com/>`_
+- `《Redis 使用教程》 <http://RedisGuide.com/>`_
 
   .. image:: cover/redisbook1e.jpg
+
+- `《Redis 设计与实现》 <http://RedisBook.com/>`_
 
 
 译作
 -------
 
-- `《Go Web 编程》 <http://gwpcn.com/>`_
-
   .. image:: cover/gwp.jpg
 
-- `《Redis 实战》 <http://redisinaction.com/>`_
+- `《Go Web 编程》 <http://gwpcn.com/>`_
 
   .. image:: cover/ria.png
+
+- `《Redis 实战》 <http://redisinaction.com/>`_
 
 
 开源文档
