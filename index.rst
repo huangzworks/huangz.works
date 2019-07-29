@@ -7,17 +7,14 @@ huangz/homepage
 ======================
 
 黄健宏（huangz），
+IT 技术图书作者和译者。
 男，
 1990 年出生，
 现居广东清远。
 
-著有《Redis 设计与实现》，
-译有《Go Web 编程》、《Redis 实战》。
-
 联系方式：
 `微博 <http://weibo.com/huangz1990>`_ 、
 `twitter <https://twitter.com/huangz1990>`_ 、
-`豆瓣 <http://www.douban.com/people/i_m_huangz>`_ 、
 huangz1990@gmail.com 
 
 商业合作、技术交流等正式联系请尽量通过电子邮件进行，
@@ -27,9 +24,9 @@ huangz1990@gmail.com
 著作
 -------
 
-  .. image:: cover/redisguide.jpg
+  .. image:: cover/redisguide.png
 
-- `《Redis 使用教程》 <http://RedisGuide.com/>`_
+- `《Redis 使用手册》 <http://RedisGuide.com/>`_
 
   .. image:: cover/redisbook1e.jpg
 
@@ -90,23 +87,6 @@ huangz1990@gmail.com
   `下载演示稿 <http://pan.baidu.com/s/1y8pWy>`_\ ）
 
 
-QQ 群
----------
-
-- 为了更好地与大家进行技术讨论，
-  我建立了以下 QQ 群，
-  欢迎有兴趣的朋友加入：
-
-  - IT 技术讨论 1 群，群号 398976550
-
-  - IT 技术讨论 2 群，群号 186200307
-
-  - IT 技术讨论 3 群，群号 910358447 
-
-- 因为 1 群和 2 群目前人数已经饱和，
-  推荐朋友们优先加入新创建的 3 群。
-
-
 微信公众号
 -------------
 
@@ -116,6 +96,7 @@ QQ 群
 
 .. image:: cover/weixin-mp.jpg
 
+
 更多
 --------
 
@@ -124,3 +105,5 @@ QQ 群
 - 笔记： `note.huangz.me <http://note.huangz.me>`_
 
 - github： `github.com/huangz1990 <https://github.com/huangz1990>`_
+
+- 豆瓣： `douban.com/people/i_m_huangz <http://www.douban.com/people/i_m_huangz>`_ 
