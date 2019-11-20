@@ -36,9 +36,9 @@ huangz1990@gmail.com
 译作
 -------
 
-  .. image:: cover/gpwg.jpeg
+  .. image:: cover/gpwg.jpg
 
-- `《Get Programming with Go》中文版 <http://gpwgcn.com>`_
+- `《Go语言趣学指南》 <http://gpwgcn.com>`_
 
   .. image:: cover/gwp.jpg
 
