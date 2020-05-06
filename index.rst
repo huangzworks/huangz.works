@@ -24,6 +24,10 @@ huangz1990@gmail.com
 著作
 -------
 
+  .. image:: cover/learning_redis.jpg
+
+- 《Redis 入门与实战》
+
   .. image:: cover/redisguide.png
 
 - `《Redis 使用手册》 <http://RedisGuide.com/>`_
