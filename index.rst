@@ -26,7 +26,7 @@ huangz1990@gmail.com
 
   .. image:: cover/learning_redis.jpg
 
-- 《Redis 入门与实战》
+- `《Redis 入门与实战》 <http://LearnRedis.com>`_
 
   .. image:: cover/redisguide.png
 
