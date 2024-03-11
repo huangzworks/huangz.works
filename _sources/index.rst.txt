@@ -49,9 +49,9 @@ huangzworks@gmail.com
 -------------
 
 .. image:: images/psql.png
-   :target: https://weibo.com/3219474004/NcH4ty1wS
+   :target: https://weibo.com/3219474004/O4tHlwb41
 
-《Practical SQL, 2e》中文版
+《SQL实战（第2版）》
 
 .. image:: images/gpwg.jpg
    :target: https://item.jd.com/12826232.html
