@@ -18,7 +18,8 @@
 联系方式：
 `微博 <https://weibo.com/u/3219474004>`_\ 、
 `twitter <https://twitter.com/huangzworks>`_\ 、
-huangzworks@gmail.com
+huangzworks@gmail.com、
+`微信 <wechat.html>`_
 
 相关链接：
 `GitHub <https://github.com/huangzworks>`_\ 、
