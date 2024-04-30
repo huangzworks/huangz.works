@@ -1,0 +1,256 @@
+
+
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>哈希表 &#8212; RedisBookOrigin 1.0 文档</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../" type="text/css" />
+    
+    <script src="../_static/documentation_options.js?v=27ad66bf"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+    <link rel="next" title="列表" href="list.html" />
+    <link rel="prev" title="字符串" href="string.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="总索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="list.html" title="列表"
+             accesskey="N">下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="string.html" title="字符串"
+             accesskey="P">上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">RedisBookOrigin 1.0 文档</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">哈希表</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="hash-chapter">
+<span id="id1"></span><h1>哈希表<a class="headerlink" href="#hash-chapter" title="Link to this heading">¶</a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">REDIS_HASH</span></code> （哈希表）是 <span class="xref std std-ref">HSET</span> 、 <span class="xref std std-ref">HLEN</span> 等命令的操作对象，
+它使用 <code class="docutils literal notranslate"><span class="pre">REDIS_ENCODING_ZIPLIST</span></code> 和 <code class="docutils literal notranslate"><span class="pre">REDIS_ENCODING_HT</span></code> 两种编码方式：</p>
+<div class="graphviz"><img src="../_images/graphviz-79b313a74063fd9f3eab8e324689b24c3be725a0.png" alt="digraph redis_hash {
+
+    node [shape=plaintext, style = filled];
+
+    edge [style = bold];
+
+    // type
+
+    REDIS_HASH [label=&quot;哈希表\nREDIS_HASH&quot;, fillcolor = &quot;#95BBE3&quot;];
+
+    // encoding
+
+    REDIS_ENCODING_ZIPLIST [label=&quot;压缩列表\nREDIS_ENCODING_ZIPLIST&quot;, fillcolor = &quot;#FADCAD&quot;];
+    REDIS_ENCODING_HT [label=&quot;字典\nREDIS_ENCODING_HT&quot;, fillcolor = &quot;#FADCAD&quot;];
+
+    // edge
+
+    REDIS_HASH -&gt; REDIS_ENCODING_ZIPLIST;
+    REDIS_HASH -&gt; REDIS_ENCODING_HT;
+
+    // datastruct 1
+
+    ziplist [label=&quot;ziplist&quot;];
+
+    REDIS_ENCODING_ZIPLIST -&gt; ziplist;
+
+    // datastruct 2
+
+    dict [label=&quot;dict.h/dict&quot;];
+
+    REDIS_ENCODING_HT -&gt; dict;
+}" class="graphviz" /></div>
+<section id="id2">
+<h2>字典编码的哈希表<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>当哈希表使用字典编码时，
+程序将哈希表的键（key）保存为字典的键，
+将哈希表的值（value）保存为字典的值。</p>
+<p>哈希表所使用的字典的键和值都是字符串对象。</p>
+<p>下图展示了一个包含三个键值对的哈希表：</p>
+<div class="graphviz"><img src="../_images/graphviz-79d5e1fa69655be0f0399a6f684997c98424b09e.png" alt="digraph db {
+
+    rankdir = LR;
+
+    node [shape = record, style = filled];
+
+    edge [style = bold];
+
+    dict [label = &quot;&lt;head&gt;dict\n |&lt;number&gt;StringObject\n \&quot;number\&quot; | NULL |&lt;book&gt;StringObject\n \&quot;book\&quot; |&lt;message&gt;StringObject\n \&quot;message\&quot;&quot;, fillcolor = &quot;#A8E270&quot;];
+
+    number [label = &quot;&lt;head&gt;StringObject | 10086&quot;];
+
+    book [label = &quot;&lt;head&gt;StringObject | \&quot;Mastering C++ in 21 days\&quot;&quot;];
+
+    message [label = &quot;&lt;head&gt;StringObject | \&quot;hello moto\&quot;&quot;];
+
+    dict:number -&gt; number:head;
+    dict:book -&gt; book:head;
+    dict:message -&gt; message:head;
+}" class="graphviz" /></div>
+</section>
+<section id="id3">
+<h2>压缩列表编码的哈希表<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>当使用 <code class="docutils literal notranslate"><span class="pre">REDIS_ENCODING_ZIPLIST</span></code> 编码哈希表时，
+程序通过将键和值一同推入压缩列表，
+从而形成保存哈希表所需的键-值对结构：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">+---------+------+------+------+------+------+------+------+------+---------+</span>
+<span class="o">|</span> <span class="n">ZIPLIST</span> <span class="o">|</span>      <span class="o">|</span>      <span class="o">|</span>      <span class="o">|</span>      <span class="o">|</span>      <span class="o">|</span>      <span class="o">|</span>      <span class="o">|</span>      <span class="o">|</span> <span class="n">ZIPLIST</span> <span class="o">|</span>
+<span class="o">|</span> <span class="n">ENTRY</span>   <span class="o">|</span> <span class="n">key1</span> <span class="o">|</span> <span class="n">val1</span> <span class="o">|</span> <span class="n">key2</span> <span class="o">|</span> <span class="n">val2</span> <span class="o">|</span> <span class="o">...</span>  <span class="o">|</span> <span class="o">...</span>  <span class="o">|</span> <span class="n">keyN</span> <span class="o">|</span> <span class="n">valN</span> <span class="o">|</span> <span class="n">ENTRY</span>   <span class="o">|</span>
+<span class="o">|</span> <span class="n">HEAD</span>    <span class="o">|</span>      <span class="o">|</span>      <span class="o">|</span>      <span class="o">|</span>      <span class="o">|</span>      <span class="o">|</span>      <span class="o">|</span>      <span class="o">|</span>      <span class="o">|</span> <span class="n">END</span>     <span class="o">|</span>
+<span class="o">+---------+------+------+------+------+------+------+------+------+---------+</span>
+</pre></div>
+</div>
+<p>新添加的 key-value 对会被添加到压缩列表的表尾。</p>
+<p>当进行查找/删除或更新操作时，程序先定位到键的位置，然后再通过对键的位置来定位值的位置。</p>
+</section>
+<section id="id4">
+<h2>编码的选择<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>创建空白哈希表时，
+程序默认使用 <code class="docutils literal notranslate"><span class="pre">REDIS_ENCODING_ZIPLIST</span></code> 编码，
+当以下任何一个条件被满足时，
+程序将编码从 <code class="docutils literal notranslate"><span class="pre">REDIS_ENCODING_ZIPLIST</span></code> 切换为 <code class="docutils literal notranslate"><span class="pre">REDIS_ENCODING_HT</span></code> ：</p>
+<ul class="simple">
+<li><p>哈希表中某个键或某个值的长度大于 <code class="docutils literal notranslate"><span class="pre">server.hash_max_ziplist_value</span></code> （默认值为 <code class="docutils literal notranslate"><span class="pre">64</span></code> ）。</p></li>
+<li><p>压缩列表中的节点数量大于 <code class="docutils literal notranslate"><span class="pre">server.hash_max_ziplist_entries</span></code> （默认值为 <code class="docutils literal notranslate"><span class="pre">512</span></code> ）。</p></li>
+</ul>
+</section>
+<section id="id5">
+<h2>哈希命令的实现<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>哈希类型命令的实现全都是对字典和压缩列表操作函数的包装，
+以及几个在两种编码之间进行转换的函数，
+没有特别要讲解的地方。</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="../index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">哈希表</a><ul>
+<li><a class="reference internal" href="#id2">字典编码的哈希表</a></li>
+<li><a class="reference internal" href="#id3">压缩列表编码的哈希表</a></li>
+<li><a class="reference internal" href="#id4">编码的选择</a></li>
+<li><a class="reference internal" href="#id5">哈希命令的实现</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="string.html"
+                          title="Previous page">&larr; 字符串</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="list.html"
+                          title="Next page">&rarr; 列表</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>本页</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/datatype/hash.rst.txt"
+            rel="nofollow">显示源代码</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">快速搜索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="提交" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="总索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="list.html" title="列表"
+             >下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="string.html" title="字符串"
+             >上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">RedisBookOrigin 1.0 文档</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">哈希表</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; 版权所有 2024, 黄健宏.
+      由 <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6创建。
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

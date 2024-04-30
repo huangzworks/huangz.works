@@ -1,0 +1,727 @@
+
+
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>订阅与发布 &#8212; RedisBookOrigin 1.0 文档</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../" type="text/css" />
+    
+    <script src="../_static/documentation_options.js?v=27ad66bf"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+    <link rel="next" title="Lua 脚本" href="scripting.html" />
+    <link rel="prev" title="事务" href="transaction.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="总索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="scripting.html" title="Lua 脚本"
+             accesskey="N">下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="transaction.html" title="事务"
+             accesskey="P">上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">RedisBookOrigin 1.0 文档</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">订阅与发布</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>订阅与发布<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>Redis 通过 <span class="xref std std-ref">PUBLISH</span> 、 <span class="xref std std-ref">SUBSCRIBE</span> 等命令实现了订阅与发布模式，
+这个功能提供两种信息机制，
+分别是订阅/发布到频道和订阅/发布到模式，
+下文先讨论订阅/发布到频道的实现，
+再讨论订阅/发布到模式的实现。</p>
+<section id="id2">
+<h2>频道的订阅与信息发送<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>Redis 的 <span class="xref std std-ref">SUBSCRIBE</span> 命令可以让客户端订阅任意数量的频道，
+每当有新信息发送到被订阅的频道时，
+信息就会被发送给所有订阅指定频道的客户端。</p>
+<p>作为例子，
+下图展示了频道 <code class="docutils literal notranslate"><span class="pre">channel1</span></code> ，
+以及订阅这个频道的三个客户端 —— <code class="docutils literal notranslate"><span class="pre">client2</span></code> 、 <code class="docutils literal notranslate"><span class="pre">client5</span></code> 和 <code class="docutils literal notranslate"><span class="pre">client1</span></code> 之间的关系：</p>
+<div class="graphviz"><img src="../_images/graphviz-e9dcf3f5d6722b08fc6ededb0b0b2642d35e4bcd.png" alt="digraph pubsub_relation {
+
+    rankdir = BT;
+
+    node [style = filled];
+
+    edge [style = bold];
+
+    channel1 [label = &quot;channel1&quot;, fillcolor = &quot;#A8E270&quot;];
+
+    node [shape = box, fillcolor = &quot;#95BBE3&quot;];
+
+    client2 [label = &quot;client2&quot;];
+    client5 [label = &quot;client5&quot;];
+    client1 [label = &quot;client1&quot;];
+
+    client2 -&gt; channel1 [label = &quot;subscribe&quot;];
+    client5 -&gt; channel1 [label = &quot;subscribe&quot;];
+    client1 -&gt; channel1 [label = &quot;subscribe&quot;];
+}" class="graphviz" /></div>
+<p>当有新消息通过 <span class="xref std std-ref">PUBLISH</span> 命令发送给频道 <code class="docutils literal notranslate"><span class="pre">channel1</span></code> 时，
+这个消息就会被发送给订阅它的三个客户端：</p>
+<div class="graphviz"><img src="../_images/graphviz-3851402bfc233a467c12da5ff31e4f035fb81876.png" alt="digraph send_message_to_subscriber {
+    
+    node [style = filled];
+
+    edge [style = &quot;dashed, bold&quot;];
+    
+    message [label = &quot;PUBLISH channel1 message&quot;, shape = plaintext, fillcolor = &quot;#FADCAD&quot;];
+
+    message -&gt; channel1 [color = &quot;#B22222]&quot;];
+
+    channel1 [label = &quot;channel1&quot;, fillcolor = &quot;#A8E270&quot;];
+
+    node [shape = box];
+
+    client2 [label = &quot;client2&quot;, fillcolor = &quot;#95BBE3&quot;];
+    client5 [label = &quot;client5&quot;, fillcolor = &quot;#95BBE3&quot;];
+    client1 [label = &quot;client1&quot;, fillcolor = &quot;#95BBE3&quot;];
+
+    /*
+    client2 -&gt; channel1 [label = &quot;subscribe&quot;];
+    client5 -&gt; channel1 [label = &quot;subscribe&quot;];
+    client1 -&gt; channel1 [label = &quot;subscribe&quot;];
+    */
+
+    channel1 -&gt; client2 [label = &quot;message&quot;, color = &quot;#B22222&quot;];
+    channel1 -&gt; client5 [label = &quot;message&quot;, color = &quot;#B22222&quot;];
+    channel1 -&gt; client1 [label = &quot;message&quot;, color = &quot;#B22222&quot;];
+}" class="graphviz" /></div>
+<p>在后面的内容中，
+我们将探讨 <span class="xref std std-ref">SUBSCRIBE</span> 和 <span class="xref std std-ref">PUBLISH</span> 命令的实现，
+以及这套订阅与发布机制的运作原理。</p>
+</section>
+<section id="id3">
+<h2>订阅频道<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>每个 Redis 服务器进程都维持着一个表示服务器状态的 <code class="docutils literal notranslate"><span class="pre">redis.h/redisServer</span></code> 结构，
+结构的 <code class="docutils literal notranslate"><span class="pre">pubsub_channels</span></code> 属性是一个字典，
+这个字典就用于保存订阅频道的信息：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">struct</span> <span class="n">redisServer</span> <span class="p">{</span>
+    <span class="o">//</span> <span class="o">...</span>
+    <span class="nb">dict</span> <span class="o">*</span><span class="n">pubsub_channels</span><span class="p">;</span>
+    <span class="o">//</span> <span class="o">...</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>其中，字典的键为正在被订阅的频道，
+而字典的值则是一个链表，
+链表中保存了所有订阅这个频道的客户端。</p>
+<p>比如说，在下图展示的这个 <code class="docutils literal notranslate"><span class="pre">pubsub_channels</span></code> 示例中， <code class="docutils literal notranslate"><span class="pre">client2</span></code> 、 <code class="docutils literal notranslate"><span class="pre">client5</span></code> 和 <code class="docutils literal notranslate"><span class="pre">client1</span></code> 就订阅了 <code class="docutils literal notranslate"><span class="pre">channel1</span></code> ，
+而其他频道也分别被别的客户端所订阅：</p>
+<div class="graphviz"><img src="../_images/graphviz-70a4c9622e5a49cb054d30e1221b935b18fb8877.png" alt="digraph pubsub {
+
+    rankdir = LR;
+
+    node [shape = record, style = filled];
+
+    edge [style = bold];
+
+    // keys
+
+    pubsub [label = &quot;pubsub_channels |&lt;channel1&gt; channel1 |&lt;channel2&gt; channel2 |&lt;channel3&gt; channel3 | ... |&lt;channelN&gt; channelN&quot;, fillcolor = &quot;#A8E270&quot;];
+
+    // clients blocking for channel1
+    client1 [label = &quot;client1&quot;, fillcolor = &quot;#95BBE3&quot;];
+    client5 [label = &quot;client5&quot;, fillcolor = &quot;#95BBE3&quot;];
+    client2 [label = &quot;client2&quot;, fillcolor = &quot;#95BBE3&quot;];
+    null_1 [label = &quot;NULL&quot;, shape = plaintext];
+    
+    pubsub:channel1 -&gt; client2;
+    client2 -&gt; client5;
+    client5 -&gt; client1;
+    client1 -&gt; null_1;
+
+    // clients blocking for channel2
+    client7 [label = &quot;client7&quot;, fillcolor = &quot;#95BBE3&quot;];
+    null_2 [label = &quot;NULL&quot;, shape = plaintext];
+
+    pubsub:channel2 -&gt; client7;
+    client7 -&gt; null_2;
+
+    // channel
+
+    client3 [label = &quot;client3&quot;, fillcolor = &quot;#95BBE3&quot;];
+    client4 [label = &quot;client4&quot;, fillcolor = &quot;#95BBE3&quot;];
+    client6 [label = &quot;client6&quot;, fillcolor = &quot;#95BBE3&quot;];
+    null_3 [label = &quot;NULL&quot;, shape = plaintext];
+
+    pubsub:channel3 -&gt; client3;
+    client3 -&gt; client4;
+    client4 -&gt; client6;
+    client6 -&gt; null_3;
+}" class="graphviz" /></div>
+<p>当客户端调用 <span class="xref std std-ref">SUBSCRIBE</span> 命令时，
+程序就将客户端和要订阅的频道在 <code class="docutils literal notranslate"><span class="pre">pubsub_channels</span></code> 字典中关联起来。</p>
+<p>举个例子，如果客户端 <code class="docutils literal notranslate"><span class="pre">client10086</span></code> 执行命令 <code class="docutils literal notranslate"><span class="pre">SUBSCRIBE</span> <span class="pre">channel1</span> <span class="pre">channel2</span> <span class="pre">channel3</span></code> ，那么前面展示的 <code class="docutils literal notranslate"><span class="pre">pubsub_channels</span></code> 将变成下面这个样子：</p>
+<div class="graphviz"><img src="../_images/graphviz-5019461f88e5b77423beb667b3f230db4cec568a.png" alt="digraph new_subscribe {
+
+    rankdir = LR;
+
+    node [shape = record, style = filled];
+
+    edge [style = bold];
+
+    // keys
+
+    pubsub [label = &quot;pubsub_channels |&lt;channel1&gt; channel1 |&lt;channel2&gt; channel2 |&lt;channel3&gt; channel3 | ... |&lt;channelN&gt; channelN&quot;, fillcolor = &quot;#A8E270&quot;];
+
+    // clients blocking for channel1
+    client1 [label = &quot;client1&quot;, fillcolor = &quot;#95BBE3&quot;];
+    client5 [label = &quot;client5&quot;, fillcolor = &quot;#95BBE3&quot;];
+    client2 [label = &quot;client2&quot;, fillcolor = &quot;#95BBE3&quot;];
+    client10086 [label = &quot;client10086&quot;, fillcolor = &quot;#FFC1C1&quot;];
+    client10086_1 [label = &quot;client10086&quot;, fillcolor = &quot;#FFC1C1&quot;];
+    client10086_2 [label = &quot;client10086&quot;, fillcolor = &quot;#FFC1C1&quot;];
+    null_1 [label = &quot;NULL&quot;, shape = plaintext];
+    null_2 [label = &quot;NULL&quot;, shape = plaintext];
+    null_3 [label = &quot;NULL&quot;, shape = plaintext];
+    
+    pubsub:channel1 -&gt; client2;
+    client2 -&gt; client5;
+    client5 -&gt; client1;
+    client1 -&gt; client10086;
+    client10086 -&gt; null_1;
+
+    // clients blocking for channel2
+    client7 [label = &quot;client7&quot;, fillcolor = &quot;#95BBE3&quot;];
+
+    pubsub:channel2 -&gt; client7;
+    client7 -&gt; client10086_1;
+    client10086_1 -&gt; null_2;
+
+    // channel
+
+    client3 [label = &quot;client3&quot;, fillcolor = &quot;#95BBE3&quot;];
+    client4 [label = &quot;client4&quot;, fillcolor = &quot;#95BBE3&quot;];
+    client6 [label = &quot;client6&quot;, fillcolor = &quot;#95BBE3&quot;];
+
+    pubsub:channel3 -&gt; client3;
+    client3 -&gt; client4;
+    client4 -&gt; client6;
+    client6 -&gt; client10086_2;
+    client10086_2 -&gt; null_3;
+}" class="graphviz" /></div>
+<p><span class="xref std std-ref">SUBSCRIBE</span> 命令的行为可以用伪代码表示如下：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">SUBSCRIBE</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">channels</span><span class="p">):</span>
+
+    <span class="c1"># 遍历所有输入频道</span>
+    <span class="k">for</span> <span class="n">channel</span> <span class="ow">in</span> <span class="n">channels</span><span class="p">:</span>
+
+        <span class="c1"># 将客户端添加到链表的末尾</span>
+        <span class="n">redisServer</span><span class="o">.</span><span class="n">pubsub_channels</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>通过 <code class="docutils literal notranslate"><span class="pre">pubsub_channels</span></code> 字典，
+程序只要检查某个频道是否为字典的键，
+就可以知道该频道是否正在被客户端订阅；
+只要取出某个键的值，
+就可以得到所有订阅该频道的客户端的信息。</p>
+</section>
+<section id="id4">
+<h2>发送信息到频道<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>了解了 <code class="docutils literal notranslate"><span class="pre">pubsub_channels</span></code> 字典的结构之后，
+解释 <span class="xref std std-ref">PUBLISH</span> 命令的实现就非常简单了：
+当调用 <code class="docutils literal notranslate"><span class="pre">PUBLISH</span> <span class="pre">channel</span> <span class="pre">message</span></code> 命令，
+程序首先根据 <code class="docutils literal notranslate"><span class="pre">channel</span></code> 定位到字典的键，
+然后将信息发送给字典值链表中的所有客户端。</p>
+<p>比如说，对于以下这个 <code class="docutils literal notranslate"><span class="pre">pubsub_channels</span></code> 实例，
+如果某个客户端执行命令 <code class="docutils literal notranslate"><span class="pre">PUBLISH</span> <span class="pre">channel1</span> <span class="pre">&quot;hello</span> <span class="pre">moto&quot;</span></code> ，那么 <code class="docutils literal notranslate"><span class="pre">client2</span></code> 、 <code class="docutils literal notranslate"><span class="pre">client5</span></code> 和 <code class="docutils literal notranslate"><span class="pre">client1</span></code> 三个客户端都将接收到 <code class="docutils literal notranslate"><span class="pre">&quot;hello</span> <span class="pre">moto&quot;</span></code> 信息：</p>
+<div class="graphviz"><img src="../_images/graphviz-70a4c9622e5a49cb054d30e1221b935b18fb8877.png" alt="digraph pubsub {
+
+    rankdir = LR;
+
+    node [shape = record, style = filled];
+
+    edge [style = bold];
+
+    // keys
+
+    pubsub [label = &quot;pubsub_channels |&lt;channel1&gt; channel1 |&lt;channel2&gt; channel2 |&lt;channel3&gt; channel3 | ... |&lt;channelN&gt; channelN&quot;, fillcolor = &quot;#A8E270&quot;];
+
+    // clients blocking for channel1
+    client1 [label = &quot;client1&quot;, fillcolor = &quot;#95BBE3&quot;];
+    client5 [label = &quot;client5&quot;, fillcolor = &quot;#95BBE3&quot;];
+    client2 [label = &quot;client2&quot;, fillcolor = &quot;#95BBE3&quot;];
+    null_1 [label = &quot;NULL&quot;, shape = plaintext];
+    
+    pubsub:channel1 -&gt; client2;
+    client2 -&gt; client5;
+    client5 -&gt; client1;
+    client1 -&gt; null_1;
+
+    // clients blocking for channel2
+    client7 [label = &quot;client7&quot;, fillcolor = &quot;#95BBE3&quot;];
+    null_2 [label = &quot;NULL&quot;, shape = plaintext];
+
+    pubsub:channel2 -&gt; client7;
+    client7 -&gt; null_2;
+
+    // channel
+
+    client3 [label = &quot;client3&quot;, fillcolor = &quot;#95BBE3&quot;];
+    client4 [label = &quot;client4&quot;, fillcolor = &quot;#95BBE3&quot;];
+    client6 [label = &quot;client6&quot;, fillcolor = &quot;#95BBE3&quot;];
+    null_3 [label = &quot;NULL&quot;, shape = plaintext];
+
+    pubsub:channel3 -&gt; client3;
+    client3 -&gt; client4;
+    client4 -&gt; client6;
+    client6 -&gt; null_3;
+}" class="graphviz" /></div>
+<p><span class="xref std std-ref">PUBLISH</span> 命令的实现可以用以下伪代码来描述：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">PUBLISH</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+
+    <span class="c1"># 遍历所有订阅频道 channel 的客户端</span>
+    <span class="k">for</span> <span class="n">client</span> <span class="ow">in</span> <span class="n">server</span><span class="o">.</span><span class="n">pubsub_channels</span><span class="p">[</span><span class="n">channel</span><span class="p">]:</span>
+
+        <span class="c1"># 将信息发送给它们</span>
+        <span class="n">send_message</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id5">
+<h2>退订频道<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>使用 <span class="xref std std-ref">UNSUBSCRIBE</span> 命令可以退订指定的频道，
+这个命令执行的是订阅的反操作：
+它从 <code class="docutils literal notranslate"><span class="pre">pubsub_channels</span></code> 字典的给定频道（键）中，
+删除关于当前客户端的信息，
+这样被退订频道的信息就不会再发送给这个客户端。</p>
+</section>
+<section id="id6">
+<h2>模式的订阅与信息发送<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<p>当使用 <span class="xref std std-ref">PUBLISH</span> 命令发送信息到某个频道时，
+不仅所有订阅该频道的客户端会收到信息，
+如果有某个/某些模式和这个频道匹配的话，
+那么所有订阅这个/这些频道的客户端也同样会收到信息。</p>
+<p>下图展示了一个带有频道和模式的例子，
+其中 <code class="docutils literal notranslate"><span class="pre">tweet.shop.*</span></code> 模式匹配了 <code class="docutils literal notranslate"><span class="pre">tweet.shop.kindle</span></code> 频道和 <code class="docutils literal notranslate"><span class="pre">tweet.shop.ipad</span></code> 频道，
+并且有不同的客户端分别订阅它们三个：</p>
+<div class="graphviz"><img src="../_images/graphviz-0c2fa8fbfbf4d0551b4e2511908748baa440f2a5.png" alt="digraph pattern_relation {
+    
+    rankdir = BT;
+
+    node [style = filled];
+    edge [style = bold];
+
+    kindle [label = &quot;tweet.shop.kindle&quot;, fillcolor = &quot;#A8E270&quot;];
+
+    ipad [label = &quot;tweet.shop.ipad&quot;, fillcolor = &quot;#A8E270&quot;];
+
+    node [shape = octagon];
+    pattern [label = &quot;tweet.shop.*&quot;];
+
+    pattern -&gt; kindle [label = &quot;match&quot;];
+    pattern -&gt; ipad [label = &quot;match&quot;];
+
+    node [shape = box];
+
+    client123 [fillcolor = &quot;#95BBE3&quot;];
+    client256 [fillcolor = &quot;#95BBE3&quot;];
+
+    clientX [fillcolor = &quot;#95BBE3&quot;];
+    clientY [fillcolor = &quot;#95BBE3&quot;];
+
+    client3333 [fillcolor = &quot;#95BBE3&quot;];
+    client4444 [fillcolor = &quot;#95BBE3&quot;];
+    client5555 [fillcolor = &quot;#95BBE3&quot;];
+
+    client123 -&gt; pattern [label = &quot;subscribe&quot;];
+    client256 -&gt; pattern [label = &quot;subscribe&quot;];
+
+    clientX -&gt; kindle [label = &quot;subscribe&quot;];
+    clientY -&gt; kindle [label = &quot;subscribe&quot;];
+
+    client3333 -&gt; ipad [label = &quot;subscribe&quot;];
+    client4444 -&gt; ipad [label = &quot;subscribe&quot;];
+    client5555 -&gt; ipad [label = &quot;subscribe&quot;];
+}" class="graphviz" /></div>
+<p>当有信息发送到 <code class="docutils literal notranslate"><span class="pre">tweet.shop.kindle</span></code> 频道时，
+信息除了发送给 <code class="docutils literal notranslate"><span class="pre">clientX</span></code> 和 <code class="docutils literal notranslate"><span class="pre">clientY</span></code> 之外，
+还会发送给订阅 <code class="docutils literal notranslate"><span class="pre">tweet.shop.*</span></code> 模式的 <code class="docutils literal notranslate"><span class="pre">client123</span></code> 和 <code class="docutils literal notranslate"><span class="pre">client256</span></code> ：</p>
+<div class="graphviz"><img src="../_images/graphviz-61a84f7bed21ea5e69b3c6ebaf380b4822b32163.png" alt="digraph send_message_to_pattern {
+  
+    node [style = filled];
+    edge [style = bold];
+
+    // tweet.shop.ipad
+
+    ipad [label = &quot;tweet.shop.ipad&quot;, fillcolor = &quot;#A8E270&quot;];
+    ipad -&gt; pattern [label = &quot;match&quot;, dir = back];
+
+    node [shape = box];
+    ipad -&gt; client3333 [label = &quot;subscribe&quot;, dir = back];
+    ipad -&gt; client4444 [label = &quot;subscribe&quot;, dir = back];
+    ipad -&gt; client5555 [label = &quot;subscribe&quot;, dir = back];
+
+    node [shape = plaintext];
+    message [label = &quot;PUBLISH tweet.shop.kindle message&quot;, fillcolor = &quot;#FADCAD&quot;];
+
+    kindle [label = &quot;tweet.shop.kindle&quot;, shape = ellipse, fillcolor = &quot;#A8E270&quot;];
+    pattern [label = &quot;tweet.shop.*&quot;, shape = octagon];
+
+    message -&gt; kindle [style = &quot;bold, dashed&quot;, color = &quot;#B22222&quot;];
+    kindle -&gt; pattern [style = &quot;bold, dashed&quot;, color = &quot;#B22222&quot;];
+
+    node [shape = box];
+    kindle -&gt; clientX [style = &quot;bold, dashed&quot;, color = &quot;#B22222&quot;, label = &quot;message&quot;];
+    kindle -&gt; clientY [style = &quot;bold, dashed&quot;, color = &quot;#B22222&quot;, label = &quot;message&quot;];
+
+    pattern -&gt; client123 [label = &quot;message&quot;, style = &quot;bold, dashed&quot;, color = &quot;#B22222&quot;];
+    pattern -&gt; client256 [label = &quot;message&quot;, style = &quot;bold, dashed&quot;, color = &quot;#B22222&quot;];
+
+    // client color
+
+    client123 [fillcolor = &quot;#95BBE3&quot;];
+    client256 [fillcolor = &quot;#95BBE3&quot;];
+
+    clientX [fillcolor = &quot;#95BBE3&quot;];
+    clientY [fillcolor = &quot;#95BBE3&quot;];
+
+    client3333 [fillcolor = &quot;#95BBE3&quot;];
+    client4444 [fillcolor = &quot;#95BBE3&quot;];
+    client5555 [fillcolor = &quot;#95BBE3&quot;];
+
+
+}" class="graphviz" /></div>
+<p>另一方面，
+如果接收到信息的是频道 <code class="docutils literal notranslate"><span class="pre">tweet.shop.ipad</span></code> ，
+那么 <code class="docutils literal notranslate"><span class="pre">client123</span></code> 和 <code class="docutils literal notranslate"><span class="pre">client256</span></code> 同样会收到信息：</p>
+<div class="graphviz"><img src="../_images/graphviz-feb1faaa9c7cf13b2d9bbcad38dd8e98a6a91dd8.png" alt="digraph pattern_relation {
+    
+    rankdir = BT;
+
+    node [style = filled];
+    edge [style = bold];
+
+    kindle [label = &quot;tweet.shop.kindle&quot;, fillcolor = &quot;#A8E270&quot;];
+
+    ipad [label = &quot;tweet.shop.ipad&quot;, fillcolor = &quot;#A8E270&quot;];
+
+    node [shape = octagon];
+    pattern [label = &quot;tweet.shop.*&quot;];
+
+    pattern -&gt; kindle [label = &quot;match&quot;];
+    pattern -&gt; ipad [style = &quot;bold, dashed&quot;, color = &quot;#B22222&quot;, dir = back];
+
+    node [shape = box];
+
+    client123 -&gt; pattern [label = &quot;message&quot;, dir = back, style= &quot;bold, dashed&quot;, color = &quot;#B22222&quot;];
+    client256 -&gt; pattern [label = &quot;message&quot;, dir = back, style= &quot;bold, dashed&quot;, color = &quot;#B22222&quot;];
+
+    clientX -&gt; kindle [label = &quot;subscribe&quot;];
+    clientY -&gt; kindle [label = &quot;subscribe&quot;];
+
+    client3333 -&gt; ipad [label = &quot;message&quot;, style = &quot;bold, dashed&quot;, color = &quot;#B22222&quot;, dir = back];
+    client4444 -&gt; ipad [label = &quot;message&quot;, style = &quot;bold, dashed&quot;, color = &quot;#B22222&quot;, dir = back];
+    client5555 -&gt; ipad [label = &quot;message&quot;, style = &quot;bold, dashed&quot;, color = &quot;#B22222&quot;, dir = back];
+
+    // new
+
+    publish [label = &quot;PUBLISH tweet.shop.ipad message&quot;, shape = plaintext, fillcolor = &quot;#FADCAD&quot;];
+
+    ipad -&gt; publish [style = &quot;bold, dashed&quot;, color = &quot;#B22222&quot;, dir = back];
+
+    // client color
+
+    client123 [fillcolor = &quot;#95BBE3&quot;];
+    client256 [fillcolor = &quot;#95BBE3&quot;];
+
+    clientX [fillcolor = &quot;#95BBE3&quot;];
+    clientY [fillcolor = &quot;#95BBE3&quot;];
+
+    client3333 [fillcolor = &quot;#95BBE3&quot;];
+    client4444 [fillcolor = &quot;#95BBE3&quot;];
+    client5555 [fillcolor = &quot;#95BBE3&quot;];
+
+
+
+}" class="graphviz" /></div>
+</section>
+<section id="id7">
+<h2>订阅模式<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">redisServer.pubsub_patterns</span></code> 属性是一个链表，链表中保存着所有和模式相关的信息：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">struct</span> <span class="n">redisServer</span> <span class="p">{</span>
+    <span class="o">//</span> <span class="o">...</span>
+    <span class="nb">list</span> <span class="o">*</span><span class="n">pubsub_patterns</span><span class="p">;</span>
+    <span class="o">//</span> <span class="o">...</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>链表中的每个节点都包含一个 <code class="docutils literal notranslate"><span class="pre">redis.h/pubsubPattern</span></code> 结构：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">typedef</span> <span class="n">struct</span> <span class="n">pubsubPattern</span> <span class="p">{</span>
+    <span class="n">redisClient</span> <span class="o">*</span><span class="n">client</span><span class="p">;</span>
+    <span class="n">robj</span> <span class="o">*</span><span class="n">pattern</span><span class="p">;</span>
+<span class="p">}</span> <span class="n">pubsubPattern</span><span class="p">;</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">client</span></code> 属性保存着订阅模式的客户端，而 <code class="docutils literal notranslate"><span class="pre">pattern</span></code> 属性则保存着被订阅的模式。</p>
+<p>每当调用 <code class="docutils literal notranslate"><span class="pre">PSUBSCRIBE</span></code> 命令订阅一个模式时，
+程序就创建一个包含客户端信息和被订阅模式的 <code class="docutils literal notranslate"><span class="pre">pubsubPattern</span></code> 结构，
+并将该结构添加到 <code class="docutils literal notranslate"><span class="pre">redisServer.pubsub_patterns</span></code> 链表中。</p>
+<p>作为例子，下图展示了一个包含两个模式的 <code class="docutils literal notranslate"><span class="pre">pubsub_patterns</span></code> 链表，
+其中 <code class="docutils literal notranslate"><span class="pre">client123</span></code> 和 <code class="docutils literal notranslate"><span class="pre">client256</span></code> 都正在订阅 <code class="docutils literal notranslate"><span class="pre">tweet.shop.*</span></code> 模式：</p>
+<div class="graphviz"><img src="../_images/graphviz-7bf337e32ae36926343b892ccad6aa4f789e1d30.png" alt="digraph publish_pattern {
+    
+    rankdir = LR;
+
+    node [shape = record, style = filled];
+
+    edge [style = bold];
+
+    redisServer [label = &quot;redisServer| ... |&lt;pubsub_patterns&gt; pubsub_patterns | ...&quot;, fillcolor = &quot;#A8E270&quot;];
+
+    pubsubPattern_1 [label = &quot;pubsubPattern | client \n client123 | pattern \n tweet.shop.*&quot;, fillcolor = &quot;#95BBE3&quot;];
+
+    pubsubPattern_2 [label = &quot;pubsubPattern | client \n client256 | pattern \n tweet.shop.*&quot;, fillcolor = &quot;#95BBE3&quot;];
+
+    redisServer:pubsub_patterns -&gt; pubsubPattern_1;
+    pubsubPattern_1 -&gt; pubsubPattern_2;
+}" class="graphviz" /></div>
+<p>如果这时客户端 <code class="docutils literal notranslate"><span class="pre">client10086</span></code> 执行 <code class="docutils literal notranslate"><span class="pre">PSUBSCRIBE</span> <span class="pre">broadcast.list.*</span></code> ，
+那么 <code class="docutils literal notranslate"><span class="pre">pubsub_patterns</span></code> 链表将被更新成这样：</p>
+<div class="graphviz"><img src="../_images/graphviz-81015b45a834dd13ba5f93b3a6d9810f6179dfe2.png" alt="digraph pubsub_pattern {
+    
+    rankdir = LR;
+
+    node [shape = record, style = filled];
+
+    edge [style = bold];
+
+    redisServer [label = &quot;redisServer| ... |&lt;pubsub_patterns&gt; pubsub_patterns | ...&quot;, fillcolor = &quot;#A8E270&quot;];
+
+    pubsubPattern_1 [label = &quot;pubsubPattern | client \n client123 | pattern \n tweet.shop.*&quot;, fillcolor = &quot;#95BBE3&quot;];
+
+    pubsubPattern_2 [label = &quot;pubsubPattern | client \n client256 | pattern \n tweet.shop.*&quot;, fillcolor = &quot;#95BBE3&quot;];
+
+    pubsubPattern_3 [label = &quot;pubsubPattern | client \n client10086 | pattern \n broadcast.live.*&quot;, fillcolor = &quot;#FFC1C1&quot;];
+
+    redisServer:pubsub_patterns -&gt; pubsubPattern_1;
+    pubsubPattern_1 -&gt; pubsubPattern_2;
+    pubsubPattern_2 -&gt; pubsubPattern_3;
+}" class="graphviz" /></div>
+<p>通过遍历整个 <code class="docutils literal notranslate"><span class="pre">pubsub_patterns</span></code> 链表，程序可以检查所有正在被订阅的模式，以及订阅这些模式的客户端。</p>
+</section>
+<section id="id8">
+<h2>发送信息到模式<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<p>发送信息到模式的工作也是由 <span class="xref std std-ref">PUBLISH</span> 命令进行的，
+在前面讲解频道的时候，
+我们给出了这样一段伪代码，
+说它定义了 <span class="xref std std-ref">PUBLISH</span> 命令的行为：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">PUBLISH</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+
+    <span class="c1"># 遍历所有订阅频道 channel 的客户端</span>
+    <span class="k">for</span> <span class="n">client</span> <span class="ow">in</span> <span class="n">server</span><span class="o">.</span><span class="n">pubsub_channels</span><span class="p">[</span><span class="n">channel</span><span class="p">]:</span>
+
+        <span class="c1"># 将信息发送给它们</span>
+        <span class="n">send_message</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>但是，这段伪代码并没有完整描述 <span class="xref std std-ref">PUBLISH</span> 命令的行为，
+因为 <span class="xref std std-ref">PUBLISH</span> 除了将 <code class="docutils literal notranslate"><span class="pre">message</span></code> 发送到所有订阅 <code class="docutils literal notranslate"><span class="pre">channel</span></code> 的客户端之外，
+它还会将 <code class="docutils literal notranslate"><span class="pre">channel</span></code> 和 <code class="docutils literal notranslate"><span class="pre">pubsub_patterns</span></code> 中的模式进行对比，
+如果 <code class="docutils literal notranslate"><span class="pre">channel</span></code> 和某个模式匹配的话，
+那么也将 <code class="docutils literal notranslate"><span class="pre">message</span></code> 发送到订阅那个模式的客户端。</p>
+<p>完整描述 <span class="xref std std-ref">PUBLISH</span> 功能的伪代码定于如下：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">PUBLISH</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+
+    <span class="c1"># 遍历所有订阅频道 channel 的客户端</span>
+    <span class="k">for</span> <span class="n">client</span> <span class="ow">in</span> <span class="n">server</span><span class="o">.</span><span class="n">pubsub_channels</span><span class="p">[</span><span class="n">channel</span><span class="p">]:</span>
+
+        <span class="c1"># 将信息发送给它们</span>
+        <span class="n">send_message</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+    <span class="c1"># 取出所有模式，以及订阅模式的客户端</span>
+    <span class="k">for</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">client</span> <span class="ow">in</span> <span class="n">server</span><span class="o">.</span><span class="n">pubsub_patterns</span><span class="p">:</span>
+
+        <span class="c1"># 如果 channel 和模式匹配</span>
+        <span class="k">if</span> <span class="n">match</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">pattern</span><span class="p">):</span>
+
+            <span class="c1"># 那么也将信息发给订阅这个模式的客户端</span>
+            <span class="n">send_message</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>举个例子，如果 Redis 服务器的 <code class="docutils literal notranslate"><span class="pre">pubsub_patterns</span></code> 状态如下：</p>
+<div class="graphviz"><img src="../_images/graphviz-81015b45a834dd13ba5f93b3a6d9810f6179dfe2.png" alt="digraph pubsub_pattern {
+    
+    rankdir = LR;
+
+    node [shape = record, style = filled];
+
+    edge [style = bold];
+
+    redisServer [label = &quot;redisServer| ... |&lt;pubsub_patterns&gt; pubsub_patterns | ...&quot;, fillcolor = &quot;#A8E270&quot;];
+
+    pubsubPattern_1 [label = &quot;pubsubPattern | client \n client123 | pattern \n tweet.shop.*&quot;, fillcolor = &quot;#95BBE3&quot;];
+
+    pubsubPattern_2 [label = &quot;pubsubPattern | client \n client256 | pattern \n tweet.shop.*&quot;, fillcolor = &quot;#95BBE3&quot;];
+
+    pubsubPattern_3 [label = &quot;pubsubPattern | client \n client10086 | pattern \n broadcast.live.*&quot;, fillcolor = &quot;#FFC1C1&quot;];
+
+    redisServer:pubsub_patterns -&gt; pubsubPattern_1;
+    pubsubPattern_1 -&gt; pubsubPattern_2;
+    pubsubPattern_2 -&gt; pubsubPattern_3;
+}" class="graphviz" /></div>
+<p>那么当某个客户端发送信息 <code class="docutils literal notranslate"><span class="pre">&quot;Amazon</span> <span class="pre">Kindle,</span> <span class="pre">$69.&quot;</span></code> 到 <code class="docutils literal notranslate"><span class="pre">tweet.shop.kindle</span></code> 频道时，
+除了所有订阅了 <code class="docutils literal notranslate"><span class="pre">tweet.shop.kindle</span></code> 频道的客户端会收到信息之外，
+客户端 <code class="docutils literal notranslate"><span class="pre">client123</span></code> 和 <code class="docutils literal notranslate"><span class="pre">client256</span></code> 也同样会收到信息，
+因为这两个客户端订阅的 <code class="docutils literal notranslate"><span class="pre">tweet.shop.*</span></code> 模式和 <code class="docutils literal notranslate"><span class="pre">tweet.shop.kindle</span></code> 频道匹配。</p>
+</section>
+<section id="id9">
+<h2>退订模式<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h2>
+<p>使用 <span class="xref std std-ref">PUNSUBSCRIBE</span> 命令可以退订指定的模式，
+这个命令执行的是订阅模式的反操作：
+程序会删除 <code class="docutils literal notranslate"><span class="pre">redisServer.pubsub_patterns</span></code> 链表中，
+所有和被退订模式相关联的 <code class="docutils literal notranslate"><span class="pre">pubsubPattern</span></code> 结构，
+这样客户端就不会再收到和模式相匹配的频道发来的信息。</p>
+</section>
+<section id="id10">
+<h2>小结<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>订阅信息由服务器进程维持的 <code class="docutils literal notranslate"><span class="pre">redisServer.pubsub_channels</span></code> 字典保存，字典的键为被订阅的频道，字典的值为订阅频道的所有客户端。</p></li>
+<li><p>当有新消息发送到频道时，程序遍历频道（键）所对应的（值）所有客户端，然后将消息发送到所有订阅频道的客户端上。</p></li>
+<li><p>订阅模式的信息由服务器进程维持的 <code class="docutils literal notranslate"><span class="pre">redisServer.pubsub_patterns</span></code> 链表保存，链表的每个节点都保存着一个 <code class="docutils literal notranslate"><span class="pre">pubsubPattern</span></code> 结构，结构中保存着被订阅的模式，以及订阅该模式的客户端。程序通过遍历链表来查找某个频道是否和某个模式匹配。</p></li>
+<li><p>当有新消息发送到频道时，除了订阅频道的客户端会收到消息之外，所有订阅了匹配频道的模式的客户端，也同样会收到消息。</p></li>
+<li><p>退订频道和退订模式分别是订阅频道和订阅模式的反操作。</p></li>
+</ul>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="../index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">订阅与发布</a><ul>
+<li><a class="reference internal" href="#id2">频道的订阅与信息发送</a></li>
+<li><a class="reference internal" href="#id3">订阅频道</a></li>
+<li><a class="reference internal" href="#id4">发送信息到频道</a></li>
+<li><a class="reference internal" href="#id5">退订频道</a></li>
+<li><a class="reference internal" href="#id6">模式的订阅与信息发送</a></li>
+<li><a class="reference internal" href="#id7">订阅模式</a></li>
+<li><a class="reference internal" href="#id8">发送信息到模式</a></li>
+<li><a class="reference internal" href="#id9">退订模式</a></li>
+<li><a class="reference internal" href="#id10">小结</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="transaction.html"
+                          title="Previous page">&larr; 事务</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="scripting.html"
+                          title="Next page">&rarr; Lua 脚本</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>本页</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/feature/pubsub.rst.txt"
+            rel="nofollow">显示源代码</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">快速搜索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="提交" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="总索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="scripting.html" title="Lua 脚本"
+             >下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="transaction.html" title="事务"
+             >上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">RedisBookOrigin 1.0 文档</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">订阅与发布</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; 版权所有 2024, 黄健宏.
+      由 <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6创建。
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

@@ -1,0 +1,237 @@
+
+
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>字符串 &#8212; RedisBookOrigin 1.0 文档</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../" type="text/css" />
+    
+    <script src="../_static/documentation_options.js?v=27ad66bf"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+    <link rel="next" title="哈希表" href="hash.html" />
+    <link rel="prev" title="对象处理机制" href="object.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="总索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="hash.html" title="哈希表"
+             accesskey="N">下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="object.html" title="对象处理机制"
+             accesskey="P">上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">RedisBookOrigin 1.0 文档</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">字符串</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="string-chapter">
+<span id="id1"></span><h1>字符串<a class="headerlink" href="#string-chapter" title="Link to this heading">¶</a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">REDIS_STRING</span></code> （字符串）是 Redis 使用得最为广泛的数据类型，
+它除了是 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 、 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 等命令的操作对象之外，
+数据库中的所有键，
+以及执行命令时提供给 Redis 的参数，
+都是用这种类型保存的。</p>
+<section id="id2">
+<h2>字符串编码<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>字符串类型分别使用 <code class="docutils literal notranslate"><span class="pre">REDIS_ENCODING_INT</span></code> 和 <code class="docutils literal notranslate"><span class="pre">REDIS_ENCODING_RAW</span></code> 两种编码：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">REDIS_ENCODING_INT</span></code> 使用 <code class="docutils literal notranslate"><span class="pre">long</span></code> 类型来保存 <code class="docutils literal notranslate"><span class="pre">long</span></code> 类型值。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">REDIS_ENCODING_RAW</span></code> 则使用 <code class="docutils literal notranslate"><span class="pre">sdshdr</span></code> 结构来保存 <code class="docutils literal notranslate"><span class="pre">sds</span></code> （也即是 <code class="docutils literal notranslate"><span class="pre">char*</span></code> )、 <code class="docutils literal notranslate"><span class="pre">long</span> <span class="pre">long</span></code> 、 <code class="docutils literal notranslate"><span class="pre">double</span></code> 和 <code class="docutils literal notranslate"><span class="pre">long</span> <span class="pre">double</span></code> 类型值。</p></li>
+</ul>
+<p>换句话来说，
+在 Redis 中，
+只有能表示为 <code class="docutils literal notranslate"><span class="pre">long</span></code> 类型的值，
+才会以整数的形式保存，
+其他类型的整数、小数和字符串，
+都是用 <code class="docutils literal notranslate"><span class="pre">sdshdr</span></code> 结构来保存。</p>
+<div class="graphviz"><img src="../_images/graphviz-c63bedd6a7ff3246cc73f7a38ca19f7af7bd6318.png" alt="digraph redis_string {
+
+    node[shape=plaintext, style = filled];
+
+    edge [style = bold];
+
+    // type
+
+    REDIS_STRING [label=&quot;字符串\nREDIS_STRING&quot;, fillcolor = &quot;#95BBE3&quot;];
+
+    // encoding
+
+    REDIS_ENCODING_RAW [label=&quot;字符串\nREDIS_ENCODING_RAW&quot;, fillcolor = &quot;#FADCAD&quot;];
+    REDIS_ENCODING_INT [label=&quot;整数\nREDIS_ENCODING_INT&quot;, fillcolor = &quot;#FADCAD&quot;];
+
+    // edge
+
+    REDIS_STRING -&gt; REDIS_ENCODING_RAW;
+    REDIS_STRING -&gt; REDIS_ENCODING_INT;
+
+    REDIS_ENCODING_RAW -&gt; sdshdr;
+    REDIS_ENCODING_INT -&gt; long;
+
+    // datastruct 1
+
+    sdshdr [label=&quot;sdshdr&quot;];
+    sds [label=&quot;sds/char*&quot;];
+    long_long [label=&quot;long long&quot;];
+    double [label=&quot;double&quot;];
+    long_double [label=&quot;long double&quot;];
+
+    sdshdr -&gt; sds;
+    sdshdr -&gt; long_long;
+    sdshdr -&gt; double;
+    sdshdr -&gt; long_double;
+
+    // datastruct 2
+
+    long [label=&quot;long&quot;];
+    long_type [label=&quot;long&quot;];
+
+    long -&gt; long_type;
+
+
+}" class="graphviz" /></div>
+</section>
+<section id="id3">
+<h2>编码的选择<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>新创建的字符串默认使用 <code class="docutils literal notranslate"><span class="pre">REDIS_ENCODING_RAW</span></code> 编码，
+在将字符串作为键或者值保存进数据库时，
+程序会尝试将字符串转为 <code class="docutils literal notranslate"><span class="pre">REDIS_ENCODING_INT</span></code> 编码。</p>
+</section>
+<section id="id4">
+<h2>字符串命令的实现<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>Redis 的字符串类型命令，
+基本上是通过包装 <code class="docutils literal notranslate"><span class="pre">sds</span></code> 数据结构的操作函数来实现的，
+没有什么需要说明的地方。</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="../index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">字符串</a><ul>
+<li><a class="reference internal" href="#id2">字符串编码</a></li>
+<li><a class="reference internal" href="#id3">编码的选择</a></li>
+<li><a class="reference internal" href="#id4">字符串命令的实现</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="object.html"
+                          title="Previous page">&larr; 对象处理机制</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="hash.html"
+                          title="Next page">&rarr; 哈希表</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>本页</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/datatype/string.rst.txt"
+            rel="nofollow">显示源代码</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">快速搜索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="提交" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="总索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="hash.html" title="哈希表"
+             >下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="object.html" title="对象处理机制"
+             >上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">RedisBookOrigin 1.0 文档</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">字符串</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; 版权所有 2024, 黄健宏.
+      由 <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6创建。
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

@@ -1,0 +1,505 @@
+
+
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>对象处理机制 &#8212; RedisBookOrigin 1.0 文档</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../" type="text/css" />
+    
+    <script src="../_static/documentation_options.js?v=27ad66bf"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+    <link rel="next" title="字符串" href="string.html" />
+    <link rel="prev" title="压缩列表" href="../compress-datastruct/ziplist.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="总索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="string.html" title="字符串"
+             accesskey="N">下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../compress-datastruct/ziplist.html" title="压缩列表"
+             accesskey="P">上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">RedisBookOrigin 1.0 文档</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">对象处理机制</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="object-chapter">
+<span id="id1"></span><h1>对象处理机制<a class="headerlink" href="#object-chapter" title="Link to this heading">¶</a></h1>
+<p>在 Redis 的命令中，用于对键（key）进行处理的命令占了很大一部分，
+而对于键所保存的值的类型（后简称“键的类型”），键能执行的命令又各不相同。</p>
+<p>比如说，
+<span class="xref std std-ref">LPUSH</span> 和 <span class="xref std std-ref">LLEN</span> 只能用于列表键，
+而 <span class="xref std std-ref">SADD</span> 和 <span class="xref std std-ref">SRANDMEMBER</span> 只能用于集合键，
+等等。</p>
+<p>另外一些命令，
+比如 <span class="xref std std-ref">DEL</span> 、 <span class="xref std std-ref">TTL</span> 和 <span class="xref std std-ref">TYPE</span> ，
+可以用于任何类型的键，
+但是，
+要正确实现这些命令，
+必须为不同类型的键设置不同的处理方式：
+比如说，
+删除一个列表键和删除一个字符串键的操作过程就不太一样。</p>
+<p>以上的描述说明，Redis 必须让每个键都带有类型信息，
+使得程序可以检查键的类型，
+并为它选择合适的处理方式。</p>
+<p>另外，在前面介绍各个底层数据结构时有提到，
+Redis 的每一种数据类型，比如字符串、列表、有序集，
+它们都拥有不只一种底层实现（Redis 内部称之为编码，encoding），
+这说明，
+每当对某种数据类型的键进行操作时，
+程序都必须根据键所采取的编码，
+进行不同的操作。</p>
+<p>比如说，
+集合类型就可以由字典和整数集合两种不同的数据结构实现，
+但是，
+当用户执行 <span class="xref std std-ref">ZADD</span> 命令时，
+他/她应该不必关心集合使用的是什么编码，
+只要 Redis 能按照 <span class="xref std std-ref">ZADD</span> 命令的指示，
+将新元素添加到集合就可以了。</p>
+<p>这说明，操作数据类型的命令除了要对键的类型进行检查之外，
+还需要根据数据类型的不同编码进行多态处理。</p>
+<p>为了解决以上问题，
+Redis 构建了自己的类型系统，
+这个系统的主要功能包括：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">redisObject</span></code> 对象。</p></li>
+<li><p>基于 <code class="docutils literal notranslate"><span class="pre">redisObject</span></code> 对象的类型检查。</p></li>
+<li><p>基于 <code class="docutils literal notranslate"><span class="pre">redisObject</span></code> 对象的显式多态函数。</p></li>
+<li><p>对 <code class="docutils literal notranslate"><span class="pre">redisObject</span></code> 进行分配、共享和销毁的机制。</p></li>
+</ul>
+<p>以下小节将分别介绍类型系统的这几个方面。</p>
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p>因为 C 并不是面向对象语言，这里将 <code class="docutils literal notranslate"><span class="pre">redisObject</span></code> 称呼为对象一是为了讲述的方便，
+二是希望通过模仿 OOP 的常用术语，让这里的内容更容易被理解，
+<code class="docutils literal notranslate"><span class="pre">redisObject</span></code> 实际上是只是一个结构类型。</p>
+</div>
+<section id="redisobject-redis">
+<h2>redisObject 数据结构，以及 Redis 的数据类型<a class="headerlink" href="#redisobject-redis" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">redisObject</span></code> 是 Redis 类型系统的核心，
+数据库中的每个键、值，以及 Redis 本身处理的参数，
+都表示为这种数据类型。</p>
+<p><code class="docutils literal notranslate"><span class="pre">redisObject</span></code> 的定义位于 <code class="docutils literal notranslate"><span class="pre">redis.h</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>/*
+ * Redis 对象
+ */
+typedef struct redisObject {
+
+    // 类型
+    unsigned type:4;
+
+    // 对齐位
+    unsigned notused:2;
+
+    // 编码方式
+    unsigned encoding:4;
+
+    // LRU 时间（相对于 server.lruclock）
+    unsigned lru:22;
+
+    // 引用计数
+    int refcount;
+
+    // 指向对象的值
+    void *ptr;
+
+} robj;
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">type</span></code> 、 <code class="docutils literal notranslate"><span class="pre">encoding</span></code> 和 <code class="docutils literal notranslate"><span class="pre">ptr</span></code> 是最重要的三个属性。</p>
+<p><code class="docutils literal notranslate"><span class="pre">type</span></code> 记录了对象所保存的值的类型，它的值可能是以下常量的其中一个（定义位于 <code class="docutils literal notranslate"><span class="pre">redis.h</span></code>）：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/*</span>
+ <span class="o">*</span> <span class="n">对象类型</span>
+ <span class="o">*/</span>
+<span class="c1">#define REDIS_STRING 0  // 字符串</span>
+<span class="c1">#define REDIS_LIST 1    // 列表</span>
+<span class="c1">#define REDIS_SET 2     // 集合</span>
+<span class="c1">#define REDIS_ZSET 3    // 有序集</span>
+<span class="c1">#define REDIS_HASH 4    // 哈希表</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">encoding</span></code> 记录了对象所保存的值的编码，它的值可能是以下常量的其中一个（定义位于 <code class="docutils literal notranslate"><span class="pre">redis.h</span></code>）：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/*</span>
+ <span class="o">*</span> <span class="n">对象编码</span>
+ <span class="o">*/</span>
+<span class="c1">#define REDIS_ENCODING_RAW 0            // 编码为字符串</span>
+<span class="c1">#define REDIS_ENCODING_INT 1            // 编码为整数</span>
+<span class="c1">#define REDIS_ENCODING_HT 2             // 编码为哈希表</span>
+<span class="c1">#define REDIS_ENCODING_ZIPMAP 3         // 编码为 zipmap</span>
+<span class="c1">#define REDIS_ENCODING_LINKEDLIST 4     // 编码为双端链表</span>
+<span class="c1">#define REDIS_ENCODING_ZIPLIST 5        // 编码为压缩列表</span>
+<span class="c1">#define REDIS_ENCODING_INTSET 6         // 编码为整数集合</span>
+<span class="c1">#define REDIS_ENCODING_SKIPLIST 7       // 编码为跳跃表</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">ptr</span></code> 是一个指针，指向实际保存值的数据结构，这个数据结构由 <code class="docutils literal notranslate"><span class="pre">type</span></code> 属性和 <code class="docutils literal notranslate"><span class="pre">encoding</span></code> 属性决定。</p>
+<p>举个例子，如果一个 <code class="docutils literal notranslate"><span class="pre">redisObject</span></code> 的 <code class="docutils literal notranslate"><span class="pre">type</span></code> 属性为 <code class="docutils literal notranslate"><span class="pre">REDIS_LIST</span></code> ， <code class="docutils literal notranslate"><span class="pre">encoding</span></code> 属性为 <code class="docutils literal notranslate"><span class="pre">REDIS_ENCODING_LINKEDLIST</span></code> ，那么这个对象就是一个 Redis 列表，它的值保存在一个双端链表内，而 <code class="docutils literal notranslate"><span class="pre">ptr</span></code> 指针就指向这个双端链表；</p>
+<p>另一方面，如果一个 <code class="docutils literal notranslate"><span class="pre">redisObject</span></code> 的 <code class="docutils literal notranslate"><span class="pre">type</span></code> 属性为 <code class="docutils literal notranslate"><span class="pre">REDIS_HASH</span></code> ， <code class="docutils literal notranslate"><span class="pre">encoding</span></code> 属性为 <code class="docutils literal notranslate"><span class="pre">REDIS_ENCODING_ZIPMAP</span></code> ，那么这个对象就是一个 Redis 哈希表，它的值保存在一个 <code class="docutils literal notranslate"><span class="pre">zipmap</span></code> 里，而 <code class="docutils literal notranslate"><span class="pre">ptr</span></code> 指针就指向这个 <code class="docutils literal notranslate"><span class="pre">zipmap</span></code> ；诸如此类。</p>
+<p>下图展示了 <code class="docutils literal notranslate"><span class="pre">redisObject</span></code> 、Redis 所有数据类型、以及 Redis 所有编码方式（底层实现）三者之间的关系：</p>
+<div class="graphviz"><img src="../_images/graphviz-50143c36512dac603b2560d061062583019e5bde.png" alt="digraph datatype {
+
+    rankdir=LR;
+
+    node[shape=plaintext, style = filled];
+
+    edge [style = bold];
+
+    // obj
+
+    redisObject [label=&quot;redisObject&quot;, fillcolor = &quot;#A8E270&quot;];
+
+    // type
+
+    node [fillcolor = &quot;#95BBE3&quot;];
+
+    REDIS_STRING [label=&quot;字符串\nREDIS_STRING&quot;];
+    REDIS_LIST [label=&quot;列表\nREDIS_LIST&quot;];
+    REDIS_SET [label=&quot;集合\nREDIS_SET&quot;];
+    REDIS_ZSET [label=&quot;有序集合\nREDIS_ZSET&quot;];
+    REDIS_HASH [label=&quot;哈希表\nREDIS_HASH&quot;];
+
+    // encoding
+
+    node [fillcolor = &quot;#FADCAD&quot;];
+
+    REDIS_ENCODING_RAW [label=&quot;字符串\nREDIS_ENCODING_RAW&quot;];
+    REDIS_ENCODING_INT [label=&quot;整数\nREDIS_ENCODING_INT&quot;];
+    REDIS_ENCODING_HT [label=&quot;字典\nREDIS_ENCODING_HT&quot;];
+    //REDIS_ENCODING_ZIPMAP [label=&quot;zipmap\nREDIS_ENCODING_ZIPMAP&quot;];
+    REDIS_ENCODING_LINKEDLIST [label=&quot;双端链表\nREDIS_ENCODING_LINKEDLIST&quot;];
+    REDIS_ENCODING_ZIPLIST [label=&quot;压缩列表\nREDIS_ENCODING_ZIPLIST&quot;];
+    REDIS_ENCODING_INTSET [label=&quot;整数集合\nREDIS_ENCODING_INTSET&quot;];
+    REDIS_ENCODING_SKIPLIST [label=&quot;跳跃表\nREDIS_ENCODING_SKIPLIST&quot;];
+
+    // edge
+
+    redisObject -&gt; REDIS_STRING;
+    redisObject -&gt; REDIS_LIST;
+    redisObject -&gt; REDIS_SET;
+    redisObject -&gt; REDIS_ZSET;
+    redisObject -&gt; REDIS_HASH;
+
+    REDIS_STRING -&gt; REDIS_ENCODING_RAW;
+    REDIS_STRING -&gt; REDIS_ENCODING_INT;
+
+    REDIS_LIST -&gt; REDIS_ENCODING_LINKEDLIST;
+    REDIS_LIST -&gt; REDIS_ENCODING_ZIPLIST;
+
+    REDIS_SET -&gt; REDIS_ENCODING_HT;
+    REDIS_SET -&gt; REDIS_ENCODING_INTSET;
+
+    REDIS_ZSET -&gt; REDIS_ENCODING_SKIPLIST;
+    REDIS_ZSET -&gt; REDIS_ENCODING_ZIPLIST;
+
+    REDIS_HASH -&gt; REDIS_ENCODING_HT;
+    REDIS_HASH -&gt; REDIS_ENCODING_ZIPLIST;
+}" class="graphviz" /></div>
+<p>这个图展示了 Redis 各种数据类型，以及它们的编码方式。</p>
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p><code class="docutils literal notranslate"><span class="pre">REDIS_ENCODING_ZIPMAP</span></code> 没有出现在图中，
+因为从 Redis 2.6 开始，
+它不再是任何数据类型的底层结构。</p>
+</div>
+</section>
+<section id="id2">
+<h2>命令的类型检查和多态<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>有了 <code class="docutils literal notranslate"><span class="pre">redisObject</span></code> 结构的存在，
+在执行处理数据类型的命令时，
+进行类型检查和对编码进行多态操作就简单得多了。</p>
+<p>当执行一个处理数据类型的命令时，
+Redis 执行以下步骤：</p>
+<ol class="arabic simple">
+<li><p>根据给定 <code class="docutils literal notranslate"><span class="pre">key</span></code> ，在数据库字典中查找和它相对应的 <code class="docutils literal notranslate"><span class="pre">redisObject</span></code> ，如果没找到，就返回 <code class="docutils literal notranslate"><span class="pre">NULL</span></code> 。</p></li>
+<li><p>检查 <code class="docutils literal notranslate"><span class="pre">redisObject</span></code> 的 <code class="docutils literal notranslate"><span class="pre">type</span></code> 属性和执行命令所需的类型是否相符，如果不相符，返回类型错误。</p></li>
+<li><p>根据 <code class="docutils literal notranslate"><span class="pre">redisObject</span></code> 的 <code class="docutils literal notranslate"><span class="pre">encoding</span></code> 属性所指定的编码，选择合适的操作函数来处理底层的数据结构。</p></li>
+<li><p>返回数据结构的操作结果作为命令的返回值。</p></li>
+</ol>
+<p>作为例子，以下展示了对键 <code class="docutils literal notranslate"><span class="pre">key</span></code> 执行 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令的完整过程：</p>
+<div class="graphviz"><img src="../_images/graphviz-28399cb0f7301d22401c88e02ebfc926000a7f4d.png" alt="digraph command_poly {
+
+    node [shape=plaintext, style = filled];
+
+    edge [style = bold];
+
+    lpop [label=&quot;LPOP key&quot;, fillcolor = &quot;#A8E270&quot;];
+
+    get_key_obj_from_db [label=&quot;Redis 从数据库中查找 key \n对应的 redisObject 结构&quot;];
+
+    is_obj_nil_or_not [label=&quot;数据库返回 NULL ？&quot;,shape=diamond, fillcolor = &quot;#95BBE3&quot;];
+
+    return_nil [label=&quot;key 不存在\n返回空回复&quot;];
+
+    is_type_list_or_not [label=&quot;redisObject 的类型为\nREDIS_LIST ？&quot;,shape=diamond, fillcolor = &quot;#95BBE3&quot;];
+
+    call_poly_pop_function [label=&quot;调用多态 pop 函数&quot;, shape=diamond, fillcolor = &quot;#95BBE3&quot;];
+
+    return_type_error [label=&quot;key 不是列表\n返回类型错误&quot;];
+
+    pop_from_ziplist [label=&quot;从 ziplist 中弹出最左节点&quot;];
+
+    pop_from_linkedlist [label=&quot;从双端链表中弹出最左节点&quot;];
+
+    return_pop_item [label=&quot;返回被弹出的元素&quot;];
+
+    // edge
+
+    lpop -&gt; get_key_obj_from_db;
+
+    get_key_obj_from_db -&gt; is_obj_nil_or_not;
+
+    is_obj_nil_or_not -&gt; return_nil [label=&quot;是&quot;];
+
+    is_obj_nil_or_not -&gt; is_type_list_or_not [label=&quot;否&quot;];
+
+    is_type_list_or_not -&gt; call_poly_pop_function [label=&quot;是&quot;];
+
+    is_type_list_or_not -&gt; return_type_error [label=&quot;否&quot;];
+
+    call_poly_pop_function -&gt; pop_from_ziplist [label=&quot;对象的编码为\nZIPLIST&quot;];
+
+    call_poly_pop_function -&gt; pop_from_linkedlist [label=&quot;对象的编码为\nLINKEDLIST&quot;];
+
+    pop_from_ziplist -&gt; return_pop_item;
+
+    pop_from_linkedlist -&gt; return_pop_item;
+
+}" class="graphviz" /></div>
+</section>
+<section id="id3">
+<h2>对象共享<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>有一些对象在 Redis 中非常常见，
+比如命令的返回值 <code class="docutils literal notranslate"><span class="pre">OK</span></code> 、 <code class="docutils literal notranslate"><span class="pre">ERROR</span></code> 、 <code class="docutils literal notranslate"><span class="pre">WRONGTYPE</span></code> 等字符，
+另外，一些小范围的整数，比如个位、十位、百位的整数都非常常见。</p>
+<p>为了利用这种常见情况，
+Redis 在内部使用了一个 <a class="reference external" href="http://en.wikipedia.org/wiki/Flyweight_pattern">Flyweight 模式</a> ：
+通过预分配一些常见的值对象，
+并在多个数据结构之间共享这些对象，
+程序避免了重复分配的麻烦，
+也节约了一些 CPU 时间。</p>
+<p>Redis 预分配的值对象有如下这些：</p>
+<ul class="simple">
+<li><p>各种命令的返回值，比如执行成功时返回的 <code class="docutils literal notranslate"><span class="pre">OK</span></code> ，执行错误时返回的 <code class="docutils literal notranslate"><span class="pre">ERROR</span></code> ，类型错误时返回的 <code class="docutils literal notranslate"><span class="pre">WRONGTYPE</span></code> ，命令入队事务时返回的 <code class="docutils literal notranslate"><span class="pre">QUEUED</span></code> ，等等。</p></li>
+<li><p>包括 <code class="docutils literal notranslate"><span class="pre">0</span></code> 在内，小于 <code class="docutils literal notranslate"><span class="pre">redis.h/REDIS_SHARED_INTEGERS</span></code> 的所有整数（<code class="docutils literal notranslate"><span class="pre">REDIS_SHARED_INTEGERS</span></code> 的默认值为 <code class="docutils literal notranslate"><span class="pre">10000</span></code>）</p></li>
+</ul>
+<p>因为命令的回复值直接返回给客户端，
+所以它们的值无须进行共享；
+另一方面，
+如果某个命令的输入值是一个小于 <code class="docutils literal notranslate"><span class="pre">REDIS_SHARED_INTEGERS</span></code> 的整数对象，
+那么当这个对象要被保存进数据库时，
+Redis 就会释放原来的值，
+并将值的指针指向共享对象。</p>
+<p>作为例子，下图展示了三个列表，它们都带有指向共享对象数组中某个值对象的指针：</p>
+<div class="graphviz"><img src="../_images/graphviz-a13cbe0b8eac04f79575479e4a2304a66e46f6c7.png" alt="digraph shared_integer {
+    
+    // setting
+    
+    node [shape = record, style = filled];
+
+    edge [style = bold];
+
+    // list
+
+    // list_a [label = &quot;&lt;head&gt;列表A | 20130101 |&lt;300&gt; * | 10086 | -998 |&lt;1024&gt; *&quot;, fillcolor = &quot;#A8E270&quot;];
+
+    list_a [label = &quot;&lt;head&gt;列表A | 20130101 |&lt;300&gt; * | 10086 &quot;, fillcolor = &quot;#A8E270&quot;];
+
+    list_b [label = &quot;列表B |&lt;81&gt; * | 12345678910 |&lt;999&gt; *&quot;, fillcolor = &quot;#95BBE3&quot;];
+
+    list_c [label = &quot;列表C |&lt;100&gt; * |&lt;0&gt; * | -25 |&lt;123&gt; *&quot;, fillcolor = &quot;#FADCAD&quot;];
+
+    sl [label = &quot;&lt;head&gt;共享整数对象数组 |&lt;0&gt; 0 | ... |&lt;81&gt; 81| ... |&lt;100&gt; 100 |&lt;123&gt; 123 | ... |&lt;300&gt; 300 | ... |&lt;999&gt; 999 | ... | 10000 &quot;];
+
+    // edge
+
+    list_a:300 -&gt; sl:300 [color=&quot;#A8E270&quot;];
+    //list_a:999 -&gt; sl:999 [color=&quot;#A8E270&quot;];
+    // list_a:1024 -&gt; sl:1024 [color=&quot;#A8E270&quot;];
+
+    list_b:81 -&gt; sl:81 [color=&quot;#95BBE3&quot;];
+    list_b:999 -&gt; sl:999 [color=&quot;#95BBE3&quot;];
+
+    list_c:100 -&gt; sl:100 [color = &quot;#FADCAD&quot;];
+    list_c:0 -&gt; sl:0 [color = &quot;#FADCAD&quot;];
+    list_c:123 -&gt; sl:123 [color = &quot;#FADCAD&quot;];
+}" class="graphviz" /></div>
+<p>三个列表的值分别为：</p>
+<ul class="simple">
+<li><p>列表 A ： <code class="docutils literal notranslate"><span class="pre">[20130101,</span> <span class="pre">300,</span> <span class="pre">10086]</span></code> ，</p></li>
+<li><p>列表 B ： <code class="docutils literal notranslate"><span class="pre">[81,</span> <span class="pre">12345678910,</span> <span class="pre">999]</span></code> ，</p></li>
+<li><p>列表 C ： <code class="docutils literal notranslate"><span class="pre">[100,</span> <span class="pre">0,</span> <span class="pre">-25,</span> <span class="pre">123]</span></code> 。</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p>共享对象只能被带指针的数据结构使用。</p>
+<p>需要提醒的一点是，
+共享对象只能被字典和双端链表这类能带有指针的数据结构使用。</p>
+<p>像整数集合和压缩列表这些只能保存字符串、整数等字面值的内存数据结构，
+就不能使用共享对象。</p>
+</div>
+</section>
+<section id="id4">
+<h2>引用计数以及对象的销毁<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>当将 <code class="docutils literal notranslate"><span class="pre">redisObject</span></code> 用作数据库的键或者值，
+而不是用来储存参数时，
+对象的生命期是非常长的，
+因为 C 语言本身没有自动释放内存的相关机制，
+如果只依靠程序员的记忆来对对象进行追踪和销毁，
+基本是不太可能的。</p>
+<p>另一方面，正如前面提到的，一个共享对象可能被多个数据结构所引用，
+这时像是“这个对象被引用了多少次？”之类的问题就会出现。</p>
+<p>为了解决以上两个问题，
+Redis 的对象系统使用了<a class="reference external" href="http://en.wikipedia.org/wiki/Reference_counting">引用计数</a>技术来负责维持和销毁对象，
+它的运作机制如下：</p>
+<ul class="simple">
+<li><p>每个 <code class="docutils literal notranslate"><span class="pre">redisObject</span></code> 结构都带有一个 <code class="docutils literal notranslate"><span class="pre">refcount</span></code> 属性，指示这个对象被引用了多少次。</p></li>
+<li><p>当新创建一个对象时，它的 <code class="docutils literal notranslate"><span class="pre">refcount</span></code> 属性被设置为 <code class="docutils literal notranslate"><span class="pre">1</span></code> 。</p></li>
+<li><p>当对一个对象进行共享时，Redis 将这个对象的 <code class="docutils literal notranslate"><span class="pre">refcount</span></code> 增一。</p></li>
+<li><p>当使用完一个对象之后，或者取消对共享对象的引用之后，程序将对象的 <code class="docutils literal notranslate"><span class="pre">refcount</span></code> 减一。</p></li>
+<li><p>当对象的 <code class="docutils literal notranslate"><span class="pre">refcount</span></code> 降至 <code class="docutils literal notranslate"><span class="pre">0</span></code> 时，这个 <code class="docutils literal notranslate"><span class="pre">redisObject</span></code> 结构，以及它所引用的数据结构的内存，都会被释放。</p></li>
+</ul>
+</section>
+<section id="id6">
+<h2>小结<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Redis 使用自己实现的对象机制来实现类型判断、命令多态和基于引用计数的垃圾回收。</p></li>
+<li><p>一种 Redis 类型的键可以有多种底层实现。</p></li>
+<li><p>Redis 会预分配一些常用的数据对象，并通过共享这些对象来减少内存占用，和避免频繁地为小对象分配内存。</p></li>
+</ul>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="../index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">对象处理机制</a><ul>
+<li><a class="reference internal" href="#redisobject-redis">redisObject 数据结构，以及 Redis 的数据类型</a></li>
+<li><a class="reference internal" href="#id2">命令的类型检查和多态</a></li>
+<li><a class="reference internal" href="#id3">对象共享</a></li>
+<li><a class="reference internal" href="#id4">引用计数以及对象的销毁</a></li>
+<li><a class="reference internal" href="#id6">小结</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="../compress-datastruct/ziplist.html"
+                          title="Previous page">&larr; 压缩列表</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="string.html"
+                          title="Next page">&rarr; 字符串</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>本页</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/datatype/object.rst.txt"
+            rel="nofollow">显示源代码</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">快速搜索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="提交" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="总索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="string.html" title="字符串"
+             >下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="../compress-datastruct/ziplist.html" title="压缩列表"
+             >上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">RedisBookOrigin 1.0 文档</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">对象处理机制</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; 版权所有 2024, 黄健宏.
+      由 <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6创建。
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

@@ -1,0 +1,311 @@
+
+
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>慢查询日志 &#8212; RedisBookOrigin 1.0 文档</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../" type="text/css" />
+    
+    <script src="../_static/documentation_options.js?v=27ad66bf"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    
+    
+     
+        <script src="../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+    <link rel="next" title="数据库" href="../internal/db.html" />
+    <link rel="prev" title="Lua 脚本" href="scripting.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="总索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="../internal/db.html" title="数据库"
+             accesskey="N">下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="scripting.html" title="Lua 脚本"
+             accesskey="P">上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">RedisBookOrigin 1.0 文档</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">慢查询日志</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>慢查询日志<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>慢查询日志是 Redis 提供的一个用于观察系统性能的功能，
+这个功能的实现非常简单，
+这里我们也简单地讲解一下。</p>
+<p>本章先介绍和慢查询功能相关的数据结构和变量，
+然后介绍 Redis 是如何记录命令的执行时间，
+以及如何为执行超过限制事件的命令记录慢查询日志的。</p>
+<section id="id2">
+<h2>相关数据结构<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>每条慢查询日志都以一个 <code class="docutils literal notranslate"><span class="pre">slowlog.h/slowlogEntry</span></code> 结构定义：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>typedef struct slowlogEntry {
+
+    // 命令参数
+    robj **argv;
+
+    // 命令参数数量
+    int argc;
+
+    // 唯一标识符
+    long long id;       /* Unique entry identifier. */
+
+    // 执行命令消耗的时间，以纳秒（1 / 1,000,000,000 秒）为单位
+    long long duration; /* Time spent by the query, in nanoseconds. */
+
+    // 命令执行时的时间
+    time_t time;        /* Unix time at which the query was executed. */
+
+} slowlogEntry;
+</pre></div>
+</div>
+<p>记录服务器状态的 <code class="docutils literal notranslate"><span class="pre">redis.h/redisServer</span></code> 结构里保存了几个和慢查询有关的属性：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">struct</span> <span class="n">redisServer</span> <span class="p">{</span>
+
+    <span class="o">//</span> <span class="o">...</span> <span class="n">other</span> <span class="n">fields</span>
+
+    <span class="o">//</span> <span class="n">保存慢查询日志的链表</span>
+    <span class="nb">list</span> <span class="o">*</span><span class="n">slowlog</span><span class="p">;</span>                  <span class="o">/*</span> <span class="n">SLOWLOG</span> <span class="nb">list</span> <span class="n">of</span> <span class="n">commands</span> <span class="o">*/</span>
+
+    <span class="o">//</span> <span class="n">慢查询日志的当前</span> <span class="nb">id</span> <span class="n">值</span>
+    <span class="n">long</span> <span class="n">long</span> <span class="n">slowlog_entry_id</span><span class="p">;</span>     <span class="o">/*</span> <span class="n">SLOWLOG</span> <span class="n">current</span> <span class="n">entry</span> <span class="n">ID</span> <span class="o">*/</span>
+
+    <span class="o">//</span> <span class="n">慢查询时间限制</span>
+    <span class="n">long</span> <span class="n">long</span> <span class="n">slowlog_log_slower_than</span><span class="p">;</span> <span class="o">/*</span> <span class="n">SLOWLOG</span> <span class="n">time</span> <span class="n">limit</span> <span class="p">(</span><span class="n">to</span> <span class="n">get</span> <span class="n">logged</span><span class="p">)</span> <span class="o">*/</span>
+
+    <span class="o">//</span> <span class="n">慢查询日志的最大条目数量</span>
+    <span class="n">unsigned</span> <span class="n">long</span> <span class="n">slowlog_max_len</span><span class="p">;</span>     <span class="o">/*</span> <span class="n">SLOWLOG</span> <span class="nb">max</span> <span class="n">number</span> <span class="n">of</span> <span class="n">items</span> <span class="n">logged</span> <span class="o">*/</span>
+
+    <span class="o">//</span> <span class="o">...</span> <span class="n">other</span> <span class="n">fields</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">slowlog</span></code> 属性是一个链表，
+链表里的每个节点保存了一个慢查询日志结构，
+所有日志按添加时间从新到旧排序，新的日志在链表的左端，旧的日志在链表的右端。</p>
+<p><code class="docutils literal notranslate"><span class="pre">slowlog_entry_id</span></code> 在创建每条新的慢查询日志时增一，用于产生慢查询日志的 ID （这个 ID 在执行 <code class="docutils literal notranslate"><span class="pre">SLOWLOG</span> <span class="pre">RESET</span></code> 之后会被重置）。</p>
+<p><code class="docutils literal notranslate"><span class="pre">slowlog_log_slower_than</span></code> 是用户指定的命令执行时间上限，执行时间大于等于这个值的命令会被慢查询日志记录。</p>
+<p><code class="docutils literal notranslate"><span class="pre">slowlog_max_len</span></code> 慢查询日志的最大数量，当日志数量等于这个值时，添加一条新日志会造成最旧的一条日志被删除。</p>
+<p>下图展示了一个 <code class="docutils literal notranslate"><span class="pre">slowlog</span></code> 属性的实例：</p>
+<div class="graphviz"><img src="../_images/graphviz-cddba25e35ccc03772f9259e000c2c2c0d0b00c6.png" alt="digraph g {
+
+    rankdir = LR;
+
+    node [shape = record, style = filled];
+
+    edge [style = bold];
+
+    // nodes
+
+    redisServer [label = &quot;redisServer | ... |&lt;slowlog&gt; slowlog | ... &quot;, fillcolor = &quot;#A8E270&quot;];
+
+    slowlog_1 [label = &quot;&lt;head&gt;slowlogEntry | argv | argc | id | duration | time&quot;, fillcolor = &quot;#95BBE3&quot;];
+    slowlog_2 [label = &quot;&lt;head&gt;slowlogEntry | argv | argc | id | duration | time&quot;, fillcolor = &quot;#95BBE3&quot;];
+    slowlog_3 [label = &quot;&lt;head&gt;slowlogEntry | argv | argc | id | duration | time&quot;, fillcolor = &quot;#95BBE3&quot;];
+
+    // edges
+
+    redisServer:slowlog -&gt; slowlog_1;
+    slowlog_1 -&gt; slowlog_2;
+    slowlog_2 -&gt; slowlog_3;
+}" class="graphviz" /></div>
+</section>
+<section id="id3">
+<h2>慢查询日志的记录<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>在每次执行命令之前，
+Redis 都会用一个参数记录命令执行前的时间，
+在命令执行完之后，
+再计算一次当前时间，
+然后将两个时间值相减，
+得出执行命令所耗费的时间值 <code class="docutils literal notranslate"><span class="pre">duration</span></code> ，
+并将 <code class="docutils literal notranslate"><span class="pre">duration</span></code> 传给 <code class="docutils literal notranslate"><span class="pre">slowlogPushEntryIfNeed</span></code> 函数。</p>
+<p>如果 <code class="docutils literal notranslate"><span class="pre">duration</span></code> 超过服务器设置的执行时间上限 <code class="docutils literal notranslate"><span class="pre">server.slowlog_log_slower_than</span></code> 的话，
+<code class="docutils literal notranslate"><span class="pre">slowlogPushEntryIfNeed</span></code> 就会创建一条新的慢查询日志，
+并将它加入到慢查询日志链表里。</p>
+<p>可以用一段伪代码来表示这个过程：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">execute_redis_command_with_slowlog</span><span class="p">():</span>
+
+    <span class="c1"># 命令执行前的时间</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">ustime</span><span class="p">()</span>
+
+    <span class="c1"># 执行命令</span>
+    <span class="n">execute_command</span><span class="p">(</span><span class="n">argv</span><span class="p">,</span> <span class="n">argc</span><span class="p">)</span>
+
+    <span class="c1"># 计算命令执行所耗费的时间</span>
+    <span class="n">duration</span> <span class="o">=</span> <span class="n">ustime</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+
+    <span class="k">if</span> <span class="n">slowlog_is_enabled</span><span class="p">:</span>
+        <span class="n">slowlogPushEntryIfNeed</span><span class="p">(</span><span class="n">argv</span><span class="p">,</span> <span class="n">argc</span><span class="p">,</span> <span class="n">duration</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">slowlogPushEntryIfNeed</span><span class="p">(</span><span class="n">argv</span><span class="p">,</span> <span class="n">argc</span><span class="p">,</span> <span class="n">duration</span><span class="p">)</span>
+
+    <span class="c1"># 如果执行命令耗费的时间超过服务器设置命令执行时间上限</span>
+    <span class="c1"># 那么创建一条新的 slowlog</span>
+    <span class="k">if</span> <span class="n">duration</span> <span class="o">&gt;</span> <span class="n">server</span><span class="o">.</span><span class="n">slowlog_log_slower_than</span><span class="p">:</span>
+
+        <span class="c1"># 创建新 slowlog</span>
+        <span class="n">log</span> <span class="o">=</span> <span class="n">new</span> <span class="n">slowlogEntry</span><span class="p">()</span>
+
+        <span class="c1"># 设置各个域</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="n">argv</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">argc</span> <span class="o">=</span> <span class="n">argc</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">duration</span> <span class="o">=</span> <span class="n">duration</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">slowlog_entry_id</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">now</span><span class="p">()</span>
+
+        <span class="c1"># 将新 slowlog 追加到日志链表末尾</span>
+        <span class="n">server</span><span class="o">.</span><span class="n">slowlog</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">log</span><span class="p">)</span>
+
+        <span class="c1"># 更新服务器 slowlog</span>
+        <span class="n">server</span><span class="o">.</span><span class="n">slowlog_entry_id</span> <span class="o">+=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+</section>
+<section id="id4">
+<h2>慢查询日志的操作<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>针对慢查询日志有三种操作，分别是查看、清空和获取日志数量：</p>
+<ul class="simple">
+<li><p>查看日志：在日志链表中遍历指定数量的日志节点，复杂度为 <span class="math notranslate nohighlight">\(O(N)\)</span> 。</p></li>
+<li><p>清空日志：释放日志链表中的所有日志节点，复杂度为 <span class="math notranslate nohighlight">\(O(N)\)</span> 。</p></li>
+<li><p>获取日志数量：获取日志的数量等同于获取 <code class="docutils literal notranslate"><span class="pre">server.slowlog</span></code> 链表的数量，复杂度为 <span class="math notranslate nohighlight">\(O(1)\)</span> 。</p></li>
+</ul>
+</section>
+<section id="id5">
+<h2>小结<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Redis 用一个链表以 FIFO 的顺序保存着所有慢查询日志。</p></li>
+<li><p>每条慢查询日志以一个慢查询节点表示，节点中记录着执行超时的命令、命令的参数、命令执行时的时间，以及执行命令所消耗的时间等信息。</p></li>
+</ul>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="../index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">慢查询日志</a><ul>
+<li><a class="reference internal" href="#id2">相关数据结构</a></li>
+<li><a class="reference internal" href="#id3">慢查询日志的记录</a></li>
+<li><a class="reference internal" href="#id4">慢查询日志的操作</a></li>
+<li><a class="reference internal" href="#id5">小结</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="scripting.html"
+                          title="Previous page">&larr; Lua 脚本</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="../internal/db.html"
+                          title="Next page">&rarr; 数据库</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>本页</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/feature/slowlog.rst.txt"
+            rel="nofollow">显示源代码</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">快速搜索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="提交" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="总索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="../internal/db.html" title="数据库"
+             >下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="scripting.html" title="Lua 脚本"
+             >上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">RedisBookOrigin 1.0 文档</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">慢查询日志</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; 版权所有 2024, 黄健宏.
+      由 <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6创建。
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

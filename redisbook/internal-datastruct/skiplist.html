@@ -1,0 +1,373 @@
+
+
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>跳跃表 &#8212; RedisBookOrigin 1.0 文档</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../" type="text/css" />
+    
+    <script src="../_static/documentation_options.js?v=27ad66bf"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    
+    
+     
+        <script src="../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+    <link rel="next" title="整数集合" href="../compress-datastruct/intset.html" />
+    <link rel="prev" title="字典" href="dict.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="总索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="../compress-datastruct/intset.html" title="整数集合"
+             accesskey="N">下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="dict.html" title="字典"
+             accesskey="P">上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">RedisBookOrigin 1.0 文档</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">跳跃表</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>跳跃表<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>跳跃表（<a class="reference external" href="http://en.wikipedia.org/wiki/Skip_list">skiplist</a>）是一种随机化的数据，
+由 William Pugh 在论文<a class="reference external" href="http://www.cl.cam.ac.uk/teaching/0506/Algorithms/skiplists.pdf">《Skip lists: a probabilistic alternative to balanced trees》</a>中提出，
+跳跃表以有序的方式在层次化的链表中保存元素，
+效率和平衡树媲美 ——
+查找、删除、添加等操作都可以在对数期望时间下完成，
+并且比起平衡树来说，
+跳跃表的实现要简单直观得多。</p>
+<p>以下是个典型的跳跃表例子（图片来自<a class="reference external" href="http://en.wikipedia.org/wiki/File:Skip_list.svg">维基百科</a>）：</p>
+<a class="reference internal image-reference" href="../_images/skiplist.png"><img alt="../_images/skiplist.png" src="../_images/skiplist.png" style="width: 800.0px; height: 187.20000000000002px;" /></a>
+<p>从图中可以看到，
+跳跃表主要由以下部分构成：</p>
+<ul class="simple">
+<li><p>表头（head）：负责维护跳跃表的节点指针。</p></li>
+<li><p>跳跃表节点：保存着元素值，以及多个层。</p></li>
+<li><p>层：保存着指向其他元素的指针。高层的指针越过的元素数量大于等于低层的指针，为了提高查找的效率，程序总是从高层先开始访问，然后随着元素值范围的缩小，慢慢降低层次。</p></li>
+<li><p>表尾：全部由 <code class="docutils literal notranslate"><span class="pre">NULL</span></code> 组成，表示跳跃表的末尾。</p></li>
+</ul>
+<p>因为跳跃表的定义可以在任何一本算法或数据结构的书中找到，
+所以本章不介绍跳跃表的具体实现方式或者具体的算法，
+而只介绍跳跃表在 Redis 的应用、核心数据结构和 API 。</p>
+<section id="id3">
+<h2>跳跃表的实现<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>为了满足自身的功能需要，
+Redis 基于 William Pugh 论文中描述的跳跃表进行了以下修改：</p>
+<ol class="arabic simple">
+<li><p>允许重复的 <code class="docutils literal notranslate"><span class="pre">score</span></code> 值：多个不同的 <code class="docutils literal notranslate"><span class="pre">member</span></code> 的 <code class="docutils literal notranslate"><span class="pre">score</span></code> 值可以相同。</p></li>
+<li><p>进行对比操作时，不仅要检查 <code class="docutils literal notranslate"><span class="pre">score</span></code> 值，还要检查 <code class="docutils literal notranslate"><span class="pre">member</span></code> ：当 <code class="docutils literal notranslate"><span class="pre">score</span></code> 值可以重复时，单靠 <code class="docutils literal notranslate"><span class="pre">score</span></code> 值无法判断一个元素的身份，所以需要连 <code class="docutils literal notranslate"><span class="pre">member</span></code> 域都一并检查才行。</p></li>
+<li><p>每个节点都带有一个高度为 1 层的后退指针，用于从表尾方向向表头方向迭代：当执行 <span class="xref std std-ref">zrevrange</span> 或 <span class="xref std std-ref">zrevrangebyscore</span> 这类以逆序处理有序集的命令时，就会用到这个属性。</p></li>
+</ol>
+<p>这个修改版的跳跃表由 <code class="docutils literal notranslate"><span class="pre">redis.h/zskiplist</span></code> 结构定义：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>typedef struct zskiplist {
+
+    // 头节点，尾节点
+    struct zskiplistNode *header, *tail;
+
+    // 节点数量
+    unsigned long length;
+
+    // 目前表内节点的最大层数
+    int level;
+
+} zskiplist;
+</pre></div>
+</div>
+<p>跳跃表的节点由 <code class="docutils literal notranslate"><span class="pre">redis.h/zskiplistNode</span></code> 定义：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">typedef</span> <span class="n">struct</span> <span class="n">zskiplistNode</span> <span class="p">{</span>
+
+    <span class="o">//</span> <span class="n">member</span> <span class="n">对象</span>
+    <span class="n">robj</span> <span class="o">*</span><span class="n">obj</span><span class="p">;</span>
+
+    <span class="o">//</span> <span class="n">分值</span>
+    <span class="n">double</span> <span class="n">score</span><span class="p">;</span>
+
+    <span class="o">//</span> <span class="n">后退指针</span>
+    <span class="n">struct</span> <span class="n">zskiplistNode</span> <span class="o">*</span><span class="n">backward</span><span class="p">;</span>
+
+    <span class="o">//</span> <span class="n">层</span>
+    <span class="n">struct</span> <span class="n">zskiplistLevel</span> <span class="p">{</span>
+
+        <span class="o">//</span> <span class="n">前进指针</span>
+        <span class="n">struct</span> <span class="n">zskiplistNode</span> <span class="o">*</span><span class="n">forward</span><span class="p">;</span>
+
+        <span class="o">//</span> <span class="n">这个层跨越的节点数量</span>
+        <span class="n">unsigned</span> <span class="nb">int</span> <span class="n">span</span><span class="p">;</span>
+
+    <span class="p">}</span> <span class="n">level</span><span class="p">[];</span>
+
+<span class="p">}</span> <span class="n">zskiplistNode</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>以下是操作这两个数据结构的 API ，API 的用途与相应的算法复杂度：</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>函数</p></th>
+<th class="head"><p>作用</p></th>
+<th class="head"><p>复杂度</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">zslCreateNode</span></code></p></td>
+<td><p>创建并返回一个新的跳跃表节点</p></td>
+<td><p>最坏 <span class="math notranslate nohighlight">\(O(1)\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">zslFreeNode</span></code></p></td>
+<td><p>释放给定的跳跃表节点</p></td>
+<td><p>最坏 <span class="math notranslate nohighlight">\(O(1)\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">zslCreate</span></code></p></td>
+<td><p>创建并初始化一个新的跳跃表</p></td>
+<td><p>最坏 <span class="math notranslate nohighlight">\(O(1)\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">zslFree</span></code></p></td>
+<td><p>释放给定的跳跃表</p></td>
+<td><p>最坏 <span class="math notranslate nohighlight">\(O(N)\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">zslInsert</span></code></p></td>
+<td><p>将一个包含给定 <code class="docutils literal notranslate"><span class="pre">score</span></code> 和 <code class="docutils literal notranslate"><span class="pre">member</span></code> 的新节点添加到跳跃表中</p></td>
+<td><p>最坏 <span class="math notranslate nohighlight">\(O(N)\)</span> 平均 <span class="math notranslate nohighlight">\(O(\log N)\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">zslDeleteNode</span></code></p></td>
+<td><p>删除给定的跳跃表节点</p></td>
+<td><p>最坏 <span class="math notranslate nohighlight">\(O(N)\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">zslDelete</span></code></p></td>
+<td><p>删除匹配给定 <code class="docutils literal notranslate"><span class="pre">member</span></code> 和 <code class="docutils literal notranslate"><span class="pre">score</span></code> 的元素</p></td>
+<td><p>最坏 <span class="math notranslate nohighlight">\(O(N)\)</span> 平均 <span class="math notranslate nohighlight">\(O(\log N)\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">zslFirstInRange</span></code></p></td>
+<td><p>找到跳跃表中第一个符合给定范围的元素</p></td>
+<td><p>最坏 <span class="math notranslate nohighlight">\(O(N)\)</span> 平均 <span class="math notranslate nohighlight">\(O(\log N)\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">zslLastInRange</span></code></p></td>
+<td><p>找到跳跃表中最后一个符合给定范围的元素</p></td>
+<td><p>最坏 <span class="math notranslate nohighlight">\(O(N)\)</span> 平均 <span class="math notranslate nohighlight">\(O(\log N)\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">zslDeleteRangeByScore</span></code></p></td>
+<td><p>删除 <code class="docutils literal notranslate"><span class="pre">score</span></code> 值在给定范围内的所有节点</p></td>
+<td><p>最坏 <span class="math notranslate nohighlight">\(O(N^2)\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">zslDeleteRangeByRank</span></code></p></td>
+<td><p>删除给定排序范围内的所有节点</p></td>
+<td><p>最坏 <span class="math notranslate nohighlight">\(O(N^2)\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">zslGetRank</span></code></p></td>
+<td><p>返回目标元素在有序集中的排位</p></td>
+<td><p>最坏 <span class="math notranslate nohighlight">\(O(N)\)</span> 平均 <span class="math notranslate nohighlight">\(O(\log N)\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">zslGetElementByRank</span></code></p></td>
+<td><p>根据给定排位，返回该排位上的元素节点</p></td>
+<td><p>最坏 <span class="math notranslate nohighlight">\(O(N)\)</span> 平均 <span class="math notranslate nohighlight">\(O(\log N)\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="id4">
+<h2>跳跃表的应用<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>和字典、链表或者字符串这几种在 Redis 中大量使用的数据结构不同，
+跳跃表在 Redis 的唯一作用，
+就是实现有序集数据类型。</p>
+<p>跳跃表将指向有序集的 <code class="docutils literal notranslate"><span class="pre">score</span></code> 值和 <code class="docutils literal notranslate"><span class="pre">member</span></code> 域的指针作为元素，
+并以 <code class="docutils literal notranslate"><span class="pre">score</span></code> 值为索引，
+对有序集元素进行排序。</p>
+<p>举个例子，
+以下代码创建了一个带有 3 个元素的有序集：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">ZADD</span> <span class="n">s</span> <span class="mi">6</span> <span class="n">x</span> <span class="mi">10</span> <span class="n">y</span> <span class="mi">15</span> <span class="n">z</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">ZRANGE</span> <span class="n">s</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span> <span class="n">WITHSCORES</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;x&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;6&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;y&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;10&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;z&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;15&quot;</span>
+</pre></div>
+</div>
+<p>在底层实现中，
+Redis 为 <code class="docutils literal notranslate"><span class="pre">x</span></code> 、 <code class="docutils literal notranslate"><span class="pre">y</span></code> 和 <code class="docutils literal notranslate"><span class="pre">z</span></code> 三个 <code class="docutils literal notranslate"><span class="pre">member</span></code> 分别创建了三个字符串，
+值分别为 <code class="docutils literal notranslate"><span class="pre">double</span></code> 类型的 <code class="docutils literal notranslate"><span class="pre">6</span></code> 、 <code class="docutils literal notranslate"><span class="pre">10</span></code> 和 <code class="docutils literal notranslate"><span class="pre">15</span></code> ，
+然后用跳跃表将这些指针有序地保存起来，
+形成这样一个跳跃表：</p>
+<div class="graphviz"><img src="../_images/graphviz-dc3106a48d485212cd9fc55bf067a9116e6b6e07.png" alt="digraph zset {
+    rankdir = LR;
+
+    node [shape = record, style = filled];
+    
+    edge [style = bold];
+
+    skiplist [label =&quot;&lt;head&gt;zskipNode\n(head) |&lt;3&gt; |&lt;2&gt; |&lt;1&gt; |&lt;score&gt;score\n NULL |&lt;robj&gt;robj\n NULL&quot;, fillcolor = &quot;#F2F2F2&quot;];
+    six [label = &quot;&lt;head&gt;zskipNode |&lt;3&gt; |&lt;2&gt; |&lt;1&gt; |&lt;score&gt;score\n 6 |&lt;robj&gt;robj\n x&quot;, fillcolor = &quot;#95BBE3&quot;];
+    ten [label = &quot;&lt;head&gt;zskipNode | &lt;1&gt; |&lt;score&gt;score\n 10 |&lt;robj&gt;robj\n y&quot;, fillcolor = &quot;#95BBE3&quot;];
+    fiften [label = &quot;&lt;head&gt;zskipNode |&lt;3&gt; |&lt;2&gt; |&lt;1&gt; |&lt;score&gt;score\n 15 |&lt;robj&gt;robj\n z&quot;, fillcolor = &quot;#95BBE3&quot;];
+
+    skiplist:3 -&gt; six:3; 
+    skiplist:2 -&gt; six:2;
+    skiplist:1 -&gt; six:1;
+    six:1 -&gt; ten:1;
+    six:2 -&gt; fiften:2;
+    six:3 -&gt; fiften:3;
+    ten:1 -&gt; fiften:1;
+
+    null_1 [label = &quot;NULL&quot;, shape=plaintext];
+    null_2 [label = &quot;NULL&quot;, shape=plaintext];
+    null_3 [label = &quot;NULL&quot;, shape=plaintext];
+
+    fiften:1 -&gt; null_1;
+    fiften:2 -&gt; null_2;
+    fiften:3 -&gt; null_3;
+
+}" class="graphviz" /></div>
+<p>为了方便展示，
+在图片中我们直接将 <code class="docutils literal notranslate"><span class="pre">member</span></code> 和 <code class="docutils literal notranslate"><span class="pre">score</span></code> 值包含在表节点中，
+但是在实际的定义中，
+因为跳跃表要和另一个实现有序集的结构（字典）分享 <code class="docutils literal notranslate"><span class="pre">member</span></code> 和 <code class="docutils literal notranslate"><span class="pre">score</span></code> 值，
+所以跳跃表只保存指向 <code class="docutils literal notranslate"><span class="pre">member</span></code> 和 <code class="docutils literal notranslate"><span class="pre">score</span></code> 的指针。
+更详细的信息，请参考《<a class="reference internal" href="../datatype/sorted_set.html#sorted-set-chapter"><span class="std std-ref">有序集</span></a>》章节。</p>
+</section>
+<section id="id5">
+<h2>小结<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>跳跃表是一种随机化数据结构，查找、添加、删除操作都可以在对数期望时间下完成。</p></li>
+<li><p>跳跃表目前在 Redis 的唯一作用，就是作为有序集类型的底层数据结构（之一，另一个构成有序集的结构是字典）。</p></li>
+<li><p>为了满足自身的需求，Redis 基于 William Pugh 论文中描述的跳跃表进行了修改，包括：</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">score</span></code> 值可重复。</p></li>
+<li><p>对比一个元素需要同时检查它的 <code class="docutils literal notranslate"><span class="pre">score</span></code> 和 <code class="docutils literal notranslate"><span class="pre">memeber</span></code> 。</p></li>
+<li><p>每个节点带有高度为 1 层的后退指针，用于从表尾方向向表头方向迭代。</p></li>
+</ol>
+</li>
+</ul>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="../index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">跳跃表</a><ul>
+<li><a class="reference internal" href="#id3">跳跃表的实现</a></li>
+<li><a class="reference internal" href="#id4">跳跃表的应用</a></li>
+<li><a class="reference internal" href="#id5">小结</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="dict.html"
+                          title="Previous page">&larr; 字典</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="../compress-datastruct/intset.html"
+                          title="Next page">&rarr; 整数集合</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>本页</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/internal-datastruct/skiplist.rst.txt"
+            rel="nofollow">显示源代码</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">快速搜索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="提交" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="总索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="../compress-datastruct/intset.html" title="整数集合"
+             >下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="dict.html" title="字典"
+             >上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">RedisBookOrigin 1.0 文档</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">跳跃表</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; 版权所有 2024, 黄健宏.
+      由 <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6创建。
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>
