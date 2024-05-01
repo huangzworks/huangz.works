@@ -36,14 +36,14 @@ huangzworks@gmail.com、
 ------------
 
 .. image:: images/redisguide.png
-   :target: https://item.jd.com/12716266.html
+   :target: https://huangz.works/redismanual/
 
-《Redis使用手册》
+`《Redis使用手册》 <https://huangz.works/redismanual/>`_
 
 .. image:: images/redisbook1e.jpg
-   :target: https://item.jd.com/11486101.html
+   :target: https://huangz.works/redisbook1e/
 
-《Redis设计与实现》
+`《Redis设计与实现》 <https://huangz.works/redisbook1e/>`_
 
 
 译作
@@ -55,19 +55,19 @@ huangzworks@gmail.com、
 《SQL实战（第2版）》
 
 .. image:: images/gpwg.jpg
-   :target: https://item.jd.com/12826232.html
+   :target: https://huangz.works/gpwg/
 
-《Go语言趣学指南》
+`《Go语言趣学指南》 <https://huangz.works/gpwg/>`_
 
 .. image:: images/gwp.jpg
-   :target: https://item.jd.com/12252845.html
+   :target: https://huangz.works/gwp/
 
-《Go Web编程》
+`《Go Web编程》 <https://huangz.works/gwp/>`_
 
 .. image:: images/ria.png
-   :target: https://item.jd.com/11791607.html
+   :target: https://huangz.works/ria/
 
-《Redis实战》
+`《Redis实战》 <https://huangz.works/ria/>`_
 
 
 荣誉/奖项
