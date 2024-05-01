@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>《Go语言趣学指南》 &#8212; 《Go语言趣学指南》读者服务网站 1.0 文档</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=1a685b77" />
+    <script src="_static/documentation_options.js?v=f115507d"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=beaddf03"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+    <link rel="next" title="译者序" href="preview/preface.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="#">
+          《Go语言趣学指南》读者服务网站</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="preview/preface.html">译者序</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preview/foreword.html">前言</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preview/ack.html">致谢</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preview/about_this_book.html">关于本书</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preview/about_the_authors.html">关于作者</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="preview/lession1.html">第 1 章：各就各位，预备，Go！</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="preview/lession2.html">第 2 章：被美化的计算器</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preview/lession3.html">第 3 章：循环和分支</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preview/lession4.html">第 4 章：变量作用域</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preview/lession5.html">第 5 章：单元实验——前往火星的航行票</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">导航 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">《Go语言趣学指南》</a><ul>
+<li><a class="reference internal" href="#id1">购买</a></li>
+<li><a class="reference internal" href="#id11">目录&amp;试读</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#id12">对本书的赞誉</a></li>
+<li><a class="reference internal" href="#id13">作者简介</a></li>
+<li><a class="reference internal" href="#id14">译者简介</a></li>
+<li><a class="reference internal" href="#id15">相关资源</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="preview/preface.html" title="Next Chapter: 译者序"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">译者序 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="go">
+<h1>《Go语言趣学指南》<a class="headerlink" href="#go" title="Link to this heading">¶</a></h1>
+<img alt="_images/cover.jpg" class="align-left" src="_images/cover.jpg" />
+<p>欢迎来到《Get Programming with Go》中文版《Go语言趣学指南》的读者服务网站！</p>
+<p>本书将以循序渐进的方式讲解高效使用 Go 所必需的概念，并提供大量练习来磨砺你的技能。
+这是一本初学者指南，旨在从头到尾地进行阅读，并且每个课程都建立在前面课程的基础之上。
+本书虽然没有完整地描述 Go 的所有语言特性，但是却涵盖了其中的绝大部分特性，并且提及了面向对象设计以及并发等高级主题。</p>
+<p>无论你是打算使用 Go 编写大型的并发 web 服务，还是说只想用 Go 编写小型脚本和简单的工具，本书都会帮助你打下坚实的基础。</p>
+<section id="id1">
+<h2>购买<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>本书在以下网店或应用有售：</p>
+<ul class="simple">
+<li><p>京东（<a class="reference external" href="https://item.jd.com/12826232.html?dist=jd">自营</a>、<a class="reference external" href="https://search.jd.com/Search?keyword=Go%E8%AF%AD%E8%A8%80%E8%B6%A3%E5%AD%A6%E6%8C%87%E5%8D%97&amp;enc=utf-8&amp;qrst=1&amp;rt=1&amp;stop=1&amp;vt=2&amp;suggest=1.his.0.0&amp;click=2">非自营</a>）</p></li>
+<li><p><a class="reference external" href="https://s.taobao.com/search?initiative_id=tbindexz_20170306&amp;ie=utf8&amp;spm=a21bo.2017.201856-taobao-item.2&amp;sourceId=tb.index&amp;search_type=item&amp;ssid=s5-e&amp;commend=all&amp;imgfile=&amp;q=Go%E8%AF%AD%E8%A8%80%E8%B6%A3%E5%AD%A6%E6%8C%87%E5%8D%97&amp;suggest=history_1&amp;_input_charset=utf-8&amp;wq=&amp;suggest_query=&amp;source=suggest">淘宝</a></p></li>
+<li><p>当当（<a class="reference external" href="http://product.dangdang.com/28525763.html">自营</a>、<a class="reference external" href="http://search.dangdang.com/?key=Go%D3%EF%D1%D4%C8%A4%D1%A7%D6%B8%C4%CF&amp;act=input">非自营</a>）</p></li>
+<li><p><a class="reference external" href="https://www.epubit.com/bookDetails?id=UBb60129159591">异步社区</a>（纸书&amp;电子书）</p></li>
+<li><p>人民邮电出版社官方旗舰店（<a class="reference external" href="https://item.jd.com/66945871504.html">京东</a>、<a class="reference external" href="https://detail.tmall.com/item.htm?spm=a230r.1.14.68.35fd14b2UTlWmz&amp;id=614129741187&amp;ns=1&amp;abbucket=19">天猫</a>、<a class="reference external" href="http://product.dangdang.com/1580063775.html">当当</a>）</p></li>
+</ul>
+</section>
+<section id="id11">
+<h2>目录&amp;试读<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h2>
+<p>你可以通过点击以下链接或者<a class="reference external" href="https://github.com/huangzworks/GPWG-website/raw/master/gpwgcn_preview.pdf">下载 PDF 文件</a>来试读本书。</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="preview/preface.html">译者序</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preview/foreword.html">前言</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preview/ack.html">致谢</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="preview/ack.html#nathan-youngman">Nathan Youngman</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/ack.html#roger-peppe">Roger Peppé</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="preview/about_this_book.html">关于本书</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="preview/about_this_book.html#id2">目标读者</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/about_this_book.html#id3">组织方式和路线图</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/about_this_book.html#id4">示例代码</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/about_this_book.html#id5">书本论坛</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="preview/about_the_authors.html">关于作者</a></li>
+</ul>
+</div>
+<p><a class="reference internal" href="preview/unit0.html#unit0"><span class="std std-ref">单元 0 ：入门</span></a></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="preview/lession1.html">第 1 章：各就各位，预备，Go！</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="preview/lession1.html#id1">1.1 什么是 Go ？</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/lession1.html#id2">1.2 Go 游乐场</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/lession1.html#id3">1.3 包和函数</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/lession1.html#id4">1.4 唯一无二的大括号风格</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/lession1.html#id5">1.5 课后小结</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<p><a class="reference internal" href="preview/unit1.html#unit1"><span class="std std-ref">单元 1 ：命令式编程</span></a></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="preview/lession2.html">第 2 章：被美化的计算器</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="preview/lession2.html#id2">2.1 执行计算</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/lession2.html#id3">2.2 格式化输出</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/lession2.html#id4">2.3 常量和变量</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/lession2.html#id5">2.4 走捷径</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/lession2.html#id8">2.5 数字游戏</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/lession2.html#id9">2.6 课后小结</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="preview/lession3.html">第 3 章：循环和分支</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="preview/lession3.html#id2">3.1 真或假</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/lession3.html#id3">3.2 比较</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/lession3.html#if">3.2 使用 <code class="docutils literal notranslate"><span class="pre">if</span></code> 实现分支判断</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/lession3.html#id4">3.4 逻辑运算符</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/lession3.html#switch">3.5 使用 <code class="docutils literal notranslate"><span class="pre">switch</span></code> 实现分支判断</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/lession3.html#id5">3.6 使用循环实现重复执行</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/lession3.html#id6">3.7 课后小结</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="preview/lession4.html">第 4 章：变量作用域</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="preview/lession4.html#id2">4.1 审视作用域</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/lession4.html#id3">4.2 简短声明</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/lession4.html#id4">4.3 作用域的范围</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/lession4.html#id5">4.4 课后小结</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="preview/lession5.html">第 5 章：单元实验——前往火星的航行票</a></li>
+</ul>
+</div>
+<p><strong>单元 2：类型</strong></p>
+<ul class="simple">
+<li><p>第 6 章：实数</p>
+<ul>
+<li><p>6.1 声明浮点数变量</p></li>
+<li><p>6.2 打印浮点数类型</p></li>
+<li><p>6.3 浮点精确性</p></li>
+<li><p>6.4 比较浮点数</p></li>
+<li><p>6.5 课后小结</p></li>
+</ul>
+</li>
+<li><p>第 7 章：整数</p>
+<ul>
+<li><p>7.1 声明整数变量</p></li>
+<li><p>7.2 为 8 位颜色使用 uint8 类型</p></li>
+<li><p>7.3 整数回绕</p></li>
+<li><p>7.4 课后小结</p></li>
+</ul>
+</li>
+<li><p>第 8 章：大数</p>
+<ul>
+<li><p>8.1 击中天花板</p></li>
+<li><p>8.2 big 包</p></li>
+<li><p>8.3 大小非同寻常的变量</p></li>
+<li><p>8.4 课后小结</p></li>
+</ul>
+</li>
+<li><p>第 9 章：多语言文本</p>
+<ul>
+<li><p>9.1 声明字符串变量</p></li>
+<li><p>9.2 字符、代码点、符文和字节</p></li>
+<li><p>9.3 拉弦</p></li>
+<li><p>9.4 使用凯撒加密法处理字符</p></li>
+<li><p>9.5 将字符串解码为符文</p></li>
+<li><p>9.6 课后小结</p></li>
+</ul>
+</li>
+<li><p>第 10 章：类型转换</p>
+<ul>
+<li><p>10.1 类型不能混合使用</p></li>
+<li><p>10.2 数字类型转换</p></li>
+<li><p>10.3 类型转换的危险之处</p></li>
+<li><p>10.4 字符串转换</p></li>
+<li><p>10.5 转换布尔值</p></li>
+<li><p>10.6 课后小结</p></li>
+</ul>
+</li>
+<li><p>第 11 章：单元实验——维吉尼亚加密法</p></li>
+</ul>
+<p><strong>单元 3：构建块</strong></p>
+<ul class="simple">
+<li><p>第 12 章：函数</p>
+<ul>
+<li><p>12.1 函数声明</p></li>
+<li><p>12.2 编写函数</p></li>
+<li><p>12.3 课后小结</p></li>
+</ul>
+</li>
+<li><p>第 13 章：方法</p>
+<ul>
+<li><p>13.1 声明新类型</p></li>
+<li><p>13.2 引入自定义类型</p></li>
+<li><p>13.3 通过方法为类型添加行为</p></li>
+<li><p>13.4 课后小结</p></li>
+</ul>
+</li>
+<li><p>第 14 章：第一类函数</p>
+<ul>
+<li><p>14.1 将函数赋值给变量</p></li>
+<li><p>14.2 将函数传递给其他函数</p></li>
+<li><p>14.3 声明函数类型</p></li>
+<li><p>14.4 闭包和匿名函数</p></li>
+<li><p>14.5 课后总结</p></li>
+</ul>
+</li>
+<li><p>第 15 章：单元实验——温度表</p></li>
+</ul>
+<p><strong>单元 4：收集器</strong></p>
+<ul class="simple">
+<li><p>第 16 章：劳苦功高的数组</p>
+<ul>
+<li><p>16.1 声明数组并访问它们的元素</p></li>
+<li><p>16.2 小心越界</p></li>
+<li><p>16.3 使用复合字面量初始化数组</p></li>
+<li><p>16.4 迭代数组</p></li>
+<li><p>16.5 被复制的数组</p></li>
+<li><p>16.6 由数组组成的数组</p></li>
+<li><p>16.7 课后小结</p></li>
+</ul>
+</li>
+<li><p>第 17 章：切片——朝向数组的窗口</p>
+<ul>
+<li><p>17.1 分割数组</p></li>
+<li><p>17.2 切片的复合字面量</p></li>
+<li><p>17.3 切片的威力</p></li>
+<li><p>17.4 带有方法的切片</p></li>
+<li><p>17.5 课后小结</p></li>
+</ul>
+</li>
+<li><p>第 18 章：更大的切片</p>
+<ul>
+<li><p>18.1 <code class="docutils literal notranslate"><span class="pre">append</span></code> 函数</p></li>
+<li><p>18.2 长度和容量</p></li>
+<li><p>18.3 详解 <code class="docutils literal notranslate"><span class="pre">append</span></code> 函数</p></li>
+<li><p>18.4 三索引切片操作</p></li>
+<li><p>18.5 使用 <code class="docutils literal notranslate"><span class="pre">make</span></code> 对切片实行预分配</p></li>
+<li><p>18.6 声明可变参数函数</p></li>
+<li><p>18.7 课后小结</p></li>
+</ul>
+</li>
+<li><p>第 19 章：无所不能的映射</p>
+<ul>
+<li><p>19.1 声明映射</p></li>
+<li><p>19.2 映射不会被拷贝</p></li>
+<li><p>19.3 使用 <code class="docutils literal notranslate"><span class="pre">make</span></code> 实行映射预分配</p></li>
+<li><p>19.4 使用映射进行计数</p></li>
+<li><p>19.5 使用映射和切片实现数据分组</p></li>
+<li><p>19.6 将映射用作集合</p></li>
+<li><p>19.7 课后小结</p></li>
+</ul>
+</li>
+<li><p>第 20 章：单元实验——切片人生</p>
+<ul>
+<li><p>20.1 开天辟地</p></li>
+<li><p>20.2 适者生存</p></li>
+<li><p>20.3 平行世界</p></li>
+</ul>
+</li>
+</ul>
+<p><strong>单元 5：状态与行为</strong></p>
+<ul class="simple">
+<li><p>第 21 章：结构</p>
+<ul>
+<li><p>21.1 声明结构</p></li>
+<li><p>21.2 通过类型重用结构</p></li>
+<li><p>21.3 通过复合字面量初始化结构</p></li>
+<li><p>21.4 结构将被复制</p></li>
+<li><p>21.5 由结构组成的切片</p></li>
+<li><p>21.6 将结构编码为 JSON</p></li>
+<li><p>21.7 使用结构标签定制 JSON</p></li>
+<li><p>21.8 课后小结</p></li>
+</ul>
+</li>
+<li><p>第 22 章：Go 没有类</p>
+<ul>
+<li><p>22.1 将方法绑定至结构</p></li>
+<li><p>22.2 构造函数</p></li>
+<li><p>22.3 类的替代品</p></li>
+<li><p>22.4 课后小结</p></li>
+</ul>
+</li>
+<li><p>第 23 章：组合与转发</p>
+<ul>
+<li><p>23.1 合并结构</p></li>
+<li><p>23.2 方法转向</p></li>
+<li><p>23.3 命名冲突</p></li>
+<li><p>23.4 课后小结</p></li>
+</ul>
+</li>
+<li><p>第 24 章：接口</p>
+<ul>
+<li><p>24.1 接口类型</p></li>
+<li><p>24.2 探索接口</p></li>
+<li><p>24.3 满足接口</p></li>
+<li><p>24.4 课后小结</p></li>
+</ul>
+</li>
+<li><p>第 25 章：单元实验——火星上的动物避难所</p></li>
+</ul>
+<p><strong>单元 6：深入 Go 语言</strong></p>
+<ul class="simple">
+<li><p>第 26 章：关于指针的二三事</p>
+<ul>
+<li><p>26.1 &amp; 和星号</p></li>
+<li><p>26.2 指针的作用就是指向</p></li>
+<li><p>26.3 实现修改</p></li>
+<li><p>26.4 隐式指针</p></li>
+<li><p>26.5 指针和接口</p></li>
+<li><p>26.6 明智地使用指针</p></li>
+<li><p>26.7 课后小结</p></li>
+</ul>
+</li>
+<li><p>第 27 章：关于 nil 的纷纷扰扰</p>
+<ul>
+<li><p>27.1 通向惊恐的空指针</p></li>
+<li><p>27.2 保护你的方法</p></li>
+<li><p>27.3 Nil 函数值</p></li>
+<li><p>27.4 Nil 切片</p></li>
+<li><p>27.5 Nil 映射</p></li>
+<li><p>27.6 Nil 接口</p></li>
+<li><p>27.7 Nil 之外的另一个选择</p></li>
+<li><p>27.8 课后小结</p></li>
+</ul>
+</li>
+<li><p>第 28 章：孰能无过</p>
+<ul>
+<li><p>28.1 处理错误</p></li>
+<li><p>28.2 优雅地错误处理</p></li>
+<li><p>28.3 新的错误</p></li>
+<li><p>28.4 不要惊恐</p></li>
+<li><p>28.5 课后小结</p></li>
+</ul>
+</li>
+<li><p>第 29 章：单元实验——数独规则</p></li>
+</ul>
+<p><strong>单元 6：并发编程</strong></p>
+<ul class="simple">
+<li><p>第 30 章：Goroutine 与并发</p>
+<ul>
+<li><p>30.1 启动 goroutine</p></li>
+<li><p>30.2 不止一个 goroutine</p></li>
+<li><p>30.3 通道</p></li>
+<li><p>30.4 使用 SELECT 处理多个通道</p></li>
+<li><p>30.5 阻塞和死锁</p></li>
+<li><p>30.6 地鼠装配线</p></li>
+<li><p>30.7 课后小结</p></li>
+</ul>
+</li>
+<li><p>第 31 章：并发状态</p>
+<ul>
+<li><p>31.1 互斥</p></li>
+<li><p>31.2 长时间运行的工作进程</p></li>
+<li><p>31.3 课后小结</p></li>
+</ul>
+</li>
+<li><p>第 32 章：单元实验——寻找火星生命</p>
+<ul>
+<li><p>32.1 可供活动的网格</p></li>
+<li><p>32.2 报告发现</p></li>
+</ul>
+</li>
+</ul>
+<div class="line-block">
+<div class="line">结语：何去何从</div>
+<div class="line">附录：参考答案</div>
+<div class="line">索引</div>
+</div>
+</section>
+<section id="id12">
+<h2>对本书的赞誉<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h2>
+<p><em>这本书的组织方式对于快速学习 Go 来说堪称完美，
+它对那些没有经验的程序员尤为有用。</em>
+—— MARIO CARRION ，MEREDITH 公司</p>
+<p><em>这是一本注重实践的书。
+书中包含的大量示例将帮助你学习 Go 语言的核心知识，
+并教会你 Go 语言常见的惯例用法。</em>
+—— ULISES FLYNN ，NAV 公司</p>
+<p><em>一本关于 Go 的好书。
+为初学者而写，
+但是对经验丰富的开发者也会有所帮助。</em>
+—— MIKAËL DAUTREY ，ISITIX 公司</p>
+<p><em>成功攀登 Go 高峰的第一步。</em>
+—— JEFF SMITH ，AGILIFY 公司</p>
+</section>
+<section id="id13">
+<h2>作者简介<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h2>
+<img alt="_images/NATHAN.jpg" src="_images/NATHAN.jpg" />
+<p>NATHAN YOUNGMAN （内森·扬曼）既是一位自学成才的网络开发者，也是终生学习概念的一位践行者。
+他是加拿大埃德蒙顿市 Go 聚会的组织者，Canada Learning Code 机构的导师以及地鼠玩偶的狂热摄影爱好者。</p>
+<img alt="_images/ROGER.jpg" src="_images/ROGER.jpg" />
+<p>ROGER PEPPÉ （罗杰·佩珀）是一位 Go 贡献者，他维护着一系列开源 Go 项目，运营着英国纽卡斯尔市的 Go 聚会，并且当前正在担任 Go 云端基础设施软件的相关工作。</p>
+</section>
+<section id="id14">
+<h2>译者简介<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h2>
+<a class="reference internal image-reference" href="_images/HUANGZ.jpeg"><img alt="_images/HUANGZ.jpeg" src="_images/HUANGZ.jpeg" style="width: 150.9px; height: 150.9px;" /></a>
+<p>黄健宏（huangz）是一位 IT 技术图书作译者。
+他著有《Redis使用手册》和《Redis设计与实现》，译有《Go Web 编程》和《Redis实战》。
+关于他的更多信息请访问 <a class="reference external" href="http://huangz.works">huangz.works</a> 。</p>
+</section>
+<section id="id15">
+<h2>相关资源<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h2>
+<p><a class="reference external" href="https://www.manning.com/books/get-programming-with-go">《Go语言趣学指南》原书在 Manning 出版社的主页</a></p>
+<p><a class="reference external" href="https://github.com/nathany/get-programming-with-go">《Go语言趣学指南》的配套源码</a></p>
+<p><a class="reference external" href="https://livebook.manning.com/book/get-programming-with-go/">《Go语言趣学指南》原书试读</a></p>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2019, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>
