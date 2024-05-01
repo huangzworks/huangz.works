@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>第 5 章：跳跃表 &#8212; 《Redis 设计与实现》图片集</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/nature.css?v=601dbdee" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=eafc0fe6" />
+    <script src="_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="第 6 章：整数集合" href="6-intset.html" />
+    <link rel="prev" title="第 4 章：字典" href="4-dict.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="6-intset.html" title="第 6 章：整数集合"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="4-dict.html" title="第 4 章：字典"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">《Redis 设计与实现》图片集</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">第 5 章：跳跃表</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>第 5 章：跳跃表<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>一个跳跃表示例。</p>
+<div class="graphviz"><img src="_images/graphviz-6ecf7a39c4a58fc62882d1b63fa22153b01e4dcf.png" alt="digraph {
+
+    rankdir = LR;
+
+    node [shape = record, width = &quot;0.5&quot;];
+
+    //
+
+    l [label = &quot; &lt;header&gt; header | &lt;tail&gt; tail | level \n 5 | length \n 3 &quot;];
+
+    subgraph cluster_nodes {
+
+        style = invisible;
+
+        header [label = &quot; &lt;l32&gt; L32 | ... | &lt;l5&gt; L5 | &lt;l4&gt; L4 | &lt;l3&gt; L3 | &lt;l2&gt; L2 | &lt;l1&gt; L1 &quot;];
+
+        bw_null [label = &quot;NULL&quot;, shape = plaintext];
+
+        level_null [label = &quot;NULL&quot;, shape = plaintext];
+
+        A [label = &quot; &lt;l4&gt; L4 | &lt;l3&gt; L3 | &lt;l2&gt; L2 | &lt;l1&gt; L1 | &lt;backward&gt; BW | 1.0 | o1 &quot;];
+
+        B [label = &quot; &lt;l2&gt; L2 | &lt;l1&gt; L1 | &lt;backward&gt; BW | 2.0 | o2 &quot;];
+
+        C [label = &quot; &lt;l5&gt; L5 | &lt;l4&gt; L4 | &lt;l3&gt; L3 | &lt;l2&gt; L2 | &lt;l1&gt; L1 | &lt;backward&gt; BW | 3.0 | o3 &quot;];
+
+    }
+
+    subgraph cluster_nulls {
+
+        style = invisible;
+
+        n1 [label = &quot;NULL&quot;, shape = plaintext];
+        n2 [label = &quot;NULL&quot;, shape = plaintext];
+        n3 [label = &quot;NULL&quot;, shape = plaintext];
+        n4 [label = &quot;NULL&quot;, shape = plaintext];
+        n5 [label = &quot;NULL&quot;, shape = plaintext];
+
+    }
+
+    //
+
+    l:header -&gt; header;
+    l:tail -&gt; C;
+
+    header:l32 -&gt; level_null [label = &quot;0&quot;];
+    header:l5 -&gt; C:l5 [label = &quot;3&quot;];
+    header:l4 -&gt; A:l4 [label = &quot;1&quot;];
+    header:l3 -&gt; A:l3 [label = &quot;1&quot;];
+    header:l2 -&gt; A:l2 [label = &quot;1&quot;];
+    header:l1 -&gt; A:l1 [label = &quot;1&quot;];
+
+    A:l4 -&gt; C:l4 [label = &quot;2&quot;];
+    A:l3 -&gt; C:l3 [label = &quot;2&quot;];
+    A:l2 -&gt; B:l2 [label = &quot;1&quot;];
+    A:l1 -&gt; B:l1 [label = &quot;1&quot;];
+
+    B:l2 -&gt; C:l2 [label = &quot;1&quot;];
+    B:l1 -&gt; C:l1 [label = &quot;1&quot;];
+
+    C:l5 -&gt; n5 [label = &quot;0&quot;];
+    C:l4 -&gt; n4 [label = &quot;0&quot;];
+    C:l3 -&gt; n3 [label = &quot;0&quot;];
+    C:l2 -&gt; n2 [label = &quot;0&quot;];
+    C:l1 -&gt; n1 [label = &quot;0&quot;];
+
+    bw_null -&gt; A:backward -&gt; B:backward -&gt; C:backward [dir = back];
+
+    label = &quot;\n 图 5-1    一个跳跃表&quot;;
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>从跳跃表的表头向表尾进行遍历。</p>
+<div class="graphviz"><img src="_images/graphviz-0b20fc7ab1f6239f839772496f8572bf6ec0cd8a.png" alt="digraph {
+
+
+    rankdir = LR;
+
+    node [shape = record, width = &quot;0.5&quot;];
+
+    //
+
+    l [label = &quot; &lt;header&gt; header | &lt;tail&gt; tail | level \n 5 | length \n 3 &quot;];
+
+    subgraph cluster_nodes {
+
+        style = invisible;
+
+        header [label = &quot; &lt;l32&gt; L32 | ... | &lt;l5&gt; L5 | &lt;l4&gt; L4 | &lt;l3&gt; L3 | &lt;l2&gt; L2 | &lt;l1&gt; L1 &quot;];
+
+        bw_null [label = &quot;NULL&quot;, shape = plaintext];
+
+        level_null [label = &quot;NULL&quot;, shape = plaintext];
+
+        A [label = &quot; &lt;l4&gt; L4 | &lt;l3&gt; L3 | &lt;l2&gt; L2 | &lt;l1&gt; L1 | &lt;backward&gt; BW | 1.0 | o1 &quot;];
+
+        B [label = &quot; &lt;l2&gt; L2 | &lt;l1&gt; L1 | &lt;backward&gt; BW | 2.0 | o2 &quot;];
+
+        C [label = &quot; &lt;l5&gt; L5 | &lt;l4&gt; L4 | &lt;l3&gt; L3 | &lt;l2&gt; L2 | &lt;l1&gt; L1 | &lt;backward&gt; BW | 3.0 | o3 &quot;];
+
+    }
+
+    subgraph cluster_nulls {
+
+        style = invisible;
+
+        n1 [label = &quot;NULL&quot;, shape = plaintext];
+        n2 [label = &quot;NULL&quot;, shape = plaintext];
+        n3 [label = &quot;NULL&quot;, shape = plaintext];
+        n4 [label = &quot;NULL&quot;, shape = plaintext];
+        n5 [label = &quot;NULL&quot;, shape = plaintext];
+
+    }
+
+    //
+
+    l:header -&gt; header [style = dashed];
+    l:tail -&gt; C;
+
+    header:l32 -&gt; level_null [label = &quot;0&quot;];
+    header:l5 -&gt; C:l5 [label = &quot;3&quot;];
+    header:l4 -&gt; A:l4 [label = &quot;1&quot;, style = dashed];
+    header:l3 -&gt; A:l3 [label = &quot;1&quot;];
+    header:l2 -&gt; A:l2 [label = &quot;1&quot;];
+    header:l1 -&gt; A:l1 [label = &quot;1&quot;];
+
+    A:l4 -&gt; C:l4 [label = &quot;2&quot;];
+    A:l3 -&gt; C:l3 [label = &quot;2&quot;];
+    A:l2 -&gt; B:l2 [label = &quot;1&quot;, style = dashed];
+    A:l1 -&gt; B:l1 [label = &quot;1&quot;];
+
+    B:l2 -&gt; C:l2 [label = &quot;1&quot;, style = dashed];
+    B:l1 -&gt; C:l1 [label = &quot;1&quot;];
+
+    C:l5 -&gt; n5 [label = &quot;0&quot;];
+    C:l4 -&gt; n4 [label = &quot;0&quot;];
+    C:l3 -&gt; n3 [label = &quot;0&quot;];
+    C:l2 -&gt; n2 [label = &quot;0&quot;, style = dashed];
+    C:l1 -&gt; n1 [label = &quot;0&quot;];
+
+    bw_null -&gt; A:backward -&gt; B:backward -&gt; C:backward [dir = back];
+
+
+    label = &quot;\n 图 5-3    遍历整个跳跃表&quot;;
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>从跳跃表的表尾向表头进行遍历。</p>
+<div class="graphviz"><img src="_images/graphviz-910e2fcbb02fe3ef12b35718abbdbcb4a5cec8b4.png" alt="digraph {
+
+    rankdir = LR;
+
+    node [shape = record, width = &quot;0.5&quot;];
+
+    //
+
+    l [label = &quot; &lt;header&gt; header | &lt;tail&gt; tail | level \n 5 | length \n 3 &quot;];
+
+    subgraph cluster_nodes {
+
+        style = invisible;
+
+        header [label = &quot; &lt;l32&gt; L32 | ... | &lt;l5&gt; L5 | &lt;l4&gt; L4 | &lt;l3&gt; L3 | &lt;l2&gt; L2 | &lt;l1&gt; L1 &quot;];
+
+        bw_null [label = &quot;NULL&quot;, shape = plaintext];
+
+        level_null [label = &quot;NULL&quot;, shape = plaintext];
+
+        A [label = &quot; &lt;l4&gt; L4 | &lt;l3&gt; L3 | &lt;l2&gt; L2 | &lt;l1&gt; L1 | &lt;backward&gt; BW | 1.0 | o1 &quot;];
+
+        B [label = &quot; &lt;l2&gt; L2 | &lt;l1&gt; L1 | &lt;backward&gt; BW | 2.0 | o2 &quot;];
+
+        C [label = &quot; &lt;l5&gt; L5 | &lt;l4&gt; L4 | &lt;l3&gt; L3 | &lt;l2&gt; L2 | &lt;l1&gt; L1 | &lt;backward&gt; BW | 3.0 | o3 &quot;];
+
+    }
+
+    subgraph cluster_nulls {
+
+        style = invisible;
+
+        n1 [label = &quot;NULL&quot;, shape = plaintext];
+        n2 [label = &quot;NULL&quot;, shape = plaintext];
+        n3 [label = &quot;NULL&quot;, shape = plaintext];
+        n4 [label = &quot;NULL&quot;, shape = plaintext];
+        n5 [label = &quot;NULL&quot;, shape = plaintext];
+
+    }
+
+    //
+
+    l:header -&gt; header;
+    l:tail -&gt; C [style = dashed];
+
+    header:l32 -&gt; level_null [label = &quot;0&quot;];
+    header:l5 -&gt; C:l5 [label = &quot;3&quot;];
+    header:l4 -&gt; A:l4 [label = &quot;1&quot;];
+    header:l3 -&gt; A:l3 [label = &quot;1&quot;];
+    header:l2 -&gt; A:l2 [label = &quot;1&quot;];
+    header:l1 -&gt; A:l1 [label = &quot;1&quot;];
+
+    A:l4 -&gt; C:l4 [label = &quot;2&quot;];
+    A:l3 -&gt; C:l3 [label = &quot;2&quot;];
+    A:l2 -&gt; B:l2 [label = &quot;1&quot;];
+    A:l1 -&gt; B:l1 [label = &quot;1&quot;];
+
+    B:l2 -&gt; C:l2 [label = &quot;1&quot;];
+    B:l1 -&gt; C:l1 [label = &quot;1&quot;];
+
+    C:l5 -&gt; n5 [label = &quot;0&quot;];
+    C:l4 -&gt; n4 [label = &quot;0&quot;];
+    C:l3 -&gt; n3 [label = &quot;0&quot;];
+    C:l2 -&gt; n2 [label = &quot;0&quot;];
+    C:l1 -&gt; n1 [label = &quot;0&quot;];
+
+    bw_null -&gt; A:backward -&gt; B:backward -&gt; C:backward [dir = back, style = dashed];
+
+    label = &quot;\n 图 5-6    从表尾向表头方向遍历跳跃表&quot;;
+}" class="graphviz" /></div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="4-dict.html"
+                          title="previous chapter">第 4 章：字典</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="6-intset.html"
+                          title="next chapter">第 6 章：整数集合</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/5-skiplist.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="6-intset.html" title="第 6 章：整数集合"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="4-dict.html" title="第 4 章：字典"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">《Redis 设计与实现》图片集</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">第 5 章：跳跃表</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2014, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

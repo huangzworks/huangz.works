@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>第 4 章：字典 &#8212; 《Redis 设计与实现》图片集</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/nature.css?v=601dbdee" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=eafc0fe6" />
+    <script src="_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="第 5 章：跳跃表" href="5-skiplist.html" />
+    <link rel="prev" title="第 3 章：链表" href="3-linked-list.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="5-skiplist.html" title="第 5 章：跳跃表"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="3-linked-list.html" title="第 3 章：链表"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">《Redis 设计与实现》图片集</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">第 4 章：字典</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>第 4 章：字典<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>一个空的哈希表。</p>
+<div class="graphviz"><img src="_images/graphviz-ae0df49eac72231c8a5ddc4f3287ae70a76d9d09.png" alt="digraph {
+
+    label = &quot;\n 图 4-1    一个空的哈希表&quot;;
+
+    rankdir = LR;
+
+    //
+
+    node [shape = record];
+
+    dictht [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 4 | &lt;sizemask&gt; sizemask \n 3 | &lt;used&gt; used \n 0&quot;];
+
+    table [label = &quot; &lt;head&gt; dictEntry*[4] | &lt;0&gt; 0 | &lt;1&gt; 1 | &lt;2&gt; 2 | &lt;3&gt; 3 &quot;];
+
+    //
+
+    node [shape = plaintext, label = &quot;NULL&quot;];
+
+    null0;
+    null1;
+    null2;
+    null3;
+
+    //
+
+    dictht:table -&gt; table:head;
+
+    table:0 -&gt; null0;
+    table:1 -&gt; null1;
+    table:2 -&gt; null2;
+    table:3 -&gt; null3;
+
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>使用链地址法解决冲突的哈希表。</p>
+<div class="graphviz"><img src="_images/graphviz-0edd4770efcdbded629eae54f22d059c235fb567.png" alt="digraph {
+
+    label = &quot;\n 图 4-2    连接在一起的键 k1 和键 k0&quot;;
+
+    rankdir = LR;
+
+    //
+
+    node [shape = record];
+
+    dictht [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 4 | &lt;sizemask&gt; sizemask \n 3 | &lt;used&gt; used \n 2&quot;];
+
+    table [label = &quot; &lt;head&gt; dictEntry*[4] | &lt;0&gt; 0 | &lt;1&gt; 1 | &lt;2&gt; 2 | &lt;3&gt; 3 &quot;];
+
+    dictEntry0 [label = &quot; &lt;head&gt; dictEntry | { k0 | v0 }&quot;];
+    dictEntry1 [label = &quot; &lt;head&gt; dictEntry | { k1 | v1 }&quot;];
+
+    //
+
+    node [shape = plaintext, label = &quot;NULL&quot;];
+
+    null0;
+    null1;
+    null2;
+    null3;
+
+    //
+
+    dictht:table -&gt; table:head;
+
+    table:0 -&gt; null0;
+    table:1 -&gt; null1;
+    table:2 -&gt; dictEntry1;
+    dictEntry1 -&gt; dictEntry0 -&gt; null2 [label = &quot;next&quot;];
+    table:3 -&gt; null3;
+
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>普通状态下（未在进行 rehash）的字典。</p>
+<div class="graphviz"><img src="_images/graphviz-14ae3cb52b4e18b8396b40a115e7f8cc983fd5fa.png" alt="digraph {
+
+    label = &quot;\n 图 4-3    普通状态下的字典&quot;;
+
+    rankdir = LR;
+
+    //
+
+    node [shape = record];
+
+    dict [label = &quot; &lt;head&gt; dict | type | privdata | &lt;ht&gt; ht | rehashidx \n -1 &quot;];
+
+    dictht0 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 4 | &lt;sizemask&gt; sizemask \n 3 | &lt;used&gt; used \n 2&quot;];
+
+    dictht1 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 0 | &lt;sizemask&gt; sizemask \n 0 | &lt;used&gt; used \n 0&quot;];
+
+    table0 [label = &quot; &lt;head&gt; dictEntry*[4] | &lt;0&gt; 0 | &lt;1&gt; 1 | &lt;2&gt; 2 | &lt;3&gt; 3 &quot;];
+    table1 [label = &quot;NULL&quot;, shape = plaintext];
+
+    dictEntry0 [label = &quot; &lt;head&gt; dictEntry | { k0 | v0 }&quot;];
+    dictEntry1 [label = &quot; &lt;head&gt; dictEntry | { k1 | v1 }&quot;];
+
+    //
+
+    node [shape = plaintext, label = &quot;NULL&quot;];
+
+    null0;
+    null1;
+    null2;
+    null3;
+
+    //
+
+    dict:ht -&gt; dictht0:head [label = &quot;ht[0]&quot;];
+    dict:ht -&gt; dictht1:head [label = &quot;ht[1]&quot;];
+
+    dictht0:table -&gt; table0:head;
+    dictht1:table -&gt; table1;
+
+    table0:0 -&gt; null0;
+    table0:1 -&gt; dictEntry0:head -&gt; null1;
+    table0:2 -&gt; null2;
+    table0:3 -&gt; dictEntry1:head -&gt; null3;
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>包含了键值对的字典。</p>
+<div class="graphviz"><img src="_images/graphviz-d9dd0ae59c128e2e8fb60d38d09acd1cb98ebc06.png" alt="digraph {
+
+    label = &quot;\n 图 4-5    添加键值对 k0 和 v0 之后的字典&quot;;
+
+    rankdir = LR;
+
+    //
+
+    node [shape = record];
+
+    dict [label = &quot; &lt;head&gt; dict | type | privdata | &lt;ht&gt; ht | rehashidx \n -1 &quot;];
+
+    dictht0 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 4 | &lt;sizemask&gt; sizemask \n 3 | &lt;used&gt; used \n 1&quot;];
+
+    dictht1 [label = &quot;...&quot;, shape = plaintext];
+
+    table0 [label = &quot; &lt;head&gt; dictEntry*[4] | &lt;0&gt; 0 | &lt;1&gt; 1 | &lt;2&gt; 2 | &lt;3&gt; 3 &quot;];
+    //table1 [label = &quot;NULL&quot;, shape = plaintext];
+
+    dictEntry [label = &quot; &lt;head&gt; dictEntry | { k0 | v0 } &quot;];
+
+    //
+
+    node [shape = plaintext, label = &quot;NULL&quot;];
+
+    null0;
+    null1;
+    null2;
+    null3;
+
+    //
+
+    dict:ht -&gt; dictht0:head [label = &quot;ht[0]&quot;];
+    dict:ht -&gt; dictht1:head [label = &quot;ht[1]&quot;];
+
+    dictht0:table -&gt; table0:head;
+    //dictht1:table -&gt; table1;
+
+    table0:0 -&gt; dictEntry:head -&gt; null0;
+    table0:1 -&gt; null1;
+    table0:2 -&gt; null2;
+    table0:3 -&gt; null3;
+
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>字典的 rehash 过程。</p>
+<div class="graphviz"><img src="_images/graphviz-9564b109c5809606b86e19ef6033258df20dfead.png" alt="digraph {
+
+    label = &quot;\n 图 4-8    执行 rehash 之前的字典&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    // 字典
+
+    dict [label = &quot; &lt;head&gt; dict | type | privdata | &lt;ht&gt; ht | rehashidx \n -1 &quot;];
+
+    // 哈希表
+
+    dictht0 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 4 | &lt;sizemask&gt; sizemask \n 3 | &lt;used&gt; used \n 4&quot;];
+
+    dictht1 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 0 | &lt;sizemask&gt; sizemask \n 0 | &lt;used&gt; used \n 0&quot;];
+
+    table0 [label = &quot; &lt;head&gt; dictEntry*[4] | &lt;0&gt; 0 | &lt;1&gt; 1 | &lt;2&gt; 2 | &lt;3&gt; 3 &quot;];
+
+    table1 [label = &quot;NULL&quot;, shape = plaintext];
+
+    // 哈希表节点
+
+    kv0 [label = &quot; &lt;head&gt; dictEntry | { k0 | v0 } &quot;];
+    kv1 [label = &quot; &lt;head&gt; dictEntry | { k1 | v1 } &quot;];
+    kv2 [label = &quot; &lt;head&gt; dictEntry | { k2 | v2 } &quot;];
+    kv3 [label = &quot; &lt;head&gt; dictEntry | { k3 | v3 } &quot;];
+
+    //
+
+    node [shape = plaintext, label = &quot;NULL&quot;];
+
+    null0;
+    null1;
+    null2;
+    null3;
+
+    //
+
+    dict:ht -&gt; dictht0:head [label = &quot;ht[0]&quot;];
+    dict:ht -&gt; dictht1:head [label = &quot;ht[1]&quot;];
+
+    dictht0:table -&gt; table0:head;
+    dictht1:table -&gt; table1;
+
+    table0:0 -&gt; kv2:head -&gt; null0;
+    table0:1 -&gt; kv0:head -&gt; null1;
+    table0:2 -&gt; kv3:head -&gt; null2;
+    table0:3 -&gt; kv1:head -&gt; null3;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-cba8bf03b2ad8ac0217b5d5caa099c116ea05cba.png" alt="digraph {
+
+    label = &quot;\n 图 4-9    为字典的 ht[1] 哈希表分配空间&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    // 字典
+
+    dict [label = &quot; &lt;head&gt; dict | type | privdata | &lt;ht&gt; ht | rehashidx \n -1 &quot;];
+
+    // 哈希表
+
+    dictht0 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 4 | &lt;sizemask&gt; sizemask \n 3 | &lt;used&gt; used \n 4&quot;];
+
+    dictht1 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 8 | &lt;sizemask&gt; sizemask \n 7 | &lt;used&gt; used \n 0&quot;];
+
+    table0 [label = &quot; &lt;head&gt; dictEntry*[4] | &lt;0&gt; 0 | &lt;1&gt; 1 | &lt;2&gt; 2 | &lt;3&gt; 3 &quot;];
+
+    table1 [label = &quot; &lt;head&gt; dictEntry*[8] | &lt;0&gt; 0 | &lt;1&gt; 1 | &lt;2&gt; 2 | ... | &lt;7&gt; 7 &quot;];
+
+    // 哈希表节点
+
+    kv0 [label = &quot; &lt;head&gt; dictEntry | { k0 | v0 } &quot;];
+    kv1 [label = &quot; &lt;head&gt; dictEntry | { k1 | v1 } &quot;];
+    kv2 [label = &quot; &lt;head&gt; dictEntry | { k2 | v2 } &quot;];
+    kv3 [label = &quot; &lt;head&gt; dictEntry | { k3 | v3 } &quot;];
+
+    //
+
+    node [shape = plaintext, label = &quot;NULL&quot;];
+
+    //
+
+    dict:ht -&gt; dictht0:head [label = &quot;ht[0]&quot;];
+    dict:ht -&gt; dictht1:head [label = &quot;ht[1]&quot;];
+
+    dictht0:table -&gt; table0:head;
+    dictht1:table -&gt; table1:head;
+
+    table0:0 -&gt; kv2:head -&gt; null0;
+    table0:1 -&gt; kv0:head -&gt; null1;
+    table0:2 -&gt; kv3:head -&gt; null2;
+    table0:3 -&gt; kv1:head -&gt; null3;
+
+    table1:0 -&gt; null10;
+    table1:1 -&gt; null11;
+    table1:2 -&gt; null12;
+    table1:7 -&gt; null17;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-5ce299510d3ac3acd190412be77614e7d3f12334.png" alt="digraph {
+
+    label = &quot;\n 图 4-10    ht[0] 的所有键值对都已经被迁移到 ht[1]&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    // 字典
+
+    dict [label = &quot; &lt;head&gt; dict | type | privdata | &lt;ht&gt; ht | rehashidx \n -1 &quot;];
+
+    // 哈希表
+
+    dictht0 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 4 | &lt;sizemask&gt; sizemask \n 3 | &lt;used&gt; used \n 0&quot;];
+
+    dictht1 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 8 | &lt;sizemask&gt; sizemask \n 7 | &lt;used&gt; used \n 4&quot;];
+
+    table0 [label = &quot; &lt;head&gt; dictEntry*[4] | &lt;0&gt; 0 | &lt;1&gt; 1 | &lt;2&gt; 2 | &lt;3&gt; 3 &quot;];
+
+    table1 [label = &quot; &lt;head&gt; dictEntry*[8] | ... | &lt;1&gt; 1 | ... | &lt;4&gt; 4 | &lt;5&gt; 5 | ... | &lt;7&gt; 7 &quot;];
+
+    // 哈希表节点
+
+    kv0 [label = &quot; &lt;head&gt; dictEntry | { k0 | v0 } &quot;];
+    kv1 [label = &quot; &lt;head&gt; dictEntry | { k1 | v1 } &quot;];
+    kv2 [label = &quot; &lt;head&gt; dictEntry | { k2 | v2 } &quot;];
+    kv3 [label = &quot; &lt;head&gt; dictEntry | { k3 | v3 } &quot;];
+
+    //
+
+    node [shape = plaintext, label = &quot;NULL&quot;];
+
+    //
+
+    dict:ht -&gt; dictht0:head [label = &quot;ht[0]&quot;];
+    dict:ht -&gt; dictht1:head [label = &quot;ht[1]&quot;];
+
+    dictht0:table -&gt; table0:head;
+    dictht1:table -&gt; table1:head;
+
+    table0:0 -&gt; null0;
+    table0:1 -&gt; null1;
+    table0:2 -&gt; null2;
+    table0:3 -&gt; null3;
+
+    table1:1 -&gt; kv3:head -&gt; null11;
+    table1:4 -&gt; kv2:head -&gt; null14;
+    table1:5 -&gt; kv0:head -&gt; null15;
+    table1:7 -&gt; kv1:head -&gt; null17;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-2130a61bace2dea3deba4fcb5046c7a33ec96c54.png" alt="digraph {
+
+    label = &quot;\n 图 4-11    完成 rehash 之后的字典&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    // 字典
+
+    dict [label = &quot; &lt;head&gt; dict | type | privdata | &lt;ht&gt; ht | rehashidx \n -1 &quot;];
+
+    // 哈希表
+
+    dictht0 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 8 | &lt;sizemask&gt; sizemask \n 7 | &lt;used&gt; used \n 4&quot;];
+
+    dictht1 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 0 | &lt;sizemask&gt; sizemask \n 0 | &lt;used&gt; used \n 0&quot;];
+
+    table0 [label = &quot; &lt;head&gt; dictEntry*[8] | ... | &lt;1&gt; 1 | ... | &lt;4&gt; 4 | &lt;5&gt; 5 | ... | &lt;7&gt; 7 &quot;];
+
+    table1 [label = &quot;NULL&quot;, shape = plaintext];
+
+    // 哈希表节点
+
+    kv0 [label = &quot; &lt;head&gt; dictEntry | { k0 | v0 } &quot;];
+    kv1 [label = &quot; &lt;head&gt; dictEntry | { k1 | v1 } &quot;];
+    kv2 [label = &quot; &lt;head&gt; dictEntry | { k2 | v2 } &quot;];
+    kv3 [label = &quot; &lt;head&gt; dictEntry | { k3 | v3 } &quot;];
+
+    //
+
+    node [shape = plaintext, label = &quot;NULL&quot;];
+
+    //
+
+    dict:ht -&gt; dictht0:head [label = &quot;ht[0]&quot;];
+    dict:ht -&gt; dictht1:head [label = &quot;ht[1]&quot;];
+
+    dictht0:table -&gt; table0:head;
+    dictht1:table -&gt; table1;
+
+    table0:1 -&gt; kv3:head -&gt; null11;
+    table0:4 -&gt; kv2:head -&gt; null14;
+    table0:5 -&gt; kv0:head -&gt; null15;
+    table0:7 -&gt; kv1:head -&gt; null17;
+
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>字典的渐进式 rehash 过程。</p>
+<div class="graphviz"><img src="_images/graphviz-39bf8a3d82841c1d470d88d66589fc5c0fff5691.png" alt="digraph {
+
+    label = &quot;\n 图 4-12    准备开始 rehash&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    // 字典
+
+    dict [label = &quot; &lt;head&gt; dict | type | privdata | &lt;ht&gt; ht | rehashidx \n -1 &quot;];
+
+    // 哈希表
+
+    dictht0 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 4 | &lt;sizemask&gt; sizemask \n 3 | &lt;used&gt; used \n 4&quot;];
+
+    dictht1 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 8 | &lt;sizemask&gt; sizemask \n 7 | &lt;used&gt; used \n 0&quot;];
+
+    table0 [label = &quot; &lt;head&gt; dictEntry*[4] | &lt;0&gt; 0 | &lt;1&gt; 1 | &lt;2&gt; 2 | &lt;3&gt; 3 &quot;];
+
+    table1 [label = &quot; &lt;head&gt; dictEntry*[8] | &lt;0&gt; 0 | &lt;1&gt; 1 | &lt;2&gt; 2 | ... | &lt;7&gt; 7 &quot;];
+
+    // 哈希表节点
+
+    kv0 [label = &quot; &lt;head&gt; dictEntry | { k0 | v0 } &quot;];
+    kv1 [label = &quot; &lt;head&gt; dictEntry | { k1 | v1 } &quot;];
+    kv2 [label = &quot; &lt;head&gt; dictEntry | { k2 | v2 } &quot;];
+    kv3 [label = &quot; &lt;head&gt; dictEntry | { k3 | v3 } &quot;];
+
+    //
+
+    node [shape = plaintext, label = &quot;NULL&quot;];
+
+    //
+
+    dict:ht -&gt; dictht0:head [label = &quot;ht[0]&quot;];
+    dict:ht -&gt; dictht1:head [label = &quot;ht[1]&quot;];
+
+    dictht0:table -&gt; table0:head;
+    dictht1:table -&gt; table1:head;
+
+    table0:0 -&gt; kv2:head -&gt; null0;
+    table0:1 -&gt; kv0:head -&gt; null1;
+    table0:2 -&gt; kv3:head -&gt; null2;
+    table0:3 -&gt; kv1:head -&gt; null3;
+
+    table1:0 -&gt; null10;
+    table1:1 -&gt; null11;
+    table1:2 -&gt; null12;
+    table1:7 -&gt; null17;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-e54115292a81336617d5776e0abd28eb3689a17b.png" alt="digraph {
+
+    label = &quot;\n 图 4-13    rehash 索引 0 上的键值对&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    // 字典
+
+    dict [label = &quot; &lt;head&gt; dict | type | privdata | &lt;ht&gt; ht | rehashidx \n 0 &quot;];
+
+    // 哈希表
+
+    dictht0 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 4 | &lt;sizemask&gt; sizemask \n 3 | &lt;used&gt; used \n 3&quot;];
+
+    dictht1 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 8 | &lt;sizemask&gt; sizemask \n 7 | &lt;used&gt; used \n 1&quot;];
+
+    table0 [label = &quot; &lt;head&gt; dictEntry*[4] | &lt;0&gt; 0 | &lt;1&gt; 1 | &lt;2&gt; 2 | &lt;3&gt; 3 &quot;];
+
+    table1 [label = &quot; &lt;head&gt; dictEntry*[8] | ... | &lt;4&gt; 4 | ... &quot;];
+
+    // 哈希表节点
+
+    kv0 [label = &quot; &lt;head&gt; dictEntry | { k0 | v0 } &quot;];
+    kv1 [label = &quot; &lt;head&gt; dictEntry | { k1 | v1 } &quot;];
+    kv2 [label = &quot; &lt;head&gt; dictEntry | { k2 | v2 } &quot;];
+    kv3 [label = &quot; &lt;head&gt; dictEntry | { k3 | v3 } &quot;];
+
+    //
+
+    node [shape = plaintext, label = &quot;NULL&quot;];
+
+    //
+
+    dict:ht -&gt; dictht0:head [label = &quot;ht[0]&quot;];
+    dict:ht -&gt; dictht1:head [label = &quot;ht[1]&quot;];
+
+    dictht0:table -&gt; table0:head;
+    dictht1:table -&gt; table1:head;
+
+    table0:0 -&gt; null0;
+    table0:1 -&gt; kv0:head -&gt; null1;
+    table0:2 -&gt; kv3:head -&gt; null2;
+    table0:3 -&gt; kv1:head -&gt; null3;
+
+    table1:4 -&gt; kv2:head -&gt; null14
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-09466a45aa36ee3abaea68f2e265ee5689ca2d12.png" alt="digraph {
+
+    label = &quot;\n 图 4-14    rehash 索引 1 上的键值对&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    // 字典
+
+    dict [label = &quot; &lt;head&gt; dict | type | privdata | &lt;ht&gt; ht | rehashidx \n 1 &quot;];
+
+    // 哈希表
+
+    dictht0 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 4 | &lt;sizemask&gt; sizemask \n 3 | &lt;used&gt; used \n 2&quot;];
+
+    dictht1 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 8 | &lt;sizemask&gt; sizemask \n 7 | &lt;used&gt; used \n 2&quot;];
+
+    table0 [label = &quot; &lt;head&gt; dictEntry*[4] | &lt;0&gt; 0 | &lt;1&gt; 1 | &lt;2&gt; 2 | &lt;3&gt; 3 &quot;];
+
+    table1 [label = &quot; &lt;head&gt; dictEntry*[8] | ... | &lt;4&gt; 4 | &lt;5&gt; 5 | ... &quot;];
+
+    // 哈希表节点
+
+    kv0 [label = &quot; &lt;head&gt; dictEntry | { k0 | v0 } &quot;];
+    kv1 [label = &quot; &lt;head&gt; dictEntry | { k1 | v1 } &quot;];
+    kv2 [label = &quot; &lt;head&gt; dictEntry | { k2 | v2 } &quot;];
+    kv3 [label = &quot; &lt;head&gt; dictEntry | { k3 | v3 } &quot;];
+
+    //
+
+    node [shape = plaintext, label = &quot;NULL&quot;];
+
+    //
+
+    dict:ht -&gt; dictht0:head [label = &quot;ht[0]&quot;];
+    dict:ht -&gt; dictht1:head [label = &quot;ht[1]&quot;];
+
+    dictht0:table -&gt; table0:head;
+    dictht1:table -&gt; table1:head;
+
+    table0:0 -&gt; null0;
+    table0:1 -&gt; null1;
+    table0:2 -&gt; kv3:head -&gt; null2;
+    table0:3 -&gt; kv1:head -&gt; null3;
+
+    table1:4 -&gt; kv2:head -&gt; null14
+    table1:5 -&gt; kv0:head -&gt; null15;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-a6695b4a44a99d49d2d5bba9cf2f00e5db86833e.png" alt="digraph {
+
+    label = &quot;\n 图 4-15    rehash 索引 2 上的键值对&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    // 字典
+
+    dict [label = &quot; &lt;head&gt; dict | type | privdata | &lt;ht&gt; ht | rehashidx \n 2 &quot;];
+
+    // 哈希表
+
+    dictht0 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 4 | &lt;sizemask&gt; sizemask \n 3 | &lt;used&gt; used \n 1&quot;];
+
+    dictht1 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 8 | &lt;sizemask&gt; sizemask \n 7 | &lt;used&gt; used \n 3&quot;];
+
+    table0 [label = &quot; &lt;head&gt; dictEntry*[4] | &lt;0&gt; 0 | &lt;1&gt; 1 | &lt;2&gt; 2 | &lt;3&gt; 3 &quot;];
+
+    table1 [label = &quot; &lt;head&gt; dictEntry*[8] | ... | &lt;1&gt; 1 | ... | &lt;4&gt; 4 | &lt;5&gt; 5 | ... &quot;];
+
+    // 哈希表节点
+
+    kv0 [label = &quot; &lt;head&gt; dictEntry | { k0 | v0 } &quot;];
+    kv1 [label = &quot; &lt;head&gt; dictEntry | { k1 | v1 } &quot;];
+    kv2 [label = &quot; &lt;head&gt; dictEntry | { k2 | v2 } &quot;];
+    kv3 [label = &quot; &lt;head&gt; dictEntry | { k3 | v3 } &quot;];
+
+    //
+
+    node [shape = plaintext, label = &quot;NULL&quot;];
+
+    //
+
+    dict:ht -&gt; dictht0:head [label = &quot;ht[0]&quot;];
+    dict:ht -&gt; dictht1:head [label = &quot;ht[1]&quot;];
+
+    dictht0:table -&gt; table0:head;
+    dictht1:table -&gt; table1:head;
+
+    table0:0 -&gt; null0;
+    table0:1 -&gt; null1;
+    table0:2 -&gt; null2;
+    table0:3 -&gt; kv1:head -&gt; null3;
+
+    table1:1 -&gt; kv3:head -&gt; null11;
+    table1:4 -&gt; kv2:head -&gt; null14
+    table1:5 -&gt; kv0:head -&gt; null15;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-132aa58f22ede311d57e394d1fb39da456c03678.png" alt="digraph {
+
+    label = &quot;\n 图 4-16    rehash 索引 3 上的键值对&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    // 字典
+
+    dict [label = &quot; &lt;head&gt; dict | type | privdata | &lt;ht&gt; ht | rehashidx \n 3 &quot;];
+
+    // 哈希表
+
+    dictht0 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 4 | &lt;sizemask&gt; sizemask \n 3 | &lt;used&gt; used \n 0&quot;];
+
+    dictht1 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 8 | &lt;sizemask&gt; sizemask \n 7 | &lt;used&gt; used \n 4&quot;];
+
+    table0 [label = &quot; &lt;head&gt; dictEntry*[4] | &lt;0&gt; 0 | &lt;1&gt; 1 | &lt;2&gt; 2 | &lt;3&gt; 3 &quot;];
+
+    table1 [label = &quot; &lt;head&gt; dictEntry*[8] | ... | &lt;1&gt; 1 | ... | &lt;4&gt; 4 | &lt;5&gt; 5 | ... | &lt;7&gt; 7 &quot;];
+
+    // 哈希表节点
+
+    kv0 [label = &quot; &lt;head&gt; dictEntry | { k0 | v0 } &quot;];
+    kv1 [label = &quot; &lt;head&gt; dictEntry | { k1 | v1 } &quot;];
+    kv2 [label = &quot; &lt;head&gt; dictEntry | { k2 | v2 } &quot;];
+    kv3 [label = &quot; &lt;head&gt; dictEntry | { k3 | v3 } &quot;];
+
+    //
+
+    node [shape = plaintext, label = &quot;NULL&quot;];
+
+    //
+
+    dict:ht -&gt; dictht0:head [label = &quot;ht[0]&quot;];
+    dict:ht -&gt; dictht1:head [label = &quot;ht[1]&quot;];
+
+    dictht0:table -&gt; table0:head;
+    dictht1:table -&gt; table1:head;
+
+    table0:0 -&gt; null0;
+    table0:1 -&gt; null1;
+    table0:2 -&gt; null2;
+    table0:3 -&gt; null3;
+
+    table1:1 -&gt; kv3:head -&gt; null11;
+    table1:4 -&gt; kv2:head -&gt; null14
+    table1:5 -&gt; kv0:head -&gt; null15;
+    table1:7 -&gt; kv1:head -&gt; null17;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-63a1d9dfe98aa1925621514df30eae201d5ed723.png" alt="digraph {
+
+    label = &quot;\n 图 4-17    rehash 执行完毕&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    // 字典
+
+    dict [label = &quot; &lt;head&gt; dict | type | privdata | &lt;ht&gt; ht | rehashidx \n -1 &quot;];
+
+    // 哈希表
+
+    dictht0 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 8 | &lt;sizemask&gt; sizemask \n 7 | &lt;used&gt; used \n 4&quot;];
+
+    dictht1 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 0 | &lt;sizemask&gt; sizemask \n 0 | &lt;used&gt; used \n 0&quot;];
+
+    table0 [label = &quot; &lt;head&gt; dictEntry*[8] | ... | &lt;1&gt; 1 | ... | &lt;4&gt; 4 | &lt;5&gt; 5 | ... | &lt;7&gt; 7 &quot;];
+
+    table1 [label = &quot;NULL&quot;, shape = plaintext];
+
+    // 哈希表节点
+
+    kv0 [label = &quot; &lt;head&gt; dictEntry | { k0 | v0 } &quot;];
+    kv1 [label = &quot; &lt;head&gt; dictEntry | { k1 | v1 } &quot;];
+    kv2 [label = &quot; &lt;head&gt; dictEntry | { k2 | v2 } &quot;];
+    kv3 [label = &quot; &lt;head&gt; dictEntry | { k3 | v3 } &quot;];
+
+    //
+
+    node [shape = plaintext, label = &quot;NULL&quot;];
+
+    //
+
+    dict:ht -&gt; dictht0:head [label = &quot;ht[0]&quot;];
+    dict:ht -&gt; dictht1:head [label = &quot;ht[1]&quot;];
+
+    dictht0:table -&gt; table0:head;
+    dictht1:table -&gt; table1;
+
+    table0:1 -&gt; kv3:head -&gt; null11;
+    table0:4 -&gt; kv2:head -&gt; null14;
+    table0:5 -&gt; kv0:head -&gt; null15;
+    table0:7 -&gt; kv1:head -&gt; null17;
+
+}" class="graphviz" /></div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="3-linked-list.html"
+                          title="previous chapter">第 3 章：链表</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="5-skiplist.html"
+                          title="next chapter">第 5 章：跳跃表</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/4-dict.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="5-skiplist.html" title="第 5 章：跳跃表"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="3-linked-list.html" title="第 3 章：链表"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">《Redis 设计与实现》图片集</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">第 4 章：字典</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2014, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

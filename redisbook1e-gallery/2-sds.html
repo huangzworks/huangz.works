@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>第 2 章： 简单动态字符串 &#8212; 《Redis 设计与实现》图片集</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/nature.css?v=601dbdee" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=eafc0fe6" />
+    <script src="_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="第 3 章：链表" href="3-linked-list.html" />
+    <link rel="prev" title="《Redis 设计与实现》图片集" href="index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="3-linked-list.html" title="第 3 章：链表"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="《Redis 设计与实现》图片集"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">《Redis 设计与实现》图片集</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">第 2 章： 简单动态字符串</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>第 2 章： 简单动态字符串<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>没有任何未使用空间的 SDS 示例。</p>
+<div class="graphviz"><img src="_images/graphviz-3d6664ca70835837c840745877a3fd08c41ac985.png" alt="digraph {
+
+    label = &quot;\n 图 2-1    SDS 示例&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    //
+
+    sdshdr [label = &quot;sdshdr | free \n 0 | len \n 5 | &lt;buf&gt; buf&quot;];
+
+    buf [label = &quot;{ 'R' | 'e' | 'd' | 'i' | 's' | '\\0' }&quot;];
+
+    //
+
+    sdshdr:buf -&gt; buf;
+
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>带有五字节使用空间的 SDS 示例。</p>
+<div class="graphviz"><img src="_images/graphviz-355640de7a572104488d369cb49298dab0b66701.png" alt="digraph {
+
+    label = &quot;\n 图 2-2    带有未使用空间的 SDS 示例&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    //
+
+    sdshdr [label = &quot;sdshdr | free \n 5 | len \n 5 | &lt;buf&gt; buf&quot;];
+
+    buf [label = &quot;{ 'R' | 'e' | 'd' | 'i' | 's' | '\\0' | | | | | }&quot;];
+
+    //
+
+    sdshdr:buf -&gt; buf;
+
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>遍历 C 字符串并获取其长度的过程。</p>
+<div class="graphviz"><img src="_images/graphviz-1e78558d7e378e3dad9610fd1d96955a9cb7f23f.png" alt="digraph {
+
+    rankdir = TB;
+
+    node [shape = record];
+
+    str [label = &quot; &lt;1&gt; 'R' | &lt;2&gt; 'e' | &lt;3&gt; 'd' | &lt;4&gt; 'i' | &lt;5&gt; 's' | &lt;6&gt; '\\0' &quot;];
+
+    node [shape = plaintext];
+
+    p1 [label = &quot;len = 1&quot;];
+
+    p1 -&gt; str:1;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-8e07309e841b6937691d95983aaf1a38769450f5.png" alt="digraph {
+
+    rankdir = TB;
+
+    node [shape = record];
+
+    str [label = &quot; &lt;1&gt; 'R' | &lt;2&gt; 'e' | &lt;3&gt; 'd' | &lt;4&gt; 'i' | &lt;5&gt; 's' | &lt;6&gt; '\\0' &quot;];
+
+    node [shape = plaintext];
+
+    p2 [label = &quot;len = 2&quot;];
+
+    p2 -&gt; str:2;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-6c6be774acfca8f00209ede1ca45f099f94c56ce.png" alt="digraph {
+
+    rankdir = TB;
+
+    node [shape = record];
+
+    str [label = &quot; &lt;1&gt; 'R' | &lt;2&gt; 'e' | &lt;3&gt; 'd' | &lt;4&gt; 'i' | &lt;5&gt; 's' | &lt;6&gt; '\\0' &quot;];
+
+    node [shape = plaintext];
+
+    p3 [label = &quot;len = 3&quot;];
+
+    p3 -&gt; str:3;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-a6d4ef426ea8a83beb4c2df3f7d77e5666e2ba87.png" alt="digraph {
+
+    rankdir = TB;
+
+    node [shape = record];
+
+    str [label = &quot; &lt;1&gt; 'R' | &lt;2&gt; 'e' | &lt;3&gt; 'd' | &lt;4&gt; 'i' | &lt;5&gt; 's' | &lt;6&gt; '\\0' &quot;];
+
+    node [shape = plaintext];
+
+    p4 [label = &quot;len = 4&quot;];
+
+    p4 -&gt; str:4;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-5aee454981cfd096dd24b9c5ff8dbdb3ac38814a.png" alt="digraph {
+
+    rankdir = TB;
+
+    node [shape = record];
+
+    str [label = &quot; &lt;1&gt; 'R' | &lt;2&gt; 'e' | &lt;3&gt; 'd' | &lt;4&gt; 'i' | &lt;5&gt; 's' | &lt;6&gt; '\\0' &quot;];
+
+    node [shape = plaintext];
+
+    p5 [label = &quot;len = 5&quot;];
+
+    p5 -&gt; str:5;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-63c2136e1b4b45bffbf67df97dced71d32b56981.png" alt="digraph {
+
+    label = &quot;\n 图 2-4    计算 C 字符串长度的过程&quot;;
+
+    rankdir = TB;
+
+    node [shape = record];
+
+    str [label = &quot; &lt;1&gt; 'R' | &lt;2&gt; 'e' | &lt;3&gt; 'd' | &lt;4&gt; 'i' | &lt;5&gt; 's' | &lt;6&gt; '\\0' &quot;];
+
+    node [shape = plaintext];
+
+    p6 [label = &quot;发现空字符 \n 停止计数 \n 字符串的长度为 5 字节&quot;];
+
+    p6 -&gt; str:6;
+
+}" class="graphviz" /></div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="index.html"
+                          title="previous chapter">《Redis 设计与实现》图片集</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="3-linked-list.html"
+                          title="next chapter">第 3 章：链表</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/2-sds.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="3-linked-list.html" title="第 3 章：链表"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="《Redis 设计与实现》图片集"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">《Redis 设计与实现》图片集</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">第 2 章： 简单动态字符串</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2014, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>第 21 章： 排序 &#8212; 《Redis 设计与实现》图片集</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/nature.css?v=601dbdee" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=eafc0fe6" />
+    <script src="_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="第 22 章： 二进制位数组" href="22-bit.html" />
+    <link rel="prev" title="第 20 章： Lua 脚本" href="20-lua.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="22-bit.html" title="第 22 章： 二进制位数组"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="20-lua.html" title="第 20 章： Lua 脚本"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">《Redis 设计与实现》图片集</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">第 21 章： 排序</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>第 21 章： 排序<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<section id="sort-key">
+<h2>SORT &lt;key&gt; 命令的实现<a class="headerlink" href="#sort-key" title="Link to this heading">¶</a></h2>
+<p>Redis 服务器在执行 <code class="docutils literal notranslate"><span class="pre">SORT</span> <span class="pre">number</span></code> 时创建的数据结构。</p>
+<div class="graphviz"><img src="_images/graphviz-eb7554ec6b27a6f790d2c9dd7438194c65b49865.png" alt="digraph {
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    subgraph cluster_array {
+
+        style = invis;
+
+        array [label = &quot; array | { &lt;array0&gt; array[0] \n redisSortObject | { &lt;obj0&gt; obj | u } } | { &lt;array1&gt; array[1] \n redisSortObject | { &lt;obj1&gt; obj | u } } | { &lt;array2&gt; array[2] \n redisSortObject | { &lt;obj2&gt; obj | u } } &quot;];
+    }
+
+   label = &quot;\n 图 21-1    命令为排序 numbers 列表而创建的数组&quot;;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-3f9cf78a6ec6a24ea581ee0d46ef5757daf26d4b.png" alt="digraph {
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    subgraph cluster_numbers {
+
+        label = &quot;numbers 链表&quot;
+
+        style = dashed;
+
+        one [label = &quot;StringObject \n \&quot;1\&quot;&quot;];
+        two [label = &quot;StringObject \n \&quot;2\&quot;&quot;];
+        three [label = &quot;StringObject \n \&quot;3\&quot;&quot;];
+
+        three -&gt; one -&gt; two;
+
+    }
+
+    subgraph cluster_array {
+
+        style = invis;
+
+        array [label = &quot; array | { &lt;array0&gt; array[0] \n redisSortObject | { &lt;obj0&gt; obj | u } } | { &lt;array1&gt; array[1] \n redisSortObject | { &lt;obj1&gt; obj | u } } | { &lt;array2&gt; array[2] \n redisSortObject | { &lt;obj2&gt; obj | u } } &quot;];
+    }
+   array:obj0 -&gt; three;
+   array:obj1 -&gt; one;
+   array:obj2 -&gt; two;
+
+   label = &quot;\n 图 21-2    将 obj 指针指向列表的各个项&quot;;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-c694e0bad7d9035a88df761d3d779ad1f38372f1.png" alt="digraph {
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    subgraph cluster_numbers {
+
+        label = &quot;numbers 链表&quot;
+
+        style = dashed;
+
+        one [label = &quot;StringObject \n \&quot;1\&quot;&quot;];
+        two [label = &quot;StringObject \n \&quot;2\&quot;&quot;];
+        three [label = &quot;StringObject \n \&quot;3\&quot;&quot;];
+
+        three -&gt; one -&gt; two;
+
+    }
+
+    subgraph cluster_array {
+
+        style = invis;
+
+        array [label = &quot; array | { &lt;array0&gt; array[0] \n redisSortObject | { &lt;obj0&gt; obj | u.score \n 3.0 } } | { &lt;array1&gt; array[1] \n redisSortObject | { &lt;obj1&gt; obj | u.score \n 1.0 } } | { &lt;array2&gt; array[2] \n redisSortObject | { &lt;obj2&gt; obj | u.score \n 2.0 } } &quot;];
+    }
+   array:obj0 -&gt; three;
+   array:obj1 -&gt; one;
+   array:obj2 -&gt; two;
+
+   label = &quot;\n 图 21-3    设置数组项的 u.score 属性&quot;;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-23bf735a793da7d7ea48ab58fd014e43bb9fe6b2.png" alt="digraph {
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    subgraph cluster_numbers {
+
+        label = &quot;numbers 链表&quot;
+
+        style = dashed;
+
+        one [label = &quot;StringObject \n \&quot;1\&quot;&quot;];
+        two [label = &quot;StringObject \n \&quot;2\&quot;&quot;];
+        three [label = &quot;StringObject \n \&quot;3\&quot;&quot;];
+
+        three -&gt; one -&gt; two;
+
+    }
+
+    subgraph cluster_array {
+
+        style = invis;
+
+        array [label = &quot; array | { &lt;array0&gt; array[0] \n redisSortObject | { &lt;obj0&gt; obj | u.score \n 1.0 } } | { &lt;array1&gt; array[1] \n redisSortObject | { &lt;obj1&gt; obj | u.score \n 2.0 } } | { &lt;array2&gt; array[2] \n redisSortObject | { &lt;obj2&gt; obj | u.score \n 3.0 } } &quot;];
+    }
+   array:obj0 -&gt; one;
+   array:obj1 -&gt; two;
+   array:obj2 -&gt; three;
+
+   label = &quot;\n 图 21-4    排序后的数组&quot;;
+
+}" class="graphviz" /></div>
+</section>
+<section id="alpha">
+<h2>ALPHA 选项的实现<a class="headerlink" href="#alpha" title="Link to this heading">¶</a></h2>
+<p>服务器在执行 <code class="docutils literal notranslate"><span class="pre">SORT</span> <span class="pre">fruits</span> <span class="pre">ALPHA</span></code> 时创建的数据结构。</p>
+<div class="graphviz"><img src="_images/graphviz-45ab10494eee039b45ca3b9ce0691a05ffd1357c.png" alt="digraph {
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    subgraph cluster_fruits {
+
+        label = &quot;fruits 集合&quot;;
+
+        style = dashed;
+
+        apple [label = &quot;StringObject \n \&quot;apple\&quot;&quot;];
+        banana [label = &quot;StringObject \n \&quot;banana\&quot;&quot;];
+        cherry [label = &quot;StringObject \n \&quot;cherry\&quot;&quot;];
+
+        apple -&gt; cherry -&gt; banana [style = invis];
+    }
+
+    subgraph cluster_array {
+
+        style = invis;
+
+        array [label = &quot; array | { &lt;array0&gt; array[0] \n redisSortObject | { &lt;obj0&gt; obj | u } } | { &lt;array1&gt; array[1] \n redisSortObject | { &lt;obj1&gt; obj | u } } | { &lt;array2&gt; array[2] \n redisSortObject | { &lt;obj2&gt; obj | u } } &quot;];
+    }
+   array:obj0 -&gt; apple;
+   array:obj1 -&gt; cherry;
+   array:obj2 -&gt; banana;
+
+   label = &quot;\n 图 21-5    将 obj 指针指向集合的各个元素&quot;;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-488ec57f14f447fe16b18b9c689139ffec7f2207.png" alt="digraph {
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    subgraph cluster_fruits {
+
+        label = &quot;fruits 集合&quot;;
+
+        style = dashed;
+
+        apple [label = &quot;StringObject \n \&quot;apple\&quot;&quot;];
+        banana [label = &quot;StringObject \n \&quot;banana\&quot;&quot;];
+        cherry [label = &quot;StringObject \n \&quot;cherry\&quot;&quot;];
+
+        apple -&gt; cherry -&gt; banana [style = invis];
+    }
+
+    subgraph cluster_array {
+
+        style = invis;
+
+        array [label = &quot; array | { &lt;array0&gt; array[0] \n redisSortObject | { &lt;obj0&gt; obj | u } } | { &lt;array1&gt; array[1] \n redisSortObject | { &lt;obj1&gt; obj | u } } | { &lt;array2&gt; array[2] \n redisSortObject | { &lt;obj2&gt; obj | u } } &quot;];
+    }
+   array:obj0 -&gt; apple;
+   array:obj1 -&gt; banana;
+   array:obj2 -&gt; cherry;
+
+   label = &quot;\n 图 21-6    按集合元素进行排序后的数组&quot;;
+
+}" class="graphviz" /></div>
+</section>
+<section id="asc-desc">
+<h2>ASC 选项和 DESC 选项的实现<a class="headerlink" href="#asc-desc" title="Link to this heading">¶</a></h2>
+<p>图 21-7 展示了 <span class="xref std std-ref">SORT</span> 命令在对 <code class="docutils literal notranslate"><span class="pre">numbers</span></code> 列表执行升序排序时所创建的数组。</p>
+<div class="graphviz"><img src="_images/graphviz-d86a8eace41784b84e8bf50a66f0ff9a6bacae70.png" alt="digraph {
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    subgraph cluster_numbers {
+
+        label = &quot;numbers 链表&quot;
+
+        style = dashed
+
+        one [label = &quot;StringObject \n \&quot;1\&quot;&quot;];
+        two [label = &quot;StringObject \n \&quot;2\&quot;&quot;];
+        three [label = &quot;StringObject \n \&quot;3\&quot;&quot;];
+
+        three -&gt; one -&gt; two;
+
+    }
+
+    subgraph cluster_array {
+
+        style = invis;
+
+        array [label = &quot; array | { &lt;array0&gt; array[0] \n redisSortObject | { &lt;obj0&gt; obj | u.score \n 1.0 } } | { &lt;array1&gt; array[1] \n redisSortObject | { &lt;obj1&gt; obj | u.score \n 2.0 } } | { &lt;array2&gt; array[2] \n redisSortObject | { &lt;obj2&gt; obj | u.score \n 3.0 } } &quot;];
+    }
+   array:obj0 -&gt; one;
+   array:obj1 -&gt; two;
+   array:obj2 -&gt; three;
+
+   label = &quot;\n 图 21-7    执行升序排序的数组&quot;;
+
+}" class="graphviz" /></div>
+<p>图 21-8 展示了 <span class="xref std std-ref">SORT</span> 命令在对 <code class="docutils literal notranslate"><span class="pre">numbers</span></code> 列表执行降序排序时所创建的数组。</p>
+<div class="graphviz"><img src="_images/graphviz-259078bd242eaf195b6eff7e91fb18a73939a4a5.png" alt="digraph {
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    subgraph cluster_numbers {
+
+        label = &quot;numbers 链表&quot;
+
+        style = dashed;
+
+        one [label = &quot;StringObject \n \&quot;1\&quot;&quot;];
+        two [label = &quot;StringObject \n \&quot;2\&quot;&quot;];
+        three [label = &quot;StringObject \n \&quot;3\&quot;&quot;];
+
+        three -&gt; one -&gt; two;
+
+    }
+
+    subgraph cluster_array {
+
+        style = invis;
+
+        array [label = &quot; array | { &lt;array0&gt; array[0] \n redisSortObject | { &lt;obj0&gt; obj | u.score \n 3.0 } } | { &lt;array1&gt; array[1] \n redisSortObject | { &lt;obj1&gt; obj | u.score \n 2.0 } } | { &lt;array2&gt; array[2] \n redisSortObject | { &lt;obj2&gt; obj | u.score \n 1.0 } } &quot;];
+    }
+   array:obj0 -&gt; three;
+   array:obj1 -&gt; two;
+   array:obj2 -&gt; one;
+
+   label = &quot;\n 图 21-8    执行降序排序的数组&quot;;
+
+}" class="graphviz" /></div>
+</section>
+<section id="by">
+<h2>BY 选项的实现<a class="headerlink" href="#by" title="Link to this heading">¶</a></h2>
+<p>服务器在执行 <code class="docutils literal notranslate"><span class="pre">SORT</span> <span class="pre">fruits</span> <span class="pre">BY</span> <span class="pre">*-price</span></code> 时创建的数据结构。</p>
+<div class="graphviz"><img src="_images/graphviz-e7c7c36f35cd4283d7dc04133536564669afd43e.png" alt="digraph {
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    subgraph cluster_fruits {
+
+        label = &quot;fruits 集合&quot;;
+
+        style = dashed;
+
+        apple [label = &quot;StringObject \n \&quot;apple\&quot;&quot;];
+        banana [label = &quot;StringObject \n \&quot;banana\&quot;&quot;];
+        cherry [label = &quot;StringObject \n \&quot;cherry\&quot;&quot;];
+
+        apple -&gt; cherry -&gt; banana [style = invis];
+    }
+
+    subgraph cluster_array {
+
+        style = invis;
+
+        array [label = &quot; array | { &lt;array0&gt; array[0] \n redisSortObject | { &lt;obj0&gt; obj | u } } | { &lt;array1&gt; array[1] \n redisSortObject | { &lt;obj1&gt; obj | u } } | { &lt;array2&gt; array[2] \n redisSortObject | { &lt;obj2&gt; obj | u } } &quot;];
+    }
+   array:obj0 -&gt; apple;
+   array:obj1 -&gt; cherry;
+   array:obj2 -&gt; banana;
+
+   label = &quot;\n 图 21-9    将 obj 指针指向集合的各个元素&quot;;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-bb3601e6f4afaae42f6e250faab846704570c377.png" alt="digraph {
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    subgraph cluster_fruits {
+
+        label = &quot;fruits 集合&quot;;
+
+        style = dashed;
+
+        apple [label = &quot;StringObject \n \&quot;apple\&quot;&quot;];
+        banana [label = &quot;StringObject \n \&quot;banana\&quot;&quot;];
+        cherry [label = &quot;StringObject \n \&quot;cherry\&quot;&quot;];
+
+        apple -&gt; cherry -&gt; banana [style = invis];
+    }
+
+    subgraph cluster_array {
+
+        style = invis;
+
+        array [label = &quot; array | { &lt;array0&gt; array[0] \n redisSortObject | { &lt;obj0&gt; obj | u.score \n 8.0 } } | { &lt;array1&gt; array[1] \n redisSortObject | { &lt;obj1&gt; obj | u.score \n 7.0 } } | { &lt;array2&gt; array[2] \n redisSortObject | { &lt;obj2&gt; obj | u.score \n 5.5 } } &quot;];
+    }
+   array:obj0 -&gt; apple;
+   array:obj1 -&gt; cherry;
+   array:obj2 -&gt; banana;
+
+   label = &quot;\n 图 21-10    根据权重键的值设置数组项的 u.score 属性&quot;;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-9e85643e0c9f24dc981add843f85417f85d93be1.png" alt="digraph {
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    subgraph cluster_fruits {
+
+        label = &quot;fruits 集合&quot;;
+
+        style = dashed;
+
+        apple [label = &quot;StringObject \n \&quot;apple\&quot;&quot;];
+        banana [label = &quot;StringObject \n \&quot;banana\&quot;&quot;];
+        cherry [label = &quot;StringObject \n \&quot;cherry\&quot;&quot;];
+
+        apple -&gt; cherry -&gt; banana [style = invis];
+    }
+
+    subgraph cluster_array {
+
+        style = invis;
+
+        array [label = &quot; array | { &lt;array0&gt; array[0] \n redisSortObject | { &lt;obj0&gt; obj | u.score \n 5.5 } } | { &lt;array1&gt; array[1] \n redisSortObject | { &lt;obj1&gt; obj | u.score \n 7.0 } } | { &lt;array2&gt; array[2] \n redisSortObject | { &lt;obj2&gt; obj | u.score \n 8.0 } } &quot;];
+    }
+   array:obj0 -&gt; banana;
+   array:obj1 -&gt; cherry;
+   array:obj2 -&gt; apple;
+
+   label = &quot;\n 图 21-11    根据 u.score 属性进行排序之后的数组&quot;;
+
+}" class="graphviz" /></div>
+</section>
+<section id="alpha-by">
+<h2>带有 ALPHA 选项的 BY 选项的实现<a class="headerlink" href="#alpha-by" title="Link to this heading">¶</a></h2>
+<p>服务器执行 <code class="docutils literal notranslate"><span class="pre">SORT</span> <span class="pre">fruits</span> <span class="pre">BY</span> <span class="pre">*-id</span> <span class="pre">ALPHA</span></code> 时创建的数据结构。</p>
+<div class="graphviz"><img src="_images/graphviz-2dd7e4cfe762830e0244c1e16aed7b0010d67df9.png" alt="digraph {
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    subgraph cluster_fruits {
+
+        label = &quot;fruits 集合&quot;;
+
+        style = dashed;
+
+        apple [label = &quot;StringObject \n \&quot;apple\&quot;&quot;];
+        banana [label = &quot;StringObject \n \&quot;banana\&quot;&quot;];
+        cherry [label = &quot;StringObject \n \&quot;cherry\&quot;&quot;];
+
+        apple -&gt; cherry -&gt; banana [style = invis];
+    }
+
+    subgraph cluster_array {
+
+        style = invis;
+
+        array [label = &quot; array | { &lt;array0&gt; array[0] \n redisSortObject | { &lt;obj0&gt; obj | u } } | { &lt;array1&gt; array[1] \n redisSortObject | { &lt;obj1&gt; obj | u } } | { &lt;array2&gt; array[2] \n redisSortObject | { &lt;obj2&gt; obj | u } } &quot;];
+    }
+   array:obj0 -&gt; apple;
+   array:obj1 -&gt; cherry;
+   array:obj2 -&gt; banana;
+
+   label = &quot;\n 图 21-12    将 obj 指针指向集合的各个元素&quot;;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-2c3cf9e606db4cb58e6f65d743e95e5efd6ed547.png" alt="digraph {
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    subgraph cluster_fruits {
+
+        label = &quot;fruits 集合&quot;;
+
+        style = dashed;
+
+        apple [label = &quot;StringObject \n \&quot;apple\&quot;&quot;];
+        banana [label = &quot;StringObject \n \&quot;banana\&quot;&quot;];
+        cherry [label = &quot;StringObject \n \&quot;cherry\&quot;&quot;];
+
+        apple -&gt; cherry -&gt; banana [style = invis];
+    }
+
+    subgraph cluster_array {
+
+        style = invis;
+
+        array [label = &quot; array | { &lt;array0&gt; array[0] \n redisSortObject | { &lt;obj0&gt; obj | &lt;cmpobj0&gt; u.cmpobj } } | { &lt;array1&gt; array[1] \n redisSortObject | { &lt;obj1&gt; obj | &lt;cmpobj1&gt; u.cmpobj } } | { &lt;array2&gt; array[2] \n redisSortObject | { &lt;obj2&gt; obj | &lt;cmpobj2&gt; u.cmpobj } } &quot;];
+    }
+   array:obj0 -&gt; apple;
+   array:obj1 -&gt; cherry;
+   array:obj2 -&gt; banana;
+
+   apple_id [label = &quot;StringObject \n \&quot;FRUIT-25\&quot;&quot;];
+   banana_id [label = &quot;StringObject \n \&quot;FRUIT-79\&quot;&quot;];
+   cherry_id [label = &quot;StringObject \n \&quot;FRUIT-13\&quot;&quot;];
+
+   array:cmpobj0 -&gt; apple_id;
+   array:cmpobj1 -&gt; cherry_id;
+   array:cmpobj2 -&gt; banana_id;
+
+
+   label = &quot;\n 图 21-13    将 u.cmpobj 指针指向权重键&quot;;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-b6cac9b06daff11446d3242ff680e9d3a3586292.png" alt="digraph {
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    subgraph cluster_fruits {
+
+        label = &quot;fruits 集合&quot;;
+
+        style = dashed;
+
+        apple [label = &quot;StringObject \n \&quot;apple\&quot;&quot;];
+        banana [label = &quot;StringObject \n \&quot;banana\&quot;&quot;];
+        cherry [label = &quot;StringObject \n \&quot;cherry\&quot;&quot;];
+
+        apple -&gt; cherry -&gt; banana [style = invis];
+    }
+
+    subgraph cluster_array {
+
+        style = invis;
+
+        array [label = &quot; array | { &lt;array0&gt; array[0] \n redisSortObject | { &lt;obj0&gt; obj | &lt;cmpobj0&gt; u.cmpobj } } | { &lt;array1&gt; array[1] \n redisSortObject | { &lt;obj1&gt; obj | &lt;cmpobj1&gt; u.cmpobj } } | { &lt;array2&gt; array[2] \n redisSortObject | { &lt;obj2&gt; obj | &lt;cmpobj2&gt; u.cmpobj } } &quot;];
+    }
+   array:obj0 -&gt; cherry;
+   array:obj1 -&gt; apple;
+   array:obj2 -&gt; banana;
+
+   apple_id [label = &quot;StringObject \n \&quot;FRUIT-25\&quot;&quot;];
+   banana_id [label = &quot;StringObject \n \&quot;FRUIT-79\&quot;&quot;];
+   cherry_id [label = &quot;StringObject \n \&quot;FRUIT-13\&quot;&quot;];
+
+   array:cmpobj0 -&gt; cherry_id;
+   array:cmpobj1 -&gt; apple_id;
+   array:cmpobj2 -&gt; banana_id;
+
+
+   label = &quot;\n 图 21-14    按 u.cmpobj 所指向的字符串对象进行排序之后的数组&quot;;
+
+}" class="graphviz" /></div>
+</section>
+<section id="limit">
+<h2>LIMIT 选项的实现<a class="headerlink" href="#limit" title="Link to this heading">¶</a></h2>
+<p>服务器在执行 <code class="docutils literal notranslate"><span class="pre">SORT</span> <span class="pre">alphabet</span> <span class="pre">ALPHA</span> <span class="pre">LIMIT</span> <span class="pre">0</span> <span class="pre">4</span></code> 时创建的数据结构。</p>
+<div class="graphviz"><img src="_images/graphviz-22368e7bb6e0d30da1ce121e25d82607446f4737.png" alt="digraph {
+
+    rankdir = LR;
+
+    subgraph cluster_alphabet {
+
+        label = &quot;alphabet 集合\n&quot;;
+
+        style = dashed;
+
+        node [shape = box];
+
+        a [label = &quot;StringObject \n \&quot;a\&quot;&quot;];
+        b [label = &quot;StringObject \n \&quot;b\&quot;&quot;];
+        c [label = &quot;StringObject \n \&quot;c\&quot;&quot;];
+        d [label = &quot;StringObject \n \&quot;d\&quot;&quot;];
+        e [label = &quot;StringObject \n \&quot;e\&quot;&quot;];
+        f [label = &quot;StringObject \n \&quot;f\&quot;&quot;];
+
+        edge [style = invis];
+
+        d -&gt; c -&gt; a;
+        b -&gt; f -&gt; e;
+    }
+
+    array [label = &quot; array | { array[0] \n redisSortObject | { &lt;obj0&gt; obj | u } } | { array[1] \n redisSortObject | { &lt;obj1&gt; obj | u } } | { array[2] \n redisSortObject | { &lt;obj2&gt; obj | u } } | { array[3] \n redisSortObject | { &lt;obj3&gt; obj | u } } | { array[4] \n redisSortObject | { &lt;obj4&gt; obj | u } } | { array[5] \n redisSortObject | { &lt;obj5&gt; obj | u } } &quot;, shape = record];
+
+    edge [minlen = 2.0];
+
+    array:obj0 -&gt; d;
+    array:obj1 -&gt; c;
+    array:obj2 -&gt; a;
+    array:obj3 -&gt; b;
+    array:obj4 -&gt; f;
+    array:obj5 -&gt; e;
+
+    label = &quot;\n 图 21-15    将 obj 指针指向集合的各个元素&quot;;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-83e0fb431e579f08239fc5bf79c15b9912e53e0e.png" alt="digraph {
+
+    rankdir = LR;
+
+    subgraph cluster_alphabet {
+
+        label = &quot;alphabet 集合\n\n&quot;;
+
+        style = dashed;
+
+        node [shape = box];
+
+        a [label = &quot;StringObject \n \&quot;a\&quot;&quot;];
+        b [label = &quot;StringObject \n \&quot;b\&quot;&quot;];
+        c [label = &quot;StringObject \n \&quot;c\&quot;&quot;];
+        d [label = &quot;StringObject \n \&quot;d\&quot;&quot;];
+        e [label = &quot;StringObject \n \&quot;e\&quot;&quot;];
+        f [label = &quot;StringObject \n \&quot;f\&quot;&quot;];
+
+        edge [style = invis];
+
+        d -&gt; c -&gt; a;
+        b -&gt; f -&gt; e;
+    }
+
+    array [label = &quot; array | { array[0] \n redisSortObject | { &lt;obj0&gt; obj | u } } | { array[1] \n redisSortObject | { &lt;obj1&gt; obj | u } } | { array[2] \n redisSortObject | { &lt;obj2&gt; obj | u } } | { array[3] \n redisSortObject | { &lt;obj3&gt; obj | u } } | { array[4] \n redisSortObject | { &lt;obj4&gt; obj | u } } | { array[5] \n redisSortObject | { &lt;obj5&gt; obj | u } } &quot;, shape = record];
+
+    edge [minlen = 2.0];
+
+    array:obj0 -&gt; a;
+    array:obj1 -&gt; b;
+    array:obj2 -&gt; c;
+    array:obj3 -&gt; d;
+    array:obj4 -&gt; e;
+    array:obj5 -&gt; f;
+
+    label = &quot;\n 图 21-16    排序后的数组&quot;;
+
+}" class="graphviz" /></div>
+</section>
+<section id="get">
+<h2>GET 选项的实现<a class="headerlink" href="#get" title="Link to this heading">¶</a></h2>
+<p>服务器在执行 <code class="docutils literal notranslate"><span class="pre">SORT</span> <span class="pre">students</span> <span class="pre">ALPHA</span> <span class="pre">GET</span> <span class="pre">*-name</span></code> 时创建的数据结构。</p>
+<div class="graphviz"><img src="_images/graphviz-e8eda4fc6841d6db907e39d1aa71810410199fc5.png" alt="digraph {
+
+    rankdir = LR;
+
+    subgraph cluster_students {
+
+        label = &quot;students 集合&quot;;
+
+        style = dashed;
+
+        node [shape = box];
+
+        peter [label = &quot;StringObject \n \&quot;peter\&quot;&quot;];
+
+        jack [label = &quot;StringObject \n \&quot;jack\&quot;&quot;];
+
+        tom [label = &quot;StringObject \n \&quot;tom\&quot;&quot;];
+
+        peter -&gt; jack -&gt; tom [style = invis];
+
+    }
+
+    node [shape = record];
+
+    array [label = &quot; array | { array[0] \n redisSortObject | { &lt;obj0&gt; obj | u } } | { array[1] \n redisSortObject | { &lt;obj1&gt; obj | u } } | { array[2] \n redisSortObject | { &lt;obj2&gt; obj | u } } &quot;];
+
+    array:obj0 -&gt; peter;
+    array:obj1 -&gt; jack;
+    array:obj2 -&gt; tom;
+
+    label = &quot;\n 图 21-17    排序之前的数组&quot;;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-25d5b2b41641ef21c4b12579800b17534d30f13d.png" alt="digraph {
+
+    rankdir = LR;
+
+    subgraph cluster_students {
+
+        label = &quot;students 集合&quot;;
+
+        style = dashed;
+
+        node [shape = box];
+
+        peter [label = &quot;StringObject \n \&quot;peter\&quot;&quot;];
+
+        jack [label = &quot;StringObject \n \&quot;jack\&quot;&quot;];
+
+        tom [label = &quot;StringObject \n \&quot;tom\&quot;&quot;];
+
+        peter -&gt; jack -&gt; tom [style = invis];
+
+    }
+
+    node [shape = record];
+
+    array [label = &quot; array | { array[0] \n redisSortObject | { &lt;obj0&gt; obj | u } } | { array[1] \n redisSortObject | { &lt;obj1&gt; obj | u } } | { array[2] \n redisSortObject | { &lt;obj2&gt; obj | u } } &quot;];
+
+    array:obj0 -&gt; jack;
+    array:obj1 -&gt; peter;
+    array:obj2 -&gt; tom;
+
+    label = &quot;\n 图 21-18    排序之后的数组&quot;;
+
+}" class="graphviz" /></div>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">第 21 章： 排序</a><ul>
+<li><a class="reference internal" href="#sort-key">SORT &lt;key&gt; 命令的实现</a></li>
+<li><a class="reference internal" href="#alpha">ALPHA 选项的实现</a></li>
+<li><a class="reference internal" href="#asc-desc">ASC 选项和 DESC 选项的实现</a></li>
+<li><a class="reference internal" href="#by">BY 选项的实现</a></li>
+<li><a class="reference internal" href="#alpha-by">带有 ALPHA 选项的 BY 选项的实现</a></li>
+<li><a class="reference internal" href="#limit">LIMIT 选项的实现</a></li>
+<li><a class="reference internal" href="#get">GET 选项的实现</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="20-lua.html"
+                          title="previous chapter">第 20 章： Lua 脚本</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="22-bit.html"
+                          title="next chapter">第 22 章： 二进制位数组</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/21-sort.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="22-bit.html" title="第 22 章： 二进制位数组"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="20-lua.html" title="第 20 章： Lua 脚本"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">《Redis 设计与实现》图片集</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">第 21 章： 排序</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2014, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>第 24 章： 监视器 &#8212; 《Redis 设计与实现》图片集</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/nature.css?v=601dbdee" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=eafc0fe6" />
+    <script src="_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="第 23 章： 慢查询日志" href="23-slowlog.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="23-slowlog.html" title="第 23 章： 慢查询日志"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">《Redis 设计与实现》图片集</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">第 24 章： 监视器</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>第 24 章： 监视器<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<div class="graphviz"><img src="_images/graphviz-30e19d967667d39cf4f3d87b782156a9cf1a6d38.png" alt="digraph {
+
+    label = &quot;\n 图 24-1    命令的接收和信息的发送&quot;;
+
+    rankdir = LR;
+
+    server [label = &quot;服\n务\n器&quot;, shape = box, height = 3.0, width = 1.0];
+
+    node [shape = circle, width = 1.3];
+
+    client [label = &quot;客户端&quot;];
+
+    m1 [label = &quot;监视器 1&quot;];
+    m2 [label = &quot;监视器 2&quot;];
+    m3 [label = &quot;监视器 3&quot;];
+
+    client -&gt; server [label = &quot;发送命令请求&quot;];
+
+    edge [label = &quot;发送命令信息&quot;];
+
+    server -&gt; m1;
+    server -&gt; m2;
+    server -&gt; m3;
+
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<div class="graphviz"><img src="_images/graphviz-961fb0e46b3150b032dd0b9f7d5e5c2aa732036f.png" alt="digraph {
+
+    label = &quot;\n 图 24-3    客户端 c10086 执行 MONITOR 命令之后的 monitors 链表&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    server [label = &quot; redisServer | ... | &lt;monitors&gt; monitors | ... &quot;];
+
+    c128 [label = &quot;c128&quot;];
+
+    c256 [label = &quot;c256&quot;];
+
+    c512 [label = &quot;c512&quot;];
+
+    c10086 [label = &quot;c10086&quot;];
+
+    server:monitors -&gt; c128 -&gt; c256 -&gt; c512 -&gt; c10086;
+
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<div class="graphviz"><img src="_images/graphviz-d1bed6e1b77baa9f683d7a553e63a98b4a85906c.png" alt="digraph {
+
+    label = &quot;\n 图 24-4    服务器将信息发送给各个监视器&quot;;
+
+    rankdir = LR;
+
+    server [label = &quot;服\n务\n器&quot;, shape = box, height = 4.0, width = 1.0];
+
+    node [shape = circle, width = 1.3];
+
+    c128;
+    c256;
+    c512;
+    c10086;
+
+    edge [label = &quot;1378822257.329412\n[0 127.0.0.1:56604]\n\&quot;KEYS\&quot; \&quot;*\&quot;&quot;];
+
+    server -&gt; c128;
+    server -&gt; c256;
+    server -&gt; c512;
+    server -&gt; c10086;
+
+}" class="graphviz" /></div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="23-slowlog.html"
+                          title="previous chapter">第 23 章： 慢查询日志</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/24-monitor.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="23-slowlog.html" title="第 23 章： 慢查询日志"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">《Redis 设计与实现》图片集</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">第 24 章： 监视器</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2014, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

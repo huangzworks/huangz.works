@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>第 7 章：压缩列表 &#8212; 《Redis 设计与实现》图片集</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/nature.css?v=601dbdee" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=eafc0fe6" />
+    <script src="_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="第 8 章：对象" href="8-object.html" />
+    <link rel="prev" title="第 6 章：整数集合" href="6-intset.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="8-object.html" title="第 8 章：对象"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="6-intset.html" title="第 6 章：整数集合"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">《Redis 设计与实现》图片集</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">第 7 章：压缩列表</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>第 7 章：压缩列表<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>压缩列表的各个部分</p>
+<div class="graphviz"><img src="_images/graphviz-a802a0572a1740ab16e41a4934a9e32c76ddda87.png" alt="digraph {
+
+    label = &quot;\n 图 7-1    压缩列表的各个组成部分&quot;;
+
+    node [shape = record];
+
+    ziplist [label = &quot; zlbytes | zltail | zllen | entry1 | entry2 | ... | entryN | zlend &quot;];
+
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>一个包含三个节点的压缩列表示例。</p>
+<div class="graphviz"><img src="_images/graphviz-e1704745851eff19ad69959cd8d6948c9a0fd5a1.png" alt="digraph {
+
+    rankdir = BT;
+
+    label = &quot;\n 图 7-2    包含三个节点的压缩列表&quot;;
+
+    node [shape = record];
+
+    ziplist [label = &quot; &lt;zlbytes&gt; zlbytes \n 0x50 | zltail \n 0x3c | zllen \n 0x3 | entry1 | entry2 | &lt;entry3&gt; entry3 | zlend \n 0xFF &quot;];
+
+    node [shape = plaintext];
+
+    p [label = &quot;p&quot;];
+
+    p -&gt; ziplist:zlbytes;
+
+    tail [label = &quot;p + 60&quot;];
+
+    tail -&gt; ziplist:entry3;
+
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>一个包含五个节点的压缩列表示例。</p>
+<div class="graphviz"><img src="_images/graphviz-69c4ac185295d6d45b02e081aafcc5a7d83fa4d2.png" alt="digraph {
+
+    label = &quot;\n 图 7-3    包含五个节点的压缩列表&quot;;
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    ziplist [label = &quot; &lt;zlbytes&gt; zlbytes \n 0xd2 | zltail \n 0xb3 | zllen \n 0x5 | entry1 | entry2 | entry3 | entry4 | &lt;entry5&gt; entry5 | zlend \n 0xFF &quot;];
+
+    node [shape = plaintext];
+
+    p [label = &quot;p&quot;];
+
+    p -&gt; ziplist:zlbytes;
+
+    tail [label = &quot;p + 179&quot;];
+
+    tail -&gt; ziplist:entry5;
+
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>压缩列表节点的各个组成部分。</p>
+<div class="graphviz"><img src="_images/graphviz-e09989ce07edb3a2f072458a07e9cc343e8f91d0.png" alt="digraph {
+
+    label = &quot;\n 图 7-4    压缩列表节点的各个组成部分&quot;;
+
+    node [shape = record];
+
+    n [label = &quot; previous_entry_length | encoding | content &quot;];
+
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>压缩列表节点的 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性示例。</p>
+<div class="graphviz"><img src="_images/graphviz-385632c6c1c3082ede9e6d70d506142af4085b32.png" alt="digraph {
+
+    label = &quot;\n 图 7-5    当前节点的前一节点的长度为 5 字节&quot;;
+
+    node [shape = record];
+
+    n [label = &quot; previous_entry_length \n 0x05 | encoding \n ... | content \n ... &quot;];
+
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>使用压缩列表节点的 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性遍历整个压缩列表的过程。</p>
+<div class="graphviz"><img src="_images/graphviz-15217b2038767b2545711ded8238c71b143c11fc.png" alt="digraph {
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    entry1 [label = &quot; zlbytes | zltail | zllen | &lt;e1&gt; entry1 | &lt;e2&gt; entry2 | &lt;e3&gt; entry3 | &lt;e4&gt; entry4 | zlend &quot;];
+
+    node [shape = plaintext];
+
+    p1 -&gt; entry1:e4;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-092b6d5123dd97425e687c9704d559913d5957f2.png" alt="digraph {
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    entry2 [label = &quot; zlbytes | zltail | zllen | &lt;e1&gt; entry1 | &lt;e2&gt; entry2 | &lt;e3&gt; entry3 | &lt;e4&gt; entry4 | zlend &quot;];
+
+    node [shape = plaintext];
+
+    p2 [label = &quot;p2 = p1 - entry4.previous_entry_length&quot;];
+    p2 -&gt; entry2:e3;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-ebf45a374446b5d685316dde5a36b78ffca5f1fa.png" alt="digraph {
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    entry3 [label = &quot; zlbytes | zltail | zllen | &lt;e1&gt; entry1 | &lt;e2&gt; entry2 | &lt;e3&gt; entry3 | &lt;e4&gt; entry4 | zlend &quot;];
+
+    node [shape = plaintext];
+
+    p3 [label = &quot;p3 = p2 - entry3.previous_entry_length&quot;];
+    p3 -&gt; entry3:e2;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-957b8bf1a8d830eb0381ba4a2b08c692cd47f269.png" alt="digraph {
+
+    label = &quot;\n 图 7-8    一个从表尾向表头遍历的例子&quot;;
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    entry4 [label = &quot; zlbytes | zltail | zllen | &lt;e1&gt; entry1 | &lt;e2&gt; entry2 | &lt;e3&gt; entry3 | &lt;e4&gt; entry4 | zlend &quot;];
+
+    node [shape = plaintext];
+
+    p4 [label = &quot;p4 = p3 - entry2.previous_entry_length&quot;];
+    p4 -&gt; entry4:e1;
+
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>一个保存着 <code class="docutils literal notranslate"><span class="pre">&quot;hello</span> <span class="pre">world&quot;</span></code> 字符串的压缩列表节点示例。</p>
+<div class="graphviz"><img src="_images/graphviz-c5fc18e99e983cb079550d2414b7eea7c3522813.png" alt="digraph {
+
+    label = &quot;\n 图 7-9    保存着字节数组 \&quot;hello world\&quot; 的节点&quot;;
+
+    node [shape = record];
+
+    entry [label = &quot; previous_entry_length \n ... | encoding \n 00001011 | content \n \&quot;hello world\&quot; &quot;];
+
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>一个保存着整数 <code class="docutils literal notranslate"><span class="pre">10086</span></code> 的压缩列表节点示例。</p>
+<div class="graphviz"><img src="_images/graphviz-4af9b411b4d7b3114a745309df8e0b7d153e8227.png" alt="digraph {
+
+    label = &quot;\n 图 7-10    保存着整数值 10086 的节点&quot;;
+
+    node [shape = record];
+
+    entry [label = &quot; previous_entry_length \n ... | encoding \n 11000000 | content \n 10086 &quot;];
+
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>向压缩列表添加新节点并引发连锁更新的过程。</p>
+<div class="graphviz"><img src="_images/graphviz-ca5eeddb258a3432262e1b6e4f13b1d5dad0b06d.png" alt="digraph {
+
+    label = &quot;\n 图 7-11    包含节点 e1 至 eN 的压缩列表&quot;;
+
+    node [shape = record];
+
+    ziplist [label = &quot; zlbytes| zltail | zllen | e1 | e2 | e3 | ... | eN | zlend &quot;];
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-f66e4aec4b88dccdf505d17a83a1e6223bd24d41.png" alt="digraph {
+
+    label = &quot;\n 图 7-12    添加新节点到压缩列表&quot;;
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    ziplist [label = &quot; zlbytes | zltail | zllen | &lt;new&gt; new | e1 | e2 | e3 | ... | eN | zlend &quot;];
+
+    p [label = &quot;添加新节点&quot;, shape = plaintext];
+
+    p -&gt; ziplist:new;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-7a4c19917bd20eebfe66915ada84e76a994a3fd8.png" alt="digraph {
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    ziplist [label = &quot; zlbytes | zltail | zllen | &lt;new&gt; new | &lt;e1&gt; e1 | &lt;e2&gt; e2 | &lt;e3&gt; e3 | ... | &lt;en&gt; eN | zlend &quot;];
+
+    p [label = &quot;扩展 e1 \n并引发对 e2 的扩展&quot;, shape = plaintext];
+
+    p -&gt; ziplist:e1;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-a278b3722772bd1e2e5a2208e31c70b4585978b3.png" alt="digraph {
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    ziplist [label = &quot; zlbytes | zltail | zllen | &lt;new&gt; new | &lt;e1&gt; e1 | &lt;e2&gt; e2 | &lt;e3&gt; e3 | ... | &lt;en&gt; eN | zlend &quot;];
+
+    p [label = &quot;扩展 e2 \n并引发对 e3 的扩展&quot;, shape = plaintext];
+
+    p -&gt; ziplist:e2;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-3172262673026dc2cb2aa8405ec72b5121c5d5cb.png" alt="digraph {
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    ziplist [label = &quot; zlbytes | zltail | zllen | &lt;new&gt; new | &lt;e1&gt; e1 | &lt;e2&gt; e2 | &lt;e3&gt; e3 | ... | &lt;en&gt; eN | zlend &quot;];
+
+    p [label = &quot;扩展 e3 \n并引发对 e4 的扩展&quot;, shape = plaintext];
+
+    p -&gt; ziplist:e3;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-bf850f68a222f407411946bbdc4fd300766c733c.png" alt="digraph {
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    ziplist [label = &quot; zlbytes | zltail | zllen | &lt;new&gt; new | &lt;e1&gt; e1 | &lt;e2&gt; e2 | &lt;e3&gt; e3 | &lt;more&gt; ... | &lt;en&gt; eN | zlend &quot;];
+
+    p [label = &quot;一直扩展下去……&quot;, shape = plaintext];
+
+    p -&gt; ziplist:more;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-ed722bfd909b7cc487ab710e7dd43cd574aa53aa.png" alt="digraph {
+
+    label = &quot;\n 图 7-13    连锁更新过程&quot;;
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    ziplist [label = &quot; zlbytes | zltail | zllen | &lt;new&gt; new | &lt;e1&gt; e1 | &lt;e2&gt; e2 | &lt;e3&gt; e3 | &lt;e4&gt; e4 | ... | &lt;eN&gt; eN | zlend &quot;];
+
+    p [label = &quot;为 eN-1 扩展 eN 的 previous_entry_length 属性 \n 连锁更新到此结束&quot;, shape = plaintext];
+
+    p -&gt; ziplist:eN;
+
+}" class="graphviz" /></div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="6-intset.html"
+                          title="previous chapter">第 6 章：整数集合</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="8-object.html"
+                          title="next chapter">第 8 章：对象</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/7-ziplist.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="8-object.html" title="第 8 章：对象"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="6-intset.html" title="第 6 章：整数集合"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">《Redis 设计与实现》图片集</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">第 7 章：压缩列表</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2014, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

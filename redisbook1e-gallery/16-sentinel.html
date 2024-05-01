@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>第 16 章： Sentinel &#8212; 《Redis 设计与实现》图片集</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/nature.css?v=601dbdee" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=eafc0fe6" />
+    <script src="_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="第 17 章： 集群" href="17-cluster.html" />
+    <link rel="prev" title="第 15 章： 复制" href="15-replication.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="17-cluster.html" title="第 17 章： 集群"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="15-replication.html" title="第 15 章： 复制"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">《Redis 设计与实现》图片集</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">第 16 章： Sentinel</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="sentinel">
+<h1>第 16 章： Sentinel<a class="headerlink" href="#sentinel" title="Link to this heading">¶</a></h1>
+<p>Sentinel 状态以及已连接的两个 Sentinel 实例结构。</p>
+<div class="graphviz"><img src="_images/graphviz-fda6d2341f1ccb15978dc1db32baf3b2e237a7d4.png" alt="digraph {
+
+    label = &quot;\n 图 16-5    master1 的实例结构&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    //
+
+    master1 [label = &quot; &lt;head&gt; sentinelRedisInstance | flags \n SRI_MASTER | name \n \&quot;master1\&quot; | runid \n \&quot;ee07959afc9d061233191c0f5bfe29580dfad0f4\&quot; | config_epoch \n 0 | &lt;addr&gt; addr | down_after_period \n 30000 | quorum \n 2 | parallel_syncs \n 1 | failover_timeout \n 900000 | ... &quot;];
+
+    addr [label = &quot; &lt;head&gt; sentinelAddr | ip \n \&quot;127.0.0.1\&quot; | port \n 6379 &quot;];
+
+    //
+
+    master1:addr -&gt; addr:head;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-fb1d686df41f47ec5486b8737c3f481a22d59ed1.png" alt="digraph {
+
+    label = &quot;\n 图 16-6    master2 的实例结构&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    //
+
+    master2 [label = &quot; &lt;head&gt; sentinelRedisInstance | flags \n SRI_MASTER | name \n \&quot;master2\&quot; | runid \n \&quot;a68408b775438a5dee54a638b3a6f3461920158a\&quot; | config_epoch \n 0 | &lt;addr&gt; addr | down_after_period \n 50000 | quorum \n 5 | parallel_syncs \n 5 | failover_timeout \n 450000 | ... &quot;];
+
+    addr [label = &quot; &lt;head&gt; sentinelAddr | ip \n \&quot;127.0.0.1\&quot; | port \n 12345 &quot;];
+
+    //
+
+    master2:addr -&gt; addr:head;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-31912e2493c9c5e8eddbdf521406744bec8e5c6c.png" alt="digraph {
+
+    label = &quot;\n 图 16-7    Sentinel 状态以及 masters 字典&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    //
+
+    sentinelState [label = &quot; sentinelState | &lt;masters&gt; masters | ... &quot;];
+
+    masters [label = &quot; &lt;head&gt; dict | &lt;master1&gt; \&quot;master1\&quot; | &lt;master2&gt; \&quot;master2\&quot; &quot;];
+
+    master1 [label = &quot; &lt;head&gt; sentinelRedisInstance | ... | name \n \&quot;master1\&quot; | ... &quot;];
+
+    master2 [label = &quot; &lt;head&gt; sentinelRedisInstance | ... | name \n \&quot;master2\&quot; | ... &quot;];
+
+    //
+
+    sentinelState:masters -&gt; masters:head;
+
+    masters:master1 -&gt; master1:head;
+    masters:master2 -&gt; master2:head;
+
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>Sentinel 通过向主服务器发送 <code class="docutils literal notranslate"><span class="pre">INFO</span></code> 命令来获得从服务器的信息。</p>
+<div class="graphviz"><img src="_images/graphviz-0f519f4600b6f9ef9d8d4efd0cc7a903b180aa43.png" alt="digraph {
+
+    label = &quot;\n 图 16-9    Sentinel 向带有三个从服务器的主服务器发送 INFO 命令&quot;;
+
+    sentinel [label = &quot;Sentinel&quot;, shape = box, width = 4.5, height = 1.0];
+
+    master [shape = doublecircle];
+
+    node [shape = circle];
+    edge [dir = none];
+
+    master -&gt; slave0;
+    master -&gt; slave1;
+    master -&gt; slave2;
+
+    edge [dir = forward];
+
+    sentinel -&gt; master [label = &quot;INFO&quot;];
+
+}" class="graphviz" /></div>
+<p>以及 Sentinel 为这个主服务器以及三个从服务器创建的信息结构。</p>
+<div class="graphviz"><img src="_images/graphviz-5bb6f5453a30a910ede05cc40ab7727e4b7e100d.png" alt="digraph {
+
+    label = &quot;\n 图 16-10    主服务器和它的三个从服务器&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    master [label = &quot; sentinelRedisInstance | flags \n SRI_MASTER | run_id \n \&quot;7611c59dc3a29aa6fa0609f841bb6a1019008a9c\&quot; | name \n \&quot;master\&quot; | ... | &lt;slaves&gt; slaves | ... &quot;];
+
+    slaves [label = &quot; &lt;head&gt; dict | &lt;slave0&gt; \&quot;127.0.0.1:11111\&quot; | &lt;slave1&gt; \&quot;127.0.0.1:22222\&quot; | &lt;slave2&gt; \&quot;127.0.0.1:33333\&quot; &quot;];
+
+    slave0 [label = &quot; &lt;head&gt; sentinelRedisInstance | flags \n SRI_SLAVE | name \n \&quot;127.0.0.1:11111\&quot; | ... &quot;];
+    slave1 [label = &quot; &lt;head&gt; sentinelRedisInstance | flags \n SRI_SLAVE | name \n \&quot;127.0.0.1:22222\&quot; | ... &quot;];
+    slave2 [label = &quot; &lt;head&gt; sentinelRedisInstance | flags \n SRI_SLAVE | name \n \&quot;127.0.0.1:33333\&quot; | ... &quot;];
+
+    master:slaves -&gt; slaves:head;
+    slaves:slave0 -&gt; slave0:head;
+    slaves:slave1 -&gt; slave1:head;
+    slaves:slave2 -&gt; slave2:head;
+
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>Sentinel 通过命令连接向频道发送信息，
+并通过订阅连接从频道中获取信息。</p>
+<div class="graphviz"><img src="_images/graphviz-3843441b12988f1de8603690a5c7ab86f715c21f.png" alt="digraph {
+
+    label = &quot;\n 图 16-13    Sentinel 同时向服务器发送和接收信息&quot;;
+
+    rankdir = LR;
+
+    sentinel [label = &quot;Sentinel&quot;, shape = box, height = 1.8];
+
+    master [label = &quot;服务器&quot;, shape = circle];
+
+    sentinel -&gt; master [label = &quot;通过命令连接\n发送信息到频道&quot;];
+
+    sentinel -&gt; master [dir = back, label = &quot;通过订阅连接\n从频道中接收信息&quot;];
+
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>示例：一个 Sentinel 向包括它自己在内的三个 Sentinel 发送信息。</p>
+<div class="graphviz"><img src="_images/graphviz-2eb036409cff9f3eee4d78cc08baa338d061f4d3.png" alt="digraph {
+
+    label = &quot;\n 图 16-14    向服务器发送信息&quot;;
+
+    node [shape = box];
+
+    sentinel1 [label = &quot;sentinel1&quot;, width = 2.0];
+
+    sentinel2 [label = &quot;sentinel2&quot;, width = 2.0];
+
+    sentinel3 [label = &quot;sentinel3&quot;, width = 2.0];
+
+    server [label = &quot;服务器&quot;, shape = circle];
+
+
+    edge [label = &quot;发送信息\n（命令连接）&quot;];
+    sentinel1 -&gt; server;
+
+    edge [style = dashed];
+
+    edge [dir = back, label = &quot;接收信息\n（订阅连接）&quot;];
+    sentinel1 -&gt; server;
+    sentinel2 -&gt; server;
+    sentinel3 -&gt; server;
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>Redis Sentinel 执行故障转移的整个过程。</p>
+<div class="graphviz"><img src="_images/graphviz-49ce49a995cc5c6763f78295ddedac591b9a5de0.png" alt="digraph {
+
+    label = &quot;\n 图 16-22    将 server2 升级为主服务器&quot;;
+
+    subgraph cluster_servers {
+
+        style = invis;
+
+        node [shape = circle, width = 1.2];
+        edge [dir = none, style = dashed];
+
+        server1 [label = &quot;server1&quot;, shape = doublecircle, style = dashed];
+
+        server2 [label = &quot;server2&quot;];
+        server3 [label = &quot;server3&quot;];
+        server4 [label = &quot;server4&quot;];
+
+        server1 -&gt; server2;
+        server1 -&gt; server3;
+        server1 -&gt; server4;
+
+    }
+
+    sentinel_system [label = &quot;领头 Sentinel&quot;, shape = box, width = 5.0, height = 1.0];
+
+    edge [label = &quot;监视&quot;];
+
+    sentinel_system -&gt; server1 [style = dashed, label = &quot;已下线&quot;, dir = none];
+    sentinel_system -&gt; server2 [label = &quot;发送命令\nSLAVEOF no one&quot;];
+    sentinel_system -&gt; server3 [dir = none];
+    sentinel_system -&gt; server4 [dir = none];
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-34cd444ccf17f6dd08b274f129a835c7201b8b36.png" alt="digraph {
+
+    label = &quot;\n 图 16-23    server2 成功升级为主服务器&quot;;
+
+    subgraph cluster_servers {
+
+        style = invis;
+
+        node [shape = circle, width = 1.2];
+        edge [dir = none, style = dashed];
+
+        server1 [label = &quot;server1&quot;, shape = doublecircle, style = dashed];
+
+        server2 [label = &quot;server2&quot;, shape = doublecircle];
+        server3 [label = &quot;server3&quot;];
+        server4 [label = &quot;server4&quot;];
+
+        server1 -&gt; server3;
+        server1 -&gt; server4;
+
+    }
+
+    sentinel_system [label = &quot;领头 Sentinel&quot;, shape = box, width = 5.0, height = 1.0];
+
+    edge [label = &quot;监视&quot;, dir = none];
+
+    sentinel_system -&gt; server1 [style = dashed, label = &quot;已下线&quot;];
+    sentinel_system -&gt; server2;
+    sentinel_system -&gt; server3;
+    sentinel_system -&gt; server4;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-e4af74b7aa7c2580a404fc182b92b6eb58adf585.png" alt="digraph {
+
+    label = &quot;\n 图 16-24    让从服务器复制新的主服务器&quot;;
+
+    subgraph cluster_servers {
+
+        style = invis;
+
+        node [shape = circle, width = 1.2];
+        edge [dir = none, style = dashed];
+
+        server1 [label = &quot;server1&quot;, shape = doublecircle, style = dashed];
+
+        server2 [label = &quot;server2&quot;, shape = doublecircle];
+        server3 [label = &quot;server3&quot;];
+        server4 [label = &quot;server4&quot;];
+
+        server1 -&gt; server3;
+        server1 -&gt; server4;
+
+    }
+
+    sentinel_system [label = &quot;领头 Sentinel&quot;, shape = box, width = 5.0, height = 1.0];
+
+    sentinel_system -&gt; server1 [style = dashed, label = &quot;已下线&quot;, dir = none];
+    sentinel_system -&gt; server2 [label = &quot;监视&quot;, dir = none];
+
+    edge  [label = &quot;发送命令\nSLAVEOF\n&lt;server2_ip&gt;\n&lt;server2_port&gt;&quot;];
+    sentinel_system -&gt; server3;
+    sentinel_system -&gt; server4;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-433c7aed7aab31c2f70d1e31bed3ded818001eda.png" alt="digraph {
+
+    label = &quot;\n 图 16-25    server3 和 server4 成为 server2 的从服务器&quot;;
+
+    subgraph cluster_servers {
+
+        style = invis;
+
+        node [shape = circle, width = 1.2];
+        edge [dir = none];
+
+        server1 [label = &quot;server1&quot;, shape = doublecircle, style = dashed];
+
+        server2 [label = &quot;server2&quot;, shape = doublecircle];
+        server3 [label = &quot;server3&quot;];
+        server4 [label = &quot;server4&quot;];
+
+        server2 -&gt; server3;
+        server2 -&gt; server4;
+
+    }
+
+    sentinel_system [label = &quot;领头 Sentinel&quot;, shape = box, width = 5.0, height = 1.0];
+
+    sentinel_system -&gt; server1 [style = dashed, label = &quot;已下线&quot;, dir = none];
+
+    edge [label = &quot;监视&quot;, dir = none];
+
+    sentinel_system -&gt; server2;
+    sentinel_system -&gt; server3;
+    sentinel_system -&gt; server4;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-1ae8653ed8751fc1a21b6f333f4513ce3e84e3db.png" alt="digraph {
+
+    label = &quot;\n 图 16-26    server1 被设置为新主服务器的从服务器&quot;;
+
+    subgraph cluster_servers {
+
+        style = invis;
+
+        node [shape = circle, width = 1.2];
+        edge [dir = none];
+
+        server1 [label = &quot;server1&quot;, shape = circle, style = dashed];
+
+        server2 [label = &quot;server2&quot;, shape = doublecircle];
+        server3 [label = &quot;server3&quot;];
+        server4 [label = &quot;server4&quot;];
+
+        server2 -&gt; server1 [style = dashed];
+        server2 -&gt; server3;
+        server2 -&gt; server4;
+
+    }
+
+    sentinel_system [label = &quot;Sentinel 系统&quot;, shape = box, width = 5.0, height = 1.0];
+
+    edge [dir = none];
+
+    sentinel_system -&gt; server1 [style = dashed, label = &quot;已下线&quot;];
+
+    edge [label = &quot;监视&quot;];
+
+    sentinel_system -&gt; server2;
+    sentinel_system -&gt; server3;
+    sentinel_system -&gt; server4;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="_images/graphviz-29e76e0bdb90eba9484d6978d0019b83b4e46060.png" alt="digraph {
+
+    label = &quot;\n 图 16-27    server1 重新上线并成为 server2 的从服务器&quot;;
+
+    subgraph cluster_servers {
+
+        style = invis;
+
+        node [shape = circle, width = 1.2];
+        edge [dir = none];
+
+        server1 [label = &quot;server1&quot;];
+
+        server2 [label = &quot;server2&quot;, shape = doublecircle];
+        server3 [label = &quot;server3&quot;];
+        server4 [label = &quot;server4&quot;];
+
+        server2 -&gt; server1;
+        server2 -&gt; server3;
+        server2 -&gt; server4;
+
+    }
+
+    sentinel_system [label = &quot;Sentinel 系统&quot;, shape = box, width = 5.0, height = 1.0];
+
+
+    edge [label = &quot;监视&quot;, dir = none];
+
+    sentinel_system -&gt; server1;
+    sentinel_system -&gt; server2;
+    sentinel_system -&gt; server3;
+    sentinel_system -&gt; server4;
+
+}" class="graphviz" /></div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="15-replication.html"
+                          title="previous chapter">第 15 章： 复制</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="17-cluster.html"
+                          title="next chapter">第 17 章： 集群</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/16-sentinel.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="17-cluster.html" title="第 17 章： 集群"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="15-replication.html" title="第 15 章： 复制"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">《Redis 设计与实现》图片集</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">第 16 章： Sentinel</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2014, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

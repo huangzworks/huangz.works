@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>第 3 章：链表 &#8212; 《Redis 设计与实现》图片集</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/nature.css?v=601dbdee" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=eafc0fe6" />
+    <script src="_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="第 4 章：字典" href="4-dict.html" />
+    <link rel="prev" title="第 2 章： 简单动态字符串" href="2-sds.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="4-dict.html" title="第 4 章：字典"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="2-sds.html" title="第 2 章： 简单动态字符串"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">《Redis 设计与实现》图片集</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">第 3 章：链表</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>第 3 章：链表<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>由多个链表节点 <code class="docutils literal notranslate"><span class="pre">listNode</span></code> 组成的链表。</p>
+<div class="graphviz"><img src="_images/graphviz-df28506b6d382c03e9ab9cf8ca74c18b377f860b.png" alt="digraph {
+
+    label = &quot;\n 图 3-1    由多个 listNode 组成的双端链表&quot;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    //
+
+    more_prev [label = &quot;...&quot;, shape = plaintext];
+    x [label = &quot;&lt;head&gt; listNode | value \n ...&quot;];
+    y [label = &quot;&lt;head&gt; listNode | value \n ...&quot;];
+    z [label = &quot;&lt;head&gt; listNode | value \n ...&quot;];
+    more_next [label = &quot;...&quot;, shape = plaintext];
+
+    //
+
+    more_prev -&gt; x [label = &quot;next&quot;];
+    x -&gt; more_prev [label = &quot;prev&quot;];
+
+
+    x -&gt; y [label = &quot;next&quot;];
+    y -&gt; x [label = &quot;prev&quot;];
+
+    y -&gt; z [label = &quot;next&quot;];
+    z -&gt; y [label = &quot;prev&quot;];
+
+    z -&gt; more_next [label = &quot;next&quot;];
+    more_next -&gt; z [label = &quot;prev&quot;];
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>由 <code class="docutils literal notranslate"><span class="pre">list</span></code> 结构和 <code class="docutils literal notranslate"><span class="pre">listNode</span></code> 节点组成的链表。</p>
+<div class="graphviz"><img src="_images/graphviz-9d1addb90750a930db28b2cc110729fc044acb29.png" alt="digraph {
+
+    label = &quot;\n 图 3-2    由 list 结构和 listNode 结构组成的链表&quot;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    //
+
+    list [label = &quot;list | &lt;head&gt; head | &lt;tail&gt; tail | &lt;len&gt; len \n 3 | &lt;dup&gt; dup | &lt;free&gt; free | &lt;match&gt; match &quot;, width = 2.0];
+
+    more_prev [label = &quot;NULL&quot;, shape = plaintext];
+    x [label = &quot;&lt;head&gt; listNode | value \n ...&quot;];
+    y [label = &quot;&lt;head&gt; listNode | value \n ...&quot;];
+    z [label = &quot;&lt;head&gt; listNode | value \n ...&quot;];
+    more_next [label = &quot;NULL&quot;, shape = plaintext];
+
+    dup [label = &quot;...&quot;, shape = plaintext];
+    free [label = &quot;...&quot;, shape = plaintext];
+    match [label = &quot;...&quot;, shape = plaintext];
+
+    //
+
+    list:head -&gt; x;
+    list:tail -&gt; z;
+
+    list:dup -&gt; dup;
+    list:free -&gt; free;
+    list:match -&gt; match;
+
+    x -&gt; y;
+    y -&gt; x;
+
+    y -&gt; z;
+    z -&gt; y;
+
+    //
+
+    more_prev -&gt; x [dir = back];
+    z -&gt; more_next;
+
+}" class="graphviz" /></div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="2-sds.html"
+                          title="previous chapter">第 2 章： 简单动态字符串</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="4-dict.html"
+                          title="next chapter">第 4 章：字典</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/3-linked-list.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="4-dict.html" title="第 4 章：字典"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="2-sds.html" title="第 2 章： 简单动态字符串"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">《Redis 设计与实现》图片集</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">第 3 章：链表</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2014, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

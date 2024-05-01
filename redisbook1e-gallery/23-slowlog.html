@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>第 23 章： 慢查询日志 &#8212; 《Redis 设计与实现》图片集</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/nature.css?v=601dbdee" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=eafc0fe6" />
+    <script src="_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="第 24 章： 监视器" href="24-monitor.html" />
+    <link rel="prev" title="第 22 章： 二进制位数组" href="22-bit.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="24-monitor.html" title="第 24 章： 监视器"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="22-bit.html" title="第 22 章： 二进制位数组"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">《Redis 设计与实现》图片集</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">第 23 章： 慢查询日志</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>第 23 章： 慢查询日志<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">slowlogEntry</span></code> 结构。</p>
+<div class="graphviz"><img src="_images/graphviz-2d16124e8c75666eadc90a067559f48ea991e61d.png" alt="digraph {
+
+     label = &quot;\n 图 23-1    slowlogEntry 结构示例&quot;;
+
+     rankdir = LR;
+
+     node [shape = record];
+
+     slowlogEntry [label = &quot; slowlogEntry | id \n 3 | time \n 1378781439 | duration \n 10 | &lt;argv&gt; argv | argc \n 3 &quot;];
+
+     argv [label = &quot; { { argv[0] | StringObject \n \&quot;SET\&quot; } | { argv[1] | StringObject \n \&quot;number\&quot; } | { argv[2] | StringObject \n \&quot;10086\&quot; } } &quot;];
+
+     slowlogEntry:argv -&gt; argv;
+
+}" class="graphviz" /></div>
+<p>服务器状态的 <code class="docutils literal notranslate"><span class="pre">slowlog</span></code> 属性。</p>
+<div class="graphviz"><img src="_images/graphviz-c367bcb9cf9372d2c5e86a631edbb5aa83bf3f13.png" alt="digraph {
+
+    label = &quot;\n 图 23-2    redisServer 结构示例&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    redisServer [label = &quot; redisServer | ... | slowlog_entry_id \n 6 | &lt;slowlog&gt; slowlog | slowlog_log_slower_than \n 0 | slowlog_max_len \n 5 | ... &quot;];
+
+    slowlogEntry_5 [label = &quot; slowlogEntry | id \n 5 | time \n 1378781521 | duration \n 61 | &lt;argv&gt; argv | argc \n 2 &quot;];
+
+    slowlogEntry_1 [label = &quot; slowlogEntry | id \n 1 | time \n 1378781425 | duration \n 11 | &lt;argv&gt; argv | argc \n 4 &quot;];
+
+    more [label = &quot;...&quot;, shape = plaintext]
+
+    redisServer:slowlog -&gt; slowlogEntry_5 -&gt; more -&gt; slowlogEntry_1;
+
+}" class="graphviz" /></div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="22-bit.html"
+                          title="previous chapter">第 22 章： 二进制位数组</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="24-monitor.html"
+                          title="next chapter">第 24 章： 监视器</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/23-slowlog.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="24-monitor.html" title="第 24 章： 监视器"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="22-bit.html" title="第 22 章： 二进制位数组"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">《Redis 设计与实现》图片集</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">第 23 章： 慢查询日志</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2014, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>

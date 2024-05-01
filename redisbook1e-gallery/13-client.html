@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>第 13 章： 客户端 &#8212; 《Redis 设计与实现》图片集</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/nature.css?v=601dbdee" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=eafc0fe6" />
+    <script src="_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="第 14 章： 服务器" href="14-server.html" />
+    <link rel="prev" title="第 12 章： 事件" href="12-event.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="14-server.html" title="第 14 章： 服务器"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="12-event.html" title="第 12 章： 事件"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">《Redis 设计与实现》图片集</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">第 13 章： 客户端</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>第 13 章： 客户端<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>三个连接到服务器的客户端。</p>
+<div class="graphviz"><img src="_images/graphviz-a6bf3425160c1120c9c4ededc2ad08a189526221.png" alt="digraph {
+
+    label = &quot;\n 13-1    客户端与服务器&quot;;
+
+    rankdir = LR;
+
+    node [shape = circle, width = 1.2];
+
+    c1 [label = &quot;客户端 1&quot;];
+    c2 [label = &quot;客户端 2&quot;];
+    c3 [label = &quot;客户端 3&quot;];
+
+    node [shape = box, height = 4.0, width = 1.5];
+
+    server [label = &quot;服\n务\n器&quot;];
+
+    //
+
+    edge [dir = none, minlen = 2];
+
+    c1 -&gt; server;
+    c2 -&gt; server;
+    c3 -&gt; server;
+}" class="graphviz" /></div>
+<p>这三个客户端在服务器状态 <code class="docutils literal notranslate"><span class="pre">clients</span></code> 属性中的样子。</p>
+<div class="graphviz"><img src="_images/graphviz-6d6ed32158d5b654ad1541fc7ee4a7b7667c4c98.png" alt="digraph {
+
+    label = &quot;\n 13-2    clients 链表&quot;;
+
+    rankdir = LR;
+
+    //
+
+    node [shape = record];
+
+    redisServer [label = &quot; redisServer | ... | &lt;clients&gt; clients | ... &quot;, width = 2];
+
+    c1 [label = &quot; redisClient\n（客户端 1） &quot;];
+    c2 [label = &quot; redisClient\n（客户端 2） &quot;];
+    c3 [label = &quot; redisClient\n（客户端 3） &quot;];
+
+    //
+
+    redisServer:clients -&gt; c1;
+    c1 -&gt; c2;
+    c2 -&gt; c3;
+
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>Redis 客户端的输入缓冲区示例。</p>
+<div class="graphviz"><img src="_images/graphviz-674fbbd2f0120d0c7e02838883fb400e1d3ed9e5.png" alt="digraph {
+
+    label = &quot;\n 图 13-4    querybuf 属性示例&quot;;
+
+    rankdir = LR;
+
+    //
+
+    node [shape = record];
+
+    client [label = &quot; redisClient | ... | &lt;querybuf&gt; querybuf | ... &quot;, width = 2];
+
+    sdshdr [label = &quot; &lt;head&gt; sdshdr | free \n 0 | len \n 33 | &lt;buf&gt; buf &quot;];
+
+    buf [label = &quot; { '*' | '3' | '\\r' | '\\n' | ... | 'v' | 'a' | 'l' | 'u' | 'e' | '\\r' | '\\n' | '\\0' } &quot;];
+
+    //
+
+    client:querybuf -&gt; sdshdr:head;
+
+    sdshdr:buf -&gt; buf;
+
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>Redis 客户端的 <code class="docutils literal notranslate"><span class="pre">argv</span></code> 属性和 <code class="docutils literal notranslate"><span class="pre">argc</span></code> 属性示例。</p>
+<div class="graphviz"><img src="_images/graphviz-6d17b9beb31788f523fef3ac82fccc72839b2bbf.png" alt="digraph {
+
+    label = &quot;\n 图 13-5    argv 属性和 argc 属性示例&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    redisClient [label = &quot; redisClient | ... | &lt;argv&gt; argv | argc \n 3 | ... &quot;, width = 2];
+
+    argv [label = &quot; { { &lt;head&gt; argv[0] | StringObject \n \&quot;SET\&quot; } | { argv[1] | StringObject \n \&quot;key\&quot; } | { argv[1] | StringObject \n \&quot;value\&quot; } } &quot;];
+
+    redisClient:argv -&gt; argv:head;
+
+}" class="graphviz" /></div>
+<hr class="docutils" />
+<p>Redis 客户端的固定大小输出缓冲区示例。</p>
+<div class="graphviz"><img src="_images/graphviz-ec72bfba75e6254599702db09d355a5d9ecb803d.png" alt="digraph {
+
+    label = &quot;\n 图 13-8    固定大小缓冲区示例&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    redisClient [label = &quot; redisClient | ... | &lt;buf&gt; buf | bufpos \n 5 | ... &quot;];
+
+    buf [label = &quot; { '+' | 'O' | 'K' | '\\r' | '\\n' | '\\0' | ... } &quot;];
+
+    redisClient:buf -&gt; buf;
+
+}" class="graphviz" /></div>
+<p>Redis 客户端的可变大小输出缓冲区示例。</p>
+<div class="graphviz"><img src="_images/graphviz-9a3c1b927777a7d0884f0923b8b5dab21fb976b3.png" alt="digraph {
+
+    label = &quot;\n 图 13-9    可变大小缓冲区示例&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    redisClient [label = &quot; redisClient | ... | &lt;reply&gt; reply | ... &quot;, width = 2];
+
+    node [label = &quot; &lt;head&gt; StringObject \n ... &quot;];
+
+    redisClient:reply -&gt; s1:head -&gt; s2:head -&gt; s3:head;
+
+}" class="graphviz" /></div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="12-event.html"
+                          title="previous chapter">第 12 章： 事件</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="14-server.html"
+                          title="next chapter">第 14 章： 服务器</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/13-client.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="14-server.html" title="第 14 章： 服务器"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="12-event.html" title="第 12 章： 事件"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">《Redis 设计与实现》图片集</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">第 13 章： 客户端</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2014, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+  </body>
+</html>
