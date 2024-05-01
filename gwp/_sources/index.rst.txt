@@ -32,7 +32,7 @@
 
 在异步社区购买纸书和电子书： http://www.epubit.com.cn/book/details/4705
 
-在各大网店上购买本书： `京东（自营） <https://item.jd.com/12252845.html>`_ 、 `亚马逊（自营） <https://www.amazon.cn/Go-Web%E7%BC%96%E7%A8%8B-%E6%96%B0%E5%8A%A0%E5%9D%A1-%E9%83%91%E5%85%86%E9%9B%84/dp/B078CN7XSS>`_ 、 `当当（自营） <http://product.dangdang.com/25199475.html>`_ 、 `互动出版网（china-pub） <http://product.china-pub.com/7032494>`_ 
+在各大网店上购买本书： `京东（自营） <https://item.jd.com/12252845.html>`_ 、 `当当（自营） <http://product.dangdang.com/25199475.html>`_ 
 
 在豆瓣上关注并购买本书： https://book.douban.com/subject/27204133/
 
