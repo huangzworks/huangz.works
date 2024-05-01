@@ -37,7 +37,7 @@
 在豆瓣上关注并购买本书： https://book.douban.com/subject/27204133/
 
 ..
-        购买译者签名版：http://gwpcn.com/signed.html#id1
+        购买译者签名版：./signed.html#id1
 
 
 关于本书
@@ -96,17 +96,17 @@
 
 *以下目录中可点击的章节为试读内容*
 
-- `内容提要 <http://gwpcn.com/preview/summary.html#id1>`_
-- `译者记事 <http://gwpcn.com/preview/translator-notes.html#id1>`_
-- `译者介绍 <http://gwpcn.com/preview/about-translator.html#id1>`_
-- `前言 <http://gwpcn.com/preview/preface.html#id1>`_
-- `致谢 <http://gwpcn.com/preview/acknowledgments.html#id1>`_
-- `关于本书 <http://gwpcn.com/preview/about-this-book.html#id1>`_
-- `关于本书封面插图 <http://gwpcn.com/preview/about-the-cover-illustration.html#id1>`_
-- `第一部分 —— Go 与 Web 应用 <http://gwpcn.com/preview/part-one.html#goweb>`_
+- `内容提要 <./preview/summary.html#id1>`_
+- `译者记事 <./preview/translator-notes.html#id1>`_
+- `译者介绍 <./preview/about-translator.html#id1>`_
+- `前言 <./preview/preface.html#id1>`_
+- `致谢 <./preview/acknowledgments.html#id1>`_
+- `关于本书 <./preview/about-this-book.html#id1>`_
+- `关于本书封面插图 <./preview/about-the-cover-illustration.html#id1>`_
+- `第一部分 —— Go 与 Web 应用 <./preview/part-one.html#goweb>`_
 
-  - `第 1 章：Go 与 Web 应用 <http://gwpcn.com/preview/chp1.html#goweb>`_
-  - `第 2 章：ChitChat 论坛 <http://gwpcn.com/preview/chp2.html#chitchat>`_
+  - `第 1 章：Go 与 Web 应用 <./preview/chp1.html#goweb>`_
+  - `第 2 章：ChitChat 论坛 <./preview/chp2.html#chitchat>`_
 
 - 第二部分 —— Web 应用的基本组成部分
 
@@ -124,7 +124,7 @@
 
 - 附录
 
-  - `安装并设置 Go <http://gwpcn.com/preview/appendix.html#go>`_
+  - `安装并设置 Go <./preview/appendix.html#go>`_
 
 
 对本书的赞誉
@@ -213,7 +213,7 @@ https://github.com/sausheong/gwp
 
         勘误目录：
 
-        - `关于本书 <http://gwpcn.com/erreta/about-this-book.html#id1>`_
+        - `关于本书 <./erreta/about-this-book.html#id1>`_
 
 
         关联项目
