@@ -1,0 +1,158 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>压缩列表 &#8212; Redis 设计与实现</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">压缩列表</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>压缩列表<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>压缩列表（ziplist）是列表键和哈希键的底层实现之一。</p>
+<p>当一个列表键只包含少量列表项，
+并且每个列表项要么就是小整数值，
+要么就是长度比较短的字符串，
+那么 Redis 就会使用压缩列表来做列表键的底层实现。</p>
+<p>比如说，
+执行以下命令将创建一个压缩列表实现的列表键：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">RPUSH</span><span class="w"> </span><span class="n">lst</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="mi">5</span><span class="w"> </span><span class="mi">10086</span><span class="w"> </span><span class="s">&quot;hello&quot;</span><span class="w"> </span><span class="s">&quot;world&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">6</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">OBJECT</span><span class="w"> </span><span class="n">ENCODING</span><span class="w"> </span><span class="n">lst</span>
+<span class="s">&quot;ziplist&quot;</span>
+</pre></div>
+</div>
+<p>因为列表键里面包含的都是 <code class="docutils literal notranslate"><span class="pre">1</span></code> 、 <code class="docutils literal notranslate"><span class="pre">3</span></code> 、 <code class="docutils literal notranslate"><span class="pre">5</span></code> 、 <code class="docutils literal notranslate"><span class="pre">10086</span></code> 这样的小整数值，
+以及 <code class="docutils literal notranslate"><span class="pre">&quot;hello&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;world&quot;</span></code> 这样的短字符串。</p>
+<p>另外，
+当一个哈希键只包含少量键值对，
+并且每个键值对的键和值要么就是小整数值，
+要么就是长度比较短的字符串，
+那么 Redis 就会使用压缩列表来做哈希键的底层实现。</p>
+<p>举个例子，
+执行以下命令将创建一个压缩列表实现的哈希键：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">HMSET</span><span class="w"> </span><span class="n">profile</span><span class="w"> </span><span class="s">&quot;name&quot;</span><span class="w"> </span><span class="s">&quot;Jack&quot;</span><span class="w"> </span><span class="s">&quot;age&quot;</span><span class="w"> </span><span class="mi">28</span><span class="w"> </span><span class="s">&quot;job&quot;</span><span class="w"> </span><span class="s">&quot;Programmer&quot;</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">OBJECT</span><span class="w"> </span><span class="n">ENCODING</span><span class="w"> </span><span class="n">profile</span>
+<span class="s">&quot;ziplist&quot;</span>
+</pre></div>
+</div>
+<p>因为哈希键里面包含的所有键和值都是小整数值或者短字符串。</p>
+<p>本章将对压缩列表的定义以及相关操作进行详细的介绍。</p>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/preview/ziplist/content.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">压缩列表</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2015, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

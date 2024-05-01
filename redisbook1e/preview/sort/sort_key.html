@@ -1,0 +1,308 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>SORT &lt;key&gt; 命令的实现 &#8212; Redis 设计与实现</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">SORT &lt;key&gt; 命令的实现</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="sort-key">
+<h1>SORT &lt;key&gt; 命令的实现<a class="headerlink" href="#sort-key" title="Link to this heading">¶</a></h1>
+<p><span class="xref std std-ref">SORT</span> 命令的最简单执行形式为：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">SORT</span><span class="w"> </span><span class="o">&lt;</span><span class="n">key</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>这个命令可以对一个包含数字值的键 <code class="docutils literal notranslate"><span class="pre">key</span></code> 进行排序。</p>
+<p>以下示例展示了如何使用 <span class="xref std std-ref">SORT</span> 命令对一个包含三个数字值的列表键进行排序：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">RPUSH</span><span class="w"> </span><span class="n">numbers</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">2</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">3</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SORT</span><span class="w"> </span><span class="n">numbers</span>
+<span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="s">&quot;1&quot;</span>
+<span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="s">&quot;2&quot;</span>
+<span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="s">&quot;3&quot;</span>
+</pre></div>
+</div>
+<p>服务器执行 <code class="docutils literal notranslate"><span class="pre">SORT</span> <span class="pre">numbers</span></code> 命令的详细步骤如下：</p>
+<ol class="arabic simple">
+<li><p>创建一个和 <code class="docutils literal notranslate"><span class="pre">numbers</span></code> 列表长度相同的数组，
+该数组的每个项都是一个 <code class="docutils literal notranslate"><span class="pre">redis.h/redisSortObject</span></code> 结构，
+如图 IMAGE_CREATE_ARRAY 所示。</p></li>
+<li><p>遍历数组，
+将各个数组项的 <code class="docutils literal notranslate"><span class="pre">obj</span></code> 指针分别指向 <code class="docutils literal notranslate"><span class="pre">numbers</span></code> 列表的各个项，
+构成 <code class="docutils literal notranslate"><span class="pre">obj</span></code> 指针和列表项之间的一对一关系，
+如图 IMAGE_POINT_OBJ 所示。</p></li>
+<li><p>遍历数组，
+将各个 <code class="docutils literal notranslate"><span class="pre">obj</span></code> 指针所指向的列表项转换成一个 <code class="docutils literal notranslate"><span class="pre">double</span></code> 类型的浮点数，
+并将这个浮点数保存在相应数组项的 <code class="docutils literal notranslate"><span class="pre">u.score</span></code> 属性里面，
+如图 IMAGE_SET_SCORE 所示。</p></li>
+<li><p>根据数组项 <code class="docutils literal notranslate"><span class="pre">u.score</span></code> 属性的值，
+对数组进行数字值排序，
+排序后的数组项按 <code class="docutils literal notranslate"><span class="pre">u.score</span></code> 属性的值从小到大排列，
+如图 IMAGE_SORTED 所示。</p></li>
+<li><p>遍历数组，
+将各个数组项的 <code class="docutils literal notranslate"><span class="pre">obj</span></code> 指针所指向的列表项作为排序结果返回给客户端：
+程序首先访问数组的索引 <code class="docutils literal notranslate"><span class="pre">0</span></code> ，
+返回 <code class="docutils literal notranslate"><span class="pre">u.score</span></code> 值为 <code class="docutils literal notranslate"><span class="pre">1.0</span></code> 的列表项 <code class="docutils literal notranslate"><span class="pre">&quot;1&quot;</span></code> ；
+然后访问数组的索引 <code class="docutils literal notranslate"><span class="pre">1</span></code> ，
+返回 <code class="docutils literal notranslate"><span class="pre">u.score</span></code> 值为 <code class="docutils literal notranslate"><span class="pre">2.0</span></code> 的列表项 <code class="docutils literal notranslate"><span class="pre">&quot;2&quot;</span></code> ；
+最后访问数组的索引 <code class="docutils literal notranslate"><span class="pre">2</span></code> ，
+返回 <code class="docutils literal notranslate"><span class="pre">u.score</span></code> 值为 <code class="docutils literal notranslate"><span class="pre">3.0</span></code> 的列表项 <code class="docutils literal notranslate"><span class="pre">&quot;3&quot;</span></code> 。</p></li>
+</ol>
+<p>其他 <code class="docutils literal notranslate"><span class="pre">SORT</span> <span class="pre">&lt;key&gt;</span></code> 命令的执行步骤也和这里给出的 <code class="docutils literal notranslate"><span class="pre">SORT</span> <span class="pre">numbers</span></code> 命令的执行步骤类似。</p>
+<div class="graphviz"><img src="../../_images/graphviz-5200aa72bb3bce6b9bcf90414c82b3001e128845.png" alt="digraph {
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    subgraph cluster_array {
+
+        style = invis;
+
+        array [label = &quot; array | { &lt;array0&gt; array[0] \n redisSortObject | { &lt;obj0&gt; obj | u } } | { &lt;array1&gt; array[1] \n redisSortObject | { &lt;obj1&gt; obj | u } } | { &lt;array2&gt; array[2] \n redisSortObject | { &lt;obj2&gt; obj | u } } &quot;];
+    }
+
+   label = &quot;\n 图 IMAGE_CREATE_ARRAY    命令为排序 numbers 列表而创建的数组&quot;;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="../../_images/graphviz-67593132fe085d0044011704f87243cd47d30679.png" alt="digraph {
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    subgraph cluster_numbers {
+
+        label = &quot;numbers 链表&quot;
+
+        style = dashed;
+
+        one [label = &quot;StringObject \n \&quot;1\&quot;&quot;];
+        two [label = &quot;StringObject \n \&quot;2\&quot;&quot;];
+        three [label = &quot;StringObject \n \&quot;3\&quot;&quot;];
+
+        three -&gt; one -&gt; two;
+
+    }
+
+    subgraph cluster_array {
+
+        style = invis;
+
+        array [label = &quot; array | { &lt;array0&gt; array[0] \n redisSortObject | { &lt;obj0&gt; obj | u } } | { &lt;array1&gt; array[1] \n redisSortObject | { &lt;obj1&gt; obj | u } } | { &lt;array2&gt; array[2] \n redisSortObject | { &lt;obj2&gt; obj | u } } &quot;];
+    }
+   array:obj0 -&gt; three;
+   array:obj1 -&gt; one;
+   array:obj2 -&gt; two;
+
+   label = &quot;\n 图 IMAGE_POINT_OBJ    将 obj 指针指向列表的各个项&quot;;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="../../_images/graphviz-bbfeb42607a530628ca5a652a44329a2141f2542.png" alt="digraph {
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    subgraph cluster_numbers {
+
+        label = &quot;numbers 链表&quot;
+
+        style = dashed;
+
+        one [label = &quot;StringObject \n \&quot;1\&quot;&quot;];
+        two [label = &quot;StringObject \n \&quot;2\&quot;&quot;];
+        three [label = &quot;StringObject \n \&quot;3\&quot;&quot;];
+
+        three -&gt; one -&gt; two;
+
+    }
+
+    subgraph cluster_array {
+
+        style = invis;
+
+        array [label = &quot; array | { &lt;array0&gt; array[0] \n redisSortObject | { &lt;obj0&gt; obj | u.score \n 3.0 } } | { &lt;array1&gt; array[1] \n redisSortObject | { &lt;obj1&gt; obj | u.score \n 1.0 } } | { &lt;array2&gt; array[2] \n redisSortObject | { &lt;obj2&gt; obj | u.score \n 2.0 } } &quot;];
+    }
+   array:obj0 -&gt; three;
+   array:obj1 -&gt; one;
+   array:obj2 -&gt; two;
+
+   label = &quot;\n 图 IMAGE_SET_SCORE    设置数组项的 u.score 属性&quot;;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="../../_images/graphviz-4d08728d92821efdb973e7b5070f9c46cf07b314.png" alt="digraph {
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    subgraph cluster_numbers {
+
+        label = &quot;numbers 链表&quot;
+
+        style = dashed;
+
+        one [label = &quot;StringObject \n \&quot;1\&quot;&quot;];
+        two [label = &quot;StringObject \n \&quot;2\&quot;&quot;];
+        three [label = &quot;StringObject \n \&quot;3\&quot;&quot;];
+
+        three -&gt; one -&gt; two;
+
+    }
+
+    subgraph cluster_array {
+
+        style = invis;
+
+        array [label = &quot; array | { &lt;array0&gt; array[0] \n redisSortObject | { &lt;obj0&gt; obj | u.score \n 1.0 } } | { &lt;array1&gt; array[1] \n redisSortObject | { &lt;obj1&gt; obj | u.score \n 2.0 } } | { &lt;array2&gt; array[2] \n redisSortObject | { &lt;obj2&gt; obj | u.score \n 3.0 } } &quot;];
+    }
+   array:obj0 -&gt; one;
+   array:obj1 -&gt; two;
+   array:obj2 -&gt; three;
+
+   label = &quot;\n 图 IMAGE_SORTED    排序后的数组&quot;;
+
+}" class="graphviz" /></div>
+<p>以下是 <code class="docutils literal notranslate"><span class="pre">redisSortObject</span></code> 结构的完整定义：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">_redisSortObject</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="c1">// 被排序键的值</span>
+<span class="w">    </span><span class="n">robj</span><span class="w"> </span><span class="o">*</span><span class="n">obj</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 权重</span>
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">        </span><span class="c1">// 排序数字值时使用</span>
+<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">score</span><span class="p">;</span>
+
+<span class="w">        </span><span class="c1">// 排序带有 BY 选项的字符串值时使用</span>
+<span class="w">        </span><span class="n">robj</span><span class="w"> </span><span class="o">*</span><span class="n">cmpobj</span><span class="p">;</span>
+
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="n">u</span><span class="p">;</span>
+
+<span class="p">}</span><span class="w"> </span><span class="n">redisSortObject</span><span class="p">;</span>
+</pre></div>
+</div>
+<p><span class="xref std std-ref">SORT</span> 命令为每个被排序的键都创建一个与键长度相同的数组，
+数组的每个项都是一个 <code class="docutils literal notranslate"><span class="pre">redisSortObject</span></code> 结构，
+根据 <span class="xref std std-ref">SORT</span> 命令使用的选项不同，
+程序使用 <code class="docutils literal notranslate"><span class="pre">redisSortObject</span></code> 结构的方式也不同，
+稍后介绍 <span class="xref std std-ref">SORT</span> 命令的各种选项时我们会看到这一点。</p>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/preview/sort/sort_key.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">SORT &lt;key&gt; 命令的实现</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2015, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

@@ -1,0 +1,312 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>升级 &#8212; Redis 设计与实现</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">升级</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>升级<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>每当我们要将一个新元素添加到整数集合里面，
+并且新元素的类型比整数集合现有所有元素的类型都要长时，
+整数集合需要先进行升级（upgrade），
+然后才能将新元素添加到整数集合里面。</p>
+<p>升级整数集合并添加新元素共分为三步进行：</p>
+<ol class="arabic simple">
+<li><p>根据新元素的类型，
+扩展整数集合底层数组的空间大小，
+并为新元素分配空间。</p></li>
+<li><p>将底层数组现有的所有元素都转换成与新元素相同的类型，
+并将类型转换后的元素放置到正确的位上，
+而且在放置元素的过程中，
+需要继续维持底层数组的有序性质不变。</p></li>
+<li><p>将新元素添加到底层数组里面。</p></li>
+</ol>
+<p>举个例子，
+假设现在有一个 <code class="docutils literal notranslate"><span class="pre">INTSET_ENC_INT16</span></code> 编码的整数集合，
+集合中包含三个 <code class="docutils literal notranslate"><span class="pre">int16_t</span></code> 类型的元素，
+如图 6-3 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-7a264e59e6b31a8997f2f0ed0ffce91a61dcd999.png" alt="digraph {
+
+    label = &quot;\n 图 6-3    一个包含三个 int16_t 类型的元素的整数集合&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    intset [label = &quot; intset | encoding \n INTSET_ENC_INT16 | length \n 3 | &lt;contents&gt; contents &quot;];
+
+    contents [label = &quot; { 1 | 2 | 3 } &quot;];
+
+    intset:contents -&gt; contents;
+
+}" class="graphviz" /></div>
+<p>因为每个元素都占用 <code class="docutils literal notranslate"><span class="pre">16</span></code> 位空间，
+所以整数集合底层数组的大小为 <code class="docutils literal notranslate"><span class="pre">3</span> <span class="pre">*</span> <span class="pre">16</span> <span class="pre">=</span> <span class="pre">48</span></code> 位，
+图 6-4 展示了整数集合的三个元素在这 <code class="docutils literal notranslate"><span class="pre">48</span></code> 位里的位置。</p>
+<div class="graphviz"><img src="../../_images/graphviz-db7dd8c4814123e5dc24c8042037a19ab0365ea3.png" alt="digraph {
+
+    label = &quot;\n 图 6-4    contents 数组的各个元素，以及它们所在的位&quot;;
+
+    node [shape = record];
+
+    contents [label = &quot; { 位 | 元素 } | { 0 至 15 位 | 1 } | { 16 至 31 位 | 2 } | { 32 至 47 位 | 3 } &quot;];
+
+}" class="graphviz" /></div>
+<p>现在，
+假设我们要将类型为 <code class="docutils literal notranslate"><span class="pre">int32_t</span></code> 的整数值 <code class="docutils literal notranslate"><span class="pre">65535</span></code> 添加到整数集合里面，
+因为 <code class="docutils literal notranslate"><span class="pre">65535</span></code> 的类型 <code class="docutils literal notranslate"><span class="pre">int32_t</span></code> 比整数集合当前所有元素的类型都要长，
+所以在将 <code class="docutils literal notranslate"><span class="pre">65535</span></code> 添加到整数集合之前，
+程序需要先对整数集合进行升级。</p>
+<p>升级首先要做的是，
+根据新类型的长度，
+以及集合元素的数量（包括要添加的新元素在内），
+对底层数组进行空间重分配。</p>
+<p>整数集合目前有三个元素，
+再加上新元素 <code class="docutils literal notranslate"><span class="pre">65535</span></code> ，
+整数集合需要分配四个元素的空间，
+因为每个 <code class="docutils literal notranslate"><span class="pre">int32_t</span></code> 整数值需要占用 <code class="docutils literal notranslate"><span class="pre">32</span></code> 位空间，
+所以在空间重分配之后，
+底层数组的大小将是 <code class="docutils literal notranslate"><span class="pre">32</span> <span class="pre">*</span> <span class="pre">4</span> <span class="pre">=</span> <span class="pre">128</span></code> 位，
+如图 6-5 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-2e31de141bb3f48bba4439c0509957802a09a996.png" alt="digraph {
+
+    label = &quot;\n 图 6-5    进行空间重分配之后的数组&quot;;
+
+    node [shape = record];
+
+    contents [label = &quot; { 位 | 元素 } | { 0 至 15 位 | 1 } | { 16 至 31 位 | 2 } | { 32 至 47 位 | 3 } | { 48 至 127 位 | （新分配空间）} &quot;];
+
+}" class="graphviz" /></div>
+<p>虽然程序对底层数组进行了空间重分配，
+但数组原有的三个元素 <code class="docutils literal notranslate"><span class="pre">1</span></code> 、 <code class="docutils literal notranslate"><span class="pre">2</span></code> 、 <code class="docutils literal notranslate"><span class="pre">3</span></code> 仍然是 <code class="docutils literal notranslate"><span class="pre">int16_t</span></code> 类型，
+这些元素还保存在数组的前 <code class="docutils literal notranslate"><span class="pre">48</span></code> 位里面，
+所以程序接下来要做的就是将这三个元素转换成 <code class="docutils literal notranslate"><span class="pre">int32_t</span></code> 类型，
+并将转换后的元素放置到正确的位上面，
+而且在放置元素的过程中，
+需要维持底层数组的有序性质不变。</p>
+<p>首先，
+因为元素 <code class="docutils literal notranslate"><span class="pre">3</span></code> 在 <code class="docutils literal notranslate"><span class="pre">1</span></code> 、 <code class="docutils literal notranslate"><span class="pre">2</span></code> 、 <code class="docutils literal notranslate"><span class="pre">3</span></code> 、 <code class="docutils literal notranslate"><span class="pre">65535</span></code> 四个元素中排名第三，
+所以它将被移动到 <code class="docutils literal notranslate"><span class="pre">contents</span></code> 数组的索引 <code class="docutils literal notranslate"><span class="pre">2</span></code> 位置上，
+也即是数组 <code class="docutils literal notranslate"><span class="pre">64</span></code> 位至 <code class="docutils literal notranslate"><span class="pre">95</span></code> 位的空间内，
+如图 6-6 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-7ac236ac01de873db4d78370a7297d233f67018d.png" alt="digraph {
+
+    label = &quot;\n 图 6-6    对元素 3 进行类型转换，并保存在适当的位上&quot;;
+
+    node [shape = record];
+
+    contents [label = &quot; { 位 | 元素 } | { 0 至 15 位 | 1 } | { 16 至 31 位 | 2 } | { 32 至 47 位 | &lt;old&gt; 3 } | { 48 至 63 位 | （新分配空间） } | { 64 位至 95 位 | &lt;new&gt; 3 } | { 96 位至 127 位 | （新分配空间）} &quot;];
+
+    contents:old -&gt; contents:new [label = &quot;从 int16_t 类型转换为 int32_t 类型&quot;];
+
+}" class="graphviz" /></div>
+<p>接着，
+因为元素 <code class="docutils literal notranslate"><span class="pre">2</span></code> 在 <code class="docutils literal notranslate"><span class="pre">1</span></code> 、 <code class="docutils literal notranslate"><span class="pre">2</span></code> 、 <code class="docutils literal notranslate"><span class="pre">3</span></code> 、 <code class="docutils literal notranslate"><span class="pre">65535</span></code> 四个元素中排名第二，
+所以它将被移动到 <code class="docutils literal notranslate"><span class="pre">contents</span></code> 数组的索引 <code class="docutils literal notranslate"><span class="pre">1</span></code> 位置上，
+也即是数组的 <code class="docutils literal notranslate"><span class="pre">32</span></code> 位至 <code class="docutils literal notranslate"><span class="pre">63</span></code> 位的空间内，
+如图 6-7 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-ee8f457f10357ef7ef994a4be1e96e73eb1f7ad7.png" alt="digraph {
+
+    label = &quot;\n 图 6-7    对元素 2 进行类型转换，并保存在适当的位上&quot;;
+
+    node [shape = record];
+
+    contents [label = &quot; { 位 | 元素 } | { 0 至 15 位 | 1 } | { 16 至 31 位 | &lt;old&gt; 2 } | { 32 至 63 位 | &lt;new&gt; 2 } | { 64 位至 95 位 | 3 } | { 96 位至 127 位 | （新分配空间）} &quot;];
+
+    contents:old -&gt; contents:new [label = &quot;从 int16_t 类型转换为 int32_t 类型&quot;];
+
+}" class="graphviz" /></div>
+<p>之后，
+因为元素 <code class="docutils literal notranslate"><span class="pre">1</span></code> 在 <code class="docutils literal notranslate"><span class="pre">1</span></code> 、 <code class="docutils literal notranslate"><span class="pre">2</span></code> 、 <code class="docutils literal notranslate"><span class="pre">3</span></code> 、 <code class="docutils literal notranslate"><span class="pre">65535</span></code> 四个元素中排名第一，
+所以它将被移动到 <code class="docutils literal notranslate"><span class="pre">contents</span></code> 数组的索引 <code class="docutils literal notranslate"><span class="pre">0</span></code> 位置上，
+也即是数组的 <code class="docutils literal notranslate"><span class="pre">0</span></code> 位至 <code class="docutils literal notranslate"><span class="pre">31</span></code> 位的空间内，
+如图 6-8 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-f850882709ace17cfdc3f526b6dd3bea647518cd.png" alt="digraph {
+
+    label = &quot;\n 图 6-8    对元素 1 进行类型转换，并保存在适当的位上&quot;;
+
+    node [shape = record];
+
+    contents [label = &quot; { 位 | 元素 } | { 0 至 31 位 | &lt;old&gt; 1 } | { 32 至 63 位 | 2 } | { 64 位至 95 位 | 3 } | { 96 位至 127 位 | （新分配空间）} &quot;];
+
+    //contents:old -&gt; contents:new [label = &quot;从 int16_t 类型转换为 int32_t 类型&quot;];
+    contents:old -&gt; contents:old [label = &quot;从 int16_t 类型转换为 int32_t 类型&quot;];
+
+}" class="graphviz" /></div>
+<p>然后，
+因为元素 <code class="docutils literal notranslate"><span class="pre">65535</span></code> 在 <code class="docutils literal notranslate"><span class="pre">1</span></code> 、 <code class="docutils literal notranslate"><span class="pre">2</span></code> 、 <code class="docutils literal notranslate"><span class="pre">3</span></code> 、 <code class="docutils literal notranslate"><span class="pre">65535</span></code> 四个元素中排名第四，
+所以它将被添加到 <code class="docutils literal notranslate"><span class="pre">contents</span></code> 数组的索引 <code class="docutils literal notranslate"><span class="pre">3</span></code> 位置上，
+也即是数组的 <code class="docutils literal notranslate"><span class="pre">96</span></code> 位至 <code class="docutils literal notranslate"><span class="pre">127</span></code> 位的空间内，
+如图 6-9 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-7cb1b22a521068e7c42c71ea498bcb52a0a9d101.png" alt="digraph {
+
+    label = &quot;\n 图 6-9    添加 65535 到数组&quot;;
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    set [label = &quot;添加新元素&quot;, shape = plaintext];
+
+    contents [label = &quot; { 位 | 元素 } | { 0 至 31 位 | 1 } | { 32 至 63 位 | 2 } | { 64 位至 95 位 | 3 } | { 96 位至 127 位 | &lt;new&gt; 65535 } &quot;];
+
+
+    set -&gt; contents:new;
+
+}" class="graphviz" /></div>
+<p>最后，
+程序将整数集合 <code class="docutils literal notranslate"><span class="pre">encoding</span></code> 属性的值从 <code class="docutils literal notranslate"><span class="pre">INTSET_ENC_INT16</span></code> 改为 <code class="docutils literal notranslate"><span class="pre">INTSET_ENC_INT32</span></code> ，
+并将 <code class="docutils literal notranslate"><span class="pre">length</span></code> 属性的值从 <code class="docutils literal notranslate"><span class="pre">3</span></code> 改为 <code class="docutils literal notranslate"><span class="pre">4</span></code> ，
+设置完成之后的整数集合如图 6-10 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-efcdc1348f79a5c46387b6889e9adba33887ac5c.png" alt="digraph {
+
+    label = &quot;\n 图 6-10    完成添加操作之后的整数集合&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    intset [label = &quot; intset | encoding \n INTSET_ENC_INT32 | length \n 4 | &lt;contents&gt; contents &quot;];
+
+    contents [label = &quot; { 1 | 2 | 3 | 65535 } &quot;];
+
+    intset:contents -&gt; contents;
+
+}" class="graphviz" /></div>
+<p>因为每次向整数集合添加新元素都可能会引起升级，
+而每次升级都需要对底层数组中已有的所有元素进行类型转换，
+所以向整数集合添加新元素的时间复杂度为 <span class="math">O(N)</span> 。</p>
+<p>其他类型的升级操作，
+比如从 <code class="docutils literal notranslate"><span class="pre">INTSET_ENC_INT16</span></code> 编码升级为 <code class="docutils literal notranslate"><span class="pre">INTSET_ENC_INT64</span></code> 编码，
+或者从 <code class="docutils literal notranslate"><span class="pre">INTSET_ENC_INT32</span></code> 编码升级为 <code class="docutils literal notranslate"><span class="pre">INTSET_ENC_INT64</span></code> 编码，
+升级的过程都和上面展示的升级过程类似。</p>
+<aside class="topic">
+<p class="topic-title">升级之后新元素的摆放位置</p>
+<p>因为引发升级的新元素的长度总是比整数集合现有所有元素的长度都大，
+所以这个新元素的值要么就大于所有现有元素，
+要么就小于所有现有元素：</p>
+<ul class="simple">
+<li><p>在新元素小于所有现有元素的情况下，
+新元素会被放置在底层数组的最开头（索引 <code class="docutils literal notranslate"><span class="pre">0</span></code> ）；</p></li>
+<li><p>在新元素大于所有现有元素的情况下，
+新元素会被放置在底层数组的最末尾（索引 <code class="docutils literal notranslate"><span class="pre">length-1</span></code> ）。</p></li>
+</ul>
+</aside>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/preview/intset/upgrade.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">升级</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2015, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

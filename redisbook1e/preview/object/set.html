@@ -1,0 +1,335 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>集合对象 &#8212; Redis 设计与实现</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">集合对象</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>集合对象<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>集合对象的编码可以是 <code class="docutils literal notranslate"><span class="pre">intset</span></code> 或者 <code class="docutils literal notranslate"><span class="pre">hashtable</span></code> 。</p>
+<p><code class="docutils literal notranslate"><span class="pre">intset</span></code> 编码的集合对象使用整数集合作为底层实现，
+集合对象包含的所有元素都被保存在整数集合里面。</p>
+<p>举个例子，
+以下代码将创建一个如图 8-12 所示的 <code class="docutils literal notranslate"><span class="pre">intset</span></code> 编码集合对象：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SADD</span><span class="w"> </span><span class="n">numbers</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="mi">5</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">3</span>
+</pre></div>
+</div>
+<div class="graphviz"><img src="../../_images/graphviz-5cf6b331e56c044dc40cf66aa3191b48588b027f.png" alt="digraph {
+
+    label = &quot;\n 图 8-12    intset 编码的 numbers 集合对象&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    redisObject [label = &quot; redisObject | type \n REDIS_SET | encoding \n REDIS_ENCODING_INTSET | &lt;ptr&gt; ptr | ... &quot;];
+    intset [label = &quot; &lt;head&gt; intset | encoding \n INTSET_ENC_INT16 | length \n 3 | &lt;contents&gt; contents &quot;];
+
+    contents [label = &quot; { 1 | 3 | 5 } &quot;];
+
+    redisObject:ptr -&gt; intset:head;
+    intset:contents -&gt; contents;
+
+}" class="graphviz" /></div>
+<p>另一方面，
+<code class="docutils literal notranslate"><span class="pre">hashtable</span></code> 编码的集合对象使用字典作为底层实现，
+字典的每个键都是一个字符串对象，
+每个字符串对象包含了一个集合元素，
+而字典的值则全部被设置为 <code class="docutils literal notranslate"><span class="pre">NULL</span></code> 。</p>
+<p>举个例子，
+以下代码将创建一个如图 8-13 所示的 <code class="docutils literal notranslate"><span class="pre">hashtable</span></code> 编码集合对象：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SADD</span><span class="w"> </span><span class="n">fruits</span><span class="w"> </span><span class="s">&quot;apple&quot;</span><span class="w"> </span><span class="s">&quot;banana&quot;</span><span class="w"> </span><span class="s">&quot;cherry&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">3</span>
+</pre></div>
+</div>
+<div class="graphviz"><img src="../../_images/graphviz-dedb626ef552a858369fd3504060ce1657e888aa.png" alt="digraph {
+
+    label = &quot;\n 图 8-13    hashtable 编码的 fruits 集合对象&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    redisObject [label = &quot; redisObject | type \n REDIS_SET | encoding \n REDIS_ENCODING_HT | &lt;ptr&gt; ptr | ... &quot;];
+
+    dict [label = &quot; &lt;head&gt; dict | &lt;cherry&gt; StringObject \n \&quot;cherry\&quot; | &lt;apple&gt; StringObject \n \&quot;apple\&quot; | &lt;banana&gt; StringObject \n \&quot;banana\&quot; &quot;, width = 1.5];
+
+    redisObject:ptr -&gt; dict:head;
+
+    node [shape = plaintext, label = &quot;NULL&quot;];
+
+    dict:apple -&gt; nullX;
+    dict:banana -&gt; nullY;
+    dict:cherry -&gt; nullZ;
+
+}" class="graphviz" /></div>
+<section id="id2">
+<h2>编码的转换<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>当集合对象可以同时满足以下两个条件时，
+对象使用 <code class="docutils literal notranslate"><span class="pre">intset</span></code> 编码：</p>
+<ol class="arabic simple">
+<li><p>集合对象保存的所有元素都是整数值；</p></li>
+<li><p>集合对象保存的元素数量不超过 <code class="docutils literal notranslate"><span class="pre">512</span></code> 个；</p></li>
+</ol>
+<p>不能满足这两个条件的集合对象需要使用 <code class="docutils literal notranslate"><span class="pre">hashtable</span></code> 编码。</p>
+<aside class="topic">
+<p class="topic-title">注意</p>
+<p>第二个条件的上限值是可以修改的，
+具体请看配置文件中关于 <code class="docutils literal notranslate"><span class="pre">set-max-intset-entries</span></code> 选项的说明。</p>
+</aside>
+<p>对于使用 <code class="docutils literal notranslate"><span class="pre">intset</span></code> 编码的集合对象来说，
+当使用 <code class="docutils literal notranslate"><span class="pre">intset</span></code> 编码所需的两个条件的任意一个不能被满足时，
+对象的编码转换操作就会被执行：
+原本保存在整数集合中的所有元素都会被转移并保存到字典里面，
+并且对象的编码也会从 <code class="docutils literal notranslate"><span class="pre">intset</span></code> 变为 <code class="docutils literal notranslate"><span class="pre">hashtable</span></code> 。</p>
+<p>举个例子，
+以下代码创建了一个只包含整数元素的集合对象，
+该对象的编码为 <code class="docutils literal notranslate"><span class="pre">intset</span></code> ：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SADD</span><span class="w"> </span><span class="n">numbers</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="mi">5</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">3</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">OBJECT</span><span class="w"> </span><span class="n">ENCODING</span><span class="w"> </span><span class="n">numbers</span>
+<span class="s">&quot;intset&quot;</span>
+</pre></div>
+</div>
+<p>不过，
+只要我们向这个只包含整数元素的集合对象添加一个字符串元素，
+集合对象的编码转移操作就会被执行：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SADD</span><span class="w"> </span><span class="n">numbers</span><span class="w"> </span><span class="s">&quot;seven&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">1</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">OBJECT</span><span class="w"> </span><span class="n">ENCODING</span><span class="w"> </span><span class="n">numbers</span>
+<span class="s">&quot;hashtable&quot;</span>
+</pre></div>
+</div>
+<p>除此之外，
+如果我们创建一个包含 <code class="docutils literal notranslate"><span class="pre">512</span></code> 个整数元素的集合对象，
+那么对象的编码应该会是 <code class="docutils literal notranslate"><span class="pre">intset</span></code> ：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">EVAL</span><span class="w"> </span><span class="s">&quot;for i=1, 512 do redis.call(&#39;SADD&#39;, KEYS[1], i) end&quot;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="n">integers</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SCARD</span><span class="w"> </span><span class="n">integers</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">512</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">OBJECT</span><span class="w"> </span><span class="n">ENCODING</span><span class="w"> </span><span class="n">integers</span>
+<span class="s">&quot;intset&quot;</span>
+</pre></div>
+</div>
+<p>但是，
+只要我们再向集合添加一个新的整数元素，
+使得这个集合的元素数量变成 <code class="docutils literal notranslate"><span class="pre">513</span></code> ，
+那么对象的编码转换操作就会被执行：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SADD</span><span class="w"> </span><span class="n">integers</span><span class="w"> </span><span class="mi">10086</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">1</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SCARD</span><span class="w"> </span><span class="n">integers</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">513</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">OBJECT</span><span class="w"> </span><span class="n">ENCODING</span><span class="w"> </span><span class="n">integers</span>
+<span class="s">&quot;hashtable&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id3">
+<h2>集合命令的实现<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>因为集合键的值为集合对象，
+所以用于集合键的所有命令都是针对集合对象来构建的，
+表 8-10 列出了其中一部分集合键命令，
+以及这些命令在不同编码的集合对象下的实现方法。</p>
+<hr class="docutils" />
+<p>表 8-10    集合命令的实现方法</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>命令</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">intset</span></code> 编码的实现方法</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">hashtable</span></code> 编码的实现方法</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><span class="xref std std-ref">SADD</span></p></td>
+<td><p>调用 <code class="docutils literal notranslate"><span class="pre">intsetAdd</span></code> 函数，
+将所有新元素添加到整数集合里面。</p></td>
+<td><p>调用 <code class="docutils literal notranslate"><span class="pre">dictAdd</span></code> ，
+以新元素为键， <code class="docutils literal notranslate"><span class="pre">NULL</span></code> 为值，
+将键值对添加到字典里面。</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="xref std std-ref">SCARD</span></p></td>
+<td><p>调用 <code class="docutils literal notranslate"><span class="pre">intsetLen</span></code> 函数，
+返回整数集合所包含的元素数量，
+这个数量就是集合对象所包含的元素数量。</p></td>
+<td><p>调用 <code class="docutils literal notranslate"><span class="pre">dictSize</span></code> 函数，
+返回字典所包含的键值对数量，
+这个数量就是集合对象所包含的元素数量。</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="xref std std-ref">SISMEMBER</span></p></td>
+<td><p>调用 <code class="docutils literal notranslate"><span class="pre">intsetFind</span></code> 函数，
+在整数集合中查找给定的元素，
+如果找到了说明元素存在于集合，
+没找到则说明元素不存在于集合。</p></td>
+<td><p>调用 <code class="docutils literal notranslate"><span class="pre">dictFind</span></code> 函数，
+在字典的键中查找给定的元素，
+如果找到了说明元素存在于集合，
+没找到则说明元素不存在于集合。</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="xref std std-ref">SMEMBERS</span></p></td>
+<td><p>遍历整个整数集合，
+使用 <code class="docutils literal notranslate"><span class="pre">intsetGet</span></code> 函数返回集合元素。</p></td>
+<td><p>遍历整个字典，
+使用 <code class="docutils literal notranslate"><span class="pre">dictGetKey</span></code> 函数返回字典的键作为集合元素。</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="xref std std-ref">SRANDMEMBER</span></p></td>
+<td><p>调用 <code class="docutils literal notranslate"><span class="pre">intsetRandom</span></code> 函数，
+从整数集合中随机返回一个元素。</p></td>
+<td><p>调用 <code class="docutils literal notranslate"><span class="pre">dictGetRandomKey</span></code> 函数，
+从字典中随机返回一个字典键。</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="xref std std-ref">SPOP</span></p></td>
+<td><p>调用 <code class="docutils literal notranslate"><span class="pre">intsetRandom</span></code> 函数，
+从整数集合中随机取出一个元素，
+在将这个随机元素返回给客户端之后，
+调用 <code class="docutils literal notranslate"><span class="pre">intsetRemove</span></code> 函数，
+将随机元素从整数集合中删除掉。</p></td>
+<td><p>调用 <code class="docutils literal notranslate"><span class="pre">dictGetRandomKey</span></code> 函数，
+从字典中随机取出一个字典键，
+在将这个随机字典键的值返回给客户端之后，
+调用 <code class="docutils literal notranslate"><span class="pre">dictDelete</span></code> 函数，
+从字典中删除随机字典键所对应的键值对。</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="xref std std-ref">SREM</span></p></td>
+<td><p>调用 <code class="docutils literal notranslate"><span class="pre">intsetRemove</span></code> 函数，
+从整数集合中删除所有给定的元素。</p></td>
+<td><p>调用 <code class="docutils literal notranslate"><span class="pre">dictDelete</span></code> 函数，
+从字典中删除所有键为给定元素的键值对。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="../../index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">集合对象</a><ul>
+<li><a class="reference internal" href="#id2">编码的转换</a></li>
+<li><a class="reference internal" href="#id3">集合命令的实现</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/preview/object/set.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">集合对象</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2015, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

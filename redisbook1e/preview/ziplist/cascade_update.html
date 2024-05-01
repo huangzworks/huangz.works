@@ -1,0 +1,310 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>连锁更新 &#8212; Redis 设计与实现</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">连锁更新</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>连锁更新<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>前面说过，
+每个节点的 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性都记录了前一个节点的长度：</p>
+<ul class="simple">
+<li><p>如果前一节点的长度小于 <code class="docutils literal notranslate"><span class="pre">254</span></code> 字节，
+那么 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性需要用 <code class="docutils literal notranslate"><span class="pre">1</span></code> 字节长的空间来保存这个长度值。</p></li>
+<li><p>如果前一节点的长度大于等于 <code class="docutils literal notranslate"><span class="pre">254</span></code> 字节，
+那么 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性需要用 <code class="docutils literal notranslate"><span class="pre">5</span></code> 字节长的空间来保存这个长度值。</p></li>
+</ul>
+<p>现在，
+考虑这样一种情况：
+在一个压缩列表中，
+有多个连续的、长度介于 <code class="docutils literal notranslate"><span class="pre">250</span></code> 字节到 <code class="docutils literal notranslate"><span class="pre">253</span></code> 字节之间的节点 <code class="docutils literal notranslate"><span class="pre">e1</span></code> 至 <code class="docutils literal notranslate"><span class="pre">eN</span></code> ，
+如图 7-11 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-b8d60dbcbb3cf3ddc0d9870195a9cd0e1671fdd3.png" alt="digraph {
+
+    label = &quot;\n 图 7-11    包含节点 e1 至 eN 的压缩列表&quot;;
+
+    node [shape = record];
+
+    ziplist [label = &quot; zlbytes| zltail | zllen | e1 | e2 | e3 | ... | eN | zlend &quot;];
+
+}" class="graphviz" /></div>
+<p>因为 <code class="docutils literal notranslate"><span class="pre">e1</span></code> 至 <code class="docutils literal notranslate"><span class="pre">eN</span></code> 的所有节点的长度都小于 <code class="docutils literal notranslate"><span class="pre">254</span></code> 字节，
+所以记录这些节点的长度只需要 <code class="docutils literal notranslate"><span class="pre">1</span></code> 字节长的 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性，
+换句话说，
+<code class="docutils literal notranslate"><span class="pre">e1</span></code> 至 <code class="docutils literal notranslate"><span class="pre">eN</span></code> 的所有节点的 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性都是 <code class="docutils literal notranslate"><span class="pre">1</span></code> 字节长的。</p>
+<p>这时，
+如果我们将一个长度大于等于 <code class="docutils literal notranslate"><span class="pre">254</span></code> 字节的新节点 <code class="docutils literal notranslate"><span class="pre">new</span></code> 设置为压缩列表的表头节点，
+那么 <code class="docutils literal notranslate"><span class="pre">new</span></code> 将成为 <code class="docutils literal notranslate"><span class="pre">e1</span></code> 的前置节点，
+如图 7-12 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-959b7edcb8400ee2477fb057ea5bd1ca9b080be1.png" alt="digraph {
+
+    label = &quot;\n 图 7-12    添加新节点到压缩列表&quot;;
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    ziplist [label = &quot; zlbytes | zltail | zllen | &lt;new&gt; new | e1 | e2 | e3 | ... | eN | zlend &quot;];
+
+    p [label = &quot;添加新节点&quot;, shape = plaintext];
+
+    p -&gt; ziplist:new;
+
+}" class="graphviz" /></div>
+<p>因为 <code class="docutils literal notranslate"><span class="pre">e1</span></code> 的 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性仅长 <code class="docutils literal notranslate"><span class="pre">1</span></code> 字节，
+它没办法保存新节点 <code class="docutils literal notranslate"><span class="pre">new</span></code> 的长度，
+所以程序将对压缩列表执行空间重分配操作，
+并将 <code class="docutils literal notranslate"><span class="pre">e1</span></code> 节点的 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性从原来的 <code class="docutils literal notranslate"><span class="pre">1</span></code> 字节长扩展为 <code class="docutils literal notranslate"><span class="pre">5</span></code> 字节长。</p>
+<p>现在，
+麻烦的事情来了 ——
+<code class="docutils literal notranslate"><span class="pre">e1</span></code> 原本的长度介于 <code class="docutils literal notranslate"><span class="pre">250</span></code> 字节至 <code class="docutils literal notranslate"><span class="pre">253</span></code> 字节之间，
+在为 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性新增四个字节的空间之后，
+<code class="docutils literal notranslate"><span class="pre">e1</span></code> 的长度就变成了介于 <code class="docutils literal notranslate"><span class="pre">254</span></code> 字节至 <code class="docutils literal notranslate"><span class="pre">257</span></code> 字节之间，
+而这种长度使用 <code class="docutils literal notranslate"><span class="pre">1</span></code> 字节长的 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性是没办法保存的。</p>
+<p>因此，
+为了让 <code class="docutils literal notranslate"><span class="pre">e2</span></code> 的 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性可以记录下 <code class="docutils literal notranslate"><span class="pre">e1</span></code> 的长度，
+程序需要再次对压缩列表执行空间重分配操作，
+并将 <code class="docutils literal notranslate"><span class="pre">e2</span></code> 节点的 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性从原来的 <code class="docutils literal notranslate"><span class="pre">1</span></code> 字节长扩展为 <code class="docutils literal notranslate"><span class="pre">5</span></code> 字节长。</p>
+<p>正如扩展 <code class="docutils literal notranslate"><span class="pre">e1</span></code> 引发了对 <code class="docutils literal notranslate"><span class="pre">e2</span></code> 的扩展一样，
+扩展 <code class="docutils literal notranslate"><span class="pre">e2</span></code> 也会引发对 <code class="docutils literal notranslate"><span class="pre">e3</span></code> 的扩展，
+而扩展 <code class="docutils literal notranslate"><span class="pre">e3</span></code> 又会引发对 <code class="docutils literal notranslate"><span class="pre">e4</span></code> 的扩展……为了让每个节点的 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性都符合压缩列表对节点的要求，
+程序需要不断地对压缩列表执行空间重分配操作，
+直到 <code class="docutils literal notranslate"><span class="pre">eN</span></code> 为止。</p>
+<p>Redis 将这种在特殊情况下产生的连续多次空间扩展操作称之为“连锁更新”（cascade update），
+图 7-13 展示了这一过程。</p>
+<div class="graphviz"><img src="../../_images/graphviz-88cb1a27a2e1941c28fad8b5fb26b6ef0427bdf4.png" alt="digraph {
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    ziplist [label = &quot; zlbytes | zltail | zllen | &lt;new&gt; new | &lt;e1&gt; e1 | &lt;e2&gt; e2 | &lt;e3&gt; e3 | ... | &lt;en&gt; eN | zlend &quot;];
+
+    p [label = &quot;扩展 e1 \n并引发对 e2 的扩展&quot;, shape = plaintext];
+
+    p -&gt; ziplist:e1;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="../../_images/graphviz-76dbea6cd8e5d31a547c2d966e91b8e0cd02ab3e.png" alt="digraph {
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    ziplist [label = &quot; zlbytes | zltail | zllen | &lt;new&gt; new | &lt;e1&gt; e1 | &lt;e2&gt; e2 | &lt;e3&gt; e3 | ... | &lt;en&gt; eN | zlend &quot;];
+
+    p [label = &quot;扩展 e2 \n并引发对 e3 的扩展&quot;, shape = plaintext];
+
+    p -&gt; ziplist:e2;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="../../_images/graphviz-850c7441b681aa0a32dc7b2651757a08942e8460.png" alt="digraph {
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    ziplist [label = &quot; zlbytes | zltail | zllen | &lt;new&gt; new | &lt;e1&gt; e1 | &lt;e2&gt; e2 | &lt;e3&gt; e3 | ... | &lt;en&gt; eN | zlend &quot;];
+
+    p [label = &quot;扩展 e3 \n并引发对 e4 的扩展&quot;, shape = plaintext];
+
+    p -&gt; ziplist:e3;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="../../_images/graphviz-32c98b459ac45ba2537cb6e34502dc50906dd6dd.png" alt="digraph {
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    ziplist [label = &quot; zlbytes | zltail | zllen | &lt;new&gt; new | &lt;e1&gt; e1 | &lt;e2&gt; e2 | &lt;e3&gt; e3 | &lt;more&gt; ... | &lt;en&gt; eN | zlend &quot;];
+
+    p [label = &quot;一直扩展下去……&quot;, shape = plaintext];
+
+    p -&gt; ziplist:more;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="../../_images/graphviz-adc0e8a5eb9dd28120b090879a052b10119b3c73.png" alt="digraph {
+
+    label = &quot;\n 图 7-13    连锁更新过程&quot;;
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    ziplist [label = &quot; zlbytes | zltail | zllen | &lt;new&gt; new | &lt;e1&gt; e1 | &lt;e2&gt; e2 | &lt;e3&gt; e3 | &lt;e4&gt; e4 | ... | &lt;eN&gt; eN | zlend &quot;];
+
+    p [label = &quot;为 eN-1 扩展 eN 的 previous_entry_length 属性 \n 连锁更新到此结束&quot;, shape = plaintext];
+
+    p -&gt; ziplist:eN;
+
+}" class="graphviz" /></div>
+<p>除了添加新节点可能会引发连锁更新之外，
+删除节点也可能会引发连锁更新。</p>
+<p>考虑图 7-14 所示的压缩列表，
+如果 <code class="docutils literal notranslate"><span class="pre">e1</span></code> 至 <code class="docutils literal notranslate"><span class="pre">eN</span></code> 都是大小介于 <code class="docutils literal notranslate"><span class="pre">250</span></code> 字节至 <code class="docutils literal notranslate"><span class="pre">253</span></code> 字节的节点，
+<code class="docutils literal notranslate"><span class="pre">big</span></code> 节点的长度大于等于 <code class="docutils literal notranslate"><span class="pre">254</span></code> 字节（需要 <code class="docutils literal notranslate"><span class="pre">5</span></code> 字节的 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 来保存），
+而 <code class="docutils literal notranslate"><span class="pre">small</span></code> 节点的长度小于 <code class="docutils literal notranslate"><span class="pre">254</span></code> 字节（只需要 <code class="docutils literal notranslate"><span class="pre">1</span></code> 字节的 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 来保存），
+那么当我们将 <code class="docutils literal notranslate"><span class="pre">small</span></code> 节点从压缩列表中删除之后，
+为了让 <code class="docutils literal notranslate"><span class="pre">e1</span></code> 的 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性可以记录 <code class="docutils literal notranslate"><span class="pre">big</span></code> 节点的长度，
+程序将扩展 <code class="docutils literal notranslate"><span class="pre">e1</span></code> 的空间，
+并由此引发之后的连锁更新。</p>
+<div class="graphviz"><img src="../../_images/graphviz-b85d284d69ebdc7593fa350b67094c3bf05e83ba.png" alt="digraph {
+
+    label = &quot;\n 图 7-14    另一种引起连锁更新的情况&quot;;
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    ziplist [label = &quot; zlbytes| zltail | zllen | big | &lt;small&gt; small | e1 | e2 | e3 | ... | eN | zlend &quot;];
+
+    node [shape = plaintext];
+
+    p [label = &quot;删去 small 节点将引发连锁更新&quot;];
+
+    p -&gt; ziplist:small;
+
+}" class="graphviz" /></div>
+<p>因为连锁更新在最坏情况下需要对压缩列表执行 <code class="docutils literal notranslate"><span class="pre">N</span></code> 次空间重分配操作，
+而每次空间重分配的最坏复杂度为 <span class="math">O(N)</span> ，
+所以连锁更新的最坏复杂度为 <span class="math">O(N^2)</span> 。</p>
+<p>要注意的是，
+尽管连锁更新的复杂度较高，
+但它真正造成性能问题的几率是很低的：</p>
+<ul class="simple">
+<li><p>首先，
+压缩列表里要恰好有多个连续的、长度介于 <code class="docutils literal notranslate"><span class="pre">250</span></code> 字节至 <code class="docutils literal notranslate"><span class="pre">253</span></code> 字节之间的节点，
+连锁更新才有可能被引发，
+在实际中，
+这种情况并不多见；</p></li>
+<li><p>其次，
+即使出现连锁更新，
+但只要被更新的节点数量不多，
+就不会对性能造成任何影响：
+比如说，
+对三五个节点进行连锁更新是绝对不会影响性能的；</p></li>
+</ul>
+<p>因为以上原因，
+<code class="docutils literal notranslate"><span class="pre">ziplistPush</span></code> 等命令的平均复杂度仅为 <span class="math">O(N)</span> ，
+在实际中，
+我们可以放心地使用这些函数，
+而不必担心连锁更新会影响压缩列表的性能。</p>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/preview/ziplist/cascade_update.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">连锁更新</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2015, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

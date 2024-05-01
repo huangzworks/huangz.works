@@ -1,0 +1,305 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>对象共享 &#8212; Redis 设计与实现</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">对象共享</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>对象共享<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>除了用于实现引用计数内存回收机制之外，
+对象的引用计数属性还带有对象共享的作用。</p>
+<p>举个例子，
+假设键 A 创建了一个包含整数值 <code class="docutils literal notranslate"><span class="pre">100</span></code> 的字符串对象作为值对象，
+如图 8-20 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-6a266dddd3d5bc296f6e4c3bf5bbb759439fc78c.png" alt="digraph {
+
+    label = &quot;\n 图 8-20    未被共享的字符串对象&quot;;
+
+    rankdir = LR;
+
+    key_a [label = &quot;键 A&quot;, shape = box, width = 1.5];
+
+    redisObject [label = &quot; &lt;head&gt; redisObject | type \n REDIS_STRING | encoding \n REDIS_ENCODING_INT | &lt;ptr&gt; ptr | refcount \n 1 | ... &quot;, shape = record];
+
+    node [shape = plaintext];
+
+    number [label = &quot;100&quot;]
+
+    redisObject:ptr -&gt; number;
+
+    key_a -&gt; redisObject:head;
+
+}" class="graphviz" /></div>
+<p>如果这时键 B 也要创建一个同样保存了整数值 <code class="docutils literal notranslate"><span class="pre">100</span></code> 的字符串对象作为值对象，
+那么服务器有以下两种做法：</p>
+<ol class="arabic simple">
+<li><p>为键 B 新创建一个包含整数值 <code class="docutils literal notranslate"><span class="pre">100</span></code> 的字符串对象；</p></li>
+<li><p>让键 A 和键 B 共享同一个字符串对象；</p></li>
+</ol>
+<p>以上两种方法很明显是第二种方法更节约内存。</p>
+<p>在 Redis 中，
+让多个键共享同一个值对象需要执行以下两个步骤：</p>
+<ol class="arabic simple">
+<li><p>将数据库键的值指针指向一个现有的值对象；</p></li>
+<li><p>将被共享的值对象的引用计数增一。</p></li>
+</ol>
+<p>举个例子，
+图 8-21 就展示了包含整数值 <code class="docutils literal notranslate"><span class="pre">100</span></code> 的字符串对象同时被键 A 和键 B 共享之后的样子，
+可以看到，
+除了对象的引用计数从之前的 <code class="docutils literal notranslate"><span class="pre">1</span></code> 变成了 <code class="docutils literal notranslate"><span class="pre">2</span></code> 之外，
+其他属性都没有变化。</p>
+<div class="graphviz"><img src="../../_images/graphviz-e6f50fccbc93240a373287b35950806cec54c525.png" alt="digraph {
+
+    label = &quot;\n 图 8-21    被共享的字符串对象&quot;;
+
+    rankdir = LR;
+
+    key_a [label = &quot;键 A&quot;, shape = box, width = 1.5];
+    key_b [label = &quot;键 B&quot;, shape = box, width = 1.5];
+
+    redisObject [label = &quot; &lt;head&gt; redisObject | type \n REDIS_STRING | encoding \n REDIS_ENCODING_INT | &lt;ptr&gt; ptr | refcount \n 2 | ... &quot;, shape = record];
+
+    node [shape = plaintext];
+
+    number [label = &quot;100&quot;]
+
+    redisObject:ptr -&gt; number;
+
+    key_a -&gt; redisObject:head;
+    key_b -&gt; redisObject:head;
+
+}" class="graphviz" /></div>
+<p>共享对象机制对于节约内存非常有帮助，
+数据库中保存的相同值对象越多，
+对象共享机制就能节约越多的内存。</p>
+<p>比如说，
+假设数据库中保存了整数值 <code class="docutils literal notranslate"><span class="pre">100</span></code> 的键不只有键 A 和键 B 两个，
+而是有一百个，
+那么服务器只需要用一个字符串对象的内存就可以保存原本需要使用一百个字符串对象的内存才能保存的数据。</p>
+<p>目前来说，
+Redis 会在初始化服务器时，
+创建一万个字符串对象，
+这些对象包含了从 <code class="docutils literal notranslate"><span class="pre">0</span></code> 到 <code class="docutils literal notranslate"><span class="pre">9999</span></code> 的所有整数值，
+当服务器需要用到值为 <code class="docutils literal notranslate"><span class="pre">0</span></code> 到 <code class="docutils literal notranslate"><span class="pre">9999</span></code> 的字符串对象时，
+服务器就会使用这些共享对象，
+而不是新创建对象。</p>
+<aside class="topic">
+<p class="topic-title">注意</p>
+<p>创建共享字符串对象的数量可以通过修改 <code class="docutils literal notranslate"><span class="pre">redis.h/REDIS_SHARED_INTEGERS</span></code> 常量来修改。</p>
+</aside>
+<p>举个例子，
+如果我们创建一个值为 <code class="docutils literal notranslate"><span class="pre">100</span></code> 的键 <code class="docutils literal notranslate"><span class="pre">A</span></code> ，
+并使用 <span class="xref std std-ref">OBJECT REFCOUNT</span> 命令查看键 <code class="docutils literal notranslate"><span class="pre">A</span></code> 的值对象的引用计数，
+我们会发现值对象的引用计数为 <code class="docutils literal notranslate"><span class="pre">2</span></code> ：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SET</span><span class="w"> </span><span class="n">A</span><span class="w"> </span><span class="mi">100</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">OBJECT</span><span class="w"> </span><span class="n">REFCOUNT</span><span class="w"> </span><span class="n">A</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">2</span>
+</pre></div>
+</div>
+<p>引用这个值对象的两个程序分别是持有这个值对象的服务器程序，
+以及共享这个值对象的键 <code class="docutils literal notranslate"><span class="pre">A</span></code> ，
+如图 8-22 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-e315c8b6df96c9f21677599af9a825869c40c629.png" alt="digraph {
+
+    label = &quot;\n 图 8-22    引用数为 2 的共享对象&quot;;
+
+    rankdir = LR;
+
+    server [label = &quot;服务器程序&quot;, shape = box, width = 1.5];
+    key_a [label = &quot;键 A&quot;, shape = box, width = 1.5];
+
+    redisObject [label = &quot; &lt;head&gt; redisObject | type \n REDIS_STRING | encoding \n REDIS_ENCODING_INT | &lt;ptr&gt; ptr | refcount \n 2 | ... &quot;, shape = record];
+
+    node [shape = plaintext];
+
+    number [label = &quot;100&quot;]
+
+    redisObject:ptr -&gt; number;
+
+    server -&gt; redisObject:head;
+    key_a -&gt; redisObject:head;
+
+}" class="graphviz" /></div>
+<p>如果这时我们再创建一个值为 <code class="docutils literal notranslate"><span class="pre">100</span></code> 的键 <code class="docutils literal notranslate"><span class="pre">B</span></code> ，
+那么键 <code class="docutils literal notranslate"><span class="pre">B</span></code> 也会指向包含整数值 <code class="docutils literal notranslate"><span class="pre">100</span></code> 的共享对象，
+使得共享对象的引用计数值变为 <code class="docutils literal notranslate"><span class="pre">3</span></code> ：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SET</span><span class="w"> </span><span class="n">B</span><span class="w"> </span><span class="mi">100</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">OBJECT</span><span class="w"> </span><span class="n">REFCOUNT</span><span class="w"> </span><span class="n">A</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">3</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">OBJECT</span><span class="w"> </span><span class="n">REFCOUNT</span><span class="w"> </span><span class="n">B</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">3</span>
+</pre></div>
+</div>
+<p>图 8-23 展示了共享值对象的三个程序。</p>
+<div class="graphviz"><img src="../../_images/graphviz-ec3d9f5df04568874e4458e77a27175b648ca7e2.png" alt="digraph {
+
+    label = &quot;\n 图 8-23    引用数为 3 的共享对象&quot;;
+
+    rankdir = LR;
+
+    server [label = &quot;服务器程序&quot;, shape = box, width = 1.5];
+    key_a [label = &quot;键 A&quot;, shape = box, width = 1.5];
+    key_b [label = &quot;键 B&quot;, shape = box, width = 1.5];
+
+    redisObject [label = &quot; &lt;head&gt; redisObject | type \n REDIS_STRING | encoding \n REDIS_ENCODING_INT | &lt;ptr&gt; ptr | refcount \n 3 | ... &quot;, shape = record];
+
+    node [shape = plaintext];
+
+    number [label = &quot;100&quot;]
+
+    redisObject:ptr -&gt; number;
+
+    key_a -&gt; redisObject:head;
+    key_b -&gt; redisObject:head;
+    server -&gt; redisObject:head;
+
+}" class="graphviz" /></div>
+<p>另外，
+这些共享对象不单单只有字符串键可以使用，
+那些在数据结构中嵌套了字符串对象的对象（<code class="docutils literal notranslate"><span class="pre">linkedlist</span></code> 编码的列表对象、 <code class="docutils literal notranslate"><span class="pre">hashtable</span></code> 编码的哈希对象、 <code class="docutils literal notranslate"><span class="pre">hashtable</span></code> 编码的集合对象、以及 <code class="docutils literal notranslate"><span class="pre">zset</span></code> 编码的有序集合对象）都可以使用这些共享对象。</p>
+<aside class="topic">
+<p class="topic-title">为什么 Redis 不共享包含字符串的对象？</p>
+<p>当服务器考虑将一个共享对象设置为键的值对象时，
+程序需要先检查给定的共享对象和键想创建的目标对象是否完全相同，
+只有在共享对象和目标对象完全相同的情况下，
+程序才会将共享对象用作键的值对象，
+而一个共享对象保存的值越复杂，
+验证共享对象和目标对象是否相同所需的复杂度就会越高，
+消耗的 CPU 时间也会越多：</p>
+<ul class="simple">
+<li><p>如果共享对象是保存整数值的字符串对象，
+那么验证操作的复杂度为 <span class="math">O(1)</span> ；</p></li>
+<li><p>如果共享对象是保存字符串值的字符串对象，
+那么验证操作的复杂度为 <span class="math">O(N)</span> ；</p></li>
+<li><p>如果共享对象是包含了多个值（或者对象的）对象，
+比如列表对象或者哈希对象，
+那么验证操作的复杂度将会是 <span class="math">O(N^2)</span> 。</p></li>
+</ul>
+<p>因此，
+尽管共享更复杂的对象可以节约更多的内存，
+但受到 CPU 时间的限制，
+Redis 只对包含整数值的字符串对象进行共享。</p>
+</aside>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/preview/object/share_object.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">对象共享</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2015, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

@@ -1,0 +1,715 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>数据库键空间 &#8212; Redis 设计与实现</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">数据库键空间</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>数据库键空间<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>Redis 是一个键值对（key-value pair）数据库服务器，
+服务器中的每个数据库都由一个 <code class="docutils literal notranslate"><span class="pre">redis.h/redisDb</span></code> 结构表示，
+其中，
+<code class="docutils literal notranslate"><span class="pre">redisDb</span></code> 结构的 <code class="docutils literal notranslate"><span class="pre">dict</span></code> 字典保存了数据库中的所有键值对，
+我们将这个字典称为键空间（key space）：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">redisDb</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="c1">// ...</span>
+
+<span class="w">    </span><span class="c1">// 数据库键空间，保存着数据库中的所有键值对</span>
+<span class="w">    </span><span class="n">dict</span><span class="w"> </span><span class="o">*</span><span class="n">dict</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// ...</span>
+
+<span class="p">}</span><span class="w"> </span><span class="n">redisDb</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>键空间和用户所见的数据库是直接对应的：</p>
+<ul class="simple">
+<li><p>键空间的键也就是数据库的键，
+每个键都是一个字符串对象。</p></li>
+<li><p>键空间的值也就是数据库的值，
+每个值可以是字符串对象、列表对象、哈希表对象、集合对象和有序集合对象在内的任意一种 Redis 对象。</p></li>
+</ul>
+<p>举个例子，
+如果我们在空白的数据库中执行以下命令：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SET</span><span class="w"> </span><span class="n">message</span><span class="w"> </span><span class="s">&quot;hello world&quot;</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">RPUSH</span><span class="w"> </span><span class="n">alphabet</span><span class="w"> </span><span class="s">&quot;a&quot;</span><span class="w"> </span><span class="s">&quot;b&quot;</span><span class="w"> </span><span class="s">&quot;c&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">3</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">HSET</span><span class="w"> </span><span class="n">book</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="s">&quot;Redis in Action&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">1</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">HSET</span><span class="w"> </span><span class="n">book</span><span class="w"> </span><span class="n">author</span><span class="w"> </span><span class="s">&quot;Josiah L. Carlson&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">1</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">HSET</span><span class="w"> </span><span class="n">book</span><span class="w"> </span><span class="n">publisher</span><span class="w"> </span><span class="s">&quot;Manning&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">1</span>
+</pre></div>
+</div>
+<p>那么在这些命令执行之后，
+数据库的键空间将会是图 IMAGE_DB_EXAMPLE 所展示的样子：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">alphabet</span></code> 是一个列表键，
+键的名字是一个包含字符串 <code class="docutils literal notranslate"><span class="pre">&quot;alphabet&quot;</span></code> 的字符串对象，
+键的值则是一个包含三个元素的列表对象。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">book</span></code> 是一个哈希表键，
+键的名字是一个包含字符串 <code class="docutils literal notranslate"><span class="pre">&quot;book&quot;</span></code> 的字符串对象，
+键的值则是一个包含三个键值对的哈希表对象。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">message</span></code> 是一个字符串键，
+键的名字是一个包含字符串 <code class="docutils literal notranslate"><span class="pre">&quot;message&quot;</span></code> 的字符串对象，
+键的值则是一个包含字符串 <code class="docutils literal notranslate"><span class="pre">&quot;hello</span> <span class="pre">world&quot;</span></code> 的字符串对象。</p></li>
+</ul>
+<div class="graphviz"><img src="../../_images/graphviz-2684198bd126fefff8c30d2e5a15c6341b238f1b.png" alt="digraph {
+
+    label = &quot;\n图 IMAGE_DB_EXAMPLE    数据库键空间例子&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    //
+
+    redisDb [label = &quot;redisDb | ... | &lt;dict&gt; dict | ...&quot;];
+
+    dict [label = &quot;&lt;dict&gt; dict | &lt;alphabet&gt; StringObject \n \&quot;alphabet\&quot; | &lt;book&gt; StringObject \n \&quot;book\&quot; | &lt;message&gt; StringObject \n \&quot;message\&quot;&quot;];
+
+    subgraph cluster_alphabet {
+
+        a [label = &quot; StringObject \n \&quot;a\&quot; &quot;];
+        b [label = &quot; StringObject \n \&quot;b\&quot; &quot;];
+        c [label = &quot; StringObject \n \&quot;c\&quot; &quot;];
+
+        a -&gt; b -&gt; c;
+
+        label = &quot;ListObject&quot;;
+
+    }
+
+    //alphabet [label = &quot;&lt;head&gt; ListObject | { StringObject \n \&quot;a\&quot; | \&quot;b\&quot; | \&quot;c\&quot; }&quot;];
+
+    book [label = &quot;&lt;head&gt; HashObject | &lt;name&gt; StringObject \n \&quot;name\&quot; | &lt;author&gt; StringObject \n \&quot;author\&quot; | &lt;publisher&gt; StringObject \n \&quot;publisher\&quot;&quot;];
+
+    //name [label = &quot; StringObject \n \&quot;Redis in Action\&quot;&quot;];
+    name [label = &quot; StringObject \n \&quot;Redis in Action\&quot;&quot;];
+
+    author [label = &quot; StringObject \n \&quot;Josiah L. Carlson\&quot;&quot;];
+
+    publisher [label = &quot; StringObject \n \&quot;Manning\&quot;&quot;];
+
+    message [label = &quot; StringObject \n \&quot;hello world\&quot;&quot;];
+
+    //
+
+    redisDb:dict -&gt; dict:dict;
+
+    dict:alphabet -&gt; a;
+    dict:book -&gt; book:head;
+    dict:message -&gt; message;
+
+    book:name -&gt; name;
+    book:publisher -&gt; publisher;
+    book:author -&gt; author;
+
+}" class="graphviz" /></div>
+<p>因为数据库的键空间是一个字典，
+所以所有针对数据库的操作 ——
+比如添加一个键值对到数据库，
+或者从数据库中删除一个键值对，
+又或者在数据库中获取某个键值对，
+等等，
+实际上都是通过对键空间字典进行操作来实现的，
+以下几个小节将分别介绍数据库的添加、删除、更新、取值等操作的实现原理。</p>
+<section id="id2">
+<h2>添加新键<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>添加一个新键值对到数据库，
+实际上就是将一个新键值对添加到键空间字典里面，
+其中键为字符串对象，
+而值则为任意一种类型的 Redis 对象。</p>
+<p>举个例子，
+如果键空间当前的状态如图 IMAGE_DB_EXAMPLE 所示，
+那么在执行以下命令之后：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SET</span><span class="w"> </span><span class="n">date</span><span class="w"> </span><span class="s">&quot;2013.12.1&quot;</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p>键空间将添加一个新的键值对，
+这个新键值对的键是一个包含字符串 <code class="docutils literal notranslate"><span class="pre">&quot;date&quot;</span></code> 的字符串对象，
+而键值对的值则是一个包含字符串 <code class="docutils literal notranslate"><span class="pre">&quot;2013.12.1&quot;</span></code> 的字符串对象，
+如图 IMAGE_DB_AFTER_ADD_NEW_KEY 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-54205c04d9a3f6ab004ef2744a43400578887bf2.png" alt="digraph {
+
+    label = &quot;\n图 IMAGE_DB_AFTER_ADD_NEW_KEY    添加 date 键之后的键空间&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    //
+
+    redisDb [label = &quot;redisDb | ... | &lt;dict&gt; dict | ...&quot;];
+
+    dict [label = &quot;&lt;dict&gt; dict | &lt;alphabet&gt; StringObject \n \&quot;alphabet\&quot; | &lt;book&gt; StringObject \n \&quot;book\&quot; | &lt;message&gt; StringObject \n \&quot;message\&quot; | &lt;date&gt; StringObject \n \&quot;date\&quot;&quot;];
+
+    subgraph cluster_alphabet {
+
+        a [label = &quot; StringObject \n \&quot;a\&quot; &quot;];
+        b [label = &quot; StringObject \n \&quot;b\&quot; &quot;];
+        c [label = &quot; StringObject \n \&quot;c\&quot; &quot;];
+
+        a -&gt; b -&gt; c;
+
+        label = &quot;ListObject&quot;;
+
+    }
+
+    book [label = &quot;&lt;head&gt; HashObject | &lt;name&gt; StringObject \n \&quot;name\&quot; | &lt;author&gt; StringObject \n \&quot;author\&quot; | &lt;publisher&gt; StringObject \n \&quot;publisher\&quot;&quot;];
+
+    name [label = &quot; StringObject \n \&quot;Redis in Action\&quot;&quot;];
+
+    author [label = &quot; StringObject \n \&quot;Josiah L. Carlson\&quot;&quot;];
+
+    publisher [label = &quot; StringObject \n \&quot;Manning\&quot;&quot;];
+
+    message [label = &quot; StringObject \n \&quot;hello world\&quot;&quot;];
+
+    date [label = &quot; StringObject \n \&quot;2013.12.1\&quot;&quot;];
+
+    //
+
+    redisDb:dict -&gt; dict:dict;
+
+    dict:alphabet -&gt; a;
+    dict:book -&gt; book:head;
+    dict:message -&gt; message;
+
+    book:name -&gt; name;
+    book:publisher -&gt; publisher;
+    book:author -&gt; author;
+
+    dict:date -&gt; date;
+
+    //
+
+    node [shape = plaintext]
+
+    newadd [label = &quot;新添加&quot;]
+
+    newadd -&gt; dict:date [style = dashed]
+
+}" class="graphviz" /></div>
+</section>
+<section id="id3">
+<h2>删除键<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>删除数据库中的一个键，
+实际上就是在键空间里面删除键所对应的键值对对象。</p>
+<p>举个例子，
+如果键空间当前的状态如图 IMAGE_DB_EXAMPLE 所示，
+那么在执行以下命令之后：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">DEL</span><span class="w"> </span><span class="n">book</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">1</span>
+</pre></div>
+</div>
+<p>键 <code class="docutils literal notranslate"><span class="pre">book</span></code> 以及它的值将从键空间中被删除，
+如图 IMAGE_DB_AFTER_DEL 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-7bd75d918de870498665d2377211ab770a604c81.png" alt="digraph {
+
+    label = &quot;\n图 IMAGE_DB_AFTER_DEL    删除 book 键之后的键空间&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    //
+
+    redisDb [label = &quot;redisDb | ... | &lt;dict&gt; dict | ...&quot;];
+
+    dict [label = &quot;&lt;dict&gt; dict | &lt;alphabet&gt; StringObject \n \&quot;alphabet\&quot; |  &lt;message&gt; StringObject \n \&quot;message\&quot;&quot;];
+
+    subgraph cluster_alphabet {
+
+        a [label = &quot; StringObject \n \&quot;a\&quot; &quot;];
+        b [label = &quot; StringObject \n \&quot;b\&quot; &quot;];
+        c [label = &quot; StringObject \n \&quot;c\&quot; &quot;];
+
+        a -&gt; b -&gt; c;
+
+        label = &quot;ListObject&quot;;
+
+    }
+
+    message [label = &quot; StringObject \n \&quot;hello world\&quot;&quot;];
+
+    //
+
+    redisDb:dict -&gt; dict:dict;
+
+    dict:alphabet -&gt; a;
+    dict:message -&gt; message;
+
+}" class="graphviz" /></div>
+</section>
+<section id="id4">
+<h2>更新键<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>对一个数据库键进行更新，
+实际上就是对键空间里面键所对应的值对象进行更新，
+根据值对象的类型不同，
+更新的具体方法也会有所不同。</p>
+<p>举个例子，
+如果键空间当前的状态如图 IMAGE_DB_EXAMPLE 所示，
+那么在执行以下命令之后：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SET</span><span class="w"> </span><span class="n">message</span><span class="w"> </span><span class="s">&quot;blah blah&quot;</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p>键 <code class="docutils literal notranslate"><span class="pre">message</span></code> 的值对象将从之前包含 <code class="docutils literal notranslate"><span class="pre">&quot;hello</span> <span class="pre">world&quot;</span></code> 字符串更新为包含 <code class="docutils literal notranslate"><span class="pre">&quot;blah</span> <span class="pre">blah&quot;</span></code> 字符串，
+如图 IMAGE_DB_UPDATE_CAUSE_SET 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-016e93eb350c3d0f5e244922159b12a1821287a6.png" alt="digraph {
+
+    label = &quot;\n图 IMAGE_DB_UPDATE_CAUSE_SET    使用 SET 命令更新 message 键&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    //
+
+    redisDb [label = &quot;redisDb | ... | &lt;dict&gt; dict | ...&quot;];
+
+    dict [label = &quot;&lt;dict&gt; dict | &lt;alphabet&gt; StringObject \n \&quot;alphabet\&quot; | &lt;book&gt; StringObject \n \&quot;book\&quot; | &lt;message&gt; StringObject \n \&quot;message\&quot;&quot;];
+
+    subgraph cluster_alphabet {
+
+        a [label = &quot; StringObject \n \&quot;a\&quot; &quot;];
+        b [label = &quot; StringObject \n \&quot;b\&quot; &quot;];
+        c [label = &quot; StringObject \n \&quot;c\&quot; &quot;];
+
+        a -&gt; b -&gt; c;
+
+        label = &quot;ListObject&quot;;
+
+    }
+
+    book [label = &quot;&lt;head&gt; HashObject | &lt;name&gt; StringObject \n \&quot;name\&quot; | &lt;author&gt; StringObject \n \&quot;author\&quot; | &lt;publisher&gt; StringObject \n \&quot;publisher\&quot;&quot;];
+
+    name [label = &quot; StringObject \n \&quot;Redis in Action\&quot;&quot;];
+
+    author [label = &quot; StringObject \n \&quot;Josiah L. Carlson\&quot;&quot;];
+
+    publisher [label = &quot; StringObject \n \&quot;Manning\&quot;&quot;];
+
+    message [label = &quot; StringObject \n \&quot;blah blah\&quot;&quot;];
+
+    //
+
+    redisDb:dict -&gt; dict:dict;
+
+    dict:alphabet -&gt; a;
+    dict:book -&gt; book:head;
+    dict:message -&gt; message;
+
+    book:name -&gt; name;
+    book:publisher -&gt; publisher;
+    book:author -&gt; author;
+
+    //
+
+    node [shape = plaintext]
+
+    update [label = &quot;更新值对象&quot;]
+
+    update -&gt; message [style = dashed]
+
+}" class="graphviz" /></div>
+<p>再举个例子，
+如果我们继续执行以下命令：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">HSET</span><span class="w"> </span><span class="n">book</span><span class="w"> </span><span class="n">page</span><span class="w"> </span><span class="mi">320</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">1</span>
+</pre></div>
+</div>
+<p>那么键空间中 <code class="docutils literal notranslate"><span class="pre">book</span></code> 键的值对象（一个哈希对象）将被更新，
+新的键值对 <code class="docutils literal notranslate"><span class="pre">page</span></code> 和 <code class="docutils literal notranslate"><span class="pre">320</span></code> 会被添加到值对象里面，
+如图 IMAGE_UPDATE_BY_HSET 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-309052d36fae71dfed1fbbb1fd114bd7f4e94704.png" alt="digraph {
+
+    label = &quot;\n图 IMAGE_UPDATE_BY_HSET    使用 HSET 更新 book 键&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    //
+
+    redisDb [label = &quot;redisDb | ... | &lt;dict&gt; dict | ...&quot;];
+
+    dict [label = &quot;&lt;dict&gt; dict | &lt;alphabet&gt; StringObject \n \&quot;alphabet\&quot; | &lt;book&gt; StringObject \n \&quot;book\&quot; | &lt;message&gt; StringObject \n \&quot;message\&quot; &quot;];
+
+    subgraph cluster_alphabet {
+
+        a [label = &quot; StringObject \n \&quot;a\&quot; &quot;];
+        b [label = &quot; StringObject \n \&quot;b\&quot; &quot;];
+        c [label = &quot; StringObject \n \&quot;c\&quot; &quot;];
+
+        a -&gt; b -&gt; c;
+
+        label = &quot;ListObject&quot;;
+
+    }
+
+    book [label = &quot;&lt;head&gt; HashObject | &lt;name&gt; StringObject \n \&quot;name\&quot; | &lt;author&gt; StringObject \n \&quot;author\&quot; | &lt;publisher&gt; StringObject \n \&quot;publisher\&quot; | &lt;page&gt; StringObject \n \&quot;page\&quot; &quot;];
+
+    name [label = &quot; StringObject \n \&quot;Redis in Action\&quot;&quot;];
+
+    author [label = &quot; StringObject \n \&quot;Josiah L. Carlson\&quot;&quot;];
+
+    publisher [label = &quot; StringObject \n \&quot;Manning\&quot;&quot;];
+
+    page [label = &quot; StringObject \n 320&quot;];
+
+    message [label = &quot; StringObject \n \&quot;blah blah\&quot;&quot;];
+
+    //
+
+    redisDb:dict -&gt; dict:dict;
+
+    dict:alphabet -&gt; a;
+    dict:book -&gt; book:head;
+    dict:message -&gt; message;
+
+    book:name -&gt; name;
+    book:publisher -&gt; publisher;
+    book:author -&gt; author;
+    book:page -&gt; page;
+
+    //
+
+    node [shape = plaintext]
+
+    update [label = &quot;新添加&quot;]
+
+    update -&gt; book:page [style = dashed]
+
+}" class="graphviz" /></div>
+</section>
+<section id="id5">
+<h2>对键取值<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>对一个数据库键进行取值，
+实际上就是在键空间中取出键所对应的值对象，
+根据值对象的类型不同，
+具体的取值方法也会有所不同。</p>
+<p>举个例子，
+如果键空间当前的状态如图 IMAGE_DB_EXAMPLE 所示，
+那么当执行以下命令时：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">GET</span><span class="w"> </span><span class="n">message</span>
+<span class="s">&quot;hello world&quot;</span>
+</pre></div>
+</div>
+<p><span class="xref std std-ref">GET</span> 命令将首先在键空间中查找键 <code class="docutils literal notranslate"><span class="pre">message</span></code> ，
+找到键之后接着取得该键所对应的字符串对象值，
+之后再返回值对象所包含的字符串 <code class="docutils literal notranslate"><span class="pre">&quot;hello</span> <span class="pre">world&quot;</span></code> ，
+取值过程如图 IMAGE_FETCH_VALUE_VIA_GET 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-e43e052bb9d3db48af621776b5ddf3ebed625ce9.png" alt="digraph {
+
+    label = &quot;\n图 IMAGE_FETCH_VALUE_VIA_GET    使用 GET 命令取值的过程&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    //
+
+    redisDb [label = &quot;redisDb | ... | &lt;dict&gt; dict | ...&quot;];
+
+    dict [label = &quot;&lt;dict&gt; dict | &lt;alphabet&gt; StringObject \n \&quot;alphabet\&quot; | &lt;book&gt; StringObject \n \&quot;book\&quot; | &lt;message&gt; StringObject \n \&quot;message\&quot;&quot;];
+
+    subgraph cluster_alphabet {
+
+        a [label = &quot; StringObject \n \&quot;a\&quot; &quot;];
+        b [label = &quot; StringObject \n \&quot;b\&quot; &quot;];
+        c [label = &quot; StringObject \n \&quot;c\&quot; &quot;];
+
+        a -&gt; b -&gt; c;
+
+        label = &quot;ListObject&quot;;
+
+    }
+
+    book [label = &quot;&lt;head&gt; HashObject | &lt;name&gt; StringObject \n \&quot;name\&quot; | &lt;author&gt; StringObject \n \&quot;author\&quot; | &lt;publisher&gt; StringObject \n \&quot;publisher\&quot;&quot;];
+
+    name [label = &quot; StringObject \n \&quot;Redis in Action\&quot;&quot;];
+
+    author [label = &quot; StringObject \n \&quot;Josiah L. Carlson\&quot;&quot;];
+
+    publisher [label = &quot; StringObject \n \&quot;Manning\&quot;&quot;];
+
+    message [label = &quot; StringObject \n \&quot;hello world\&quot;&quot;];
+
+    get [label = &quot;GET&quot;, shape = plaintext];
+
+    //
+
+    redisDb:dict -&gt; dict:dict;
+
+    dict:alphabet -&gt; a;
+    dict:book -&gt; book:head;
+    dict:message -&gt; message:head [label = &quot;2）取值&quot;, style = dashed];
+
+    book:name -&gt; name;
+    book:publisher -&gt; publisher;
+    book:author -&gt; author;
+
+    get -&gt; dict:message [label = &quot;1）查找键&quot;, style = dashed];
+
+}" class="graphviz" /></div>
+<p>再举一个例子，
+当执行以下命令时：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">LRANGE</span><span class="w"> </span><span class="n">alphabet</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">-1</span>
+<span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="s">&quot;a&quot;</span>
+<span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="s">&quot;b&quot;</span>
+<span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="s">&quot;c&quot;</span>
+</pre></div>
+</div>
+<p><span class="xref std std-ref">LRANGE</span> 命令将首先在键空间中查找键 <code class="docutils literal notranslate"><span class="pre">alphabet</span></code> ，
+找到键之后接着取得该键所对应的列表对象值，
+之后再返回列表对象中包含的三个字符串对象的值，
+取值过程如图 IMAGE_FETCH_VALUE_VIA_LRANGE 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-5d49b058755dcc31ebdf483b5f8e4b6d837fe270.png" alt="digraph {
+
+    label = &quot;\n图 IMAGE_FETCH_VALUE_VIA_LRANGE    使用 LRANGE 命令取值的过程&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    //
+
+    redisDb [label = &quot;redisDb | ... | &lt;dict&gt; dict | ...&quot;];
+
+    dict [label = &quot;&lt;dict&gt; dict | &lt;alphabet&gt; StringObject \n \&quot;alphabet\&quot; | &lt;book&gt; StringObject \n \&quot;book\&quot; | &lt;message&gt; StringObject \n \&quot;message\&quot;&quot;];
+
+    subgraph cluster_alphabet {
+
+        a [label = &quot; StringObject \n \&quot;a\&quot; &quot;];
+        b [label = &quot; StringObject \n \&quot;b\&quot; &quot;];
+        c [label = &quot; StringObject \n \&quot;c\&quot; &quot;];
+
+        a -&gt; b -&gt; c [style = dashed];
+
+        label = &quot;ListObject&quot;;
+
+    }
+
+    book [label = &quot;&lt;head&gt; HashObject | &lt;name&gt; StringObject \n \&quot;name\&quot; | &lt;author&gt; StringObject \n \&quot;author\&quot; | &lt;publisher&gt; StringObject \n \&quot;publisher\&quot;&quot;];
+
+    name [label = &quot; StringObject \n \&quot;Redis in Action\&quot;&quot;];
+
+    author [label = &quot; StringObject \n \&quot;Josiah L. Carlson\&quot;&quot;];
+
+    publisher [label = &quot; StringObject \n \&quot;Manning\&quot;&quot;];
+
+    message [label = &quot; StringObject \n \&quot;hello world\&quot;&quot;];
+
+    lrange [label = &quot;LRANGE&quot;, shape = plaintext];
+
+    //
+
+    redisDb:dict -&gt; dict:dict;
+
+    dict:alphabet -&gt; a [label = &quot;2）取值&quot;, style = dashed];
+    dict:book -&gt; book:head;
+    dict:message -&gt; message:head;
+
+    book:name -&gt; name:head;
+    book:publisher -&gt; publisher:head;
+    book:author -&gt; author:head;
+
+    lrange -&gt; dict:alphabet [label = &quot;1）查找键&quot;, style = dashed];
+
+}" class="graphviz" /></div>
+</section>
+<section id="id6">
+<h2>其他键空间操作<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<p>除了上面列出的添加、删除、更新、取值操作之外，
+还有很多针对数据库本身的 Redis 命令，
+也是通过对键空间进行处理来完成的。</p>
+<p>比如说，
+用于清空整个数据库的 <span class="xref std std-ref">FLUSHDB</span> 命令，
+就是通过删除键空间中的所有键值对来实现的。</p>
+<p>又比如说，
+用于随机返回数据库中某个键的 <span class="xref std std-ref">RANDOMKEY</span> 命令，
+就是通过在键空间中随机返回一个键来实现的。</p>
+<p>另外，
+用于返回数据库键数量的 <span class="xref std std-ref">DBSIZE</span> 命令，
+就是通过返回键空间中包含键值对的数量来实现的。</p>
+<p>类似的命令还有 <span class="xref std std-ref">EXISTS</span> 、 <span class="xref std std-ref">RENAME</span> 、 <span class="xref std std-ref">KEYS</span> ，
+等等，
+这些命令都是通过对键空间进行操作来实现的。</p>
+</section>
+<section id="id7">
+<h2>读写键空间时的维护操作<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
+<p>当使用 Redis 命令对数据库进行读写时，
+服务器不仅会对键空间执行指定的读写操作，
+还会执行一些额外的维护操作，
+其中包括：</p>
+<ul class="simple">
+<li><p>在读取一个键之后（读操作和写操作都要对键进行读取），
+服务器会根据键是否存在，
+以此来更新服务器的键空间命中（hit）次数或键空间不命中（miss）次数，
+这两个值可以在 <span class="xref std std-ref">INFO stats</span> 命令的 <code class="docutils literal notranslate"><span class="pre">keyspace_hits</span></code> 属性和 <code class="docutils literal notranslate"><span class="pre">keyspace_misses</span></code> 属性中查看。</p></li>
+<li><p>在读取一个键之后，
+服务器会更新键的 LRU （最后一次使用）时间，
+这个值可以用于计算键的闲置时间，
+使用命令 <span class="xref std std-ref">OBJECT idletime &lt;key&gt;</span> 命令可以查看键 <code class="docutils literal notranslate"><span class="pre">key</span></code> 的闲置时间。</p></li>
+<li><p>如果服务器在读取一个键时，
+发现该键已经过期，
+那么服务器会先删除这个过期键，
+然后才执行余下的其他操作，
+本章稍后对过期键的讨论会详细说明这一点。</p></li>
+<li><p>如果有客户端使用 <span class="xref std std-ref">WATCH</span> 命令监视了某个键，
+那么服务器在对被监视的键进行修改之后，
+会将这个键标记为脏（dirty），
+从而让事务程序注意到这个键已经被修改过，
+《事务》一章会详细说明这一点。</p></li>
+<li><p>服务器每次修改一个键之后，
+都会对脏（dirty）键计数器的值增一，
+这个计数器会触发服务器的持久化以及复制操作执行，
+《RDB 持久化》、《AOF 持久化》和《复制》这三章都会说到这一点。</p></li>
+<li><p>如果服务器开启了数据库通知功能，
+那么在对键进行修改之后，
+服务器将按配置发送相应的数据库通知，
+本章稍后讨论数据库通知功能的实现时会详细说明这一点。</p></li>
+</ul>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="../../index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">数据库键空间</a><ul>
+<li><a class="reference internal" href="#id2">添加新键</a></li>
+<li><a class="reference internal" href="#id3">删除键</a></li>
+<li><a class="reference internal" href="#id4">更新键</a></li>
+<li><a class="reference internal" href="#id5">对键取值</a></li>
+<li><a class="reference internal" href="#id6">其他键空间操作</a></li>
+<li><a class="reference internal" href="#id7">读写键空间时的维护操作</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/preview/database/key_space.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">数据库键空间</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2015, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

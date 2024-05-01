@@ -1,0 +1,230 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>整数集合的实现 &#8212; Redis 设计与实现</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">整数集合的实现</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>整数集合的实现<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>整数集合（intset）是 Redis 用于保存整数值的集合抽象数据结构，
+它可以保存类型为 <code class="docutils literal notranslate"><span class="pre">int16_t</span></code> 、 <code class="docutils literal notranslate"><span class="pre">int32_t</span></code> 或者 <code class="docutils literal notranslate"><span class="pre">int64_t</span></code> 的整数值，
+并且保证集合中不会出现重复元素。</p>
+<p>每个 <code class="docutils literal notranslate"><span class="pre">intset.h/intset</span></code> 结构表示一个整数集合：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">intset</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="c1">// 编码方式</span>
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">encoding</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 集合包含的元素数量</span>
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">length</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 保存元素的数组</span>
+<span class="w">    </span><span class="kt">int8_t</span><span class="w"> </span><span class="n">contents</span><span class="p">[];</span>
+
+<span class="p">}</span><span class="w"> </span><span class="n">intset</span><span class="p">;</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">contents</span></code> 数组是整数集合的底层实现：
+整数集合的每个元素都是 <code class="docutils literal notranslate"><span class="pre">contents</span></code> 数组的一个数组项（item），
+各个项在数组中按值的大小从小到大有序地排列，
+并且数组中不包含任何重复项。</p>
+<p><code class="docutils literal notranslate"><span class="pre">length</span></code> 属性记录了整数集合包含的元素数量，
+也即是 <code class="docutils literal notranslate"><span class="pre">contents</span></code> 数组的长度。</p>
+<p>虽然 <code class="docutils literal notranslate"><span class="pre">intset</span></code> 结构将 <code class="docutils literal notranslate"><span class="pre">contents</span></code> 属性声明为 <code class="docutils literal notranslate"><span class="pre">int8_t</span></code> 类型的数组，
+但实际上 <code class="docutils literal notranslate"><span class="pre">contents</span></code> 数组并不保存任何 <code class="docutils literal notranslate"><span class="pre">int8_t</span></code> 类型的值 ——
+<code class="docutils literal notranslate"><span class="pre">contents</span></code> 数组的真正类型取决于 <code class="docutils literal notranslate"><span class="pre">encoding</span></code> 属性的值：</p>
+<ul class="simple">
+<li><p>如果 <code class="docutils literal notranslate"><span class="pre">encoding</span></code> 属性的值为 <code class="docutils literal notranslate"><span class="pre">INTSET_ENC_INT16</span></code> ，
+那么 <code class="docutils literal notranslate"><span class="pre">contents</span></code> 就是一个 <code class="docutils literal notranslate"><span class="pre">int16_t</span></code> 类型的数组，
+数组里的每个项都是一个 <code class="docutils literal notranslate"><span class="pre">int16_t</span></code> 类型的整数值
+（最小值为 <code class="docutils literal notranslate"><span class="pre">-32,768</span></code> ，最大值为 <code class="docutils literal notranslate"><span class="pre">32,767</span></code> ）。</p></li>
+<li><p>如果 <code class="docutils literal notranslate"><span class="pre">encoding</span></code> 属性的值为 <code class="docutils literal notranslate"><span class="pre">INTSET_ENC_INT32</span></code> ，
+那么 <code class="docutils literal notranslate"><span class="pre">contents</span></code> 就是一个 <code class="docutils literal notranslate"><span class="pre">int32_t</span></code> 类型的数组，
+数组里的每个项都是一个 <code class="docutils literal notranslate"><span class="pre">int32_t</span></code> 类型的整数值
+（最小值为 <code class="docutils literal notranslate"><span class="pre">-2,147,483,648</span></code> ，最大值为 <code class="docutils literal notranslate"><span class="pre">2,147,483,647</span></code> ）。</p></li>
+<li><p>如果 <code class="docutils literal notranslate"><span class="pre">encoding</span></code> 属性的值为 <code class="docutils literal notranslate"><span class="pre">INTSET_ENC_INT64</span></code> ，
+那么 <code class="docutils literal notranslate"><span class="pre">contents</span></code> 就是一个 <code class="docutils literal notranslate"><span class="pre">int64_t</span></code> 类型的数组，
+数组里的每个项都是一个 <code class="docutils literal notranslate"><span class="pre">int64_t</span></code> 类型的整数值
+（最小值为 <code class="docutils literal notranslate"><span class="pre">-9,223,372,036,854,775,808</span></code> ，最大值为 <code class="docutils literal notranslate"><span class="pre">9,223,372,036,854,775,807</span></code> ）。</p></li>
+</ul>
+<p>图 6-1 展示了一个整数集合示例：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">encoding</span></code> 属性的值为 <code class="docutils literal notranslate"><span class="pre">INTSET_ENC_INT16</span></code> ，
+表示整数集合的底层实现为 <code class="docutils literal notranslate"><span class="pre">int16_t</span></code> 类型的数组，
+而集合保存的都是 <code class="docutils literal notranslate"><span class="pre">int16_t</span></code> 类型的整数值。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">length</span></code> 属性的值为 <code class="docutils literal notranslate"><span class="pre">5</span></code> ，
+表示整数集合包含五个元素。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">contents</span></code> 数组按从小到大的顺序保存着集合中的五个元素。</p></li>
+<li><p>因为每个集合元素都是 <code class="docutils literal notranslate"><span class="pre">int16_t</span></code> 类型的整数值，
+所以 <code class="docutils literal notranslate"><span class="pre">contents</span></code> 数组的大小等于 <code class="docutils literal notranslate"><span class="pre">sizeof(int16_t)</span> <span class="pre">*</span> <span class="pre">5</span> <span class="pre">=</span> <span class="pre">16</span> <span class="pre">*</span> <span class="pre">5</span> <span class="pre">=</span> <span class="pre">80</span></code> 位。</p></li>
+</ul>
+<div class="graphviz"><img src="../../_images/graphviz-00bb670b4cac07b1511c4dd7add2e49db1c813d2.png" alt="digraph {
+
+    label = &quot;\n 图 6-1    一个包含五个 int16_t 类型整数值的整数集合&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    intset [label = &quot; intset | encoding \n INTSET_ENC_INT16 | length \n 5 | &lt;contents&gt; contents &quot;];
+
+    //contents [label = &quot; { { 0 位至 15 位 | &lt;arrow&gt; -6370 } | { 16 位至 31 位 | -5 } | { 32 位至 47 位 | 18 } | { 48 至 63 位 | 233 } | { 64 位至 79 位 | 14632 } } &quot;];
+
+    //intset:contents -&gt; contents:arrow;
+
+    contents [label = &quot; { -6370 | -5 | 18 | 233 | 14632 } &quot;];
+    intset:contents -&gt; contents;
+}" class="graphviz" /></div>
+<p>图 6-2 展示了另一个整数集合示例：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">encoding</span></code> 属性的值为 <code class="docutils literal notranslate"><span class="pre">INTSET_ENC_INT64</span></code> ，
+表示整数集合的底层实现为 <code class="docutils literal notranslate"><span class="pre">int64_t</span></code> 类型的数组，
+而数组中保存的都是 <code class="docutils literal notranslate"><span class="pre">int64_t</span></code> 类型的整数值。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">length</span></code> 属性的值为 <code class="docutils literal notranslate"><span class="pre">4</span></code> ，
+表示整数集合包含四个元素。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">contents</span></code> 数组按从小到大的顺序保存着集合中的四个元素。</p></li>
+<li><p>因为每个集合元素都是 <code class="docutils literal notranslate"><span class="pre">int64_t</span></code> 类型的整数值，
+所以 <code class="docutils literal notranslate"><span class="pre">contents</span></code> 数组的大小为 <code class="docutils literal notranslate"><span class="pre">sizeof(int64_t)</span> <span class="pre">*</span> <span class="pre">4</span> <span class="pre">=</span> <span class="pre">64</span> <span class="pre">*</span> <span class="pre">4</span> <span class="pre">=</span> <span class="pre">256</span></code> 位。</p></li>
+</ul>
+<div class="graphviz"><img src="../../_images/graphviz-3ac249e234faf515313917a8b45e43664bf3ce7d.png" alt="digraph {
+
+    label = &quot;\n 图 6-2    一个包含四个 int64_t 类型整数值的整数集合&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    intset [label = &quot; intset | encoding \n INTSET_ENC_INT64 | length \n 4 | &lt;contents&gt; contents &quot;];
+
+    contents [label = &quot; { -2675256175807981027 | 1 | 3 | 5 } &quot;];
+
+    intset:contents -&gt; contents:arrow;
+
+}" class="graphviz" /></div>
+<p>虽然 <code class="docutils literal notranslate"><span class="pre">contents</span></code> 数组保存的四个整数值中，
+只有 <code class="docutils literal notranslate"><span class="pre">-2675256175807981027</span></code> 是真正需要用 <code class="docutils literal notranslate"><span class="pre">int64_t</span></code> 类型来保存的，
+而其他的 <code class="docutils literal notranslate"><span class="pre">1</span></code> 、 <code class="docutils literal notranslate"><span class="pre">3</span></code> 、 <code class="docutils literal notranslate"><span class="pre">5</span></code> 三个值都可以用 <code class="docutils literal notranslate"><span class="pre">int16_t</span></code> 类型来保存，
+不过根据整数集合的升级规则，
+当向一个底层为 <code class="docutils literal notranslate"><span class="pre">int16_t</span></code> 数组的整数集合添加一个 <code class="docutils literal notranslate"><span class="pre">int64_t</span></code> 类型的整数值时，
+整数集合已有的所有元素都会被转换成 <code class="docutils literal notranslate"><span class="pre">int64_t</span></code> 类型，
+所以 <code class="docutils literal notranslate"><span class="pre">contents</span></code> 数组保存的四个整数值都是 <code class="docutils literal notranslate"><span class="pre">int64_t</span></code> 类型的，
+不仅仅是 <code class="docutils literal notranslate"><span class="pre">-2675256175807981027</span></code> 。</p>
+<p>接下来的一节将对整数集合的升级操作进行详细的介绍。</p>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/preview/intset/datastruct.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">整数集合的实现</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2015, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

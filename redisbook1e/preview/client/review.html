@@ -1,0 +1,159 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>重点回顾 &#8212; Redis 设计与实现</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">重点回顾</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>重点回顾<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<ul class="simple">
+<li><p>服务器状态结构使用 <code class="docutils literal notranslate"><span class="pre">clients</span></code> 链表连接起多个客户端状态，
+新添加的客户端状态会被放到链表的末尾。</p></li>
+<li><p>客户端状态的 <code class="docutils literal notranslate"><span class="pre">flags</span></code> 属性使用不同标志来表示客户端的角色，
+以及客户端当前所处的状态。</p></li>
+<li><p>输入缓冲区记录了客户端发送的命令请求，
+这个缓冲区的大小不能超过 1 GB 。</p></li>
+<li><p>命令的参数和参数个数会被记录在客户端状态的 <code class="docutils literal notranslate"><span class="pre">argv</span></code> 和 <code class="docutils literal notranslate"><span class="pre">argc</span></code> 属性里面，
+而 <code class="docutils literal notranslate"><span class="pre">cmd</span></code> 属性则记录了客户端要执行命令的实现函数。</p></li>
+<li><p>客户端有固定大小缓冲区和可变大小缓冲区两种缓冲区可用，
+其中固定大小缓冲区的最大大小为 16 KB ，
+而可变大小缓冲区的最大大小不能超过服务器设置的硬性限制值。</p></li>
+<li><p>输出缓冲区限制值有两种，
+如果输出缓冲区的大小超过了服务器设置的硬性限制，
+那么客户端会被立即关闭；
+除此之外，
+如果客户端在一定时间内，
+一直超过服务器设置的软性限制，
+那么客户端也会被关闭。</p></li>
+<li><p>当一个客户端通过网络连接连上服务器时，
+服务器会为这个客户端创建相应的客户端状态。
+网络连接关闭、
+发送了不合协议格式的命令请求、
+成为 <span class="xref std std-ref">CLIENT_KILL</span> 命令的目标、
+空转时间超时、
+输出缓冲区的大小超出限制，
+以上这些原因都会造成客户端被关闭。</p></li>
+<li><p>处理 Lua 脚本的伪客户端在服务器初始化时创建，
+这个客户端会一直存在，
+直到服务器关闭。</p></li>
+<li><p>载入 AOF 文件时使用的伪客户端在载入工作开始时动态创建，
+载入工作完毕之后关闭。</p></li>
+</ul>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/preview/client/review.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">重点回顾</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2015, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

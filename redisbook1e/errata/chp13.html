@@ -1,0 +1,207 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>第 13 章《客户端》勘误 &#8212; Redis 设计与实现</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../" type="text/css" />
+    
+    <script src="../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">第 13 章《客户端》勘误</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>第 13 章《客户端》勘误<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<section id="id2">
+<h2>168 页<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>图 13-5 中错误地包含了两个 <code class="docutils literal notranslate"><span class="pre">argv[1]</span></code> ，
+第二个 <code class="docutils literal notranslate"><span class="pre">argv[1]</span></code> 应为 <code class="docutils literal notranslate"><span class="pre">argv[2]</span></code> ，
+以下是修正后的图片：</p>
+<div class="graphviz"><img src="../_images/graphviz-0282ebf0f83f5eff21014b89f4b146e4d169ff40.png" alt="digraph {
+
+    label = &quot;\n 图 13-5    argv 属性和 argc 属性示例&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    redisClient [label = &quot; redisClient | ... | &lt;argv&gt; argv | argc \n 3 | ... &quot;, width = 2];
+
+    argv [label = &quot; { { &lt;head&gt; argv[0] | StringObject \n \&quot;SET\&quot; } | { argv[1] | StringObject \n \&quot;key\&quot; } | { argv[2] | StringObject \n \&quot;value\&quot; } } &quot;];
+
+    redisClient:argv -&gt; argv:head;
+
+}" class="graphviz" /></div>
+<p>感谢 凯旋冲锋 反馈这个错误。</p>
+</section>
+<section id="id3">
+<h2>173 页<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>在 13.2.2 节，
+客户端被关闭的原因中的第 4 点：</p>
+<blockquote>
+<div><p>如果用户为服务器设置了 <code class="docutils literal notranslate"><span class="pre">timeout</span></code> 配置选项，
+那么当客户端的空转时间超过 <code class="docutils literal notranslate"><span class="pre">timeout</span></code> 选项设置的值时，
+客户端将被关闭。
+不过 <code class="docutils literal notranslate"><span class="pre">timeout</span></code> 选项有一些例外情况：
+<strong>如果客户端是主服务器（打开了</strong> <code class="docutils literal notranslate"><span class="pre">REDIS_MASTER</span></code> <strong>标志），
+从服务器（打开了</strong> <code class="docutils literal notranslate"><span class="pre">REDIS_SLAVE</span></code> <strong>标志），
+正在被</strong> <code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> <strong>等命令阻塞（打开了</strong> <code class="docutils literal notranslate"><span class="pre">REDIS_BLOCKED</span></code> <strong>标志）</strong>，
+或者正在执行 <code class="docutils literal notranslate"><span class="pre">SUBSCRIBE</span></code> 、 <code class="docutils literal notranslate"><span class="pre">PSUBSCRIBE</span></code> 等订阅命令，
+那么即使客户端的空转时间超过了 <code class="docutils literal notranslate"><span class="pre">timeout</span></code> 选项的值，
+客户端也不会被服务器关闭。</p>
+</div></blockquote>
+<p>其中加粗部分的各个子句应该使用顿号而不是句号来进行分割，
+改正后的句子为：</p>
+<blockquote>
+<div><p>如果用户为服务器设置了 <code class="docutils literal notranslate"><span class="pre">timeout</span></code> 配置选项，
+那么当客户端的空转时间超过 <code class="docutils literal notranslate"><span class="pre">timeout</span></code> 选项设置的值时，
+客户端将被关闭。
+不过 <code class="docutils literal notranslate"><span class="pre">timeout</span></code> 选项有一些例外情况：
+<strong>如果客户端是主服务器（打开了</strong> <code class="docutils literal notranslate"><span class="pre">REDIS_MASTER</span></code> <strong>标志）、
+从服务器（打开了</strong> <code class="docutils literal notranslate"><span class="pre">REDIS_SLAVE</span></code> <strong>标志）、
+正在被</strong> <code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> <strong>等命令阻塞（打开了</strong> <code class="docutils literal notranslate"><span class="pre">REDIS_BLOCKED</span></code> <strong>标志）</strong>，
+或者正在执行 <code class="docutils literal notranslate"><span class="pre">SUBSCRIBE</span></code> 、 <code class="docutils literal notranslate"><span class="pre">PSUBSCRIBE</span></code> 等订阅命令，
+那么即使客户端的空转时间超过了 <code class="docutils literal notranslate"><span class="pre">timeout</span></code> 选项的值，
+客户端也不会被服务器关闭。</p>
+</div></blockquote>
+<p>一个更好的办法是修改一下整个段落的表现形式，
+让各个例外条件变得更清晰一些：</p>
+<blockquote>
+<div><p>如果用户为服务器设置了 <code class="docutils literal notranslate"><span class="pre">timeout</span></code> 配置选项，
+那么当客户端的空转时间超过 <code class="docutils literal notranslate"><span class="pre">timeout</span></code> 选项设置的值时，
+客户端将被关闭。
+不过 <code class="docutils literal notranslate"><span class="pre">timeout</span></code> 选项有一些例外情况 ——
+如果客户端满足以下条件中的任意一种：</p>
+<ol class="arabic simple">
+<li><p>客户端是一个主服务器（该客户端的 <code class="docutils literal notranslate"><span class="pre">REDIS_MASTER</span></code> 标志处于打开状态）；</p></li>
+<li><p>客户端是一个从服务器（该客户端的 <code class="docutils literal notranslate"><span class="pre">REDIS_SLAVE</span></code> 标志处于打开状态）；</p></li>
+<li><p>客户端正在被 <code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 等命令阻塞（该客户端的 <code class="docutils literal notranslate"><span class="pre">REDIS_BLOCKED</span></code> 标志处于打开状态）；</p></li>
+<li><p>客户端正在执行 <code class="docutils literal notranslate"><span class="pre">SUBSCRIBE</span></code> 、 <code class="docutils literal notranslate"><span class="pre">PSUBSCRIBE</span></code> 等订阅命令；</p></li>
+</ol>
+<p>那么即使客户端的空转时间超过了 <code class="docutils literal notranslate"><span class="pre">timeout</span></code> 选项的值，
+客户端也不会被服务器关闭。</p>
+</div></blockquote>
+<p>感谢 <a class="reference external" href="http://weibo.com/u/2714840873">不装嫩就会死的尹大侠</a> 反馈这个错误。</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="../index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">第 13 章《客户端》勘误</a><ul>
+<li><a class="reference internal" href="#id2">168 页</a></li>
+<li><a class="reference internal" href="#id3">173 页</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/errata/chp13.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">第 13 章《客户端》勘误</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2015, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

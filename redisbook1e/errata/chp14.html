@@ -1,0 +1,230 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>第 14 章《服务器》勘误 &#8212; Redis 设计与实现</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../" type="text/css" />
+    
+    <script src="../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">第 14 章《服务器》勘误</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>第 14 章《服务器》勘误<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<section id="id2">
+<h2>178 页<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>图 14-3 中错误地包含了两个 <code class="docutils literal notranslate"><span class="pre">argv[1]</span></code> ，
+其中第二个 <code class="docutils literal notranslate"><span class="pre">argv[1]</span></code> 应为 <code class="docutils literal notranslate"><span class="pre">argv[2]</span></code> ，
+以下是修正后的图片：</p>
+<div class="graphviz"><img src="../_images/graphviz-3d6d4bde4934db1ddb2c11a59def4869afbaea12.png" alt="digraph {
+
+    label = &quot;\n 图 14-3    客户端状态的 argv 属性和 argc 属性&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    redisClient [label = &quot; redisClient | ... | &lt;argv&gt; argv | argc \n 3 | ... &quot;, width = 2];
+
+    argv [label = &quot; { { &lt;head&gt; argv[0] | StringObject \n \&quot;SET\&quot; } | { argv[1] | StringObject \n \&quot;KEY\&quot; } | { argv[2] | StringObject \n \&quot;VALUE\&quot; } } &quot;];
+
+    redisClient:argv -&gt; argv:head;
+
+}" class="graphviz" /></div>
+<p>感谢 凯旋冲锋 反馈这个错误。</p>
+</section>
+<section id="id3">
+<h2>182 页<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>14.1.5 节第一句中的：</p>
+<blockquote>
+<div><p>并将命令的参数和参数个数分别保存到了客户端状态的 <code class="docutils literal notranslate"><span class="pre">argv</span></code> 属性和 <code class="docutils literal notranslate"><span class="pre">argv</span></code> 属性里面</p>
+</div></blockquote>
+<p>这一句中的第二个 <code class="docutils literal notranslate"><span class="pre">argv</span></code> 应为 <code class="docutils literal notranslate"><span class="pre">argc</span></code> ，修正后的句子为：</p>
+<blockquote>
+<div><p>并将命令的参数和参数个数分别保存到了客户端状态的 <code class="docutils literal notranslate"><span class="pre">argv</span></code> 属性和 <code class="docutils literal notranslate"><span class="pre">argc</span></code> 属性里面</p>
+</div></blockquote>
+<p>感谢 kevin 反馈这个错误。</p>
+</section>
+<section id="id4">
+<h2>183 页<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>图 14-6 中错误地包含了两个 <code class="docutils literal notranslate"><span class="pre">argv[1]</span></code> ，
+其中第二个 <code class="docutils literal notranslate"><span class="pre">argv[1]</span></code> 应为 <code class="docutils literal notranslate"><span class="pre">argv[2]</span></code> ，
+以下是修正后的图片：</p>
+<div class="graphviz"><img src="../_images/graphviz-18be5184092d216a7a41449b88b970145bdb9cd1.png" alt="digraph {
+
+    label = &quot;\n 图 14-6    客户端状态&quot;;
+
+    //
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    redisClient [label = &quot; redisClient | ... | &lt;cmd&gt; cmd | &lt;argv&gt; argv | argc \n 3 | ... &quot;, width = 2];
+
+    set [label = &quot; &lt;head&gt; redisCommand | name \n \&quot;set\&quot; | &lt;proc&gt; proc | arity \n -3 | sflags \n \&quot;wm\&quot; | ... &quot;];
+
+    setCommand [label = &quot;void setCommand(redisClient *c);&quot;, shape = plaintext];
+    //* fix editor highlight
+
+    redisClient:cmd -&gt; set:head; set:proc -&gt; setCommand;
+
+    argv [label = &quot; { { &lt;head&gt; argv[0] | StringObject \n \&quot;SET\&quot; } | { argv[1] | StringObject \n \&quot;KEY\&quot; } | { argv[2] | StringObject \n \&quot;VALUE\&quot; } } &quot;];
+
+    redisClient:argv -&gt; argv:head;
+
+}" class="graphviz" /></div>
+<p>感谢 凯旋冲锋 反馈这个错误。</p>
+</section>
+<section id="id5">
+<h2>185 页<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>14.2.1 末尾对 <code class="docutils literal notranslate"><span class="pre">unixtime</span></code> 属性以及 <code class="docutils literal notranslate"><span class="pre">mstime</span></code> 属性的精度进行描述的句子：</p>
+<blockquote>
+<div><p>服务器只会在打印日志、 更新服务器的 LRU 时钟、 决定是否执行持久化任务、 计算服务器上线时间（uptime）这类对时间精确度要求不高的功能上。</p>
+</div></blockquote>
+<p>应该改为：</p>
+<blockquote>
+<div><p>服务器只会在打印日志、 更新服务器的 LRU 时钟、 决定是否执行持久化任务、 计算服务器上线时间（uptime）这类对时间精确度要求不高的功能上<strong>使用</strong> <code class="docutils literal notranslate"><span class="pre">unixtime</span></code> <strong>属性和</strong> <code class="docutils literal notranslate"><span class="pre">mstime</span></code> <strong>属性</strong>。</p>
+</div></blockquote>
+<p>其中加粗内容为新增内容。</p>
+<p>感谢 <a class="reference external" href="http://book.douban.com/people/zionwu/">zionwu</a> 反馈这个错误。</p>
+</section>
+<section id="id6">
+<h2>189 页<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<p>14.2.7 节第一句：</p>
+<blockquote>
+<div><p>……，第 9 章经对这些操作进行了详细的说明。</p>
+</div></blockquote>
+<p>中少了一个“已经”的“已”字，
+以下是修正后的内容：</p>
+<blockquote>
+<div><p>……，第 9 章已经对这些操作进行了详细的说明。</p>
+</div></blockquote>
+<p>感谢 <a class="reference external" href="http://weibo.com/u/1935857022">kimi_可米</a> 反馈这个错误。</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="../index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">第 14 章《服务器》勘误</a><ul>
+<li><a class="reference internal" href="#id2">178 页</a></li>
+<li><a class="reference internal" href="#id3">182 页</a></li>
+<li><a class="reference internal" href="#id4">183 页</a></li>
+<li><a class="reference internal" href="#id5">185 页</a></li>
+<li><a class="reference internal" href="#id6">189 页</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/errata/chp14.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">第 14 章《服务器》勘误</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2015, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

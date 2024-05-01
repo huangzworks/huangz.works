@@ -1,0 +1,176 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>对象的空转时长 &#8212; Redis 设计与实现</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">对象的空转时长</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>对象的空转时长<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>除了前面介绍过的 <code class="docutils literal notranslate"><span class="pre">type</span></code> 、 <code class="docutils literal notranslate"><span class="pre">encoding</span></code> 、 <code class="docutils literal notranslate"><span class="pre">ptr</span></code> 和 <code class="docutils literal notranslate"><span class="pre">refcount</span></code> 四个属性之外，
+<code class="docutils literal notranslate"><span class="pre">redisObject</span></code> 结构包含的最后一个属性为 <code class="docutils literal notranslate"><span class="pre">lru</span></code> 属性，
+该属性记录了对象最后一次被命令程序访问的时间：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">redisObject</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="c1">// ...</span>
+
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">lru</span><span class="o">:</span><span class="mi">22</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// ...</span>
+
+<span class="p">}</span><span class="w"> </span><span class="n">robj</span><span class="p">;</span>
+</pre></div>
+</div>
+<p><span class="xref std std-ref">OBJECT IDLETIME</span> 命令可以打印出给定键的空转时长，
+这一空转时长就是通过将当前时间减去键的值对象的 <code class="docutils literal notranslate"><span class="pre">lru</span></code> 时间计算得出的：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SET</span><span class="w"> </span><span class="n">msg</span><span class="w"> </span><span class="s">&quot;hello world&quot;</span>
+<span class="n">OK</span>
+
+<span class="cp"># 等待一小段时间</span>
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">OBJECT</span><span class="w"> </span><span class="n">IDLETIME</span><span class="w"> </span><span class="n">msg</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">20</span>
+
+<span class="cp"># 等待一阵子</span>
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">OBJECT</span><span class="w"> </span><span class="n">IDLETIME</span><span class="w"> </span><span class="n">msg</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">180</span>
+
+<span class="cp"># 访问 msg 键的值</span>
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">GET</span><span class="w"> </span><span class="n">msg</span>
+<span class="s">&quot;hello world&quot;</span>
+
+<span class="cp"># 键处于活跃状态，空转时长为 0</span>
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">OBJECT</span><span class="w"> </span><span class="n">IDLETIME</span><span class="w"> </span><span class="n">msg</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">0</span>
+</pre></div>
+</div>
+<aside class="topic">
+<p class="topic-title">注意</p>
+<p><span class="xref std std-ref">OBJECT IDLETIME</span> 命令的实现是特殊的，
+这个命令在访问键的值对象时，
+不会修改值对象的 <code class="docutils literal notranslate"><span class="pre">lru</span></code> 属性。</p>
+</aside>
+<p>除了可以被 <span class="xref std std-ref">OBJECT IDLETIME</span> 命令打印出来之外，
+键的空转时长还有另外一项作用：
+如果服务器打开了 <code class="docutils literal notranslate"><span class="pre">maxmemory</span></code> 选项，
+并且服务器用于回收内存的算法为 <code class="docutils literal notranslate"><span class="pre">volatile-lru</span></code> 或者 <code class="docutils literal notranslate"><span class="pre">allkeys-lru</span></code> ，
+那么当服务器占用的内存数超过了 <code class="docutils literal notranslate"><span class="pre">maxmemory</span></code> 选项所设置的上限值时，
+空转时长较高的那部分键会优先被服务器释放，
+从而回收内存。</p>
+<p>配置文件的 <code class="docutils literal notranslate"><span class="pre">maxmemory</span></code> 选项和 <code class="docutils literal notranslate"><span class="pre">maxmemory-policy</span></code> 选项的说明介绍了关于这方面的更多信息。</p>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/preview/object/lru.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">对象的空转时长</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2015, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

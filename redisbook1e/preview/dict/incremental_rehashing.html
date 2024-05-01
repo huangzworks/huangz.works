@@ -1,0 +1,497 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>渐进式 rehash &#8212; Redis 设计与实现</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">渐进式 rehash</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="rehash">
+<h1>渐进式 rehash<a class="headerlink" href="#rehash" title="Link to this heading">¶</a></h1>
+<p>上一节说过，
+扩展或收缩哈希表需要将 <code class="docutils literal notranslate"><span class="pre">ht[0]</span></code> 里面的所有键值对 rehash 到 <code class="docutils literal notranslate"><span class="pre">ht[1]</span></code> 里面，
+但是，
+这个 rehash 动作并不是一次性、集中式地完成的，
+而是分多次、渐进式地完成的。</p>
+<p>这样做的原因在于，
+如果 <code class="docutils literal notranslate"><span class="pre">ht[0]</span></code> 里只保存着四个键值对，
+那么服务器可以在瞬间就将这些键值对全部 rehash 到 <code class="docutils literal notranslate"><span class="pre">ht[1]</span></code> ；
+但是，
+如果哈希表里保存的键值对数量不是四个，
+而是四百万、四千万甚至四亿个键值对，
+那么要一次性将这些键值对全部 rehash 到 <code class="docutils literal notranslate"><span class="pre">ht[1]</span></code> 的话，
+庞大的计算量可能会导致服务器在一段时间内停止服务。</p>
+<p>因此，
+为了避免 rehash 对服务器性能造成影响，
+服务器不是一次性将 <code class="docutils literal notranslate"><span class="pre">ht[0]</span></code> 里面的所有键值对全部 rehash 到 <code class="docutils literal notranslate"><span class="pre">ht[1]</span></code> ，
+而是分多次、渐进式地将 <code class="docutils literal notranslate"><span class="pre">ht[0]</span></code> 里面的键值对慢慢地 rehash 到 <code class="docutils literal notranslate"><span class="pre">ht[1]</span></code> 。</p>
+<p>以下是哈希表渐进式 rehash 的详细步骤：</p>
+<ol class="arabic simple">
+<li><p>为 <code class="docutils literal notranslate"><span class="pre">ht[1]</span></code> 分配空间，
+让字典同时持有 <code class="docutils literal notranslate"><span class="pre">ht[0]</span></code> 和 <code class="docutils literal notranslate"><span class="pre">ht[1]</span></code> 两个哈希表。</p></li>
+<li><p>在字典中维持一个索引计数器变量 <code class="docutils literal notranslate"><span class="pre">rehashidx</span></code> ，
+并将它的值设置为 <code class="docutils literal notranslate"><span class="pre">0</span></code> ，
+表示 rehash 工作正式开始。</p></li>
+<li><p>在 rehash 进行期间，
+每次对字典执行添加、删除、查找或者更新操作时，
+程序除了执行指定的操作以外，
+还会顺带将 <code class="docutils literal notranslate"><span class="pre">ht[0]</span></code> 哈希表在 <code class="docutils literal notranslate"><span class="pre">rehashidx</span></code> 索引上的所有键值对 rehash 到 <code class="docutils literal notranslate"><span class="pre">ht[1]</span></code> ，
+当 rehash 工作完成之后，
+程序将 <code class="docutils literal notranslate"><span class="pre">rehashidx</span></code> 属性的值增一。</p></li>
+<li><p>随着字典操作的不断执行，
+最终在某个时间点上，
+<code class="docutils literal notranslate"><span class="pre">ht[0]</span></code> 的所有键值对都会被 rehash 至 <code class="docutils literal notranslate"><span class="pre">ht[1]</span></code> ，
+这时程序将 <code class="docutils literal notranslate"><span class="pre">rehashidx</span></code> 属性的值设为 <code class="docutils literal notranslate"><span class="pre">-1</span></code> ，
+表示 rehash 操作已完成。</p></li>
+</ol>
+<p>渐进式 rehash 的好处在于它采取分而治之的方式，
+将 rehash 键值对所需的计算工作均滩到对字典的每个添加、删除、查找和更新操作上，
+从而避免了集中式 rehash 而带来的庞大计算量。</p>
+<p>图 4-12 至图 4-17 展示了一次完整的渐进式 rehash 过程，
+注意观察在整个 rehash 过程中，
+字典的 <code class="docutils literal notranslate"><span class="pre">rehashidx</span></code> 属性是如何变化的。</p>
+<div class="graphviz"><img src="../../_images/graphviz-977a05cd96e28c39335bb45c3873c8aa877f1d35.png" alt="digraph {
+
+    label = &quot;\n 图 4-12    准备开始 rehash&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    // 字典
+
+    dict [label = &quot; &lt;head&gt; dict | type | privdata | &lt;ht&gt; ht | rehashidx \n -1 &quot;];
+
+    // 哈希表
+
+    dictht0 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 4 | &lt;sizemask&gt; sizemask \n 3 | &lt;used&gt; used \n 4&quot;];
+
+    dictht1 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 8 | &lt;sizemask&gt; sizemask \n 7 | &lt;used&gt; used \n 0&quot;];
+
+    table0 [label = &quot; &lt;head&gt; dictEntry*[4] | &lt;0&gt; 0 | &lt;1&gt; 1 | &lt;2&gt; 2 | &lt;3&gt; 3 &quot;];
+
+    table1 [label = &quot; &lt;head&gt; dictEntry*[8] | &lt;0&gt; 0 | &lt;1&gt; 1 | &lt;2&gt; 2 | ... | &lt;7&gt; 7 &quot;];
+
+    // 哈希表节点
+
+    kv0 [label = &quot; &lt;head&gt; dictEntry | { k0 | v0 } &quot;];
+    kv1 [label = &quot; &lt;head&gt; dictEntry | { k1 | v1 } &quot;];
+    kv2 [label = &quot; &lt;head&gt; dictEntry | { k2 | v2 } &quot;];
+    kv3 [label = &quot; &lt;head&gt; dictEntry | { k3 | v3 } &quot;];
+
+    //
+
+    node [shape = plaintext, label = &quot;NULL&quot;];
+
+    //
+
+    dict:ht -&gt; dictht0:head [label = &quot;ht[0]&quot;];
+    dict:ht -&gt; dictht1:head [label = &quot;ht[1]&quot;];
+
+    dictht0:table -&gt; table0:head;
+    dictht1:table -&gt; table1:head;
+
+    table0:0 -&gt; kv2:head -&gt; null0;
+    table0:1 -&gt; kv0:head -&gt; null1;
+    table0:2 -&gt; kv3:head -&gt; null2;
+    table0:3 -&gt; kv1:head -&gt; null3;
+
+    table1:0 -&gt; null10;
+    table1:1 -&gt; null11;
+    table1:2 -&gt; null12;
+    table1:7 -&gt; null17;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="../../_images/graphviz-9c2802566f44f652e0f0314675b0c2a3e3b98d08.png" alt="digraph {
+
+    label = &quot;\n 图 4-13    rehash 索引 0 上的键值对&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    // 字典
+
+    dict [label = &quot; &lt;head&gt; dict | type | privdata | &lt;ht&gt; ht | rehashidx \n 0 &quot;];
+
+    // 哈希表
+
+    dictht0 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 4 | &lt;sizemask&gt; sizemask \n 3 | &lt;used&gt; used \n 3&quot;];
+
+    dictht1 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 8 | &lt;sizemask&gt; sizemask \n 7 | &lt;used&gt; used \n 1&quot;];
+
+    table0 [label = &quot; &lt;head&gt; dictEntry*[4] | &lt;0&gt; 0 | &lt;1&gt; 1 | &lt;2&gt; 2 | &lt;3&gt; 3 &quot;];
+
+    table1 [label = &quot; &lt;head&gt; dictEntry*[8] | ... | &lt;4&gt; 4 | ... &quot;];
+
+    // 哈希表节点
+
+    kv0 [label = &quot; &lt;head&gt; dictEntry | { k0 | v0 } &quot;];
+    kv1 [label = &quot; &lt;head&gt; dictEntry | { k1 | v1 } &quot;];
+    kv2 [label = &quot; &lt;head&gt; dictEntry | { k2 | v2 } &quot;];
+    kv3 [label = &quot; &lt;head&gt; dictEntry | { k3 | v3 } &quot;];
+
+    //
+
+    node [shape = plaintext, label = &quot;NULL&quot;];
+
+    //
+
+    dict:ht -&gt; dictht0:head [label = &quot;ht[0]&quot;];
+    dict:ht -&gt; dictht1:head [label = &quot;ht[1]&quot;];
+
+    dictht0:table -&gt; table0:head;
+    dictht1:table -&gt; table1:head;
+
+    table0:0 -&gt; null0;
+    table0:1 -&gt; kv0:head -&gt; null1;
+    table0:2 -&gt; kv3:head -&gt; null2;
+    table0:3 -&gt; kv1:head -&gt; null3;
+
+    table1:4 -&gt; kv2:head -&gt; null14
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="../../_images/graphviz-ba13079eac82e08f2bb2e37f41fcc14b0b5f84fe.png" alt="digraph {
+
+    label = &quot;\n 图 4-14    rehash 索引 1 上的键值对&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    // 字典
+
+    dict [label = &quot; &lt;head&gt; dict | type | privdata | &lt;ht&gt; ht | rehashidx \n 1 &quot;];
+
+    // 哈希表
+
+    dictht0 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 4 | &lt;sizemask&gt; sizemask \n 3 | &lt;used&gt; used \n 2&quot;];
+
+    dictht1 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 8 | &lt;sizemask&gt; sizemask \n 7 | &lt;used&gt; used \n 2&quot;];
+
+    table0 [label = &quot; &lt;head&gt; dictEntry*[4] | &lt;0&gt; 0 | &lt;1&gt; 1 | &lt;2&gt; 2 | &lt;3&gt; 3 &quot;];
+
+    table1 [label = &quot; &lt;head&gt; dictEntry*[8] | ... | &lt;4&gt; 4 | &lt;5&gt; 5 | ... &quot;];
+
+    // 哈希表节点
+
+    kv0 [label = &quot; &lt;head&gt; dictEntry | { k0 | v0 } &quot;];
+    kv1 [label = &quot; &lt;head&gt; dictEntry | { k1 | v1 } &quot;];
+    kv2 [label = &quot; &lt;head&gt; dictEntry | { k2 | v2 } &quot;];
+    kv3 [label = &quot; &lt;head&gt; dictEntry | { k3 | v3 } &quot;];
+
+    //
+
+    node [shape = plaintext, label = &quot;NULL&quot;];
+
+    //
+
+    dict:ht -&gt; dictht0:head [label = &quot;ht[0]&quot;];
+    dict:ht -&gt; dictht1:head [label = &quot;ht[1]&quot;];
+
+    dictht0:table -&gt; table0:head;
+    dictht1:table -&gt; table1:head;
+
+    table0:0 -&gt; null0;
+    table0:1 -&gt; null1;
+    table0:2 -&gt; kv3:head -&gt; null2;
+    table0:3 -&gt; kv1:head -&gt; null3;
+
+    table1:4 -&gt; kv2:head -&gt; null14
+    table1:5 -&gt; kv0:head -&gt; null15;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="../../_images/graphviz-242a55c5bec137d727bfb5e948d642f26b7bc4fa.png" alt="digraph {
+
+    label = &quot;\n 图 4-15    rehash 索引 2 上的键值对&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    // 字典
+
+    dict [label = &quot; &lt;head&gt; dict | type | privdata | &lt;ht&gt; ht | rehashidx \n 2 &quot;];
+
+    // 哈希表
+
+    dictht0 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 4 | &lt;sizemask&gt; sizemask \n 3 | &lt;used&gt; used \n 1&quot;];
+
+    dictht1 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 8 | &lt;sizemask&gt; sizemask \n 7 | &lt;used&gt; used \n 3&quot;];
+
+    table0 [label = &quot; &lt;head&gt; dictEntry*[4] | &lt;0&gt; 0 | &lt;1&gt; 1 | &lt;2&gt; 2 | &lt;3&gt; 3 &quot;];
+
+    table1 [label = &quot; &lt;head&gt; dictEntry*[8] | ... | &lt;1&gt; 1 | ... | &lt;4&gt; 4 | &lt;5&gt; 5 | ... &quot;];
+
+    // 哈希表节点
+
+    kv0 [label = &quot; &lt;head&gt; dictEntry | { k0 | v0 } &quot;];
+    kv1 [label = &quot; &lt;head&gt; dictEntry | { k1 | v1 } &quot;];
+    kv2 [label = &quot; &lt;head&gt; dictEntry | { k2 | v2 } &quot;];
+    kv3 [label = &quot; &lt;head&gt; dictEntry | { k3 | v3 } &quot;];
+
+    //
+
+    node [shape = plaintext, label = &quot;NULL&quot;];
+
+    //
+
+    dict:ht -&gt; dictht0:head [label = &quot;ht[0]&quot;];
+    dict:ht -&gt; dictht1:head [label = &quot;ht[1]&quot;];
+
+    dictht0:table -&gt; table0:head;
+    dictht1:table -&gt; table1:head;
+
+    table0:0 -&gt; null0;
+    table0:1 -&gt; null1;
+    table0:2 -&gt; null2;
+    table0:3 -&gt; kv1:head -&gt; null3;
+
+    table1:1 -&gt; kv3:head -&gt; null11;
+    table1:4 -&gt; kv2:head -&gt; null14
+    table1:5 -&gt; kv0:head -&gt; null15;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="../../_images/graphviz-e4bd951aade20303a0172db961a03f31edf3ee73.png" alt="digraph {
+
+    label = &quot;\n 图 4-16    rehash 索引 3 上的键值对&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    // 字典
+
+    dict [label = &quot; &lt;head&gt; dict | type | privdata | &lt;ht&gt; ht | rehashidx \n 3 &quot;];
+
+    // 哈希表
+
+    dictht0 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 4 | &lt;sizemask&gt; sizemask \n 3 | &lt;used&gt; used \n 0&quot;];
+
+    dictht1 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 8 | &lt;sizemask&gt; sizemask \n 7 | &lt;used&gt; used \n 4&quot;];
+
+    table0 [label = &quot; &lt;head&gt; dictEntry*[4] | &lt;0&gt; 0 | &lt;1&gt; 1 | &lt;2&gt; 2 | &lt;3&gt; 3 &quot;];
+
+    table1 [label = &quot; &lt;head&gt; dictEntry*[8] | ... | &lt;1&gt; 1 | ... | &lt;4&gt; 4 | &lt;5&gt; 5 | ... | &lt;7&gt; 7 &quot;];
+
+    // 哈希表节点
+
+    kv0 [label = &quot; &lt;head&gt; dictEntry | { k0 | v0 } &quot;];
+    kv1 [label = &quot; &lt;head&gt; dictEntry | { k1 | v1 } &quot;];
+    kv2 [label = &quot; &lt;head&gt; dictEntry | { k2 | v2 } &quot;];
+    kv3 [label = &quot; &lt;head&gt; dictEntry | { k3 | v3 } &quot;];
+
+    //
+
+    node [shape = plaintext, label = &quot;NULL&quot;];
+
+    //
+
+    dict:ht -&gt; dictht0:head [label = &quot;ht[0]&quot;];
+    dict:ht -&gt; dictht1:head [label = &quot;ht[1]&quot;];
+
+    dictht0:table -&gt; table0:head;
+    dictht1:table -&gt; table1:head;
+
+    table0:0 -&gt; null0;
+    table0:1 -&gt; null1;
+    table0:2 -&gt; null2;
+    table0:3 -&gt; null3;
+
+    table1:1 -&gt; kv3:head -&gt; null11;
+    table1:4 -&gt; kv2:head -&gt; null14
+    table1:5 -&gt; kv0:head -&gt; null15;
+    table1:7 -&gt; kv1:head -&gt; null17;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="../../_images/graphviz-a4fcb8d597ffddc0dc84c4e5fbd63f83b9113f17.png" alt="digraph {
+
+    label = &quot;\n 图 4-17    rehash 执行完毕&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    // 字典
+
+    dict [label = &quot; &lt;head&gt; dict | type | privdata | &lt;ht&gt; ht | rehashidx \n -1 &quot;];
+
+    // 哈希表
+
+    dictht0 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 8 | &lt;sizemask&gt; sizemask \n 7 | &lt;used&gt; used \n 4&quot;];
+
+    dictht1 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 0 | &lt;sizemask&gt; sizemask \n 0 | &lt;used&gt; used \n 0&quot;];
+
+    table0 [label = &quot; &lt;head&gt; dictEntry*[8] | ... | &lt;1&gt; 1 | ... | &lt;4&gt; 4 | &lt;5&gt; 5 | ... | &lt;7&gt; 7 &quot;];
+
+    table1 [label = &quot;NULL&quot;, shape = plaintext];
+
+    // 哈希表节点
+
+    kv0 [label = &quot; &lt;head&gt; dictEntry | { k0 | v0 } &quot;];
+    kv1 [label = &quot; &lt;head&gt; dictEntry | { k1 | v1 } &quot;];
+    kv2 [label = &quot; &lt;head&gt; dictEntry | { k2 | v2 } &quot;];
+    kv3 [label = &quot; &lt;head&gt; dictEntry | { k3 | v3 } &quot;];
+
+    //
+
+    node [shape = plaintext, label = &quot;NULL&quot;];
+
+    //
+
+    dict:ht -&gt; dictht0:head [label = &quot;ht[0]&quot;];
+    dict:ht -&gt; dictht1:head [label = &quot;ht[1]&quot;];
+
+    dictht0:table -&gt; table0:head;
+    dictht1:table -&gt; table1;
+
+    table0:1 -&gt; kv3:head -&gt; null11;
+    table0:4 -&gt; kv2:head -&gt; null14;
+    table0:5 -&gt; kv0:head -&gt; null15;
+    table0:7 -&gt; kv1:head -&gt; null17;
+
+}" class="graphviz" /></div>
+<section id="id1">
+<h2>渐进式 rehash 执行期间的哈希表操作<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>因为在进行渐进式 rehash 的过程中，
+字典会同时使用 <code class="docutils literal notranslate"><span class="pre">ht[0]</span></code> 和 <code class="docutils literal notranslate"><span class="pre">ht[1]</span></code> 两个哈希表，
+所以在渐进式 rehash 进行期间，
+字典的删除（delete）、查找（find）、更新（update）等操作会在两个哈希表上进行：
+比如说，
+要在字典里面查找一个键的话，
+程序会先在 <code class="docutils literal notranslate"><span class="pre">ht[0]</span></code> 里面进行查找，
+如果没找到的话，
+就会继续到 <code class="docutils literal notranslate"><span class="pre">ht[1]</span></code> 里面进行查找，
+诸如此类。</p>
+<p>另外，
+在渐进式 rehash 执行期间，
+新添加到字典的键值对一律会被保存到 <code class="docutils literal notranslate"><span class="pre">ht[1]</span></code> 里面，
+而 <code class="docutils literal notranslate"><span class="pre">ht[0]</span></code> 则不再进行任何添加操作：
+这一措施保证了 <code class="docutils literal notranslate"><span class="pre">ht[0]</span></code> 包含的键值对数量会只减不增，
+并随着 rehash 操作的执行而最终变成空表。</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="../../index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">渐进式 rehash</a><ul>
+<li><a class="reference internal" href="#id1">渐进式 rehash 执行期间的哈希表操作</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/preview/dict/incremental_rehashing.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">渐进式 rehash</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2015, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

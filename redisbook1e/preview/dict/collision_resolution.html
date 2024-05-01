@@ -1,0 +1,223 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>解决键冲突 &#8212; Redis 设计与实现</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">解决键冲突</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>解决键冲突<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>当有两个或以上数量的键被分配到了哈希表数组的同一个索引上面时，
+我们称这些键发生了冲突（collision）。</p>
+<p>Redis 的哈希表使用链地址法（separate chaining）来解决键冲突：
+每个哈希表节点都有一个 <code class="docutils literal notranslate"><span class="pre">next</span></code> 指针，
+多个哈希表节点可以用 <code class="docutils literal notranslate"><span class="pre">next</span></code> 指针构成一个单向链表，
+被分配到同一个索引上的多个节点可以用这个单向链表连接起来，
+这就解决了键冲突的问题。</p>
+<p>举个例子，
+假设程序要将键值对 <code class="docutils literal notranslate"><span class="pre">k2</span></code> 和 <code class="docutils literal notranslate"><span class="pre">v2</span></code> 添加到图 4-6 所示的哈希表里面，
+并且计算得出 <code class="docutils literal notranslate"><span class="pre">k2</span></code> 的索引值为 <code class="docutils literal notranslate"><span class="pre">2</span></code> ，
+那么键 <code class="docutils literal notranslate"><span class="pre">k1</span></code> 和 <code class="docutils literal notranslate"><span class="pre">k2</span></code> 将产生冲突，
+而解决冲突的办法就是使用 <code class="docutils literal notranslate"><span class="pre">next</span></code> 指针将键 <code class="docutils literal notranslate"><span class="pre">k2</span></code> 和 <code class="docutils literal notranslate"><span class="pre">k1</span></code> 所在的节点连接起来，
+如图 4-7 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-24a7eb891fffaebec48d27e15ce9967169f08f8b.png" alt="digraph {
+
+    label = &quot;\n 图 4-6    一个包含两个键值对的哈希表&quot;;
+
+    rankdir = LR;
+
+    //
+
+    node [shape = record];
+
+    dictht0 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 4 | &lt;sizemask&gt; sizemask \n 3 | &lt;used&gt; used \n 2&quot;];
+
+    table0 [label = &quot; &lt;head&gt; dictEntry*[4] | &lt;0&gt; 0 | &lt;1&gt; 1 | &lt;2&gt; 2 | &lt;3&gt; 3 &quot;];
+    //table1 [label = &quot;NULL&quot;, shape = plaintext];
+
+    kv0 [label = &quot; &lt;head&gt; dictEntry | { k0 | v0 } &quot;];
+    kv1 [label = &quot; &lt;head&gt; dictEntry | { k1 | v1 } &quot;];
+
+    //
+
+    node [shape = plaintext, label = &quot;NULL&quot;];
+
+    null0;
+    null1;
+    null2;
+    null3;
+
+    //
+
+    dictht0:table -&gt; table0:head;
+
+    table0:0 -&gt; kv0:head;
+    kv0:head -&gt; null0 [label = &quot;next&quot;];
+    table0:1 -&gt; null1;
+    table0:2 -&gt; kv1:head;
+    kv1:head -&gt; null2 [label = &quot;next&quot;];
+    table0:3 -&gt; null3;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="../../_images/graphviz-407d8c992d82e492ff12d906b428a6ffa148924b.png" alt="digraph {
+
+    label = &quot;\n 图 4-7    使用链表解决 k2 和 k1 的冲突&quot;;
+
+    rankdir = LR;
+
+    //
+
+    node [shape = record];
+
+    dictht0 [label = &quot; &lt;head&gt; dictht | &lt;table&gt; table | &lt;size&gt; size \n 4 | &lt;sizemask&gt; sizemask \n 3 | &lt;used&gt; used \n 3&quot;];
+
+    table0 [label = &quot; &lt;head&gt; dictEntry*[4] | &lt;0&gt; 0 | &lt;1&gt; 1 | &lt;2&gt; 2 | &lt;3&gt; 3 &quot;];
+    //table1 [label = &quot;NULL&quot;, shape = plaintext];
+
+    kv0 [label = &quot; &lt;head&gt; dictEntry | { k0 | v0 } &quot;];
+    kv1 [label = &quot; &lt;head&gt; dictEntry | { k1 | v1 } &quot;];
+    kv2 [label = &quot; &lt;head&gt; dictEntry | { k2 | v2 } &quot;];
+
+    //
+
+    node [shape = plaintext, label = &quot;NULL&quot;];
+
+    null0;
+    null1;
+    null2;
+    null3;
+
+    //
+
+    dictht0:table -&gt; table0:head;
+
+    table0:0 -&gt; kv0:head;
+    kv0:head -&gt; null0 [label = &quot;next&quot;];
+    table0:1 -&gt; null1;
+    table0:2 -&gt; kv2:head;
+    kv2:head -&gt; kv1:head [label = &quot;next&quot;];
+    kv1:head -&gt; null2 [label = &quot;next&quot;];
+    table0:3 -&gt; null3;
+
+}" class="graphviz" /></div>
+<p>因为 <code class="docutils literal notranslate"><span class="pre">dictEntry</span></code> 节点组成的链表没有指向链表表尾的指针，
+所以为了速度考虑，
+程序总是将新节点添加到链表的表头位置（复杂度为 <span class="math">O(1)</span>），
+排在其他已有节点的前面。</p>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/preview/dict/collision_resolution.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">解决键冲突</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2015, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

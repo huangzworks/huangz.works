@@ -1,0 +1,184 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>简单动态字符串 &#8212; Redis 设计与实现</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">简单动态字符串</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>简单动态字符串<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>Redis 没有直接使用 C 语言传统的字符串表示（以空字符结尾的字符数组，以下简称 C 字符串），
+而是自己构建了一种名为简单动态字符串（simple dynamic string，SDS）的抽象类型，
+并将 SDS 用作 Redis 的默认字符串表示。</p>
+<p>在 Redis 里面，
+C 字符串只会作为字符串字面量（string literal），
+用在一些无须对字符串值进行修改的地方，
+比如打印日志：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redisLog</span><span class="p">(</span><span class="n">REDIS_WARNING</span><span class="p">,</span><span class="s">&quot;Redis is now ready to exit, bye bye...&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>当 Redis 需要的不仅仅是一个字符串字面量，
+而是一个可以被修改的字符串值时，
+Redis 就会使用 SDS 来表示字符串值：
+比如在 Redis 的数据库里面，
+包含字符串值的键值对在底层都是由 SDS 实现的。</p>
+<p>举个例子，
+如果客户端执行命令：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SET</span><span class="w"> </span><span class="n">msg</span><span class="w"> </span><span class="s">&quot;hello world&quot;</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p>那么 Redis 将在数据库中创建了一个新的键值对，
+其中：</p>
+<ul class="simple">
+<li><p>键值对的键是一个字符串对象，
+对象的底层实现是一个保存着字符串 <code class="docutils literal notranslate"><span class="pre">&quot;msg&quot;</span></code> 的 SDS 。</p></li>
+<li><p>键值对的值也是一个字符串对象，
+对象的底层实现是一个保存着字符串 <code class="docutils literal notranslate"><span class="pre">&quot;hello</span> <span class="pre">world&quot;</span></code> 的 SDS 。</p></li>
+</ul>
+<p>又比如说，
+如果客户端执行命令：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">RPUSH</span><span class="w"> </span><span class="n">fruits</span><span class="w"> </span><span class="s">&quot;apple&quot;</span><span class="w"> </span><span class="s">&quot;banana&quot;</span><span class="w"> </span><span class="s">&quot;cherry&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">3</span>
+</pre></div>
+</div>
+<p>那么 Redis 将在数据库中创建一个新的键值对，
+其中：</p>
+<ul class="simple">
+<li><p>键值对的键是一个字符串对象，
+对象的底层实现是一个保存了字符串 <code class="docutils literal notranslate"><span class="pre">&quot;fruits&quot;</span></code> 的 SDS 。</p></li>
+<li><p>键值对的值是一个列表对象，
+列表对象包含了三个字符串对象，
+这三个字符串对象分别由三个 SDS 实现：
+第一个 SDS 保存着字符串 <code class="docutils literal notranslate"><span class="pre">&quot;apple&quot;</span></code> ，
+第二个 SDS 保存着字符串 <code class="docutils literal notranslate"><span class="pre">&quot;banana&quot;</span></code> ，
+第三个 SDS 保存着字符串 <code class="docutils literal notranslate"><span class="pre">&quot;cherry&quot;</span></code> 。</p></li>
+</ul>
+<p>除了用来保存数据库中的字符串值之外，
+SDS 还被用作缓冲区（buffer）：
+AOF 模块中的 AOF 缓冲区，
+以及客户端状态中的输入缓冲区，
+都是由 SDS 实现的，
+在之后介绍 AOF 持久化和客户端状态的时候，
+我们会看到 SDS 在这两个模块中的应用。</p>
+<p>本章接下来将对 SDS 的实现进行介绍，
+说明 SDS 和 C 字符串的不同之处，
+解释为什么 Redis 要使用 SDS 而不是 C 字符串，
+并在本章的最后列出 SDS 的操作 API 。</p>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/preview/sds/content.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">简单动态字符串</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2015, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

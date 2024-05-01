@@ -1,0 +1,179 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>向监视器发送命令信息 &#8212; Redis 设计与实现</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">向监视器发送命令信息</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>向监视器发送命令信息<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>服务器在每次处理命令请求之前，
+都会调用 <code class="docutils literal notranslate"><span class="pre">replicationFeedMonitors</span></code> 函数，
+由这个函数将被处理命令请求的相关信息发送给各个监视器。</p>
+<p>以下是 <code class="docutils literal notranslate"><span class="pre">replicationFeedMonitors</span></code> 函数的伪代码定义，
+函数首先根据传入的参数创建信息，
+然后将信息发送给所有监视器：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">replicationFeedMonitors</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">monitors</span><span class="p">,</span> <span class="n">dbid</span><span class="p">,</span> <span class="n">argv</span><span class="p">,</span> <span class="n">argc</span><span class="p">):</span>
+
+    <span class="c1"># 根据执行命令的客户端、当前数据库的号码、命令参数、命令参数个数等参数</span>
+    <span class="c1"># 创建要发送给各个监视器的信息</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="n">create_message</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">dbid</span><span class="p">,</span> <span class="n">argv</span><span class="p">,</span> <span class="n">argc</span><span class="p">)</span>
+
+    <span class="c1"># 遍历所有监视器</span>
+    <span class="k">for</span> <span class="n">monitor</span> <span class="ow">in</span> <span class="n">monitors</span><span class="p">:</span>
+
+        <span class="c1"># 将信息发送给监视器</span>
+        <span class="n">send_message</span><span class="p">(</span><span class="n">monitor</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>举个例子，
+假设服务器在时间 <code class="docutils literal notranslate"><span class="pre">1378822257.329412</span></code> ，
+根据 IP 为 <code class="docutils literal notranslate"><span class="pre">127.0.0.1</span></code> 、端口号为 <code class="docutils literal notranslate"><span class="pre">56604</span></code> 的客户端发送的命令请求，
+对 <code class="docutils literal notranslate"><span class="pre">0</span></code> 号数据库执行命令 <code class="docutils literal notranslate"><span class="pre">KEYS</span> <span class="pre">*</span></code> ，
+那么服务器将创建以下信息：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="mf">1378822257.329412</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="w"> </span><span class="mf">127.0.0.1</span><span class="o">:</span><span class="mi">56604</span><span class="p">]</span><span class="w"> </span><span class="s">&quot;KEYS&quot;</span><span class="w"> </span><span class="s">&quot;*&quot;</span>
+</pre></div>
+</div>
+<p>如果服务器 <code class="docutils literal notranslate"><span class="pre">monitors</span></code> 链表的当前状态如图 24-3 所示，
+那么服务器会分别将信息发送给  <code class="docutils literal notranslate"><span class="pre">c128</span></code> 、 <code class="docutils literal notranslate"><span class="pre">c256</span></code> 、 <code class="docutils literal notranslate"><span class="pre">c512</span></code> 和 <code class="docutils literal notranslate"><span class="pre">c10086</span></code> 四个监视器，
+如图 24-4 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-3debea64a47d5f9379ac885d33e3246e47ab29a4.png" alt="digraph {
+
+    label = &quot;\n 图 24-4    服务器将信息发送给各个监视器&quot;;
+
+    rankdir = LR;
+
+    server [label = &quot;服\n务\n器&quot;, shape = box, height = 4.0, width = 1.0];
+
+    node [shape = circle, width = 1.3];
+
+    c128;
+    c256;
+    c512;
+    c10086;
+
+    edge [label = &quot;1378822257.329412\n[0 127.0.0.1:56604]\n\&quot;KEYS\&quot; \&quot;*\&quot;&quot;];
+
+    server -&gt; c128;
+    server -&gt; c256;
+    server -&gt; c512;
+    server -&gt; c10086;
+
+}" class="graphviz" /></div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/preview/monitor/propagate_command.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">向监视器发送命令信息</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2015, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

@@ -1,0 +1,470 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>字符串对象 &#8212; Redis 设计与实现</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">字符串对象</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>字符串对象<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>字符串对象的编码可以是 <code class="docutils literal notranslate"><span class="pre">int</span></code> 、 <code class="docutils literal notranslate"><span class="pre">raw</span></code> 或者 <code class="docutils literal notranslate"><span class="pre">embstr</span></code> 。</p>
+<p>如果一个字符串对象保存的是整数值，
+并且这个整数值可以用 <code class="docutils literal notranslate"><span class="pre">long</span></code> 类型来表示，
+那么字符串对象会将整数值保存在字符串对象结构的 <code class="docutils literal notranslate"><span class="pre">ptr</span></code> 属性里面（将 <code class="docutils literal notranslate"><span class="pre">void*</span></code> 转换成 <code class="docutils literal notranslate"><span class="pre">long</span></code> ），
+并将字符串对象的编码设置为 <code class="docutils literal notranslate"><span class="pre">int</span></code> 。</p>
+<p>举个例子，
+如果我们执行以下 <span class="xref std std-ref">SET</span> 命令，
+那么服务器将创建一个如图 8-1 所示的 <code class="docutils literal notranslate"><span class="pre">int</span></code> 编码的字符串对象作为 <code class="docutils literal notranslate"><span class="pre">number</span></code> 键的值：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SET</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="mi">10086</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">OBJECT</span><span class="w"> </span><span class="n">ENCODING</span><span class="w"> </span><span class="n">number</span>
+<span class="s">&quot;int&quot;</span>
+</pre></div>
+</div>
+<div class="graphviz"><img src="../../_images/graphviz-9b10f3b4de5f3e050ae38fc8e036869d37f38d2b.png" alt="digraph {
+
+    label = &quot;\n 图 8-1    int 编码的字符串对象&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    redisObject [label = &quot; redisObject | type \n REDIS_STRING | encoding \n REDIS_ENCODING_INT | &lt;ptr&gt; ptr | ... &quot;];
+
+    node [shape = plaintext];
+
+    number [label = &quot;10086&quot;]
+
+    redisObject:ptr -&gt; number;
+
+}" class="graphviz" /></div>
+<p>如果字符串对象保存的是一个字符串值，
+并且这个字符串值的长度大于 <code class="docutils literal notranslate"><span class="pre">39</span></code> 字节，
+那么字符串对象将使用一个简单动态字符串（SDS）来保存这个字符串值，
+并将对象的编码设置为 <code class="docutils literal notranslate"><span class="pre">raw</span></code> 。</p>
+<p>举个例子，
+如果我们执行以下命令，
+那么服务器将创建一个如图 8-2 所示的 <code class="docutils literal notranslate"><span class="pre">raw</span></code> 编码的字符串对象作为 <code class="docutils literal notranslate"><span class="pre">story</span></code> 键的值：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SET</span><span class="w"> </span><span class="n">story</span><span class="w"> </span><span class="s">&quot;Long, long, long ago there lived a king ...&quot;</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">STRLEN</span><span class="w"> </span><span class="n">story</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">43</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">OBJECT</span><span class="w"> </span><span class="n">ENCODING</span><span class="w"> </span><span class="n">story</span>
+<span class="s">&quot;raw&quot;</span>
+</pre></div>
+</div>
+<div class="graphviz"><img src="../../_images/graphviz-25c397540df6b2f776b820a30866bba106bccb7b.png" alt="digraph {
+
+    label = &quot;\n 图 8-2    raw 编码的字符串对象&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    redisObject [label = &quot; redisObject | type \n REDIS_STRING | encoding \n REDIS_ENCODING_RAW | &lt;ptr&gt; ptr | ... &quot;];
+
+    sdshdr [label = &quot; &lt;head&gt; sdshdr | free \n 0 | len \n 43 | &lt;buf&gt; buf&quot;];
+
+    buf [label = &quot; { 'L' | 'o' | 'n' | 'g' | ... | 'k' | 'i' | 'n' | 'g' | ' ' | '.' | '.' | '.' | '\\0' } &quot; ];
+
+    //
+
+    redisObject:ptr -&gt; sdshdr:head;
+    sdshdr:buf -&gt; buf;
+
+}" class="graphviz" /></div>
+<p>如果字符串对象保存的是一个字符串值，
+并且这个字符串值的长度小于等于 <code class="docutils literal notranslate"><span class="pre">39</span></code> 字节，
+那么字符串对象将使用 <code class="docutils literal notranslate"><span class="pre">embstr</span></code> 编码的方式来保存这个字符串值。</p>
+<p><code class="docutils literal notranslate"><span class="pre">embstr</span></code> 编码是专门用于保存短字符串的一种优化编码方式，
+这种编码和 <code class="docutils literal notranslate"><span class="pre">raw</span></code> 编码一样，
+都使用 <code class="docutils literal notranslate"><span class="pre">redisObject</span></code> 结构和 <code class="docutils literal notranslate"><span class="pre">sdshdr</span></code> 结构来表示字符串对象，
+但 <code class="docutils literal notranslate"><span class="pre">raw</span></code> 编码会调用两次内存分配函数来分别创建 <code class="docutils literal notranslate"><span class="pre">redisObject</span></code> 结构和 <code class="docutils literal notranslate"><span class="pre">sdshdr</span></code> 结构，
+而 <code class="docutils literal notranslate"><span class="pre">embstr</span></code> 编码则通过调用一次内存分配函数来分配一块连续的空间，
+空间中依次包含 <code class="docutils literal notranslate"><span class="pre">redisObject</span></code> 和 <code class="docutils literal notranslate"><span class="pre">sdshdr</span></code> 两个结构，
+如图 8-3 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-7baad9e9ebbcdcb592a40ee4e7ddbbe758f252eb.png" alt="digraph {
+
+    label = &quot;\n 图 8-3    embstr 编码创建的内存块结构&quot;;
+
+    node [shape = record];
+
+    embstr [ label = &quot; { redisObject | { type | encoding | &lt;ptr&gt; ptr | ... } } |  { sdshdr | { free | len | &lt;buf&gt; buf }} &quot; ];
+
+}" class="graphviz" /></div>
+<p><code class="docutils literal notranslate"><span class="pre">embstr</span></code> 编码的字符串对象在执行命令时，
+产生的效果和 <code class="docutils literal notranslate"><span class="pre">raw</span></code> 编码的字符串对象执行命令时产生的效果是相同的，
+但使用 <code class="docutils literal notranslate"><span class="pre">embstr</span></code> 编码的字符串对象来保存短字符串值有以下好处：</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">embstr</span></code> 编码将创建字符串对象所需的内存分配次数从 <code class="docutils literal notranslate"><span class="pre">raw</span></code> 编码的两次降低为一次。</p></li>
+<li><p>释放 <code class="docutils literal notranslate"><span class="pre">embstr</span></code> 编码的字符串对象只需要调用一次内存释放函数，
+而释放 <code class="docutils literal notranslate"><span class="pre">raw</span></code> 编码的字符串对象需要调用两次内存释放函数。</p></li>
+<li><p>因为 <code class="docutils literal notranslate"><span class="pre">embstr</span></code> 编码的字符串对象的所有数据都保存在一块连续的内存里面，
+所以这种编码的字符串对象比起 <code class="docutils literal notranslate"><span class="pre">raw</span></code> 编码的字符串对象能够更好地利用缓存带来的优势。</p></li>
+</ol>
+<p>作为例子，
+以下命令创建了一个 <code class="docutils literal notranslate"><span class="pre">embstr</span></code> 编码的字符串对象作为 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键的值，
+值对象的样子如图 8-4 所示：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SET</span><span class="w"> </span><span class="n">msg</span><span class="w"> </span><span class="s">&quot;hello&quot;</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">OBJECT</span><span class="w"> </span><span class="n">ENCODING</span><span class="w"> </span><span class="n">msg</span>
+<span class="s">&quot;embstr&quot;</span>
+</pre></div>
+</div>
+<div class="graphviz"><img src="../../_images/graphviz-a0882d2a335237338f8395b6c8e4eb7bd8ee3df3.png" alt="digraph {
+
+    label = &quot;\n 图 8-4    embstr 编码的字符串对象&quot;;
+
+    node [shape = record];
+
+    embstr [ label = &quot; { redisObject | { type \n REDIS_STRING | encoding \n REDIS_ENCODING_EMBSTR | &lt;ptr&gt; ptr | ... } } |  { sdshdr | { free \n 0 | len \n 5 | { buf | { &lt;buf&gt; 'h' | 'e' | 'l' | 'l' | 'o' | '\\0'}} }} &quot; ];
+
+    embstr:ptr -&gt; embstr:buf;
+
+}" class="graphviz" /></div>
+<p>最后要说的是，
+可以用 <code class="docutils literal notranslate"><span class="pre">long</span> <span class="pre">double</span></code> 类型表示的浮点数在 Redis 中也是作为字符串值来保存的：
+如果我们要保存一个浮点数到字符串对象里面，
+那么程序会先将这个浮点数转换成字符串值，
+然后再保存起转换所得的字符串值。</p>
+<p>举个例子，
+执行以下代码将创建一个包含 <code class="docutils literal notranslate"><span class="pre">3.14</span></code> 的字符串表示 <code class="docutils literal notranslate"><span class="pre">&quot;3.14&quot;</span></code> 的字符串对象：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SET</span><span class="w"> </span><span class="n">pi</span><span class="w"> </span><span class="mf">3.14</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">OBJECT</span><span class="w"> </span><span class="n">ENCODING</span><span class="w"> </span><span class="n">pi</span>
+<span class="s">&quot;embstr&quot;</span>
+</pre></div>
+</div>
+<p>在有需要的时候，
+程序会将保存在字符串对象里面的字符串值转换回浮点数值，
+执行某些操作，
+然后再将执行操作所得的浮点数值转换回字符串值，
+并继续保存在字符串对象里面。</p>
+<p>举个例子，
+如果我们执行以下代码的话：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">INCRBYFLOAT</span><span class="w"> </span><span class="n">pi</span><span class="w"> </span><span class="mf">2.0</span>
+<span class="s">&quot;5.14&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">OBJECT</span><span class="w"> </span><span class="n">ENCODING</span><span class="w"> </span><span class="n">pi</span>
+<span class="s">&quot;embstr&quot;</span>
+</pre></div>
+</div>
+<p>那么程序首先会取出字符串对象里面保存的字符串值 <code class="docutils literal notranslate"><span class="pre">&quot;3.14&quot;</span></code> ，
+将它转换回浮点数值 <code class="docutils literal notranslate"><span class="pre">3.14</span></code> ，
+然后把 <code class="docutils literal notranslate"><span class="pre">3.14</span></code> 和 <code class="docutils literal notranslate"><span class="pre">2.0</span></code> 相加得出的值 <code class="docutils literal notranslate"><span class="pre">5.14</span></code> 转换成字符串 <code class="docutils literal notranslate"><span class="pre">&quot;5.14&quot;</span></code> ，
+并将这个 <code class="docutils literal notranslate"><span class="pre">&quot;5.14&quot;</span></code> 保存到字符串对象里面。</p>
+<p>表 8-6 总结并列出了字符串对象保存各种不同类型的值所使用的编码方式。</p>
+<hr class="docutils" />
+<p>表 8-6    字符串对象保存各类型值的编码方式</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>值</p></th>
+<th class="head"><p>编码</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>可以用 <code class="docutils literal notranslate"><span class="pre">long</span></code> 类型保存的整数。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>可以用 <code class="docutils literal notranslate"><span class="pre">long</span> <span class="pre">double</span></code> 类型保存的浮点数。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">embstr</span></code> 或者 <code class="docutils literal notranslate"><span class="pre">raw</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>字符串值，
+或者因为长度太大而没办法用 <code class="docutils literal notranslate"><span class="pre">long</span></code> 类型表示的整数，
+又或者因为长度太大而没办法用 <code class="docutils literal notranslate"><span class="pre">long</span> <span class="pre">double</span></code> 类型表示的浮点数。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">embstr</span></code> 或者 <code class="docutils literal notranslate"><span class="pre">raw</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<section id="id2">
+<h2>编码的转换<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">int</span></code> 编码的字符串对象和 <code class="docutils literal notranslate"><span class="pre">embstr</span></code> 编码的字符串对象在条件满足的情况下，
+会被转换为 <code class="docutils literal notranslate"><span class="pre">raw</span></code> 编码的字符串对象。</p>
+<p>对于 <code class="docutils literal notranslate"><span class="pre">int</span></code> 编码的字符串对象来说，
+如果我们向对象执行了一些命令，
+使得这个对象保存的不再是整数值，
+而是一个字符串值，
+那么字符串对象的编码将从 <code class="docutils literal notranslate"><span class="pre">int</span></code> 变为 <code class="docutils literal notranslate"><span class="pre">raw</span></code> 。</p>
+<p>在下面的示例中，
+我们通过 <span class="xref std std-ref">APPEND</span> 命令，
+向一个保存整数值的字符串对象追加了一个字符串值，
+因为追加操作只能对字符串值执行，
+所以程序会先将之前保存的整数值 <code class="docutils literal notranslate"><span class="pre">10086</span></code> 转换为字符串值 <code class="docutils literal notranslate"><span class="pre">&quot;10086&quot;</span></code> ，
+然后再执行追加操作，
+操作的执行结果就是一个 <code class="docutils literal notranslate"><span class="pre">raw</span></code> 编码的、保存了字符串值的字符串对象：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SET</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="mi">10086</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">OBJECT</span><span class="w"> </span><span class="n">ENCODING</span><span class="w"> </span><span class="n">number</span>
+<span class="s">&quot;int&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">APPEND</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="s">&quot; is a good number!&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">23</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">GET</span><span class="w"> </span><span class="n">number</span>
+<span class="s">&quot;10086 is a good number!&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">OBJECT</span><span class="w"> </span><span class="n">ENCODING</span><span class="w"> </span><span class="n">number</span>
+<span class="s">&quot;raw&quot;</span>
+</pre></div>
+</div>
+<p>另外，
+因为 Redis 没有为 <code class="docutils literal notranslate"><span class="pre">embstr</span></code> 编码的字符串对象编写任何相应的修改程序
+（只有 <code class="docutils literal notranslate"><span class="pre">int</span></code> 编码的字符串对象和 <code class="docutils literal notranslate"><span class="pre">raw</span></code> 编码的字符串对象有这些程序），
+所以 <code class="docutils literal notranslate"><span class="pre">embstr</span></code> 编码的字符串对象实际上是只读的：
+当我们对 <code class="docutils literal notranslate"><span class="pre">embstr</span></code> 编码的字符串对象执行任何修改命令时，
+程序会先将对象的编码从 <code class="docutils literal notranslate"><span class="pre">embstr</span></code> 转换成 <code class="docutils literal notranslate"><span class="pre">raw</span></code> ，
+然后再执行修改命令；
+因为这个原因，
+<code class="docutils literal notranslate"><span class="pre">embstr</span></code> 编码的字符串对象在执行修改命令之后，
+总会变成一个 <code class="docutils literal notranslate"><span class="pre">raw</span></code> 编码的字符串对象。</p>
+<p>以下代码展示了一个 <code class="docutils literal notranslate"><span class="pre">embstr</span></code> 编码的字符串对象在执行 <span class="xref std std-ref">APPEND</span> 命令之后，
+对象的编码从 <code class="docutils literal notranslate"><span class="pre">embstr</span></code> 变为 <code class="docutils literal notranslate"><span class="pre">raw</span></code> 的例子：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SET</span><span class="w"> </span><span class="n">msg</span><span class="w"> </span><span class="s">&quot;hello world&quot;</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">OBJECT</span><span class="w"> </span><span class="n">ENCODING</span><span class="w"> </span><span class="n">msg</span>
+<span class="s">&quot;embstr&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">APPEND</span><span class="w"> </span><span class="n">msg</span><span class="w"> </span><span class="s">&quot; again!&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">18</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">OBJECT</span><span class="w"> </span><span class="n">ENCODING</span><span class="w"> </span><span class="n">msg</span>
+<span class="s">&quot;raw&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id3">
+<h2>字符串命令的实现<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>因为字符串键的值为字符串对象，
+所以用于字符串键的所有命令都是针对字符串对象来构建的，
+表 8-7 列举了其中一部分字符串命令，
+以及这些命令在不同编码的字符串对象下的实现方法。</p>
+<hr class="docutils" />
+<p>表 8-7    字符串命令的实现</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>命令</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">int</span></code> 编码的实现方法</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">embstr</span></code> 编码的实现方法</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">raw</span></code> 编码的实现方法</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><span class="xref std std-ref">SET</span></p></td>
+<td><p>使用 <code class="docutils literal notranslate"><span class="pre">int</span></code> 编码保存值。</p></td>
+<td><p>使用 <code class="docutils literal notranslate"><span class="pre">embstr</span></code> 编码保存值。</p></td>
+<td><p>使用 <code class="docutils literal notranslate"><span class="pre">raw</span></code> 编码保存值。</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="xref std std-ref">GET</span></p></td>
+<td><p>拷贝对象所保存的整数值，
+将这个拷贝转换成字符串值，
+然后向客户端返回这个字符串值。</p></td>
+<td><p>直接向客户端返回字符串值。</p></td>
+<td><p>直接向客户端返回字符串值。</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="xref std std-ref">APPEND</span></p></td>
+<td><p>将对象转换成 <code class="docutils literal notranslate"><span class="pre">raw</span></code> 编码，
+然后按 <code class="docutils literal notranslate"><span class="pre">raw</span></code>
+编码的方式执行此操作。</p></td>
+<td><p>将对象转换成 <code class="docutils literal notranslate"><span class="pre">raw</span></code> 编码，
+然后按 <code class="docutils literal notranslate"><span class="pre">raw</span></code>
+编码的方式执行此操作。</p></td>
+<td><p>调用 <code class="docutils literal notranslate"><span class="pre">sdscatlen</span></code> 函数，
+将给定字符串追加到现有字符串的末尾。</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="xref std std-ref">INCRBYFLOAT</span></p></td>
+<td><p>取出整数值并将其转换成
+<code class="docutils literal notranslate"><span class="pre">long</span> <span class="pre">double</span></code> 类型的浮点数，
+对这个浮点数进行加法计算，
+然后将得出的浮点数结果保存起来。</p></td>
+<td><p>取出字符串值并尝试将其转换成
+<code class="docutils literal notranslate"><span class="pre">long</span> <span class="pre">double</span></code> 类型的浮点数，
+对这个浮点数进行加法计算，
+然后将得出的浮点数结果保存起来。
+如果字符串值不能被转换成浮点数，
+那么向客户端返回一个错误。</p></td>
+<td><p>取出字符串值并尝试将其转换成
+<code class="docutils literal notranslate"><span class="pre">long</span> <span class="pre">double</span></code> 类型的浮点数，
+对这个浮点数进行加法计算，
+然后将得出的浮点数结果保存起来。
+如果字符串值不能被转换成浮点数，
+那么向客户端返回一个错误。</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="xref std std-ref">INCRBY</span></p></td>
+<td><p>对整数值进行加法计算，
+得出的计算结果会作为整数被保存起来。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">embstr</span></code> 编码不能执行此命令，
+向客户端返回一个错误。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">raw</span></code> 编码不能执行此命令，
+向客户端返回一个错误。</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="xref std std-ref">DECRBY</span></p></td>
+<td><p>对整数值进行减法计算，
+得出的计算结果会作为整数被保存起来。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">embstr</span></code> 编码不能执行此命令，
+向客户端返回一个错误。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">raw</span></code> 编码不能执行此命令，
+向客户端返回一个错误。</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="xref std std-ref">STRLEN</span></p></td>
+<td><p>拷贝对象所保存的整数值，
+将这个拷贝转换成字符串值，
+计算并返回这个字符串值的长度。</p></td>
+<td><p>调用 <code class="docutils literal notranslate"><span class="pre">sdslen</span></code> 函数，
+返回字符串的长度。</p></td>
+<td><p>调用 <code class="docutils literal notranslate"><span class="pre">sdslen</span></code> 函数，
+返回字符串的长度。</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="xref std std-ref">SETRANGE</span></p></td>
+<td><p>将对象转换成 <code class="docutils literal notranslate"><span class="pre">raw</span></code> 编码，
+然后按 <code class="docutils literal notranslate"><span class="pre">raw</span></code>
+编码的方式执行此命令。</p></td>
+<td><p>将对象转换成 <code class="docutils literal notranslate"><span class="pre">raw</span></code> 编码，
+然后按 <code class="docutils literal notranslate"><span class="pre">raw</span></code>
+编码的方式执行此命令。</p></td>
+<td><p>将字符串特定索引上的值设置为给定的字符。</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="xref std std-ref">GETRANGE</span></p></td>
+<td><p>拷贝对象所保存的整数值，
+将这个拷贝转换成字符串值，
+然后取出并返回字符串指定索引上的字符。</p></td>
+<td><p>直接取出并返回字符串指定索引上的字符。</p></td>
+<td><p>直接取出并返回字符串指定索引上的字符。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="../../index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">字符串对象</a><ul>
+<li><a class="reference internal" href="#id2">编码的转换</a></li>
+<li><a class="reference internal" href="#id3">字符串命令的实现</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/preview/object/string.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">字符串对象</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2015, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

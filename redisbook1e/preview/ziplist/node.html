@@ -1,0 +1,424 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>压缩列表节点的构成 &#8212; Redis 设计与实现</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">压缩列表节点的构成</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>压缩列表节点的构成<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>每个压缩列表节点可以保存一个字节数组或者一个整数值，
+其中，
+字节数组可以是以下三种长度的其中一种：</p>
+<ol class="arabic simple">
+<li><p>长度小于等于 <code class="docutils literal notranslate"><span class="pre">63</span></code> （<span class="math">2^{6}-1</span>）字节的字节数组；</p></li>
+<li><p>长度小于等于 <code class="docutils literal notranslate"><span class="pre">16383</span></code> （<span class="math">2^{14}-1</span>） 字节的字节数组；</p></li>
+<li><p>长度小于等于 <code class="docutils literal notranslate"><span class="pre">4294967295</span></code> （<span class="math">2^{32}-1</span>）字节的字节数组；</p></li>
+</ol>
+<p>而整数值则可以是以下六种长度的其中一种：</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">4</span></code> 位长，介于 <code class="docutils literal notranslate"><span class="pre">0</span></code> 至 <code class="docutils literal notranslate"><span class="pre">12</span></code> 之间的无符号整数；</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">1</span></code> 字节长的有符号整数；</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">3</span></code> 字节长的有符号整数；</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">int16_t</span></code> 类型整数；</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">int32_t</span></code> 类型整数；</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">int64_t</span></code> 类型整数。</p></li>
+</ol>
+<p>每个压缩列表节点都由 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 、 <code class="docutils literal notranslate"><span class="pre">encoding</span></code> 、 <code class="docutils literal notranslate"><span class="pre">content</span></code> 三个部分组成，
+如图 7-4 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-eaa128e8dc6b3aecf4f7ea4744d8c25781c0f757.png" alt="digraph {
+
+    label = &quot;\n 图 7-4    压缩列表节点的各个组成部分&quot;;
+
+    node [shape = record];
+
+    n [label = &quot; previous_entry_length | encoding | content &quot;];
+
+}" class="graphviz" /></div>
+<p>接下来的内容将分别介绍这三个组成部分。</p>
+<section id="previous-entry-length">
+<h2>previous_entry_length<a class="headerlink" href="#previous-entry-length" title="Link to this heading">¶</a></h2>
+<p>节点的 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性以字节为单位，
+记录了压缩列表中前一个节点的长度。</p>
+<p><code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性的长度可以是 <code class="docutils literal notranslate"><span class="pre">1</span></code> 字节或者 <code class="docutils literal notranslate"><span class="pre">5</span></code> 字节：</p>
+<ul class="simple">
+<li><p>如果前一节点的长度小于 <code class="docutils literal notranslate"><span class="pre">254</span></code> 字节，
+那么 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性的长度为 <code class="docutils literal notranslate"><span class="pre">1</span></code> 字节：
+前一节点的长度就保存在这一个字节里面。</p></li>
+<li><p>如果前一节点的长度大于等于 <code class="docutils literal notranslate"><span class="pre">254</span></code> 字节，
+那么 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性的长度为 <code class="docutils literal notranslate"><span class="pre">5</span></code> 字节：
+其中属性的第一字节会被设置为 <code class="docutils literal notranslate"><span class="pre">0xFE</span></code> （十进制值 <code class="docutils literal notranslate"><span class="pre">254</span></code>），
+而之后的四个字节则用于保存前一节点的长度。</p></li>
+</ul>
+<p>图 7-5 展示了一个包含一字节长 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性的压缩列表节点，
+属性的值为 <code class="docutils literal notranslate"><span class="pre">0x05</span></code> ，
+表示前一节点的长度为 <code class="docutils literal notranslate"><span class="pre">5</span></code> 字节。</p>
+<div class="graphviz"><img src="../../_images/graphviz-99d51acfdbc7301ebd542f07f848e5ac9dc71687.png" alt="digraph {
+
+    label = &quot;\n 图 7-5    当前节点的前一节点的长度为 5 字节&quot;;
+
+    node [shape = record];
+
+    n [label = &quot; previous_entry_length \n 0x05 | encoding \n ... | content \n ... &quot;];
+
+}" class="graphviz" /></div>
+<p>图 7-6 展示了一个包含五字节长 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性的压缩节点，
+属性的值为 <code class="docutils literal notranslate"><span class="pre">0xFE00002766</span></code> ，
+其中值的最高位字节 <code class="docutils literal notranslate"><span class="pre">0xFE</span></code> 表示这是一个五字节长的 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性，
+而之后的四字节 <code class="docutils literal notranslate"><span class="pre">0x00002766</span></code> （十进制值 <code class="docutils literal notranslate"><span class="pre">10086</span></code> ）才是前一节点的实际长度。</p>
+<div class="graphviz"><img src="../../_images/graphviz-35531675bd30a7037dc6d03a0ec863d9350b8b9b.png" alt="digraph {
+
+    label = &quot;\n 图 7-6    当前节点的前一节点的长度为 10086 字节&quot;;
+
+    node [shape = record];
+
+    n [label = &quot; previous_entry_length \n 0xFE00002766 | encoding \n ... | content \n ... &quot;];
+
+}" class="graphviz" /></div>
+<p>因为节点的 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性记录了前一个节点的长度，
+所以程序可以通过指针运算，
+根据当前节点的起始地址来计算出前一个节点的起始地址。</p>
+<p>举个例子，
+如果我们有一个指向当前节点起始地址的指针 <code class="docutils literal notranslate"><span class="pre">c</span></code> ，
+那么我们只要用指针 <code class="docutils literal notranslate"><span class="pre">c</span></code> 减去当前节点 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性的值，
+就可以得出一个指向前一个节点起始地址的指针 <code class="docutils literal notranslate"><span class="pre">p</span></code> ，
+如图 7-7 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-79cd977980ab1a6e2d42d4c0922a6a670393f311.png" alt="digraph {
+
+    label = &quot;\n 图 7-7    通过指针运算计算出前一个节点的地址&quot;;
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    entry [label = &quot; ... | &lt;previous_entry&gt; previous_entry | &lt;current_entry&gt; current_entry | ... &quot;];
+
+    c [label = &quot;c&quot;, shape = plaintext];
+    c -&gt; entry:current_entry;
+
+    p [label = &quot;p = c - current_entry.previous_entry_length&quot;, shape = plaintext];
+    p -&gt; entry:previous_entry [minlen = 2.0];
+
+}" class="graphviz" /></div>
+<p>压缩列表的从表尾向表头遍历操作就是使用这一原理实现的：
+只要我们拥有了一个指向某个节点起始地址的指针，
+那么通过这个指针以及这个节点的 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性，
+程序就可以一直向前一个节点回溯，
+最终到达压缩列表的表头节点。</p>
+<p>图 7-8 展示了一个从表尾节点向表头节点进行遍历的完整过程：</p>
+<ul class="simple">
+<li><p>首先，我们拥有指向压缩列表表尾节点 <code class="docutils literal notranslate"><span class="pre">entry4</span></code> 起始地址的指针 <code class="docutils literal notranslate"><span class="pre">p1</span></code>
+（指向表尾节点的指针可以通过指向压缩列表起始地址的指针加上 <code class="docutils literal notranslate"><span class="pre">zltail</span></code> 属性的值得出）；</p></li>
+<li><p>通过用 <code class="docutils literal notranslate"><span class="pre">p1</span></code> 减去 <code class="docutils literal notranslate"><span class="pre">entry4</span></code> 节点 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性的值，
+我们得到一个指向 <code class="docutils literal notranslate"><span class="pre">entry4</span></code> 前一节点 <code class="docutils literal notranslate"><span class="pre">entry3</span></code> 起始地址的指针 <code class="docutils literal notranslate"><span class="pre">p2</span></code> ；</p></li>
+<li><p>通过用 <code class="docutils literal notranslate"><span class="pre">p2</span></code> 减去 <code class="docutils literal notranslate"><span class="pre">entry3</span></code> 节点 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性的值，
+我们得到一个指向 <code class="docutils literal notranslate"><span class="pre">entry3</span></code> 前一节点 <code class="docutils literal notranslate"><span class="pre">entry2</span></code> 起始地址的指针 <code class="docutils literal notranslate"><span class="pre">p3</span></code> ；</p></li>
+<li><p>通过用 <code class="docutils literal notranslate"><span class="pre">p3</span></code> 减去 <code class="docutils literal notranslate"><span class="pre">entry2</span></code> 节点 <code class="docutils literal notranslate"><span class="pre">previous_entry_length</span></code> 属性的值，
+我们得到一个指向 <code class="docutils literal notranslate"><span class="pre">entry2</span></code> 前一节点 <code class="docutils literal notranslate"><span class="pre">entry1</span></code> 起始地址的指针 <code class="docutils literal notranslate"><span class="pre">p4</span></code> ，
+<code class="docutils literal notranslate"><span class="pre">entry1</span></code> 为压缩列表的表头节点；</p></li>
+<li><p>最终，
+我们从表尾节点向表头节点遍历了整个列表。</p></li>
+</ul>
+<div class="graphviz"><img src="../../_images/graphviz-173e2ba5c8a4db736af180db596715269286ea90.png" alt="digraph {
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    entry1 [label = &quot; zlbytes | zltail | zllen | &lt;e1&gt; entry1 | &lt;e2&gt; entry2 | &lt;e3&gt; entry3 | &lt;e4&gt; entry4 | zlend &quot;];
+
+    node [shape = plaintext];
+
+    p1 -&gt; entry1:e4;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="../../_images/graphviz-0c8788b3f721dacba67131f7c65f08f24e3cc1d3.png" alt="digraph {
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    entry2 [label = &quot; zlbytes | zltail | zllen | &lt;e1&gt; entry1 | &lt;e2&gt; entry2 | &lt;e3&gt; entry3 | &lt;e4&gt; entry4 | zlend &quot;];
+
+    node [shape = plaintext];
+
+    p2 [label = &quot;p2 = p1 - entry4.previous_entry_length&quot;];
+    p2 -&gt; entry2:e3;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="../../_images/graphviz-61636b4c453b98c4b94e33f41e68ff95dd38de09.png" alt="digraph {
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    entry3 [label = &quot; zlbytes | zltail | zllen | &lt;e1&gt; entry1 | &lt;e2&gt; entry2 | &lt;e3&gt; entry3 | &lt;e4&gt; entry4 | zlend &quot;];
+
+    node [shape = plaintext];
+
+    p3 [label = &quot;p3 = p2 - entry3.previous_entry_length&quot;];
+    p3 -&gt; entry3:e2;
+
+}" class="graphviz" /></div>
+<div class="graphviz"><img src="../../_images/graphviz-a8a828003fce00d15490b31d18333e9a851cb9bf.png" alt="digraph {
+
+    label = &quot;\n 图 7-8    一个从表尾向表头遍历的例子&quot;;
+
+    rankdir = BT;
+
+    node [shape = record];
+
+    entry4 [label = &quot; zlbytes | zltail | zllen | &lt;e1&gt; entry1 | &lt;e2&gt; entry2 | &lt;e3&gt; entry3 | &lt;e4&gt; entry4 | zlend &quot;];
+
+    node [shape = plaintext];
+
+    p4 [label = &quot;p4 = p3 - entry2.previous_entry_length&quot;];
+    p4 -&gt; entry4:e1;
+
+}" class="graphviz" /></div>
+</section>
+<section id="encoding">
+<h2>encoding<a class="headerlink" href="#encoding" title="Link to this heading">¶</a></h2>
+<p>节点的 <code class="docutils literal notranslate"><span class="pre">encoding</span></code> 属性记录了节点的 <code class="docutils literal notranslate"><span class="pre">content</span></code> 属性所保存数据的类型以及长度：</p>
+<ul class="simple">
+<li><p>一字节、两字节或者五字节长，
+值的最高位为 <code class="docutils literal notranslate"><span class="pre">00</span></code> 、 <code class="docutils literal notranslate"><span class="pre">01</span></code> 或者 <code class="docutils literal notranslate"><span class="pre">10</span></code> 的是字节数组编码：
+这种编码表示节点的 <code class="docutils literal notranslate"><span class="pre">content</span></code> 属性保存着字节数组，
+数组的长度由编码除去最高两位之后的其他位记录；</p></li>
+<li><p>一字节长，
+值的最高位以 <code class="docutils literal notranslate"><span class="pre">11</span></code> 开头的是整数编码：
+这种编码表示节点的 <code class="docutils literal notranslate"><span class="pre">content</span></code> 属性保存着整数值，
+整数值的类型和长度由编码除去最高两位之后的其他位记录；</p></li>
+</ul>
+<p>表 7-2 记录了所有可用的字节数组编码，
+而表 7-3 则记录了所有可用的整数编码。
+表格中的下划线 <code class="docutils literal notranslate"><span class="pre">_</span></code> 表示留空，
+而 <code class="docutils literal notranslate"><span class="pre">b</span></code> 、 <code class="docutils literal notranslate"><span class="pre">x</span></code> 等变量则代表实际的二进制数据，
+为了方便阅读，
+多个字节之间用空格隔开。</p>
+<hr class="docutils" />
+<p>表 7-2    字节数组编码</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>编码</p></th>
+<th class="head"><p>编码长度</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">content</span></code> 属性保存的值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">00bbbbbb</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1</span></code> 字节</p></td>
+<td><p>长度小于等于 <code class="docutils literal notranslate"><span class="pre">63</span></code> 字节的字节数组。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">01bbbbbb</span> <span class="pre">xxxxxxxx</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">2</span></code> 字节</p></td>
+<td><p>长度小于等于 <code class="docutils literal notranslate"><span class="pre">16383</span></code> 字节的字节数组。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">10______</span> <span class="pre">aaaaaaaa</span> <span class="pre">bbbbbbbb</span> <span class="pre">cccccccc</span> <span class="pre">dddddddd</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">5</span></code> 字节</p></td>
+<td><p>长度小于等于 <code class="docutils literal notranslate"><span class="pre">4294967295</span></code> 的字节数组。</p></td>
+</tr>
+</tbody>
+</table>
+<p>表 7-3    整数编码</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>编码</p></th>
+<th class="head"><p>编码长度</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">content</span></code> 属性保存的值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">11000000</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1</span></code> 字节</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int16_t</span></code> 类型的整数。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">11010000</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1</span></code> 字节</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int32_t</span></code> 类型的整数。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">11100000</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1</span></code> 字节</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int64_t</span></code> 类型的整数。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">11110000</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1</span></code> 字节</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">24</span></code> 位有符号整数。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">11111110</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1</span></code> 字节</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">8</span></code> 位有符号整数。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">1111xxxx</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1</span></code> 字节</p></td>
+<td><p>使用这一编码的节点没有相应的 <code class="docutils literal notranslate"><span class="pre">content</span></code> 属性，
+因为编码本身的 <code class="docutils literal notranslate"><span class="pre">xxxx</span></code> 四个位已经保存了一个介于 <code class="docutils literal notranslate"><span class="pre">0</span></code> 和 <code class="docutils literal notranslate"><span class="pre">12</span></code> 之间的值，
+所以它无须 <code class="docutils literal notranslate"><span class="pre">content</span></code> 属性。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<hr class="docutils" />
+<section id="content">
+<h2>content<a class="headerlink" href="#content" title="Link to this heading">¶</a></h2>
+<p>节点的 <code class="docutils literal notranslate"><span class="pre">content</span></code> 属性负责保存节点的值，
+节点值可以是一个字节数组或者整数，
+值的类型和长度由节点的 <code class="docutils literal notranslate"><span class="pre">encoding</span></code> 属性决定。</p>
+<p>图 7-9 展示了一个保存字节数组的节点示例：</p>
+<ul class="simple">
+<li><p>编码的最高两位 <code class="docutils literal notranslate"><span class="pre">00</span></code> 表示节点保存的是一个字节数组；</p></li>
+<li><p>编码的后六位 <code class="docutils literal notranslate"><span class="pre">001011</span></code> 记录了字节数组的长度 <code class="docutils literal notranslate"><span class="pre">11</span></code> ；</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">content</span></code> 属性保存着节点的值 <code class="docutils literal notranslate"><span class="pre">&quot;hello</span> <span class="pre">world&quot;</span></code> 。</p></li>
+</ul>
+<div class="graphviz"><img src="../../_images/graphviz-0158bb157d9345127995c7dea90d5098cbb9cb30.png" alt="digraph {
+
+    label = &quot;\n 图 7-9    保存着字节数组 \&quot;hello world\&quot; 的节点&quot;;
+
+    node [shape = record];
+
+    entry [label = &quot; previous_entry_length \n ... | encoding \n 00001011 | content \n \&quot;hello world\&quot; &quot;];
+
+}" class="graphviz" /></div>
+<p>图 7-10 展示了一个保存整数值的节点示例：</p>
+<ul class="simple">
+<li><p>编码 <code class="docutils literal notranslate"><span class="pre">11000000</span></code> 表示节点保存的是一个 <code class="docutils literal notranslate"><span class="pre">int16_t</span></code> 类型的整数值；</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">content</span></code> 属性保存着节点的值 <code class="docutils literal notranslate"><span class="pre">10086</span></code> 。</p></li>
+</ul>
+<div class="graphviz"><img src="../../_images/graphviz-48cf218d649b73bc953eba5cf4b3b189452c09ae.png" alt="digraph {
+
+    label = &quot;\n 图 7-10    保存着整数值 10086 的节点&quot;;
+
+    node [shape = record];
+
+    entry [label = &quot; previous_entry_length \n ... | encoding \n 11000000 | content \n 10086 &quot;];
+
+}" class="graphviz" /></div>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="../../index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">压缩列表节点的构成</a><ul>
+<li><a class="reference internal" href="#previous-entry-length">previous_entry_length</a></li>
+<li><a class="reference internal" href="#encoding">encoding</a></li>
+<li><a class="reference internal" href="#content">content</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/preview/ziplist/node.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">压缩列表节点的构成</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2015, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

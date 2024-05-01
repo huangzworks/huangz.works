@@ -1,0 +1,261 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>第 8 章《对象》 &#8212; Redis 设计与实现</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../" type="text/css" />
+    
+    <script src="../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">第 8 章《对象》</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>第 8 章《对象》<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<section id="id2">
+<h2>64 页<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>在这一页的倒数第二段：</p>
+<blockquote>
+<div><p>如果字符串对象保存的是一个字符串值，
+并且这个字符串值的长度大于 <code class="docutils literal notranslate"><span class="pre">32</span></code> 字节，
+那么字符串对象将使用一个简单动态字符串（SDS）来保存这个字符串值，
+并将对象的编码设置为 <code class="docutils literal notranslate"><span class="pre">raw</span></code> 。</p>
+</div></blockquote>
+<p>在本书定稿之后，
+Redis 将这个值从 <code class="docutils literal notranslate"><span class="pre">32</span></code> 改为了 <code class="docutils literal notranslate"><span class="pre">39</span></code> ，
+所以我们也需要进行相应的更新，
+修改之后的内容为：</p>
+<blockquote>
+<div><p>如果字符串对象保存的是一个字符串值，
+并且这个字符串值的长度大于 <code class="docutils literal notranslate"><span class="pre">39</span></code> 字节，
+那么字符串对象将使用一个简单动态字符串（SDS）来保存这个字符串值，
+并将对象的编码设置为 <code class="docutils literal notranslate"><span class="pre">raw</span></code> 。</p>
+</div></blockquote>
+<p>受此影响，
+65 页的图 8-2 也要更新为以下模样（图中的 <code class="docutils literal notranslate"><span class="pre">len</span></code> 属性有改动）：</p>
+<div class="graphviz"><img src="../_images/graphviz-cf2b6f3396a958da6febef6a6cc8c7f93fdb9c19.png" alt="digraph {
+
+    label = &quot;\n 图 8-2    raw 编码的字符串对象&quot;;
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    redisObject [label = &quot; redisObject | type \n REDIS_STRING | encoding \n REDIS_ENCODING_RAW | &lt;ptr&gt; ptr | ... &quot;];
+
+    sdshdr [label = &quot; &lt;head&gt; sdshdr | free \n 0 | len \n 43 | &lt;buf&gt; buf&quot;];
+
+    buf [label = &quot; { 'L' | 'o' | 'n' | 'g' | ... | 'k' | 'i' | 'n' | 'g' | ' ' | '.' | '.' | '.' | '\\0' } &quot; ];
+
+    //
+
+    redisObject:ptr -&gt; sdshdr:head;
+    sdshdr:buf -&gt; buf;
+
+}" class="graphviz" /></div>
+<p>而创建图 8-2 所示字符串的代码也要改为：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SET</span><span class="w"> </span><span class="n">story</span><span class="w"> </span><span class="s">&quot;Long, long, long ago there lived a king ...&quot;</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">STRLEN</span><span class="w"> </span><span class="n">story</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">43</span>
+
+<span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">OBJECT</span><span class="w"> </span><span class="n">ENCODING</span><span class="w"> </span><span class="n">story</span>
+<span class="s">&quot;raw&quot;</span>
+</pre></div>
+</div>
+<p>感谢 <a class="reference external" href="http://redisbook.com/en/latest/preview/object/string.html#comment-1481763423">xp</a> 反馈这个问题。</p>
+</section>
+<section id="id3">
+<h2>65 页<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>在这一页的中间开头第一段：</p>
+<blockquote>
+<div><p>如果字符串对象保存的是一个字符串值，
+并且这个字符串值的长度小于等于 <code class="docutils literal notranslate"><span class="pre">32</span></code> 字节，
+那么字符串对象将使用 <code class="docutils literal notranslate"><span class="pre">embstr</span></code> 编码的方式来保存这个字符串值。</p>
+</div></blockquote>
+<p>在本书定稿之后，
+Redis 将这个值从 <code class="docutils literal notranslate"><span class="pre">32</span></code> 改为了 <code class="docutils literal notranslate"><span class="pre">39</span></code> ，
+所以我们也需要进行相应的更新，
+修改之后的内容为：</p>
+<blockquote>
+<div><p>如果字符串对象保存的是一个字符串值，
+并且这个字符串值的长度小于等于 <code class="docutils literal notranslate"><span class="pre">39</span></code> 字节，
+那么字符串对象将使用 <code class="docutils literal notranslate"><span class="pre">embstr</span></code> 编码的方式来保存这个字符串值。</p>
+</div></blockquote>
+<p>感谢 <a class="reference external" href="http://redisbook.com/en/latest/preview/object/string.html#comment-1481763423">xp</a> 反馈这个问题。</p>
+</section>
+<section id="id5">
+<h2>75 页<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>在 8.5 节开头的介绍内容中，
+第二段代码：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SAD</span><span class="w"> </span><span class="n">Dfruits</span><span class="w"> </span><span class="s">&quot;apple&quot;</span><span class="w"> </span><span class="s">&quot;banana&quot;</span><span class="w"> </span><span class="s">&quot;cherry&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="mi">3</span>
+</pre></div>
+</div>
+<p>中的 <code class="docutils literal notranslate"><span class="pre">SADD</span></code> 命令印刷出错，
+正确的代码应该为：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SADD</span><span class="w"> </span><span class="n">fruits</span><span class="w"> </span><span class="s">&quot;apple&quot;</span><span class="w"> </span><span class="s">&quot;banana&quot;</span><span class="w"> </span><span class="s">&quot;cherry&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="mi">3</span>
+</pre></div>
+</div>
+<p>感谢 <a class="reference external" href="http://www.douban.com/people/zhkzyth/">zhkzyth</a> 反馈这个错误。</p>
+</section>
+<section id="id6">
+<h2>77 页<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<p>8.6 节开头的第二段：</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">ziplist</span></code> 编码的压缩列表对象使用压缩列表作为底层实现，
+……</p>
+</div></blockquote>
+<p>中的“压缩列表对象”有误，应该改为“有序集合对象”才对，
+以下是修正之后的内容：</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">ziplist</span></code> 编码的有序集合对象使用压缩列表作为底层实现，
+……</p>
+</div></blockquote>
+</section>
+<section id="id7">
+<h2>80 页<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
+<p>本页的最后一句：</p>
+<blockquote>
+<div><p>因为有序集合键的值为哈希对象，
+所以用于有序集合键的所有命令都是针对哈希对象来构建的，
+表 8-1 列出了其中一部分有序集合键命令，
+以及这些命令在不同编码的哈希对象下的实现方法。</p>
+</div></blockquote>
+<p>这里的“哈希对象”应该全部改为“有序集合对象”才对，
+以下是修正后的正文：</p>
+<blockquote>
+<div><p>因为有序集合键的值为有序集合对象，
+所以用于有序集合键的所有命令都是针对有序集合对象来构建的，
+表 8-1 列出了其中一部分有序集合键命令，
+以及这些命令在不同编码的有序集合对象下的实现方法。</p>
+</div></blockquote>
+<p>感谢 Andy 反馈这个问题。</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="../index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">第 8 章《对象》</a><ul>
+<li><a class="reference internal" href="#id2">64 页</a></li>
+<li><a class="reference internal" href="#id3">65 页</a></li>
+<li><a class="reference internal" href="#id5">75 页</a></li>
+<li><a class="reference internal" href="#id6">77 页</a></li>
+<li><a class="reference internal" href="#id7">80 页</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/errata/chp8.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">第 8 章《对象》</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2015, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

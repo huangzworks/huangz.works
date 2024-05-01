@@ -1,0 +1,548 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>文件事件 &#8212; Redis 设计与实现</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">文件事件</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>文件事件<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>Redis 基于 <a class="reference external" href="http://en.wikipedia.org/wiki/Reactor_pattern">Reactor 模式</a>开发了自己的网络事件处理器：
+这个处理器被称为文件事件处理器（file event handler）：</p>
+<ul class="simple">
+<li><p>文件事件处理器使用 <a class="reference external" href="http://en.wikipedia.org/wiki/Multiplexing">I/O 多路复用（multiplexing）</a>程序来同时监听多个套接字，
+并根据套接字目前执行的任务来为套接字关联不同的事件处理器。</p></li>
+<li><p>当被监听的套接字准备好执行连接应答（accept）、读取（read）、写入（write）、关闭（close）等操作时，
+与操作相对应的文件事件就会产生，
+这时文件事件处理器就会调用套接字之前关联好的事件处理器来处理这些事件。</p></li>
+</ul>
+<p>虽然文件事件处理器以单线程方式运行，
+但通过使用 I/O 多路复用程序来监听多个套接字，
+文件事件处理器既实现了高性能的网络通信模型，
+又可以很好地与 Redis 服务器中其他同样以单线程方式运行的模块进行对接，
+这保持了 Redis 内部单线程设计的简单性。</p>
+<section id="id2">
+<h2>文件事件处理器的构成<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>图 IMAGE_CONSTRUCT_OF_FILE_EVENT_HANDLER 展示了文件事件处理器的四个组成部分，
+它们分别是套接字、
+I/O 多路复用程序、
+文件事件分派器（dispatcher）、
+以及事件处理器。</p>
+<div class="graphviz"><img src="../../_images/graphviz-8f5474aa2127c331294dc5f445d513a3be8f5941.png" alt="digraph {
+
+    label = &quot;\n 图 IMAGE_CONSTRUCT_OF_FILE_EVENT_HANDLER    文件事件处理器的四个组成部分&quot;;
+
+    rankdir = LR;
+
+    node [shape = box];
+
+    subgraph cluster_sockets {
+
+        style = dashed
+
+        label = &quot;套接字&quot;;
+
+        c1 [label = &quot;s1&quot;, shape = circle];
+        c2 [label = &quot;s2&quot;, shape = circle];
+        other_client [label = &quot;...&quot;, width = 1.1, shape = plaintext];
+        c3 [label = &quot;sN&quot;, shape = circle];
+
+    }
+
+    io_multiplexing [label = &quot;I\n/\nO\n多\n路\n复\n用\n程\n序&quot;];
+
+    file_event_processor [label = &quot;文\n件\n事\n件\n分\n派\n器&quot;];
+
+    subgraph cluster_handlers {
+
+        style = dashed
+
+        label = &quot;事件处理器&quot;;
+
+        write_handler [label = &quot;命令请求处理器&quot;];
+
+        read_handler [label = &quot;命令回复处理器&quot;];
+
+        connect_handler [label = &quot;连接应答处理器&quot;];
+
+        other_handlers [label = &quot;...&quot;, width = 1.6];
+
+    }
+
+    c1 -&gt; io_multiplexing;
+    c2 -&gt; io_multiplexing;
+    other_client -&gt; io_multiplexing [style = invis];
+    c3 -&gt; io_multiplexing;
+
+    io_multiplexing -&gt; file_event_processor;
+
+    file_event_processor -&gt; write_handler;
+    file_event_processor -&gt; read_handler;
+    file_event_processor -&gt; connect_handler;
+    file_event_processor -&gt; other_handlers;
+}" class="graphviz" /></div>
+<p>文件事件是对套接字操作的抽象，
+每当一个套接字准备好执行连接应答（accept）、写入、读取、关闭等操作时，
+就会产生一个文件事件。
+因为一个服务器通常会连接多个套接字，
+所以多个文件事件有可能会并发地出现。</p>
+<p>I/O 多路复用程序负责监听多个套接字，
+并向文件事件分派器传送那些产生了事件的套接字。</p>
+<p>尽管多个文件事件可能会并发地出现，
+但 I/O 多路复用程序总是会将所有产生事件的套接字都入队到一个队列里面，
+然后通过这个队列，
+以有序（sequentially）、同步（synchronously）、每次一个套接字的方式向文件事件分派器传送套接字：
+当上一个套接字产生的事件被处理完毕之后（该套接字为事件所关联的事件处理器执行完毕），
+I/O 多路复用程序才会继续向文件事件分派器传送下一个套接字，
+如图 IMAGE_DISPATCH_EVENT_VIA_QUEUE 。</p>
+<div class="graphviz"><img src="../../_images/graphviz-b26053be07c7aad95688bf604da6f9c4d97fd054.png" alt="digraph {
+
+    rankdir = LR;
+
+    node [shape = record];
+
+    label = &quot;\n图 IMAGE_DISPATCH_EVENT_VIA_QUEUE    I/O 多路复用程序通过队列向文件事件分派器传送套接字&quot;;
+
+    //
+
+    subgraph cluster_io_multiplexing {
+
+        //style = dashed
+
+        label = &quot;队列&quot;;
+
+        queue [label = &quot; { 套接字 sN | 套接字 sN-1 | ... | 套接字 s3 | 套接字 s2 } &quot;];
+
+    }
+
+    file_event_processor [label = &quot;文\n件\n事\n件\n分\n派\n器&quot;];
+
+    //
+
+    queue -&gt; file_event_processor [label = &quot;传送\n 套接字 s1&quot;, style = dashed];
+}" class="graphviz" /></div>
+<p>文件事件分派器接收 I/O 多路复用程序传来的套接字，
+并根据套接字产生的事件的类型，
+调用相应的事件处理器。</p>
+<p>服务器会为执行不同任务的套接字关联不同的事件处理器，
+这些处理器是一个个函数，
+它们定义了某个事件发生时，
+服务器应该执行的动作。</p>
+</section>
+<section id="i-o">
+<h2>I/O 多路复用程序的实现<a class="headerlink" href="#i-o" title="Link to this heading">¶</a></h2>
+<p>Redis 的 I/O 多路复用程序的所有功能都是通过包装常见的
+<code class="docutils literal notranslate"><span class="pre">select</span></code> 、 <code class="docutils literal notranslate"><span class="pre">epoll</span></code> 、 <code class="docutils literal notranslate"><span class="pre">evport</span></code> 和 <code class="docutils literal notranslate"><span class="pre">kqueue</span></code>
+这些 I/O 多路复用函数库来实现的，
+每个 I/O 多路复用函数库在 Redis 源码中都对应一个单独的文件，
+比如 <code class="docutils literal notranslate"><span class="pre">ae_select.c</span></code> 、 <code class="docutils literal notranslate"><span class="pre">ae_epoll.c</span></code> 、 <code class="docutils literal notranslate"><span class="pre">ae_kqueue.c</span></code> ，
+诸如此类。</p>
+<p>因为 Redis 为每个 I/O 多路复用函数库都实现了相同的 API ，
+所以 I/O 多路复用程序的底层实现是可以互换的，
+如图 IMAGE_MULTI_LIB 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-29df8d0996dc4aa02f25ee3588834472b9da8876.png" alt="digraph {
+
+    label = &quot;图 IMAGE_MULTI_LIB    Redis 的 I/O 多路复用程序有多个 I/O 多路复用库实现可选&quot;;
+
+    node [shape = box];
+
+    io_multiplexing [label = &quot;I/O 多路复用程序&quot;];
+
+    subgraph cluster_imp {
+
+        style = dashed
+
+        label = &quot;底层实现&quot;;
+        labelloc = &quot;b&quot;;
+
+        kqueue [label = &quot;kqueue&quot;];
+        evport [label = &quot;evport&quot;];
+        epoll [label = &quot;epoll&quot;];
+        select [label = &quot;select&quot;];
+    }
+
+    //
+
+    edge [dir = back];
+
+    io_multiplexing -&gt; select;
+    io_multiplexing -&gt; epoll;
+    io_multiplexing -&gt; evport;
+    io_multiplexing -&gt; kqueue;
+
+}" class="graphviz" /></div>
+<p>Redis 在 I/O 多路复用程序的实现源码中用 <code class="docutils literal notranslate"><span class="pre">#include</span></code> 宏定义了相应的规则，
+程序会在编译时自动选择系统中性能最高的 I/O 多路复用函数库来作为 Redis 的 I/O 多路复用程序的底层实现：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cm">/* Include the best multiplexing layer supported by this system.</span>
+<span class="cm"> * The following should be ordered by performances, descending. */</span>
+<span class="cp">#ifdef HAVE_EVPORT</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;ae_evport.c&quot;</span>
+<span class="cp">#else</span>
+<span class="w">    </span><span class="cp">#ifdef HAVE_EPOLL</span>
+<span class="w">    </span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;ae_epoll.c&quot;</span>
+<span class="w">    </span><span class="cp">#else</span>
+<span class="w">        </span><span class="cp">#ifdef HAVE_KQUEUE</span>
+<span class="w">        </span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;ae_kqueue.c&quot;</span>
+<span class="w">        </span><span class="cp">#else</span>
+<span class="w">        </span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;ae_select.c&quot;</span>
+<span class="w">        </span><span class="cp">#endif</span>
+<span class="w">    </span><span class="cp">#endif</span>
+<span class="cp">#endif</span>
+</pre></div>
+</div>
+</section>
+<section id="id3">
+<h2>事件的类型<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>I/O 多路复用程序可以监听多个套接字的 <code class="docutils literal notranslate"><span class="pre">ae.h/AE_READABLE</span></code> 事件和 <code class="docutils literal notranslate"><span class="pre">ae.h/AE_WRITABLE</span></code> 事件，
+这两类事件和套接字操作之间的对应关系如下：</p>
+<ul class="simple">
+<li><p>当套接字变得可读时（客户端对套接字执行 <code class="docutils literal notranslate"><span class="pre">write</span></code> 操作，或者执行 <code class="docutils literal notranslate"><span class="pre">close</span></code> 操作），
+或者有新的可应答（acceptable）套接字出现时（客户端对服务器的监听套接字执行 <code class="docutils literal notranslate"><span class="pre">connect</span></code> 操作），
+套接字产生 <code class="docutils literal notranslate"><span class="pre">AE_READABLE</span></code> 事件。</p></li>
+<li><p>当套接字变得可写时（客户端对套接字执行 <code class="docutils literal notranslate"><span class="pre">read</span></code> 操作），
+套接字产生 <code class="docutils literal notranslate"><span class="pre">AE_WRITABLE</span></code> 事件。</p></li>
+</ul>
+<p>I/O 多路复用程序允许服务器同时监听套接字的 <code class="docutils literal notranslate"><span class="pre">AE_READABLE</span></code> 事件和 <code class="docutils literal notranslate"><span class="pre">AE_WRITABLE</span></code> 事件，
+如果一个套接字同时产生了这两种事件，
+那么文件事件分派器会优先处理 <code class="docutils literal notranslate"><span class="pre">AE_READABLE</span></code> 事件，
+等到 <code class="docutils literal notranslate"><span class="pre">AE_READABLE</span></code> 事件处理完之后，
+才处理 <code class="docutils literal notranslate"><span class="pre">AE_WRITABLE</span></code> 事件。</p>
+<p>这也就是说，
+如果一个套接字又可读又可写的话，
+那么服务器将先读套接字，
+后写套接字。</p>
+</section>
+<section id="api">
+<h2>API<a class="headerlink" href="#api" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">ae.c/aeCreateFileEvent</span></code> 函数接受一个套接字描述符、
+一个事件类型、
+以及一个事件处理器作为参数，
+将给定套接字的给定事件加入到 I/O 多路复用程序的监听范围之内，
+并对事件和事件处理器进行关联。</p>
+<p><code class="docutils literal notranslate"><span class="pre">ae.c/aeDeleteFileEvent</span></code> 函数接受一个套接字描述符和一个监听事件类型作为参数，
+让 I/O 多路复用程序取消对给定套接字的给定事件的监听，
+并取消事件和事件处理器之间的关联。</p>
+<p><code class="docutils literal notranslate"><span class="pre">ae.c/aeGetFileEvents</span></code> 函数接受一个套接字描述符，
+返回该套接字正在被监听的事件类型：</p>
+<ul class="simple">
+<li><p>如果套接字没有任何事件被监听，
+那么函数返回 <code class="docutils literal notranslate"><span class="pre">AE_NONE</span></code> 。</p></li>
+<li><p>如果套接字的读事件正在被监听，
+那么函数返回 <code class="docutils literal notranslate"><span class="pre">AE_READABLE</span></code> 。</p></li>
+<li><p>如果套接字的写事件正在被监听，
+那么函数返回 <code class="docutils literal notranslate"><span class="pre">AE_WRITABLE</span></code> 。</p></li>
+<li><p>如果套接字的读事件和写事件正在被监听，
+那么函数返回 <code class="docutils literal notranslate"><span class="pre">AE_READABLE</span> <span class="pre">|</span> <span class="pre">AE_WRITABLE</span></code> 。</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">ae.c/aeWait</span></code> 函数接受一个套接字描述符、一个事件类型和一个毫秒数为参数，
+在给定的时间内阻塞并等待套接字的给定类型事件产生，
+当事件成功产生，
+或者等待超时之后，
+函数返回。</p>
+<p><code class="docutils literal notranslate"><span class="pre">ae.c/aeApiPoll</span></code> 函数接受一个 <code class="docutils literal notranslate"><span class="pre">sys/time.h/struct</span> <span class="pre">timeval</span></code> 结构为参数，
+并在指定的时间內，
+阻塞并等待所有被 <code class="docutils literal notranslate"><span class="pre">aeCreateFileEvent</span></code> 函数设置为监听状态的套接字产生文件事件，
+当有至少一个事件产生，
+或者等待超时后，
+函数返回。</p>
+<p><code class="docutils literal notranslate"><span class="pre">ae.c/aeProcessEvents</span></code> 函数是文件事件分派器，
+它先调用 <code class="docutils literal notranslate"><span class="pre">aeApiPoll</span></code> 函数来等待事件产生，
+然后遍历所有已产生的事件，
+并调用相应的事件处理器来处理这些事件。</p>
+<p><code class="docutils literal notranslate"><span class="pre">ae.c/aeGetApiName</span></code> 函数返回 I/O 多路复用程序底层所使用的 I/O 多路复用函数库的名称：
+返回 <code class="docutils literal notranslate"><span class="pre">&quot;epoll&quot;</span></code> 表示底层为 <code class="docutils literal notranslate"><span class="pre">epoll</span></code> 函数库，
+返回 <code class="docutils literal notranslate"><span class="pre">&quot;select&quot;</span></code> 表示底层为 <code class="docutils literal notranslate"><span class="pre">select</span></code> 函数库，
+诸如此类。</p>
+</section>
+<section id="id4">
+<h2>文件事件的处理器<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>Redis 为文件事件编写了多个处理器，
+这些事件处理器分别用于实现不同的网络通讯需求，
+比如说：</p>
+<ul class="simple">
+<li><p>为了对连接服务器的各个客户端进行应答，
+服务器要为监听套接字关联连接应答处理器。</p></li>
+<li><p>为了接收客户端传来的命令请求，
+服务器要为客户端套接字关联命令请求处理器。</p></li>
+<li><p>为了向客户端返回命令的执行结果，
+服务器要为客户端套接字关联命令回复处理器。</p></li>
+<li><p>当主服务器和从服务器进行复制操作时，
+主从服务器都需要关联特别为复制功能编写的复制处理器。</p></li>
+<li><p>等等。</p></li>
+</ul>
+<p>在这些事件处理器里面，
+服务器最常用的要数与客户端进行通信的连接应答处理器、
+命令请求处理器和命令回复处理器。</p>
+<section id="id5">
+<h3>连接应答处理器<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">networking.c/acceptTcpHandler</span></code> 函数是 Redis 的连接应答处理器，
+这个处理器用于对连接服务器监听套接字的客户端进行应答，
+具体实现为 <code class="docutils literal notranslate"><span class="pre">sys/socket.h/accept</span></code> 函数的包装。</p>
+<p>当 Redis 服务器进行初始化的时候，
+程序会将这个连接应答处理器和服务器监听套接字的 <code class="docutils literal notranslate"><span class="pre">AE_READABLE</span></code> 事件关联起来，
+当有客户端用 <code class="docutils literal notranslate"><span class="pre">sys/socket.h/connect</span></code> 函数连接服务器监听套接字的时候，
+套接字就会产生 <code class="docutils literal notranslate"><span class="pre">AE_READABLE</span></code> 事件，
+引发连接应答处理器执行，
+并执行相应的套接字应答操作，
+如图 IMAGE_SERVER_ACCEPT_CONNECT 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-3c04505dc8f1c475e2dda6ad7df1c40152d9c9dd.png" alt="digraph {
+
+    label = &quot;\n图 IMAGE_SERVER_ACCEPT_CONNECT    服务器对客户端的连接请求进行应答&quot;;
+
+    rankdir = LR;
+
+    client [label = &quot;客户端&quot;, shape = circle];
+
+    server [label = &quot;服务器\n\n\n服务器监听套接字产生\nAE_READABLE 事件\n执行连接应答处理器&quot;, shape = box, height = 2];
+
+    client -&gt; server [label = &quot;连接监听套接字&quot;];
+
+}" class="graphviz" /></div>
+</section>
+<section id="id6">
+<h3>命令请求处理器<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">networking.c/readQueryFromClient</span></code> 函数是 Redis 的命令请求处理器，
+这个处理器负责从套接字中读入客户端发送的命令请求内容，
+具体实现为 <code class="docutils literal notranslate"><span class="pre">unistd.h/read</span></code> 函数的包装。</p>
+<p>当一个客户端通过连接应答处理器成功连接到服务器之后，
+服务器会将客户端套接字的 <code class="docutils literal notranslate"><span class="pre">AE_READABLE</span></code> 事件和命令请求处理器关联起来，
+当客户端向服务器发送命令请求的时候，
+套接字就会产生 <code class="docutils literal notranslate"><span class="pre">AE_READABLE</span></code> 事件，
+引发命令请求处理器执行，
+并执行相应的套接字读入操作，
+如图 IMAGE_SERVER_RECIVE_COMMAND_REQUEST 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-3a9d179c39fb60da1a5a129d1bc0516afe962870.png" alt="digraph {
+
+    label = &quot;\n图 IMAGE_SERVER_RECIVE_COMMAND_REQUEST    服务器接收客户端发来的命令请求&quot;;
+
+    rankdir = LR;
+
+    client [label = &quot;客户端&quot;, shape = circle];
+
+    server [label = &quot;服务器\n\n\n客户端套接字产生\nAE_READABLE 事件\n执行命令请求处理器&quot;, shape = box, height = 2];
+
+    client -&gt; server [label = &quot;发送命令请求&quot;];
+
+}" class="graphviz" /></div>
+<p>在客户端连接服务器的整个过程中，
+服务器都会一直为客户端套接字的 <code class="docutils literal notranslate"><span class="pre">AE_READABLE</span></code> 事件关联命令请求处理器。</p>
+</section>
+<section id="id7">
+<h3>命令回复处理器<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">networking.c/sendReplyToClient</span></code> 函数是 Redis 的命令回复处理器，
+这个处理器负责将服务器执行命令后得到的命令回复通过套接字返回给客户端，
+具体实现为 <code class="docutils literal notranslate"><span class="pre">unistd.h/write</span></code> 函数的包装。</p>
+<p>当服务器有命令回复需要传送给客户端的时候，
+服务器会将客户端套接字的 <code class="docutils literal notranslate"><span class="pre">AE_WRITABLE</span></code> 事件和命令回复处理器关联起来，
+当客户端准备好接收服务器传回的命令回复时，
+就会产生 <code class="docutils literal notranslate"><span class="pre">AE_WRITABLE</span></code> 事件，
+引发命令回复处理器执行，
+并执行相应的套接字写入操作，
+如图 IMAGE_SERVER_SEND_REPLY 所示。</p>
+<div class="graphviz"><img src="../../_images/graphviz-510fea3a23c231cf2f1bfcb790170ccb9fd5e79e.png" alt="digraph {
+
+    label = &quot;\n图 IMAGE_SERVER_SEND_REPLY    服务器向客户端发送命令回复&quot;;
+
+    rankdir = LR;
+
+    client [label = &quot;客户端&quot;, shape = circle];
+
+    server [label = &quot;服务器\n\n\n客户端套接字产生\nAE_WRITABLE 事件\n执行命令回复处理器&quot;, shape = box, height = 2];
+
+    client -&gt; server [dir = back, label = &quot;发送命令回复&quot;];
+
+}" class="graphviz" /></div>
+<p>当命令回复发送完毕之后，
+服务器就会解除命令回复处理器与客户端套接字的 <code class="docutils literal notranslate"><span class="pre">AE_WRITABLE</span></code> 事件之间的关联。</p>
+</section>
+<section id="id8">
+<h3>一次完整的客户端与服务器连接事件示例<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
+<p>让我们来追踪一次 Redis 客户端与服务器进行连接并发送命令的整个过程，
+看看在过程中会产生什么事件，
+而这些事件又是如何被处理的。</p>
+<p>假设一个 Redis 服务器正在运作，
+那么这个服务器的监听套接字的 <code class="docutils literal notranslate"><span class="pre">AE_READABLE</span></code> 事件应该正处于监听状态之下，
+而该事件所对应的处理器为连接应答处理器。</p>
+<p>如果这时有一个 Redis 客户端向服务器发起连接，
+那么监听套接字将产生 <code class="docutils literal notranslate"><span class="pre">AE_READABLE</span></code> 事件，
+触发连接应答处理器执行：
+处理器会对客户端的连接请求进行应答，
+然后创建客户端套接字，
+以及客户端状态，
+并将客户端套接字的 <code class="docutils literal notranslate"><span class="pre">AE_READABLE</span></code> 事件与命令请求处理器进行关联，
+使得客户端可以向主服务器发送命令请求。</p>
+<p>之后，
+假设客户端向主服务器发送一个命令请求，
+那么客户端套接字将产生 <code class="docutils literal notranslate"><span class="pre">AE_READABLE</span></code> 事件，
+引发命令请求处理器执行，
+处理器读取客户端的命令内容，
+然后传给相关程序去执行。</p>
+<p>执行命令将产生相应的命令回复，
+为了将这些命令回复传送回客户端，
+服务器会将客户端套接字的 <code class="docutils literal notranslate"><span class="pre">AE_WRITABLE</span></code> 事件与命令回复处理器进行关联：
+当客户端尝试读取命令回复的时候，
+客户端套接字将产生 <code class="docutils literal notranslate"><span class="pre">AE_WRITABLE</span></code> 事件，
+触发命令回复处理器执行，
+当命令回复处理器将命令回复全部写入到套接字之后，
+服务器就会解除客户端套接字的 <code class="docutils literal notranslate"><span class="pre">AE_WRITABLE</span></code> 事件与命令回复处理器之间的关联。</p>
+<p>图 IMAGE_COMMAND_PROGRESS 总结了上面描述的整个通讯过程，
+以及通讯时用到的事件处理器。</p>
+<div class="graphviz"><img src="../../_images/graphviz-f08d5a627b1e3b0d3c59a3a349b10a7ff247d602.png" alt="digraph {
+
+    label = &quot;\n图 IMAGE_COMMAND_PROGRESS    客户端和服务器的通讯过程&quot;;
+
+    splines = ortho;
+
+    rankdir = LR;
+
+    node [shape = box, height = 3.0];
+
+    client [label = &quot;客\n户\n端&quot;];
+
+    server [label = &quot;服\n务\n器&quot;];
+
+    client -&gt; server [label = &quot;客户端向服务器发送连接请求\n服务器执行连接应答处理器&quot;];
+
+    client -&gt; server [label = &quot;\n\n客户端向服务器发送命令请求\n服务器执行命令请求处理器&quot;];
+
+    server -&gt; client [label = &quot;\n\n服务器向客户端发送命令回复\n服务器执行命令回复处理器&quot;];
+
+}" class="graphviz" /></div>
+</section>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="../../index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">文件事件</a><ul>
+<li><a class="reference internal" href="#id2">文件事件处理器的构成</a></li>
+<li><a class="reference internal" href="#i-o">I/O 多路复用程序的实现</a></li>
+<li><a class="reference internal" href="#id3">事件的类型</a></li>
+<li><a class="reference internal" href="#api">API</a></li>
+<li><a class="reference internal" href="#id4">文件事件的处理器</a><ul>
+<li><a class="reference internal" href="#id5">连接应答处理器</a></li>
+<li><a class="reference internal" href="#id6">命令请求处理器</a></li>
+<li><a class="reference internal" href="#id7">命令回复处理器</a></li>
+<li><a class="reference internal" href="#id8">一次完整的客户端与服务器连接事件示例</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/preview/event/file_event.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">文件事件</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2015, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

@@ -1,0 +1,304 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>AOF 持久化的实现 &#8212; Redis 设计与实现</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" href="../../" type="text/css" />
+    
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">AOF 持久化的实现</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="aof">
+<h1>AOF 持久化的实现<a class="headerlink" href="#aof" title="Link to this heading">¶</a></h1>
+<p>AOF 持久化功能的实现可以分为命令追加（append）、文件写入、文件同步（sync）三个步骤。</p>
+<section id="id1">
+<h2>命令追加<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>当 AOF 持久化功能处于打开状态时，
+服务器在执行完一个写命令之后，
+会以协议格式将被执行的写命令追加到服务器状态的 <code class="docutils literal notranslate"><span class="pre">aof_buf</span></code> 缓冲区的末尾：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">redisServer</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="c1">// ...</span>
+
+<span class="w">    </span><span class="c1">// AOF 缓冲区</span>
+<span class="w">    </span><span class="n">sds</span><span class="w"> </span><span class="n">aof_buf</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>举个例子，
+如果客户端向服务器发送以下命令：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">SET</span><span class="w"> </span><span class="n">KEY</span><span class="w"> </span><span class="n">VALUE</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p>那么服务器在执行这个 <span class="xref std std-ref">SET</span> 命令之后，
+会将以下协议内容追加到 <code class="docutils literal notranslate"><span class="pre">aof_buf</span></code> 缓冲区的末尾：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="o">*</span><span class="mi">3</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n$3</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">nSET</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n$3</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">nKEY</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n$5</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">nVALUE</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n</span>
+</pre></div>
+</div>
+<p>又比如说，
+如果客户端向服务器发送以下命令：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span><span class="w"> </span><span class="n">RPUSH</span><span class="w"> </span><span class="n">NUMBERS</span><span class="w"> </span><span class="n">ONE</span><span class="w"> </span><span class="n">TWO</span><span class="w"> </span><span class="n">THREE</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span><span class="w"> </span><span class="mi">3</span>
+</pre></div>
+</div>
+<p>那么服务器在执行这个 <span class="xref std std-ref">RPUSH</span> 命令之后，
+会将以下协议内容追加到 <code class="docutils literal notranslate"><span class="pre">aof_buf</span></code> 缓冲区的末尾：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="o">*</span><span class="mi">5</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n$5</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">nRPUSH</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n$7</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">nNUMBERS</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n$3</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">nONE</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n$3</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">nTWO</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n$5</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">nTHREE</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n</span>
+</pre></div>
+</div>
+<p>以上就是 AOF 持久化的命令追加步骤的实现原理。</p>
+</section>
+<section id="id2">
+<h2>AOF 文件的写入与同步<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>Redis 的服务器进程就是一个事件循环（loop），
+这个循环中的文件事件负责接收客户端的命令请求，
+以及向客户端发送命令回复，
+而时间事件则负责执行像 <code class="docutils literal notranslate"><span class="pre">serverCron</span></code> 函数这样需要定时运行的函数。</p>
+<p>因为服务器在处理文件事件时可能会执行写命令，
+使得一些内容被追加到 <code class="docutils literal notranslate"><span class="pre">aof_buf</span></code> 缓冲区里面，
+所以在服务器每次结束一个事件循环之前，
+它都会调用 <code class="docutils literal notranslate"><span class="pre">flushAppendOnlyFile</span></code> 函数，
+考虑是否需要将 <code class="docutils literal notranslate"><span class="pre">aof_buf</span></code> 缓冲区中的内容写入和保存到 AOF 文件里面，
+这个过程可以用以下伪代码表示：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">eventLoop</span><span class="p">():</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+
+        <span class="c1"># 处理文件事件，接收命令请求以及发送命令回复</span>
+        <span class="c1"># 处理命令请求时可能会有新内容被追加到 aof_buf 缓冲区中</span>
+        <span class="n">processFileEvents</span><span class="p">()</span>
+
+        <span class="c1"># 处理时间事件</span>
+        <span class="n">processTimeEvents</span><span class="p">()</span>
+
+        <span class="c1"># 考虑是否要将 aof_buf 中的内容写入和保存到 AOF 文件里面</span>
+        <span class="n">flushAppendOnlyFile</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">flushAppendOnlyFile</span></code> 函数的行为由服务器配置的 <code class="docutils literal notranslate"><span class="pre">appendfsync</span></code> 选项的值来决定，
+各个不同值产生的行为如表 TABLE_APPENDFSYNC 所示。</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">appendfsync</span></code> 选项的值</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">flushAppendOnlyFile</span></code> 函数的行为</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">always</span></code></p></td>
+<td><p>将 <code class="docutils literal notranslate"><span class="pre">aof_buf</span></code> 缓冲区中的所有内容写入并同步到 AOF 文件。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">everysec</span></code></p></td>
+<td><p>将 <code class="docutils literal notranslate"><span class="pre">aof_buf</span></code> 缓冲区中的所有内容写入到 AOF 文件，
+如果上次同步 AOF 文件的时间距离现在超过一秒钟，
+那么再次对 AOF 文件进行同步，
+并且这个同步操作是由一个线程专门负责执行的。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">no</span></code></p></td>
+<td><p>将 <code class="docutils literal notranslate"><span class="pre">aof_buf</span></code> 缓冲区中的所有内容写入到 AOF 文件，
+但并不对 AOF 文件进行同步，
+何时同步由操作系统来决定。</p></td>
+</tr>
+</tbody>
+</table>
+<p>如果用户没有主动为 <code class="docutils literal notranslate"><span class="pre">appendfsync</span></code> 选项设置值，
+那么 <code class="docutils literal notranslate"><span class="pre">appendfsync</span></code> 选项的默认值为 <code class="docutils literal notranslate"><span class="pre">everysec</span></code> ，
+关于 <code class="docutils literal notranslate"><span class="pre">appendfsync</span></code> 选项的更多信息，
+请参考 Redis 项目附带的示例配置文件 <code class="docutils literal notranslate"><span class="pre">redis.conf</span></code> 。</p>
+<aside class="topic">
+<p class="topic-title">文件的写入和同步</p>
+<p>为了提高文件的写入效率，
+在现代操作系统中，
+当用户调用 <code class="docutils literal notranslate"><span class="pre">write</span></code> 函数，
+将一些数据写入到文件的时候，
+操作系统通常会将写入数据暂时保存在一个内存缓冲区里面，
+等到缓冲区的空间被填满、或者超过了指定的时限之后，
+才真正地将缓冲区中的数据写入到磁盘里面。</p>
+<p>这种做法虽然提高了效率，
+但也为写入数据带来了安全问题，
+因为如果计算机发生停机，
+那么保存在内存缓冲区里面的写入数据将会丢失。</p>
+<p>为此，
+系统提供了 <code class="docutils literal notranslate"><span class="pre">fsync</span></code> 和 <code class="docutils literal notranslate"><span class="pre">fdatasync</span></code> 两个同步函数，
+它们可以强制让操作系统立即将缓冲区中的数据写入到硬盘里面，
+从而确保写入数据的安全性。</p>
+</aside>
+<p>举个例子，
+假设服务器在处理文件事件期间，
+执行了以下三个写入命令：</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">SADD</span> <span class="pre">databases</span> <span class="pre">&quot;Redis&quot;</span> <span class="pre">&quot;MongoDB&quot;</span> <span class="pre">&quot;MariaDB&quot;</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SET</span> <span class="pre">date</span> <span class="pre">&quot;2013-9-5&quot;</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">INCR</span> <span class="pre">click_counter</span> <span class="pre">10086</span></code></p></li>
+</ol>
+<p>那么 <code class="docutils literal notranslate"><span class="pre">aof_buf</span></code> 缓冲区将包含这三个命令的协议内容：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="o">*</span><span class="mi">5</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n$4</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">nSADD</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n$9</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">ndatabases</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n$5</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">nRedis</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n$7</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">nMongoDB</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n$7</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">nMariaDB</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n</span>
+<span class="o">*</span><span class="mi">3</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n$3</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">nSET</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n$4</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">ndate</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n$8</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n2013</span><span class="mi">-9-5</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n</span>
+<span class="o">*</span><span class="mi">3</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n$4</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">nINCR</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n$13</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">nclick_counter</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n$5</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n10086</span><span class="err">\</span><span class="n">r</span><span class="err">\</span><span class="n">n</span>
+</pre></div>
+</div>
+<p>如果这时 <code class="docutils literal notranslate"><span class="pre">flushAppendOnlyFile</span></code> 函数被调用，
+假设服务器当前 <code class="docutils literal notranslate"><span class="pre">appendfsync</span></code> 选项的值为 <code class="docutils literal notranslate"><span class="pre">everysec</span></code> ，
+并且根据 <code class="docutils literal notranslate"><span class="pre">server.aof_last_fsync</span></code> 属性显示，
+距离上次同步 AOF 文件已经超过一秒钟，
+那么服务器会先将 <code class="docutils literal notranslate"><span class="pre">aof_buf</span></code> 中的内容写入到 AOF 文件中，
+然后再对 AOF 文件进行同步。</p>
+<p>以上就是对 AOF 持久化功能的文件写入和文件同步这两个步骤的介绍。</p>
+<aside class="topic">
+<p class="topic-title">AOF 持久化的效率和安全性</p>
+<p>服务器配置 <code class="docutils literal notranslate"><span class="pre">appendfsync</span></code> 选项的值直接决定 AOF 持久化功能的效率和安全性。</p>
+<p>当 <code class="docutils literal notranslate"><span class="pre">appendfsync</span></code> 的值为 <code class="docutils literal notranslate"><span class="pre">always</span></code> 时，
+服务器在每个事件循环都要将 <code class="docutils literal notranslate"><span class="pre">aof_buf</span></code> 缓冲区中的所有内容写入到 AOF 文件，
+并且同步 AOF 文件，
+所以 <code class="docutils literal notranslate"><span class="pre">always</span></code> 的效率是 <code class="docutils literal notranslate"><span class="pre">appendfsync</span></code> 选项三个值当中最慢的一个，
+但从安全性来说，
+<code class="docutils literal notranslate"><span class="pre">always</span></code> 也是最安全的，
+因为即使出现故障停机，
+AOF 持久化也只会丢失一个事件循环中所产生的命令数据。</p>
+<p>当 <code class="docutils literal notranslate"><span class="pre">appendfsync</span></code> 的值为 <code class="docutils literal notranslate"><span class="pre">everysec</span></code> 时，
+服务器在每个事件循环都要将 <code class="docutils literal notranslate"><span class="pre">aof_buf</span></code> 缓冲区中的所有内容写入到 AOF 文件，
+并且每隔超过一秒就要在子线程中对 AOF 文件进行一次同步：
+从效率上来讲，
+<code class="docutils literal notranslate"><span class="pre">everysec</span></code> 模式足够快，
+并且就算出现故障停机，
+数据库也只丢失一秒钟的命令数据。</p>
+<p>当 <code class="docutils literal notranslate"><span class="pre">appendfsync</span></code> 的值为 <code class="docutils literal notranslate"><span class="pre">no</span></code> 时，
+服务器在每个事件循环都要将 <code class="docutils literal notranslate"><span class="pre">aof_buf</span></code> 缓冲区中的所有内容写入到 AOF 文件，
+至于何时对 AOF 文件进行同步，
+则由操作系统控制。</p>
+<p>因为处于 <code class="docutils literal notranslate"><span class="pre">no</span></code> 模式下的 <code class="docutils literal notranslate"><span class="pre">flushAppendOnlyFile</span></code> 调用无须执行同步操作，
+所以该模式下的 AOF 文件写入速度总是最快的，
+不过因为这种模式会在系统缓存中积累一段时间的写入数据，
+所以该模式的单次同步时长通常是三种模式中时间最长的：
+从平摊操作的角度来看，
+<code class="docutils literal notranslate"><span class="pre">no</span></code> 模式和 <code class="docutils literal notranslate"><span class="pre">everysec</span></code> 模式的效率类似，
+当出现故障停机时，
+使用 <code class="docutils literal notranslate"><span class="pre">no</span></code> 模式的服务器将丢失上次同步 AOF 文件之后的所有写命令数据。</p>
+</aside>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="../../index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">AOF 持久化的实现</a><ul>
+<li><a class="reference internal" href="#id1">命令追加</a></li>
+<li><a class="reference internal" href="#id2">AOF 文件的写入与同步</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/preview/aof/aof_implement.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+    <li><a href="../../index.html">Redis 设计与实现</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">AOF 持久化的实现</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2015, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>
