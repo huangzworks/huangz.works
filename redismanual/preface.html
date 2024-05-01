@@ -1,0 +1,205 @@
+
+
+<!DOCTYPE html>
+
+<html lang="zh-CN" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>前言 &#8212; Redis使用手册</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" href="./" type="text/css" />
+    
+    <script src="_static/documentation_options.js?v=f115507d"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=beaddf03"></script>
+
+    
+    
+     
+        <script src="_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="_static/cloud.js"></script>
+    
+
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+    <link rel="next" title="引言" href="introduction.html" />
+    <link rel="prev" title="Redis使用手册" href="index.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="introduction.html" title="引言"
+             accesskey="N">下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="index.html" title="Redis使用手册"
+             accesskey="P">上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">前言</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>前言<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>时光荏苒，
+距离我的第一本书《Redis设计与实现》出版已经过去了整整五年。
+在这五年间，
+Redis 从一个不为人熟知、只有少量应用的崭新数据库，
+逐渐变成了内存数据库领域的事实标准。</p>
+<p>五年之前，
+当人们提到 Redis 的时候，
+语气通常都充满了怀疑：
+“Redis 我还是第一次听说，它好用吗？”
+“Redis 比起 Memcached 有什么优势？”
+“用 Redis 储存数据安全吗，不会丢数据吧？！”。
+然而时至今日，
+经过大量的实践应用，
+Redis 简洁高效、安全稳定的印象已经深入人心。
+无论是国内还是国外，
+从财富五百强到小型初创公司都在使用 Redis ，
+很多云服务提供商还以 Redis 为基础构建了相应的缓存服务、消息队列服务以及内存存储服务 ——
+当你使用这些服务时，
+你实际上就是在使用 Redis 。</p>
+<p>除了变得越来越受欢迎之外，
+Redis 在过去数年的另一个变化就是更新速度越来越快，
+功能也变得越来越多、越来越强大：
+比如说，
+Redis 的数据结构数量已经从过去的五种增加到了九种，
+RDB-AOF 混合持久化模式的引入使得用户不必再陷入“鱼和熊掌不可兼得”的难题中，
+而集群功能和模块机制的引入则让 Redis 在性能和功能上拥有了近乎无限的扩展能力。</p>
+<p>综上所述，
+我们可以说现在的 Redis 跟五年前比起来已经完全不一样了，
+而如何向读者讲述新版 Redis 方方面面的变化，
+则是每一本 Redis 书都必须回答的问题。
+本书以服务 Redis 初学者和使用者为目标，
+介绍了 Redis 日常使用中最常用到的部分，
+并以“命令描述+代码示例”的模式详细列举了各个 Redis 命令的用法和用例。
+我相信无论是刚开始学习 Redis 的读者，
+还是每天都要使用 Redis 的读者，
+在阅读本书的时候都会有所收获。</p>
+<p>虽然本书在写作的过程中已经思虑再三并且几易其稿，
+但百密一疏，
+书中难免还是会有错误或者遗漏的地方。
+如果读者朋友在阅读的过程中发现任何错误或是有任何疑问或建议，
+都可以通过邮箱 <a class="reference external" href="mailto:huangz1990&#37;&#52;&#48;gmail&#46;com">huangz1990<span>&#64;</span>gmail<span>&#46;</span>com</a> 或者 huangz.me 中列出的联系方式来联系我。
+由于技术研究和写作工作较为繁重，
+本人可能无法每封邮件都予以回复，
+但只要有来信我就一定会阅读，
+决不食言。</p>
+<p>最后，
+感谢吴怡编辑在写作过程中给我的帮助和指导，
+感谢赵亮宇编辑为本书出版所做的努力，
+还有感谢我的家人和朋友，
+如果没有他们的关怀和支持，
+本书是不可能顺利完成。</p>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2019 年 8 月于清远</div>
+</div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="index.html"
+                          title="Previous page">&larr; Redis使用手册</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="introduction.html"
+                          title="Next page">&rarr; 引言</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>本页</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/preface.rst.txt"
+            rel="nofollow">显示源代码</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">快速搜索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="提交" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="introduction.html" title="引言"
+             >下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="index.html" title="Redis使用手册"
+             >上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">前言</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; 版权所有 2019, 黄健宏.
+      由 <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6创建。
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

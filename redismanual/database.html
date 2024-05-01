@@ -1,0 +1,2456 @@
+
+
+<!DOCTYPE html>
+
+<html lang="zh-CN" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>数据库 &#8212; Redis使用手册</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" href="./" type="text/css" />
+    
+    <script src="_static/documentation_options.js?v=f115507d"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=beaddf03"></script>
+
+    
+    
+     
+        <script src="_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="_static/cloud.js"></script>
+    
+
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+    <link rel="next" title="自动过期" href="expire.html" />
+    <link rel="prev" title="集合（Set）" href="set.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="expire.html" title="自动过期"
+             accesskey="N">下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="set.html" title="集合（Set）"
+             accesskey="P">上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">数据库</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>数据库<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>在前面的章节中，
+我们学习了如何使用不同的 Redis 命令去创建各种不同类型的键，
+比如使用 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令去创建字符串键，
+使用 <code class="docutils literal notranslate"><span class="pre">HSET</span></code> 命令去创建散列键，
+又或者使用 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 和 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令去创建列表键，
+诸如此类。</p>
+<p>但无论字符串键也好，
+散列键又或者列表键也好，
+它们都会被储存到一个名为数据库的容器里面。
+因为 Redis 是一个键值对数据库服务器，
+所以它的数据库跟我们之前介绍过的散列键一样，
+都可以根据键的名字对数据库中的键值对进行索引：
+比如说，
+通过使用 Redis 提供的命令，
+我们可以从数据库中移除指定的键，
+又或者将指定的键从一个数据库移动到另一个数据库，
+诸如此类。</p>
+<p>作为例子，
+图 11-1 展示了一个包含四个键的数据库，
+其中 <code class="docutils literal notranslate"><span class="pre">id</span></code> 为字符串键，
+<code class="docutils literal notranslate"><span class="pre">profile</span></code> 为散列键，
+<code class="docutils literal notranslate"><span class="pre">fruits</span></code> 为集合键，
+而 <code class="docutils literal notranslate"><span class="pre">numbers</span></code> 则为列表键。</p>
+<hr class="docutils" />
+<p>图 11-1 一个数据库示例</p>
+<img alt="_images/IMAGE_DATABASE_EXAMPLE.png" src="_images/IMAGE_DATABASE_EXAMPLE.png" />
+<hr class="docutils" />
+<p>Redis 为数据库提供了非常丰富的操作命令，
+通过这些命令，
+用户可以：</p>
+<ul class="simple">
+<li><p>指定自己想要使用的数据库。</p></li>
+<li><p>一次性获取数据库包含的所有键，
+迭代地获取数据库包含的所有键，
+又或者随机地获取数据库中的某个键。</p></li>
+<li><p>根据给定键的值进行排序。</p></li>
+<li><p>检查给定的一个或多个键，看它们是否存在于数据库当中。</p></li>
+<li><p>查看给定键的类型。</p></li>
+<li><p>对给定键进行改名。</p></li>
+<li><p>移除指定的键，
+又或者将它从一个数据库移动到另一个数据库。</p></li>
+<li><p>清空数据库包含的所有键。</p></li>
+<li><p>交换给定的两个数据库。</p></li>
+</ul>
+<p>本章接下来的内容将对以上提到的各个命令进行介绍，
+并说明如何使用这些命令去实现诸如数据库迭代器和数据库取样器这样的实用程序。</p>
+<section id="select">
+<h2>SELECT：切换至指定的数据库<a class="headerlink" href="#select" title="Link to this heading">¶</a></h2>
+<p>一个 Redis 服务器可以包含多个数据库。
+在默认情况下，
+Redis 服务器在启动时将会创建 16 个数据库：
+这些数据库都使用号码进行标识，
+其中第一个数据库为 0 号数据库，
+第二个数据库为 1 号数据库，
+而第三个数据库则为 2 号数据库，
+以此类推。</p>
+<p>Redis 虽然不允许在同一个数据库里面使用两个同名的键，
+但是由于不同数据库拥有不同的命名空间，
+因此在不同数据库里面使用同名的键是完全没有问题的，
+而用户也可以通过使用不同数据库来储存不同的数据，
+以此来达到重用键名并且减少键冲突的目的。</p>
+<p>比如说，
+如果我们将用户的个人信息和会话信息都存放在同一个数据库里面，
+那么为了区分这两种信息，
+程序就需要使用 <code class="docutils literal notranslate"><span class="pre">user::&lt;id&gt;::profile</span></code> 格式的键来储存用户信息，
+并使用 <code class="docutils literal notranslate"><span class="pre">user::&lt;id&gt;::session</span></code> 格式的键来储存用户会话；
+但如果我们将这两种信息分别储存在 0 号数据库和 1 号数据库里面，
+那么程序就可以在 0 号数据库中使用 <code class="docutils literal notranslate"><span class="pre">user::&lt;id&gt;</span></code> 格式的键来储存用户信息，
+并在 1 号数据库中继续使用 <code class="docutils literal notranslate"><span class="pre">user::&lt;id&gt;</span></code> 格式的键来储存用户会话。</p>
+<p>当用户使用客户端与 Redis 服务器进行连接时，
+客户端一般默认都会使用 0 号数据库，
+但是通过使用 <code class="docutils literal notranslate"><span class="pre">SELECT</span></code> 命令，
+用户可以从当前正在使用的数据库切换到自己想要使用的数据库：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SELECT</span> <span class="n">db</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">SELECT</span></code> 命令在切换成功之后将返回 <code class="docutils literal notranslate"><span class="pre">OK</span></code> 。</p>
+<p>举个例子，
+当我们以默认方式启动 <code class="docutils literal notranslate"><span class="pre">redis-cli</span></code> 客户端时，
+<code class="docutils literal notranslate"><span class="pre">redis-cli</span></code> 将连接至服务器的 0 号数据库：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ redis-cli
+redis&gt;
+</pre></div>
+</div>
+<p>这时，
+如果我们想要从 0 号数据库切换至 3 号数据库，
+那么只需要执行以下命令即可：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SELECT</span> <span class="mi">3</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>客户端提示符末尾的 <code class="docutils literal notranslate"><span class="pre">[3]</span></code> 表示客户端现在正在使用 3 号数据库。
+（<code class="docutils literal notranslate"><span class="pre">redis-cli</span></code> 在使用默认的 0 号数据库时不会打印出数据库号码。）</p>
+<p>在此之后，
+我们就可以通过执行命令，
+对 3 号数据库进行设置了：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">msg</span> <span class="s2">&quot;hello world&quot;</span>    <span class="o">--</span> <span class="n">在</span> <span class="mi">3</span> <span class="n">号数据库创建一个</span> <span class="n">msg</span> <span class="n">键</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">counter</span> <span class="mi">10086</span>        <span class="o">--</span> <span class="n">在</span> <span class="mi">3</span> <span class="n">号数据库创建一个</span> <span class="n">counter</span> <span class="n">键</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<section id="id2">
+<h3>其他信息<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SELECT</span></code> 命令从 Redis 1.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="keys">
+<h2>KEYS：获取所有与给定匹配符相匹配的键<a class="headerlink" href="#keys" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">KEYS</span></code> 命令接受一个全局匹配符作为参数，
+然后返回数据库里面所有与这个匹配符相匹配的键作为结果：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">KEYS</span> <span class="n">pattern</span>
+</pre></div>
+</div>
+<p>举个例子，
+如果我们想要获取数据库包含的所有键，
+那么可以执行以下命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">KEYS</span> <span class="o">*</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;fruits&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;user::12312::profile&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;user::ip&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;user::id&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;cache::/user/peter&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;todo-list&quot;</span>
+</pre></div>
+</div>
+<p>又或者说，
+如果我们想要获取所有以 <code class="docutils literal notranslate"><span class="pre">user::</span></code> 为前缀的键，
+那么可以执行以下命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">KEYS</span> <span class="n">user</span><span class="p">::</span><span class="o">*</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;user::12312::profile&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;user::ip&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;user::id&quot;</span>
+</pre></div>
+</div>
+<p>最后，
+如果数据库里面没有任何键与给定的匹配符相匹配，
+那么 <code class="docutils literal notranslate"><span class="pre">KEYS</span></code> 命令将返回一个空值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">KEYS</span> <span class="n">article</span><span class="p">::</span><span class="o">*</span>
+<span class="p">(</span><span class="n">empty</span> <span class="nb">list</span> <span class="ow">or</span> <span class="nb">set</span><span class="p">)</span>    <span class="o">--</span> <span class="n">数据库里面没有任何以</span> <span class="n">article</span><span class="p">::</span> <span class="n">为前缀的键</span>
+</pre></div>
+</div>
+<section id="id3">
+<h3>全局匹配符<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">KEYS</span></code> 命令允许使用多种不同的全局匹配符作为 <code class="docutils literal notranslate"><span class="pre">pattern</span></code> 参数的值，
+表 11-1 展示了一些常见的全局匹配符，
+并举例说明了这些匹配符的作用。</p>
+<hr class="docutils" />
+<p>表 11-1 Glob 匹配符的作用及其示例</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>匹配符</p></th>
+<th class="head"><p>作用</p></th>
+<th class="head"><p>例子</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">*</span></code></p></td>
+<td><p>匹配零个或任意多个任意字符</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">user::*</span></code> 可以匹配任何以 <code class="docutils literal notranslate"><span class="pre">user::</span></code> 为前缀的字符串，比如 <code class="docutils literal notranslate"><span class="pre">user::ip</span></code> 、 <code class="docutils literal notranslate"><span class="pre">user::12312::profile</span></code> 等等，以及 <code class="docutils literal notranslate"><span class="pre">user::</span></code> 本身；
+<code class="docutils literal notranslate"><span class="pre">*z</span></code> 可以匹配任何以字母 <code class="docutils literal notranslate"><span class="pre">z</span></code> 结尾的字符串，比如 <code class="docutils literal notranslate"><span class="pre">antirez</span></code> 、 <code class="docutils literal notranslate"><span class="pre">matz</span></code> 和 <code class="docutils literal notranslate"><span class="pre">huangz</span></code> ，以及字母 <code class="docutils literal notranslate"><span class="pre">z</span></code> 本身；
+<code class="docutils literal notranslate"><span class="pre">*::*</span></code> 可以匹配任何使用了 <code class="docutils literal notranslate"><span class="pre">::</span></code> 作为间隔符的字符串，比如 <code class="docutils literal notranslate"><span class="pre">user::ip</span></code> 和 <code class="docutils literal notranslate"><span class="pre">cache::/user/peter</span></code> ，但不能匹配 <code class="docutils literal notranslate"><span class="pre">todo-list</span></code> 。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">?</span></code></p></td>
+<td><p>匹配任意的单个字符</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">user::i?</span></code> 可以匹配任何以 <code class="docutils literal notranslate"><span class="pre">user::i</span></code> 为前缀，后跟单个字符的字符串，比如 <code class="docutils literal notranslate"><span class="pre">user::ip</span></code> 、 <code class="docutils literal notranslate"><span class="pre">user::id</span></code> 等，但不能匹配 <code class="docutils literal notranslate"><span class="pre">user::ime</span></code> 。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">[]</span></code></p></td>
+<td><p>匹配给定字符串中的单个字符</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">user::i[abc]</span></code> 可以匹配 <code class="docutils literal notranslate"><span class="pre">user::ia</span></code> 、 <code class="docutils literal notranslate"><span class="pre">user::ib</span></code> 和 <code class="docutils literal notranslate"><span class="pre">user::ic</span></code> ，但不能匹配 <code class="docutils literal notranslate"><span class="pre">user::id</span></code> 或者 <code class="docutils literal notranslate"><span class="pre">user::ime</span></code> ，诸如此类。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">[?-?]</span></code></p></td>
+<td><p>匹配给定范围中的单个字符</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">user::i[a-d]</span></code> 可以匹配 <code class="docutils literal notranslate"><span class="pre">user::ia</span></code> 、 <code class="docutils literal notranslate"><span class="pre">user::ib</span></code> 、 <code class="docutils literal notranslate"><span class="pre">user::ic</span></code> 和 <code class="docutils literal notranslate"><span class="pre">user::id</span></code> ，但不能匹配除此以外的其他字符串，
+比如 <code class="docutils literal notranslate"><span class="pre">user::ip</span></code> 或者 <code class="docutils literal notranslate"><span class="pre">user::ime</span></code> 。</p></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<p>关于全局匹配符的更多信息可以参考维基百科
+<a class="reference external" href="https://en.wikipedia.org/wiki/Glob_(programming)">https://en.wikipedia.org/wiki/Glob_(programming)</a>
+或者 <code class="docutils literal notranslate"><span class="pre">glob</span></code> 程序的手册页面：
+<a class="reference external" href="http://man7.org/linux/man-pages/man7/glob.7.html">http://man7.org/linux/man-pages/man7/glob.7.html</a> 。</p>
+</section>
+<section id="id4">
+<h3>其他信息<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N) ，其中 N 为数据库包含的键数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">KEYS</span></code> 命令从 Redis 1.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="scan">
+<h2>SCAN：以渐进方式迭代数据库中的键<a class="headerlink" href="#scan" title="Link to this heading">¶</a></h2>
+<p>因为 <code class="docutils literal notranslate"><span class="pre">KEYS</span></code> 命令需要检查数据库包含的所有键，
+并一次性将符合条件的所有键全部返回给客户端，
+所以当数据库包含的键数量比较大时，
+使用 <code class="docutils literal notranslate"><span class="pre">KEYS</span></code> 命令可能会导致服务器被阻塞。</p>
+<p>为了解决这个问题，
+Redis 从 2.8.0 版本开始提供 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令，
+该命令是一个迭代器，
+它每次被调用的时候都会从数据库里面获取一部分键，
+用户可以通过重复调用 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令来迭代数据库包含的所有键：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SCAN</span> <span class="n">cursor</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令的 <code class="docutils literal notranslate"><span class="pre">cursor</span></code> 参数用于指定迭代时使用的游标，
+游标记录了迭代进行的轨迹和进度。
+在开始一次新的迭代时，
+用户需要将游标设置为 <code class="docutils literal notranslate"><span class="pre">0</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SCAN</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令的执行结果由两个元素组成：</p>
+<ul class="simple">
+<li><p>第一个元素是进行下一次迭代所需的游标，
+如果这个游标为 <code class="docutils literal notranslate"><span class="pre">0</span></code> ，
+那么说明客户端已经对数据库完成了一次完整的迭代。</p></li>
+<li><p>第二个元素是一个列表，
+这个列表包含了本次迭代取得的数据库键；
+如果 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令在某次迭代中没有获取到任何键，
+那么这个元素将是一个空列表。</p></li>
+</ul>
+<p>关于 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令返回的键列表，
+有两个需要注意的地方：</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令可能会返回重复的键，
+用户如果不想在结果里面包含重复的键，
+那么就需要自己在客户端里面进行检测和过滤。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令返回的键数量是不确定的，
+有时候甚至会不返回任何键，
+但只要命令返回的游标不为 <code class="docutils literal notranslate"><span class="pre">0</span></code> ，
+迭代就没有结束。</p></li>
+</ol>
+<section id="id5">
+<h3>一次简单的迭代示例<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
+<p>在对 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令有了基本的了解之后，
+让我们来试试使用 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令去完整地迭代一个数据库。</p>
+<p>为了开始一次新的迭代，
+我们将以 <code class="docutils literal notranslate"><span class="pre">0</span></code> 作为游标，
+调用 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SCAN</span> <span class="mi">0</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;25&quot;</span>             <span class="o">--</span> <span class="n">进行下次迭代的游标</span>
+<span class="mi">2</span><span class="p">)</span>  <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;key::16&quot;</span>    <span class="o">--</span> <span class="n">本次迭代获取到的键</span>
+    <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;key::2&quot;</span>
+    <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;key::6&quot;</span>
+    <span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;key::8&quot;</span>
+    <span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;key::13&quot;</span>
+    <span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;key::22&quot;</span>
+    <span class="mi">7</span><span class="p">)</span> <span class="s2">&quot;key::10&quot;</span>
+    <span class="mi">8</span><span class="p">)</span> <span class="s2">&quot;key::24&quot;</span>
+    <span class="mi">9</span><span class="p">)</span> <span class="s2">&quot;key::23&quot;</span>
+    <span class="mi">10</span><span class="p">)</span> <span class="s2">&quot;key::21&quot;</span>
+    <span class="mi">11</span><span class="p">)</span> <span class="s2">&quot;key::5&quot;</span>
+</pre></div>
+</div>
+<p>这个 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 调用告知我们下次迭代应该使用 <code class="docutils literal notranslate"><span class="pre">25</span></code> 作为游标，
+并返回了十一个键的键名。</p>
+<p>为了继续对数据库进行迭代，
+我们使用 <code class="docutils literal notranslate"><span class="pre">25</span></code> 作为游标，
+再次调用 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SCAN</span> <span class="mi">25</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;31&quot;</span>
+<span class="mi">2</span><span class="p">)</span>  <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;key::20&quot;</span>
+    <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;key::18&quot;</span>
+    <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;key::19&quot;</span>
+    <span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;key::7&quot;</span>
+    <span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;key::1&quot;</span>
+    <span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;key::9&quot;</span>
+    <span class="mi">7</span><span class="p">)</span> <span class="s2">&quot;key::12&quot;</span>
+    <span class="mi">8</span><span class="p">)</span> <span class="s2">&quot;key::11&quot;</span>
+    <span class="mi">9</span><span class="p">)</span> <span class="s2">&quot;key::17&quot;</span>
+    <span class="mi">10</span><span class="p">)</span> <span class="s2">&quot;key::15&quot;</span>
+    <span class="mi">11</span><span class="p">)</span> <span class="s2">&quot;key::14&quot;</span>
+    <span class="mi">12</span><span class="p">)</span> <span class="s2">&quot;key::3&quot;</span>
+</pre></div>
+</div>
+<p>这次的 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 调用返回了十二个键，
+并告知我们下次迭代应该使用 <code class="docutils literal notranslate"><span class="pre">31</span></code> 作为游标。</p>
+<p>跟之前的情况类似，
+这次我们使用 <code class="docutils literal notranslate"><span class="pre">31</span></code> 作为游标，
+再次调用 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SCAN</span> <span class="mi">31</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;0&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;key::0&quot;</span>
+   <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;key::4&quot;</span>
+</pre></div>
+</div>
+<p>这次的 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 调用只返回了两个键，
+并且它返回的下次迭代游标为 <code class="docutils literal notranslate"><span class="pre">0</span></code> ——
+这说明本次迭代已经结束，
+整个数据库已经被迭代完毕。</p>
+</section>
+<section id="id6">
+<h3>SCAN 命令的迭代保证<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
+<p>针对数据库的一次完整迭代（full iteration）以用户给定游标 <code class="docutils literal notranslate"><span class="pre">0</span></code> 调用 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令为开始，
+直到 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令返回游标 <code class="docutils literal notranslate"><span class="pre">0</span></code> 为结束。
+<code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令为完整迭代提供以下保证：</p>
+<ol class="arabic simple">
+<li><p>从迭代开始到迭代结束的整个过程中，
+一直存在于数据库里面的键总会被返回。</p></li>
+<li><p>如果一个键在迭代的过程中被添加到了数据库里面，
+那么这个键是否会被返回是不确定的。</p></li>
+<li><p>如果一个键在迭代的过程中被移除了，
+那么 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令在它被移除之后将不再返回这个键；
+但是这个键在被移除之前仍然有可能被 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令返回。</p></li>
+<li><p>无论数据库如何变化，
+迭代总是有始有终的，
+不会出现循环迭代或者其他无法终止迭代的情况。</p></li>
+</ol>
+</section>
+<section id="id7">
+<h3>游标的使用<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
+<p>在很多数据库里面，
+使用游标都要显式地进行申请，
+并在迭代完成之后释放游标，
+否则的话就会造成内存泄露。</p>
+<p>与此相反，
+<code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令的游标不需要申请，
+也不需要释放，
+它们不占用任何资源，
+每个客户端都可以使用自己的游标独立地对数据库进行迭代。</p>
+<p>此外，
+用户可以随时在迭代的途中停止进行迭代，
+又或者随时开始一次新的迭代，
+这不会浪费任何资源，
+也不会引发任何问题。</p>
+</section>
+<section id="id8">
+<h3>迭代与给定匹配符相匹配的键<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
+<p>在默认情况下，
+<code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令会向客户端返回数据库包含的所有键，
+它就像 <code class="docutils literal notranslate"><span class="pre">KEYS</span> <span class="pre">*</span></code> 命令调用的一个迭代版本。
+但是通过使用可选的 <code class="docutils literal notranslate"><span class="pre">MATCH</span></code> 选项，
+我们同样可以让 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令只返回与给定全局匹配符相匹配的键：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SCAN</span> <span class="n">cursor</span> <span class="p">[</span><span class="n">MATCH</span> <span class="n">pattern</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>带有 <code class="docutils literal notranslate"><span class="pre">MATCH</span></code> 选项的 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令就像是 <code class="docutils literal notranslate"><span class="pre">KEYS</span> <span class="pre">pattern</span></code> 命令调用的迭代版本。</p>
+<p>举个例子，
+假设我们想要获取数据库里面所有以 <code class="docutils literal notranslate"><span class="pre">user::</span></code> 开头的键，
+但是因为这些键的数量比较多，
+直接使用 <code class="docutils literal notranslate"><span class="pre">KEYS</span> <span class="pre">user::*</span></code> 有可能会造成服务器阻塞，
+所以我们可以使用 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令来代替 <code class="docutils literal notranslate"><span class="pre">KEYS</span></code> 命令，
+对符合 <code class="docutils literal notranslate"><span class="pre">user::*</span></code> 匹配符的键进行迭代：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>redis&gt; SCAN 0 MATCH user::*
+1) &quot;208&quot;
+2) 1) &quot;user::1&quot;
+   2) &quot;user::65&quot;
+   3) &quot;user::99&quot;
+   4) &quot;user::51&quot;
+
+redis&gt; SCAN 208 MATCH user::*
+1) &quot;232&quot;
+2) 1) &quot;user::13&quot;
+   2) &quot;user::28&quot;
+   3) &quot;user::83&quot;
+   4) &quot;user::14&quot;
+   5) &quot;user::61&quot;
+
+-- 省略后续的其他迭代……
+</pre></div>
+</div>
+</section>
+<section id="id9">
+<h3>指定返回键的期望数量<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h3>
+<p>在一般情况下，
+<code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令返回的键数量是不确定的，
+但是我们可以通过使用可选的 <code class="docutils literal notranslate"><span class="pre">COUNT</span></code> 选项，
+向 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令提供一个期望值，
+以此来说明我们希望得到多少个键：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SCAN</span> <span class="n">cursor</span> <span class="p">[</span><span class="n">COUNT</span> <span class="n">number</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>这里特别需要注意的是，
+<code class="docutils literal notranslate"><span class="pre">COUNT</span></code> 选项向命令提供的只是期望的键数量，
+但并不是精确的键数量。
+比如说，
+执行 <code class="docutils literal notranslate"><span class="pre">SCAN</span> <span class="pre">cursor</span> <span class="pre">COUNT</span> <span class="pre">10</span></code> 并不是说 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令最多只能返回 <code class="docutils literal notranslate"><span class="pre">10</span></code> 个键，
+又或者一定要返回 <code class="docutils literal notranslate"><span class="pre">10</span></code> 个键：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">COUNT</span></code> 选项只是提供了一个期望值，
+告诉 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令我们希望返回多少个键，
+但每次迭代返回的键数量仍然是不确定的。</p></li>
+<li><p>不过在通常情况下，
+设置一个较大的 <code class="docutils literal notranslate"><span class="pre">COUNT</span></code> 值将有助于获得更多键，
+这一点是可以肯定的。</p></li>
+</ul>
+<p>以下代码展示了几个使用 <code class="docutils literal notranslate"><span class="pre">COUNT</span></code> 选项的例子：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>redis&gt; SCAN 0 COUNT 5
+1) &quot;160&quot;
+2) 1) &quot;key::43&quot;
+   2) &quot;key::s&quot;
+   3) &quot;user::1&quot;
+   4) &quot;key::83&quot;
+   5) &quot;key::u&quot;
+
+redis&gt; SCAN 0 MATCH user::* COUNT 10
+1) &quot;208&quot;
+2) 1) &quot;user::1&quot;
+   2) &quot;user::65&quot;
+   3) &quot;user::99&quot;
+   4) &quot;user::51&quot;
+
+redis&gt; SCAN 0 MATCH key::* COUNT 100
+1) &quot;214&quot;
+2)  1) &quot;key::43&quot;
+    2) &quot;key::s&quot;
+    3) &quot;key::83&quot;
+    -- 其他键……
+    50) &quot;key::28&quot;
+    51) &quot;key::34&quot;
+</pre></div>
+</div>
+<p>在用户没有显式地使用 <code class="docutils literal notranslate"><span class="pre">COUNT</span></code> 选项的情况下，
+<code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令将使用 <code class="docutils literal notranslate"><span class="pre">10</span></code> 作为 <code class="docutils literal notranslate"><span class="pre">COUNT</span></code> 选项的默认值，
+换句话说，
+以下两条命令的作用是相同的：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SCAN</span> <span class="n">cursor</span>
+
+<span class="n">SCAN</span> <span class="n">cursor</span> <span class="n">COUNT</span> <span class="mi">10</span>
+</pre></div>
+</div>
+</section>
+<section id="id10">
+<h3>数据结构迭代命令<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h3>
+<p>跟获取数据库键的 <code class="docutils literal notranslate"><span class="pre">KEYS</span></code> 命令一样，
+Redis 的各个数据结构也存在着一些可能会导致服务器阻塞的命令：</p>
+<ul class="simple">
+<li><p>散列的 <code class="docutils literal notranslate"><span class="pre">HKEYS</span></code> 命令、 <code class="docutils literal notranslate"><span class="pre">HVALS</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">HGETALL</span></code> 命令在处理包含键值对较多的散列时，
+可能会导致服务器阻塞。</p></li>
+<li><p>集合的 <code class="docutils literal notranslate"><span class="pre">SMEMBERS</span></code> 命令在处理包含元素较多的集合时，
+可能会导致服务器阻塞。</p></li>
+<li><p>有序集合的一些范围型获取命令，
+比如 <code class="docutils literal notranslate"><span class="pre">ZRANGE</span></code> ，
+也有阻塞服务器的可能。
+比如说，
+为了获取有序集合包含的所有元素，
+用户可能会执行命令调用 <code class="docutils literal notranslate"><span class="pre">ZRANGE</span> <span class="pre">key</span> <span class="pre">0</span> <span class="pre">-1</span></code> ，
+这时如果有序集合包含的成员数量较多的话，
+这个 <code class="docutils literal notranslate"><span class="pre">ZRANGE</span></code> 命令可能就会导致服务器阻塞。</p></li>
+</ul>
+<p>为了解决以上这些问题，
+Redis 为散列、集合和有序集合也提供了与 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令类似的游标迭代命令，
+它们分别是 <code class="docutils literal notranslate"><span class="pre">HSCAN</span></code> 命令、 <code class="docutils literal notranslate"><span class="pre">SSCAN</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">ZSCAN</span></code> 命令，
+以下三个小节将分别介绍这三个命令的用法。</p>
+<section id="id11">
+<h4>1. 散列迭代命令<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">HSCAN</span></code> 命令可以以渐进的方式迭代给定散列包含的键值对：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HSCAN</span> <span class="nb">hash</span> <span class="n">cursor</span> <span class="p">[</span><span class="n">MATCH</span> <span class="n">pattern</span><span class="p">]</span> <span class="p">[</span><span class="n">COUNT</span> <span class="n">number</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>除了需要指定被迭代的散列之外，
+<code class="docutils literal notranslate"><span class="pre">HSCAN</span></code> 命令的其他参数跟 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令的参数保持一致，
+并且作用也一样。</p>
+<p>作为例子，
+以下代码展示了如何使用 <code class="docutils literal notranslate"><span class="pre">HSCAN</span></code> 命令去迭代 <code class="docutils literal notranslate"><span class="pre">user::10086::profile</span></code> 散列：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HSCAN</span> <span class="n">user</span><span class="p">::</span><span class="mi">10086</span><span class="p">::</span><span class="n">profile</span> <span class="mi">0</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;0&quot;</span>            <span class="o">--</span> <span class="n">下次迭代的游标</span>
+<span class="mi">2</span><span class="p">)</span>  <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;name&quot;</span>     <span class="o">--</span> <span class="n">键</span>
+    <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;peter&quot;</span>    <span class="o">--</span> <span class="n">值</span>
+    <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;age&quot;</span>
+    <span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;32&quot;</span>
+    <span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;gender&quot;</span>
+    <span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;male&quot;</span>
+    <span class="mi">7</span><span class="p">)</span> <span class="s2">&quot;blog&quot;</span>
+    <span class="mi">8</span><span class="p">)</span> <span class="s2">&quot;peter123.whatpress.com&quot;</span>
+    <span class="mi">9</span><span class="p">)</span> <span class="s2">&quot;email&quot;</span>
+    <span class="mi">10</span><span class="p">)</span> <span class="s2">&quot;peter123@example.com&quot;</span>
+</pre></div>
+</div>
+<p>当散列包含较多键值对的时候，
+我们应该尽量使用 <code class="docutils literal notranslate"><span class="pre">HSCAN</span></code> 去代替 <code class="docutils literal notranslate"><span class="pre">HKEYS</span></code> 、 <code class="docutils literal notranslate"><span class="pre">HVALS</span></code> 和 <code class="docutils literal notranslate"><span class="pre">HGETALL</span></code> ，
+以免造成服务器阻塞。</p>
+</section>
+<section id="id12">
+<h4>2. 渐进式集合迭代命令<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">SSCAN</span></code> 命令可以以渐进的方式迭代给定集合包含的元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SSCAN</span> <span class="nb">set</span> <span class="n">cursor</span> <span class="p">[</span><span class="n">MATCH</span> <span class="n">pattern</span><span class="p">]</span> <span class="p">[</span><span class="n">COUNT</span> <span class="n">number</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>除了需要指定被迭代的集合之外，
+<code class="docutils literal notranslate"><span class="pre">SSCAN</span></code> 命令的其他参数跟 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令的参数保持一致，
+并且作用也一样。</p>
+<p>举个例子，
+假设我们想要对 <code class="docutils literal notranslate"><span class="pre">fruits</span></code> 集合进行迭代的话，
+那么可以执行以下命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SSCAN</span> <span class="n">fruits</span> <span class="mi">0</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;0&quot;</span>           <span class="o">--</span> <span class="n">下次迭代的游标</span>
+<span class="mi">2</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;apple&quot;</span>    <span class="o">--</span> <span class="n">集合元素</span>
+   <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;watermelon&quot;</span>
+   <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;mango&quot;</span>
+   <span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;cherry&quot;</span>
+   <span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;banana&quot;</span>
+   <span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;dragon fruit&quot;</span>
+</pre></div>
+</div>
+<p>当集合包含较多元素的时候，
+我们应该尽量使用 <code class="docutils literal notranslate"><span class="pre">SSCAN</span></code> 去代替 <code class="docutils literal notranslate"><span class="pre">SMEMBERS</span></code> ，
+以免造成服务器阻塞。</p>
+</section>
+<section id="id13">
+<h4>3. 渐进式有序集合迭代命令<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">ZSCAN</span></code> 命令可以以渐进的方式迭代给定有序集合包含的成员和分值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ZSCAN</span> <span class="n">sorted_set</span> <span class="n">cursor</span> <span class="p">[</span><span class="n">MATCH</span> <span class="n">pattern</span><span class="p">]</span> <span class="p">[</span><span class="n">COUNT</span> <span class="n">number</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>除了需要指定被迭代的有序集合之外，
+<code class="docutils literal notranslate"><span class="pre">ZSCAN</span></code> 命令的其他参数跟 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令的参数保持一致，
+并且作用也一样。</p>
+<p>比如说，
+通过执行以下命令，
+我们可以对 <code class="docutils literal notranslate"><span class="pre">fruits-price</span></code> 有序集合进行迭代：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">ZSCAN</span> <span class="n">fruits</span><span class="o">-</span><span class="n">price</span> <span class="mi">0</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;0&quot;</span>                 <span class="o">--</span> <span class="n">下次迭代的游标</span>
+<span class="mi">2</span><span class="p">)</span>  <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;watermelon&quot;</span>    <span class="o">--</span> <span class="n">成员</span>
+    <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;3.5&quot;</span>           <span class="o">--</span> <span class="n">分值</span>
+    <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;banana&quot;</span>
+    <span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;4.5&quot;</span>
+    <span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;mango&quot;</span>
+    <span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;5&quot;</span>
+    <span class="mi">7</span><span class="p">)</span> <span class="s2">&quot;dragon fruit&quot;</span>
+    <span class="mi">8</span><span class="p">)</span> <span class="s2">&quot;6&quot;</span>
+    <span class="mi">9</span><span class="p">)</span> <span class="s2">&quot;cherry&quot;</span>
+    <span class="mi">10</span><span class="p">)</span> <span class="s2">&quot;7&quot;</span>
+    <span class="mi">11</span><span class="p">)</span> <span class="s2">&quot;apple&quot;</span>
+    <span class="mi">12</span><span class="p">)</span> <span class="s2">&quot;8.5&quot;</span>
+</pre></div>
+</div>
+<p>当有序集合包含较多成员的时候，
+我们应该尽量使用 <code class="docutils literal notranslate"><span class="pre">ZSCAN</span></code> 去代替 <code class="docutils literal notranslate"><span class="pre">ZRANGE</span></code> 以及其他可能会返回大量成员的范围型获取命令，
+以免造成服务器阻塞。</p>
+</section>
+<section id="id14">
+<h4>4. 迭代命令的共通性质<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">HSCAN</span></code> 、 <code class="docutils literal notranslate"><span class="pre">SSCAN</span></code> 、 <code class="docutils literal notranslate"><span class="pre">ZSCAN</span></code> 这三个命令除了与 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令拥有相同的游标参数以及可选项之外，
+还与 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令拥有相同的迭代性质：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令对于完整迭代所做的保证，
+其他三个迭代命令也能够提供。
+比如说，
+使用 <code class="docutils literal notranslate"><span class="pre">HSCAN</span></code> 命令对散列进行一次完整迭代，
+在迭代过程中一直存在的键值对总会被返回，
+诸如此类。</p></li>
+<li><p>跟 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令一样，
+其他三个迭代命令的游标也不耗费任何资源。
+用户可以在这三个命令中随意地使用游标，
+比如随时开始一次新的迭代，
+又或者随时放弃正在进行的迭代，
+这不会浪费任何资源，
+也不会引发任何问题。</p></li>
+<li><p>跟 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令一样，
+其他三个迭代命令虽然也可以使用 <code class="docutils literal notranslate"><span class="pre">COUNT</span></code> 选项设置返回元素数量的期望值，
+但命令具体返回的元素数量仍然是不确定的。</p></li>
+</ul>
+</section>
+</section>
+<section id="id15">
+<h3>其他信息<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令、 <code class="docutils literal notranslate"><span class="pre">HSCAN</span></code> 命令、 <code class="docutils literal notranslate"><span class="pre">SSCAN</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">ZSCAN</span></code> 命令单次执行的复杂度为 O(1) ，
+而使用这些命令进行一次完整迭代的复杂度则为 O(N) ，其中 N 为被迭代的元素数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令、 <code class="docutils literal notranslate"><span class="pre">HSCAN</span></code> 命令、 <code class="docutils literal notranslate"><span class="pre">SSCAN</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">ZSCAN</span></code> 命令从 Redis 2.8.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id16">
+<h2>示例：构建数据库迭代器<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令虽然可以以迭代的形式访问数据库，
+但它使用起来并不是特别方便，
+比如说：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令每次迭代都会返回一个游标，
+而用户需要手动地将这个游标用作下次迭代时的输入参数，
+如果用户不小心丢失或者弄错了这个游标的话，
+那么就可能会给迭代带来错误或者麻烦。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令每次都会返回一个包含两个元素的结果，
+其中第一个元素为游标，
+而第二个元素才是当前被迭代的键，
+如果迭代器能够直接返回被迭代的键，
+那么它使用起来就会更加方便。</p></li>
+</ul>
+<p>为了解决以上这两个问题，
+我们可以在 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令的基础上进行一些修改，
+实现出代码清单 11-1 所示的迭代器：
+这个迭代器不仅会自动记录每次迭代的游标以防丢失，
+它还可以直接返回被迭代的数据库键以供用户使用。</p>
+<hr class="docutils" />
+<p>代码清单 11-1 数据库迭代器：<code class="docutils literal notranslate"><span class="pre">/database/db_iterator.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">DbIterator</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">match</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        创建一个新的迭代器。</span>
+<span class="sd">        可选的 match 参数用于指定迭代的匹配模式，</span>
+<span class="sd">        而可选的 count 参数则用于指定我们期待每次迭代能够返回的键数量。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">match</span> <span class="o">=</span> <span class="n">match</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">=</span> <span class="n">count</span>
+        <span class="c1"># 当前迭代游标</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_cursor</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># 记录迭代是否已经完成的状态变量</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iteration_is_over</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        以列表形式返回当前被迭代到的数据库键，</span>
+<span class="sd">        返回 None 则表示本次迭代已经完成。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">iteration_is_over</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="c1"># 获取下次迭代的游标以及当前被迭代的数据库键</span>
+        <span class="n">next_cursor</span><span class="p">,</span> <span class="n">keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_cursor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">match</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">count</span><span class="p">)</span>
+        <span class="c1"># 如果下次迭代的游标为 0 ，那么表示迭代已完成</span>
+        <span class="k">if</span> <span class="n">next_cursor</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">iteration_is_over</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># 更新游标</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_cursor</span> <span class="o">=</span> <span class="n">next_cursor</span>
+        <span class="c1"># 返回当前被迭代的数据库键</span>
+        <span class="k">return</span> <span class="n">keys</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>作为例子，
+以下代码展示了如何使用这个迭代器去迭代一个数据库：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">db_iterator</span> <span class="kn">import</span> <span class="n">DbIterator</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">50</span><span class="p">):</span>             <span class="c1"># 向数据库插入 50 个键</span>
+<span class="gp">... </span>  <span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;key</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+<span class="gp">... </span>  <span class="n">value</span> <span class="o">=</span> <span class="n">i</span>
+<span class="gp">... </span>  <span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">True</span>
+<span class="go">True</span>
+<span class="go">...</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator</span> <span class="o">=</span> <span class="n">DbIterator</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>  <span class="c1"># 开始迭代</span>
+<span class="go">[&#39;key46&#39;, &#39;key1&#39;, &#39;key27&#39;, &#39;key39&#39;, &#39;key15&#39;, &#39;key0&#39;, &#39;key43&#39;, &#39;key12&#39;, &#39;key49&#39;, &#39;key41&#39;, &#39;key10&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+<span class="go">[&#39;key23&#39;, &#39;key7&#39;, &#39;key9&#39;, &#39;key20&#39;, &#39;key18&#39;, &#39;key3&#39;, &#39;key5&#39;, &#39;key34&#39;, &#39;key32&#39;, &#39;key40&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+<span class="go">[&#39;key4&#39;, &#39;key33&#39;, &#39;key30&#39;, &#39;key45&#39;, &#39;key38&#39;, &#39;key31&#39;, &#39;key6&#39;, &#39;key16&#39;, &#39;key25&#39;, &#39;key14&#39;, &#39;key13&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+<span class="go">[&#39;key29&#39;, &#39;key2&#39;, &#39;key42&#39;, &#39;key11&#39;, &#39;key48&#39;, &#39;key28&#39;, &#39;key8&#39;, &#39;key44&#39;, &#39;key21&#39;, &#39;key26&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+<span class="go">[&#39;key22&#39;, &#39;key47&#39;, &#39;key36&#39;, &#39;key17&#39;, &#39;key19&#39;, &#39;key24&#39;, &#39;key35&#39;, &#39;key37&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>  <span class="c1"># 迭代结束</span>
+<span class="gp">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p>redis-py 提供的迭代器</p>
+<p>实际上，
+redis-py 客户端也为 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令实现了一个迭代器 ——
+用户只需要调用 redis-py 的 <code class="docutils literal notranslate"><span class="pre">scan_iter()</span></code> 方法，
+就会得到一个 Python 迭代器，
+然后就可以通过这个迭代器对数据库中的键进行迭代：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>scan_iter(self, match=None, count=None) unbound redis.client.Redis method
+    Make an iterator using the SCAN command so that the client doesn&#39;t
+    need to remember the cursor position.
+
+    ``match`` allows for filtering the keys by pattern
+
+    ``count`` allows for hint the minimum number of returns
+</pre></div>
+</div>
+<p>redis-py 提供的迭代器跟 <code class="docutils literal notranslate"><span class="pre">DbIterator</span></code> 一样，
+都可以让用户免去手动输入游标的麻烦，
+但它们之间也有不少区别：</p>
+<ol class="arabic simple">
+<li><p>redis-py 的迭代器每次迭代只返回一个元素。</p></li>
+<li><p>因为 redis-py 的迭代器是通过 Python 的迭代器特性实现的，
+所以用户可以直接以 <code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">key</span> <span class="pre">in</span> <span class="pre">redis.scan_iter()</span></code> 的形式进行迭代。
+（<code class="docutils literal notranslate"><span class="pre">DbIterator</span></code> 实际上也可以实现这样的特性，
+但是由于 Python 迭代器的相关知识并不在本书的介绍范围之内，
+所以我们这个自制的迭代器才没有配备这一特性。）</p></li>
+<li><p>redis-py 的迭代器也拥有 <code class="docutils literal notranslate"><span class="pre">next()</span></code> 方法，
+但这个方法每次被调用时只会返回单个元素，
+并且它在所有元素都被迭代完毕时将抛出一个 <code class="docutils literal notranslate"><span class="pre">StopIteration</span></code> 异常。</p></li>
+</ol>
+<p>以下是一个 redis-py 迭代器的使用示例：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span><span class="o">.</span><span class="n">mset</span><span class="p">({</span><span class="s2">&quot;k1&quot;</span><span class="p">:</span><span class="s2">&quot;v1&quot;</span><span class="p">,</span> <span class="s2">&quot;k2&quot;</span><span class="p">:</span><span class="s2">&quot;v2&quot;</span><span class="p">,</span> <span class="s2">&quot;k3&quot;</span><span class="p">:</span><span class="s2">&quot;v3&quot;</span><span class="p">})</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">client</span><span class="o">.</span><span class="n">scan_iter</span><span class="p">():</span>
+<span class="gp">... </span>  <span class="nb">print</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">k1</span>
+<span class="go">k3</span>
+<span class="go">k2</span>
+</pre></div>
+</div>
+<p>因为 redis-py 为 <code class="docutils literal notranslate"><span class="pre">scan_iter()</span></code> 提供了直接支持，
+它比需要额外引入的 <code class="docutils literal notranslate"><span class="pre">DbIterator</span></code> 更为方便一些，
+所以本书之后展示的所有迭代程序都将使用 <code class="docutils literal notranslate"><span class="pre">scan_iter()</span></code> 而不是 <code class="docutils literal notranslate"><span class="pre">DbIterator</span></code> 。
+不过由于这两个迭代器的底层实现是相仿的，
+所以使用哪个其实差别都并不大。</p>
+</div>
+</section>
+<section id="randomkey">
+<h2>RANDOMKEY：随机返回一个键<a class="headerlink" href="#randomkey" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">RANDOMKEY</span></code> 命令可以从数据库里面随机地返回一个键：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">RANDOMKEY</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">RANDOMKEY</span></code> 命令不会移除被返回的键，
+它们会继续留在数据库里面。</p>
+<p>以下代码展示了如何通过 <code class="docutils literal notranslate"><span class="pre">RANDOMKEY</span></code> 命令，
+从数据库里面随机地返回一些键：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">RANDOMKEY</span>
+<span class="s2">&quot;user::123::profile&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RANDOMKEY</span>
+<span class="s2">&quot;cache::/user/peter&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RANDOMKEY</span>
+<span class="s2">&quot;favorite-animal&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RANDOMKEY</span>
+<span class="s2">&quot;fruit-price&quot;</span>
+</pre></div>
+</div>
+<p>另一方面，
+当数据库为空时，
+<code class="docutils literal notranslate"><span class="pre">RANDOMKEY</span></code> 命令将返回一个空值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">RANDOMKEY</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="id17">
+<h3>其他信息<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">RANDOMKEY</span></code> 命令从 Redis 1.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="sort">
+<h2>SORT：对键的值进行排序<a class="headerlink" href="#sort" title="Link to this heading">¶</a></h2>
+<p>用户可以通过执行 <code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令，
+对列表元素、集合元素或者有序集合成员进行排序。
+为了让用户能够以不同的方式进行排序，
+Redis 为 <code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令提供了非常多的可选项，
+如果我们以不给定任何可选项的方式直接调用 <code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令，
+那么命令将对指定键储存的元素执行数字值排序：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SORT</span> <span class="n">key</span>
+</pre></div>
+</div>
+<p>在默认情况下，
+<code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令将按照从小到大的顺序，
+依次返回排序后的各个值。</p>
+<p>比如说，
+以下例子就展示了如何对 <code class="docutils literal notranslate"><span class="pre">lucky-numbers</span></code> 集合储存的六个数字值进行排序：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">lucky</span><span class="o">-</span><span class="n">numbers</span>    <span class="o">--</span> <span class="n">以乱序形式储存的集合元素</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;1024&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;123456&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;10086&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;3.14&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;888&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;256&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SORT</span> <span class="n">lucky</span><span class="o">-</span><span class="n">numbers</span>        <span class="o">--</span> <span class="n">排序后的集合元素</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;3.14&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;256&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;888&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;1024&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;10086&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;123456&quot;</span>
+</pre></div>
+</div>
+<p>而以下例子则展示了如何对 <code class="docutils literal notranslate"><span class="pre">message-queue</span></code> 列表中的数字值进行排序：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">message</span><span class="o">-</span><span class="n">queue</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span>    <span class="o">--</span> <span class="n">根据插入顺序进行排列的列表元素</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;1024&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;256&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;128&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;512&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;64&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SORT</span> <span class="n">message</span><span class="o">-</span><span class="n">queue</span>           <span class="o">--</span> <span class="n">排序后的列表元素</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;64&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;128&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;256&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;512&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;1024&quot;</span>
+</pre></div>
+</div>
+<section id="id18">
+<h3>指定排序方式<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h3>
+<p>在默认情况下，
+<code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令执行的是升序排序操作：
+较小的值将被放到结果的较前位置，
+而较大的值则会被放到结果的较后位置。</p>
+<p>通过使用可选的 <code class="docutils literal notranslate"><span class="pre">ASC</span></code> 选项或者 <code class="docutils literal notranslate"><span class="pre">DESC</span></code> 选项，
+用户可以指定 <code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令的排序方式，
+其中 <code class="docutils literal notranslate"><span class="pre">ASC</span></code> 表示执行升序排序操作，
+而 <code class="docutils literal notranslate"><span class="pre">DESC</span></code> 则表示执行降序排序操作：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SORT</span> <span class="n">key</span> <span class="p">[</span><span class="n">ASC</span><span class="o">|</span><span class="n">DESC</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>降序排序操作的做法跟升序排序操作的做法正好相反，
+它会把较大的值放到结果的较前位置，
+而较小的值则会被放到结果的较后位置。</p>
+<p>举个例子，
+如果我们想要对 <code class="docutils literal notranslate"><span class="pre">lucky-numbers</span></code> 集合的元素实施降序排序，
+那么只需要执行以下代码就可以了：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SORT</span> <span class="n">lucky</span><span class="o">-</span><span class="n">numbers</span> <span class="n">DESC</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;123456&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;10086&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;1024&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;888&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;256&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;3.14&quot;</span>
+</pre></div>
+</div>
+<p>因为 <code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令在默认情况下进行的就是升序排序，
+所以 <code class="docutils literal notranslate"><span class="pre">SORT</span> <span class="pre">key</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">SORT</span> <span class="pre">key</span> <span class="pre">ASC</span></code> 命令产生的效果是完全相同的，
+因此我们在一般情况下并不会用到 <code class="docutils literal notranslate"><span class="pre">ASC</span></code> 选项 ——
+除非你有特别的理由，
+需要告诉别人你正在进行的是升序排序。</p>
+</section>
+<section id="id19">
+<h3>对字符串值进行排序<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令在默认情况下进行的是数字值排序，
+如果我们尝试直接使用 <code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令去对字符串元素进行排序，
+那么命令将产生一个错误：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">fruits</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;cherry&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;banana&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;apple&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;mango&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;dragon fruit&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;watermelon&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SORT</span> <span class="n">fruits</span>
+<span class="p">(</span><span class="n">error</span><span class="p">)</span> <span class="n">ERR</span> <span class="n">One</span> <span class="ow">or</span> <span class="n">more</span> <span class="n">scores</span> <span class="n">can</span><span class="s1">&#39;t be converted into double</span>
+</pre></div>
+</div>
+<p>为了让 <code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令能够对字符串值进行排序，
+我们必须让 <code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令执行字符串排序操作而不是数字值排序操作，
+这一点可以通过使用 <code class="docutils literal notranslate"><span class="pre">ALPHA</span></code> 选项来实现：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SORT</span> <span class="n">key</span> <span class="p">[</span><span class="n">ALPHA</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>作为例子，
+我们可以使用带 <code class="docutils literal notranslate"><span class="pre">ALPHA</span></code> 选项的 <code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令去对 <code class="docutils literal notranslate"><span class="pre">fruits</span></code> 集合进行排序：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SORT</span> <span class="n">fruits</span> <span class="n">ALPHA</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;apple&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;banana&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;cherry&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;dragon fruit&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;mango&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;watermelon&quot;</span>
+</pre></div>
+</div>
+<p>又或者使用以下命令，
+对 <code class="docutils literal notranslate"><span class="pre">test-record</span></code> 有序集合的成员进行排序：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>redis&gt; ZRANGE test-record 0 -1 WITHSCORES    -- 在默认情况下，有序集合成员将根据分值进行排序
+1) &quot;ben&quot;
+2) &quot;70&quot;
+3) &quot;aimee&quot;
+4) &quot;86&quot;
+5) &quot;david&quot;
+6) &quot;99&quot;
+7) &quot;cario&quot;
+8) &quot;100&quot;
+
+redis&gt; SORT test-record ALPHA                -- 但使用 SORT 命令可以对成员本身进行排序
+1) &quot;aimee&quot;
+2) &quot;ben&quot;
+3) &quot;cario&quot;
+4) &quot;david&quot;
+</pre></div>
+</div>
+</section>
+<section id="id20">
+<h3>只获取部分排序结果<a class="headerlink" href="#id20" title="Link to this heading">¶</a></h3>
+<p>在默认情况下，
+<code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令将返回所有被排序的元素，
+但如果我们只需要其中一部分排序结果的话，
+那么可以使用可选的 <code class="docutils literal notranslate"><span class="pre">LIMIT</span></code> 选项：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SORT</span> <span class="n">key</span> <span class="p">[</span><span class="n">LIMIT</span> <span class="n">offset</span> <span class="n">count</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>其中 <code class="docutils literal notranslate"><span class="pre">offset</span></code> 参数用于指定返回结果之前需要跳过的元素数量，
+而 <code class="docutils literal notranslate"><span class="pre">count</span></code> 参数则用于指定需要获取的元素数量。</p>
+<p>举个例子，
+如果我们想要知道 <code class="docutils literal notranslate"><span class="pre">fruits</span></code> 集合在排序之后的第 3 个元素是什么，
+那么只需要执行以下调用就可以了：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SORT</span> <span class="n">fruits</span> <span class="n">ALPHA</span> <span class="n">LIMIT</span> <span class="mi">2</span> <span class="mi">1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;cherry&quot;</span>
+</pre></div>
+</div>
+<p>注意，
+因为 <code class="docutils literal notranslate"><span class="pre">offset</span></code> 参数的值是从 <code class="docutils literal notranslate"><span class="pre">0</span></code> 开始计算的，
+所以这个命令在获取第三个被排序元素时使用了 <code class="docutils literal notranslate"><span class="pre">2</span></code> 而不是 <code class="docutils literal notranslate"><span class="pre">3</span></code> 来作为偏移量。</p>
+</section>
+<section id="id21">
+<h3>获取外部键的值作为结果<a class="headerlink" href="#id21" title="Link to this heading">¶</a></h3>
+<p>在默认情况下，
+<code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令将返回被排序的元素作为结果，
+但如果用户有需要的话，
+也可以使用 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 选项去获取其他别的值作为排序结果：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SORT</span> <span class="n">key</span> <span class="p">[[</span><span class="n">GET</span> <span class="n">pattern</span><span class="p">]</span> <span class="p">[</span><span class="n">GET</span> <span class="n">pattern</span><span class="p">]</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>一个 <code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令可以使用任意多个 <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">pattern</span></code> 选项，
+其中 <code class="docutils literal notranslate"><span class="pre">pattern</span></code> 参数的值可以是：</p>
+<ol class="arabic simple">
+<li><p>包含 <code class="docutils literal notranslate"><span class="pre">*</span></code> 符号的字符串；</p></li>
+<li><p>包含 <code class="docutils literal notranslate"><span class="pre">*</span></code> 符号和 <code class="docutils literal notranslate"><span class="pre">-&gt;</span></code> 符号的字符串；</p></li>
+<li><p>一个单独的 <code class="docutils literal notranslate"><span class="pre">#</span></code> 符号；</p></li>
+</ol>
+<p>接下来的三个小节将分别介绍这三种值的用法和用途。</p>
+<section id="id22">
+<h4>1. 获取字符串键的值<a class="headerlink" href="#id22" title="Link to this heading">¶</a></h4>
+<p>当 <code class="docutils literal notranslate"><span class="pre">pattern</span></code> 参数的值是一个包含 <code class="docutils literal notranslate"><span class="pre">*</span></code> 符号的字符串时，
+<code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令将把被排序的元素与 <code class="docutils literal notranslate"><span class="pre">*</span></code> 符号实行替换，
+构建出一个键名，
+然后使用 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令去获取该键的值。</p>
+<hr class="docutils" />
+<p>表 11-2 储存水果价格的各个字符串键，以及它们的值</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>字符串键</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;apple-price&quot;</span></code></p></td>
+<td><p>8.5</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;banana-price&quot;</span></code></p></td>
+<td><p>4.5</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;cherry-price&quot;</span></code></p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;dragon</span> <span class="pre">fruit-price&quot;</span></code></p></td>
+<td><p>6</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;mango-price&quot;</span></code></p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;watermelon-price&quot;</span></code></p></td>
+<td><p>3.5</p></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<p>举个例子，
+假设数据库里面储存着表 11-2 所示的一些字符串键，
+那么我们可以通过执行以下命令，
+对 <code class="docutils literal notranslate"><span class="pre">fruits</span></code> 集合的各个元素进行排序，
+然后根据排序后的元素去获取各种水果的价格：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SORT</span> <span class="n">fruits</span> <span class="n">ALPHA</span> <span class="n">GET</span> <span class="o">*-</span><span class="n">price</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;8.5&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;4.5&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;7&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;6&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;5&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;3.5&quot;</span>
+</pre></div>
+</div>
+<p>这个 <code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令的执行过程可以分为以下三个步骤：</p>
+<ol class="arabic simple">
+<li><p>对 <code class="docutils literal notranslate"><span class="pre">fruits</span></code> 集合的各个元素进行排序，
+得出一个由 <code class="docutils literal notranslate"><span class="pre">&quot;apple&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;banana&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;cherry&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;dragon</span> <span class="pre">fruit&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;mango&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;watermelon&quot;</span></code> 组成的有序元素排列。</p></li>
+<li><p>将排序后的各个元素与 <code class="docutils literal notranslate"><span class="pre">*-price</span></code> 模式进行匹配和替换，
+得出键名 <code class="docutils literal notranslate"><span class="pre">&quot;apple-price&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;banana-price&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;cherry-price&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;dragon</span> <span class="pre">fruit-price&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;mango-price&quot;</span></code> 和 <code class="docutils literal notranslate"><span class="pre">&quot;watermelon-price&quot;</span></code> 。</p></li>
+<li><p>使用 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令去获取以上各个键的值，
+并将这些值依次放入到结果列表里面，
+最后把结果列表返回给客户端。</p></li>
+</ol>
+<p>图 11-2 以图形方式展示了整个 <code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令的执行过程。</p>
+<hr class="docutils" />
+<p>图 11-2 <code class="docutils literal notranslate"><span class="pre">SORT</span> <span class="pre">fruits</span> <span class="pre">ALPHA</span> <span class="pre">GET</span> <span class="pre">*-price</span></code> 命令的执行过程</p>
+<img alt="_images/IMAGE_SORT_GET_PROCESS.png" src="_images/IMAGE_SORT_GET_PROCESS.png" />
+</section>
+<hr class="docutils" />
+<section id="id23">
+<h4>2. 获取散列中的键值<a class="headerlink" href="#id23" title="Link to this heading">¶</a></h4>
+<p>当 <code class="docutils literal notranslate"><span class="pre">pattern</span></code> 参数的值是一个包含 <code class="docutils literal notranslate"><span class="pre">*</span></code> 符号和 <code class="docutils literal notranslate"><span class="pre">-&gt;</span></code> 符号的字符串时，
+<code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令将使用 <code class="docutils literal notranslate"><span class="pre">-&gt;</span></code> 左边的字符串为散列名，
+<code class="docutils literal notranslate"><span class="pre">-&gt;</span></code> 右边的字符串为字段名，
+调用 <code class="docutils literal notranslate"><span class="pre">HGET</span></code> 命令，
+从散列里面获取指定字段的值。
+此外，
+用户传入的散列名还需要包含 <code class="docutils literal notranslate"><span class="pre">*</span></code> 符号，
+这个 <code class="docutils literal notranslate"><span class="pre">*</span></code> 符号将被替换成被排序的元素。</p>
+<hr class="docutils" />
+<p>表 11-3 储存着水果信息的散列</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>散列名</p></th>
+<th class="head"><p>散列中 <code class="docutils literal notranslate"><span class="pre">inventory</span></code> 字段的值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">apple-info</span></code></p></td>
+<td><p>“1000”</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">banana-info</span></code></p></td>
+<td><p>“300”</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">cherry-info</span></code></p></td>
+<td><p>“50”</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">dragon</span> <span class="pre">fruit-info</span></code></p></td>
+<td><p>“500”</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">mango-info</span></code></p></td>
+<td><p>“250”</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">watermelon-info</span></code></p></td>
+<td><p>“324”</p></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<p>举个例子，
+假设数据库里面储存着表 11-3 所示的 <code class="docutils literal notranslate"><span class="pre">apple-info</span></code> 、 <code class="docutils literal notranslate"><span class="pre">banana-info</span></code> 等散列，
+而这些散列的 <code class="docutils literal notranslate"><span class="pre">inventory</span></code> 键则储存着相应水果的存货量，
+那么我们可以通过执行以下命令，
+对 <code class="docutils literal notranslate"><span class="pre">fruits</span></code> 集合的各个元素进行排序，
+然后根据排序后的元素去获取各种水果的存货量：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SORT</span> <span class="n">fruits</span> <span class="n">ALPHA</span> <span class="n">GET</span> <span class="o">*-</span><span class="n">info</span><span class="o">-&gt;</span><span class="n">inventory</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;1000&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;300&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;50&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;500&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;250&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;324&quot;</span>
+</pre></div>
+</div>
+<p>这个 <code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令的执行过程可以分为以下三个步骤：</p>
+<ol class="arabic simple">
+<li><p>对 <code class="docutils literal notranslate"><span class="pre">fruits</span></code> 集合的各个元素进行排序，
+得出一个由 <code class="docutils literal notranslate"><span class="pre">&quot;apple&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;banana&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;cherry&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;dragon</span> <span class="pre">fruit&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;mango&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;watermelon&quot;</span></code> 组成的有序元素排列。</p></li>
+<li><p>将排序后的各个元素与 <code class="docutils literal notranslate"><span class="pre">*-info</span></code> 模式进行匹配和替换，
+得出散列名 <code class="docutils literal notranslate"><span class="pre">&quot;apple-info&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;banana-info&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;cherry-info&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;dragon</span> <span class="pre">fruit-info&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;mango-info&quot;</span></code> 和 <code class="docutils literal notranslate"><span class="pre">&quot;watermelon-info&quot;</span></code> 。</p></li>
+<li><p>使用 <code class="docutils literal notranslate"><span class="pre">HGET</span></code> 命令，
+从以上各个散列中取出 <code class="docutils literal notranslate"><span class="pre">inventory</span></code> 字段的值，
+并将这些值依次放入到结果列表里面，
+最后把结果列表返回给客户端。</p></li>
+</ol>
+<p>图 11-3 以图形方式展示了整个 <code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令的执行过程。</p>
+<hr class="docutils" />
+<p>图 11-3 <code class="docutils literal notranslate"><span class="pre">SORT</span> <span class="pre">fruits</span> <span class="pre">ALPHA</span> <span class="pre">GET</span> <span class="pre">*-info-&gt;inventory</span></code> 命令的执行过程</p>
+<img alt="_images/IMAGE_SORT_HASH_GET_PROCESS.png" src="_images/IMAGE_SORT_HASH_GET_PROCESS.png" />
+</section>
+<hr class="docutils" />
+<section id="id24">
+<h4>3. 获取被排序元素本身<a class="headerlink" href="#id24" title="Link to this heading">¶</a></h4>
+<p>当 <code class="docutils literal notranslate"><span class="pre">pattern</span></code> 参数的值是一个 <code class="docutils literal notranslate"><span class="pre">#</span></code> 符号时，
+<code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令将返回被排序的元素本身。</p>
+<p>因为 <code class="docutils literal notranslate"><span class="pre">SORT</span> <span class="pre">key</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">SORT</span> <span class="pre">key</span> <span class="pre">GET</span> <span class="pre">#</span></code> 命令返回的是完全相同的结果，
+所以单独使用 <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">#</span></code> 并没有任何实际作用：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SORT</span> <span class="n">fruits</span> <span class="n">ALPHA</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;apple&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;banana&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;cherry&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;dragon fruit&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;mango&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;watermelon&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SORT</span> <span class="n">fruits</span> <span class="n">ALPHA</span> <span class="n">GET</span> <span class="c1">#    -- 与上一个命令的结果完全相同</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;apple&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;banana&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;cherry&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;dragon fruit&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;mango&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;watermelon&quot;</span>
+</pre></div>
+</div>
+<p>因此，
+我们一般只会在同时使用多个 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 选项时，
+才使用 <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">#</span></code> 获取被排序的元素。
+比如说，
+以下代码就展示了如何在对水果进行排序的同时，
+获取水果的价格和库存量：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SORT</span> <span class="n">fruits</span> <span class="n">ALPHA</span> <span class="n">GET</span> <span class="c1"># GET *-price GET *-info-&gt;inventory</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;apple&quot;</span>    <span class="o">--</span> <span class="n">水果</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;8.5&quot;</span>      <span class="o">--</span> <span class="n">价格</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;1000&quot;</span>     <span class="o">--</span> <span class="n">库存量</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;banana&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;4.5&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;300&quot;</span>
+<span class="mi">7</span><span class="p">)</span> <span class="s2">&quot;cherry&quot;</span>
+<span class="mi">8</span><span class="p">)</span> <span class="s2">&quot;7&quot;</span>
+<span class="mi">9</span><span class="p">)</span> <span class="s2">&quot;50&quot;</span>
+<span class="mi">10</span><span class="p">)</span> <span class="s2">&quot;dragon fruit&quot;</span>
+<span class="mi">11</span><span class="p">)</span> <span class="s2">&quot;6&quot;</span>
+<span class="mi">12</span><span class="p">)</span> <span class="s2">&quot;500&quot;</span>
+<span class="mi">13</span><span class="p">)</span> <span class="s2">&quot;mango&quot;</span>
+<span class="mi">14</span><span class="p">)</span> <span class="s2">&quot;5&quot;</span>
+<span class="mi">15</span><span class="p">)</span> <span class="s2">&quot;250&quot;</span>
+<span class="mi">16</span><span class="p">)</span> <span class="s2">&quot;watermelon&quot;</span>
+<span class="mi">17</span><span class="p">)</span> <span class="s2">&quot;3.5&quot;</span>
+<span class="mi">18</span><span class="p">)</span> <span class="s2">&quot;324&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="id25">
+<h3>使用外部键的值作为排序权重<a class="headerlink" href="#id25" title="Link to this heading">¶</a></h3>
+<p>在默认情况下，
+<code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令将使用被排序元素本身作为排序权重，
+但在有需要时，
+用户可以通过可选的 <code class="docutils literal notranslate"><span class="pre">BY</span></code> 选项，
+指定其他键的值作为排序的权重：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SORT</span> <span class="n">key</span> <span class="p">[</span><span class="n">BY</span> <span class="n">pattern</span><span class="p">]</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">pattern</span></code> 参数的值既可以是包含 <code class="docutils literal notranslate"><span class="pre">*</span></code> 符号的字符串，
+也可以是包含 <code class="docutils literal notranslate"><span class="pre">*</span></code> 符号和 <code class="docutils literal notranslate"><span class="pre">-&gt;</span></code> 符号的字符串，
+这两种值的作用和效果跟它们在 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 选项时的作用和效果一样：
+前者用于获取字符串键的值，
+而后者则用于从散列里面获取指定字段的值。</p>
+<p>举个例子，
+通过执行以下命令，
+我们可以使用储存在字符串键里面的水果价格作为权重，
+对水果进行排序：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SORT</span> <span class="n">fruits</span> <span class="n">BY</span> <span class="o">*-</span><span class="n">price</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;watermelon&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;banana&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;mango&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;dragon fruit&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;cherry&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;apple&quot;</span>
+</pre></div>
+</div>
+<p>因为上面这个排序结果只展示了水果的名字，
+却没有展示水果的价格，
+所以这个排序结果并没有清楚地展示水果的名字和价格之间的关系。
+相反地，
+如果我们在使用 <code class="docutils literal notranslate"><span class="pre">BY</span></code> 选项的同时，
+使用两个 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 选项去获取水果的名字以及价格，
+那么就能够直观地看出水果是按照价格进行排序的了：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SORT</span> <span class="n">fruits</span> <span class="n">BY</span> <span class="o">*-</span><span class="n">price</span> <span class="n">GET</span> <span class="c1"># GET *-price</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;watermelon&quot;</span>  <span class="o">--</span> <span class="n">水果的名字</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;3.5&quot;</span>         <span class="o">--</span> <span class="n">水果的价格</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;banana&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;4.5&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;mango&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;5&quot;</span>
+<span class="mi">7</span><span class="p">)</span> <span class="s2">&quot;dragon fruit&quot;</span>
+<span class="mi">8</span><span class="p">)</span> <span class="s2">&quot;6&quot;</span>
+<span class="mi">9</span><span class="p">)</span> <span class="s2">&quot;cherry&quot;</span>
+<span class="mi">10</span><span class="p">)</span> <span class="s2">&quot;7&quot;</span>
+<span class="mi">11</span><span class="p">)</span> <span class="s2">&quot;apple&quot;</span>
+<span class="mi">12</span><span class="p">)</span> <span class="s2">&quot;8.5&quot;</span>
+</pre></div>
+</div>
+<p>同样地，
+我们还可以通过执行以下命令，
+使用散列中记录的库存量作为权重，
+对水果进行排序并获取它们的库存量：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SORT</span> <span class="n">fruits</span> <span class="n">BY</span> <span class="o">*-</span><span class="n">info</span><span class="o">-&gt;</span><span class="n">inventory</span> <span class="n">GET</span> <span class="c1"># GET *-info-&gt;inventory</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;cherry&quot;</span>  <span class="o">--</span> <span class="n">水果的名字</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;50&quot;</span>      <span class="o">--</span> <span class="n">水果的库存量</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;mango&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;250&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;banana&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;300&quot;</span>
+<span class="mi">7</span><span class="p">)</span> <span class="s2">&quot;watermelon&quot;</span>
+<span class="mi">8</span><span class="p">)</span> <span class="s2">&quot;324&quot;</span>
+<span class="mi">9</span><span class="p">)</span> <span class="s2">&quot;dragon fruit&quot;</span>
+<span class="mi">10</span><span class="p">)</span> <span class="s2">&quot;500&quot;</span>
+<span class="mi">11</span><span class="p">)</span> <span class="s2">&quot;apple&quot;</span>
+<span class="mi">12</span><span class="p">)</span> <span class="s2">&quot;1000&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id26">
+<h3>保存排序结果<a class="headerlink" href="#id26" title="Link to this heading">¶</a></h3>
+<p>在默认情况下，
+<code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令会直接将排序结果返回给客户端，
+但如果用户有需要的话，
+也可以通过可选的 <code class="docutils literal notranslate"><span class="pre">STORE</span></code> 选项，
+以列表形式将排序结果储存到指定的键里面：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SORT</span> <span class="n">key</span> <span class="p">[</span><span class="n">STORE</span> <span class="n">destination</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>如果用户给定的 <code class="docutils literal notranslate"><span class="pre">destination</span></code> 键已经存在，
+那么 <code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令会先移除该键，
+然后再储存排序结果。
+带有 <code class="docutils literal notranslate"><span class="pre">STORE</span></code> 选项的 <code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令在成功执行之后将返回被储存的元素数量作为结果。</p>
+<p>作为例子，
+以下代码展示了如何将排序 <code class="docutils literal notranslate"><span class="pre">fruits</span></code> 集合所得的结果储存到 <code class="docutils literal notranslate"><span class="pre">sorted-fruits</span></code> 列表里面：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SORT</span> <span class="n">fruits</span> <span class="n">ALPHA</span> <span class="n">STORE</span> <span class="nb">sorted</span><span class="o">-</span><span class="n">fruits</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">6</span>    <span class="o">--</span> <span class="n">有六个已排序元素被储存了</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="nb">sorted</span><span class="o">-</span><span class="n">fruits</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span>    <span class="o">--</span> <span class="n">查看排序结果</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;apple&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;banana&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;cherry&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;dragon fruit&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;mango&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;watermelon&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id27">
+<h3>其他信息<a class="headerlink" href="#id27" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>平均复杂度</p></td>
+<td><p>O(N*log(N)+M) ，其中 N 为被排序元素的数量，而 M 则为命令返回的元素数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令从 Redis 1.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="exists">
+<h2>EXISTS：检查给定键是否存在<a class="headerlink" href="#exists" title="Link to this heading">¶</a></h2>
+<p>用户可以通过使用 <code class="docutils literal notranslate"><span class="pre">EXISTS</span></code> 命令，
+检查给定的一个或多个键是否存在于当前正在使用的数据库里面：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">EXISTS</span> <span class="n">key</span> <span class="p">[</span><span class="n">key</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">EXISTS</span></code> 命令将返回存在的给定键数量作为返回值。</p>
+<p>通过将多个键传递给 <code class="docutils literal notranslate"><span class="pre">EXISTS</span></code> 命令，
+我们可以判断出，
+在给定的键里面，
+有多少个键是实际存在的。
+举个例子，
+通过执行以下命令，
+我们可以知道 <code class="docutils literal notranslate"><span class="pre">k1</span></code> 、 <code class="docutils literal notranslate"><span class="pre">k2</span></code> 和 <code class="docutils literal notranslate"><span class="pre">k3</span></code> 这三个给定键当中，
+只有两个键是存在的：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">EXISTS</span> <span class="n">k1</span> <span class="n">k2</span> <span class="n">k3</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2</span>
+</pre></div>
+</div>
+<p>另一方面，
+如果我们只想要确认某个键是否存在，
+那么只需要将那个键传递给 <code class="docutils literal notranslate"><span class="pre">EXISTS</span></code> 命令即可：
+命令返回 <code class="docutils literal notranslate"><span class="pre">0</span></code> 表示该键不存在，
+而返回 <code class="docutils literal notranslate"><span class="pre">1</span></code> 则表示该键存在。</p>
+<p>比如说，
+通过执行以下命令，
+我们可以知道键 <code class="docutils literal notranslate"><span class="pre">k3</span></code> 并不存在于数据库：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">EXISTS</span> <span class="n">k3</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<section id="id28">
+<h3>只能接受单个键的 <code class="docutils literal notranslate"><span class="pre">EXISTS</span></code> 命令<a class="headerlink" href="#id28" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">EXISTS</span></code> 命令从 Redis 3.0.3 版本开始接受多个键作为输入，
+在此前的版本中，
+<code class="docutils literal notranslate"><span class="pre">EXISTS</span></code> 命令只能接受单个键作为输入：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">EXISTS</span> <span class="n">key</span>
+</pre></div>
+</div>
+<p>旧版的 <code class="docutils literal notranslate"><span class="pre">EXISTS</span></code> 命令在键存在时返回 <code class="docutils literal notranslate"><span class="pre">1</span></code> ，
+不存在时返回 <code class="docutils literal notranslate"><span class="pre">0</span></code> 。</p>
+</section>
+<section id="id29">
+<h3>其他信息<a class="headerlink" href="#id29" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>Redis 3.0.3 版本以前，
+只能接受单个键作为输入的 <code class="docutils literal notranslate"><span class="pre">EXISTS</span></code> 命令的复杂度为 O(1) ；
+Redis 3.0.3 及以上版本，
+能够接受多个键作为输入的 <code class="docutils literal notranslate"><span class="pre">EXISTS</span></code> 命令的复杂度为 O(N) ，
+其中 N 为用户给定的键数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">EXISTS</span></code> 命令从 Redis 1.0.0 版本开始可用，
+但只有 Redis 3.0.3 及以上版本才能接受多个键作为输入，
+此前的版本只能接受单个键作为输入。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="dbsize">
+<h2>DBSIZE：获取数据库包含的键值对数量<a class="headerlink" href="#dbsize" title="Link to this heading">¶</a></h2>
+<p>用户可以通过执行 <code class="docutils literal notranslate"><span class="pre">DBSIZE</span></code> 命令来获知当前使用的数据库包含了多少个键值对：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DBSIZE</span>
+</pre></div>
+</div>
+<p>比如在以下这个例子中，
+我们就通过执行 <code class="docutils literal notranslate"><span class="pre">DBSIZE</span></code> 获知数据库目前包含了六个键值对：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">DBSIZE</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">6</span>
+</pre></div>
+</div>
+<section id="id30">
+<h3>其他信息<a class="headerlink" href="#id30" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">DBSIZE</span></code> 命令从 Redis 1.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="type">
+<h2>TYPE：查看键的类型<a class="headerlink" href="#type" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">TYPE</span></code> 命令允许我们查看给定键的类型：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">TYPE</span> <span class="n">key</span>
+</pre></div>
+</div>
+<p>举个例子，
+如果我们对一个字符串键执行 <code class="docutils literal notranslate"><span class="pre">TYPE</span></code> 命令，
+那么命令将告知我们，
+这个键是一个字符串键：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">msg</span>
+<span class="s2">&quot;hello world&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">TYPE</span> <span class="n">msg</span>
+<span class="n">string</span>
+</pre></div>
+</div>
+<p>又比如说，
+如果我们对一个集合键执行 <code class="docutils literal notranslate"><span class="pre">TYPE</span></code> 命令，
+那么命令将告知我们，
+这个键是一个集合键：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">fruits</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;banana&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;cherry&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;apple&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">TYPE</span> <span class="n">fruits</span>
+<span class="nb">set</span>
+</pre></div>
+</div>
+<p>表 11-4 列出了 <code class="docutils literal notranslate"><span class="pre">TYPE</span></code> 命令在面对不同类型的键时返回的各项结果。</p>
+<hr class="docutils" />
+<p>表 11-4 <code class="docutils literal notranslate"><span class="pre">TYPE</span></code> 命令在面对不同类型的键时返回的各项结果</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>键类型</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">TYPE</span></code> 命令的返回值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>字符串键</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>散列键</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">hash</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>列表键</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">list</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>集合键</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">set</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>有序集合键</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">zset</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>HyperLogLog</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>位图</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">string</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>地理位置</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">zset</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>流</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">stream</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<p>在这个表格里面，
+<code class="docutils literal notranslate"><span class="pre">TYPE</span></code> 命令对于字符串键、散列键、列表键、集合键和流键的返回结果都非常直观，
+不过它对于之后几种类型的键的返回结果则需要做进一步解释：</p>
+<ul class="simple">
+<li><p>因为所有有序集合命令 ——
+比如 <code class="docutils literal notranslate"><span class="pre">ZADD</span></code> 、 <code class="docutils literal notranslate"><span class="pre">ZREM</span></code> 、 <code class="docutils literal notranslate"><span class="pre">ZSCORE</span></code> 等等 ——
+都是以 z 为前缀命名的，
+所以有序集合也被称为 zset 。
+因此 <code class="docutils literal notranslate"><span class="pre">TYPE</span></code> 命令在接收到有序集合键作为输入时，
+将返回 <code class="docutils literal notranslate"><span class="pre">zset</span></code> 作为结果。</p></li>
+<li><p>因为 HyperLogLog 和位图这两种键在底层都是通过字符串键来实现的，
+所以 <code class="docutils literal notranslate"><span class="pre">TYPE</span></code> 命令对于这两种键将返回 <code class="docutils literal notranslate"><span class="pre">string</span></code> 作为结果。</p></li>
+<li><p>跟 HyperLogLog 和位图的情况类似，
+因为地理位置键使用了有序集合键作为底层实现，
+所以 <code class="docutils literal notranslate"><span class="pre">TYPE</span></code> 命令对于地理位置键将返回 <code class="docutils literal notranslate"><span class="pre">zset</span></code> 作为结果。</p></li>
+</ul>
+<section id="id31">
+<h3>其他信息<a class="headerlink" href="#id31" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">TYPE</span></code> 命令从 Redis 1.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id32">
+<h2>示例：数据库取样程序<a class="headerlink" href="#id32" title="Link to this heading">¶</a></h2>
+<p>在使用 Redis 的过程中，
+我们可能会想要知道 Redis 数据库中各种键的类型分布状况：
+比如说，
+我们可能会想要知道数据库里面有多少个字符串键、有多少个列表键、有多少个散列键，
+以及这些键在数据库键的总数量中占多少个百分比。</p>
+<p>代码清单 11-2 展示了一个能够计算出以上信息的数据库取样程序。
+<code class="docutils literal notranslate"><span class="pre">DbSampler</span></code> 程序会对数据库进行迭代，
+使用 <code class="docutils literal notranslate"><span class="pre">TYPE</span></code> 命令获取被迭代键的类型并对不同类型的键实施计数，
+最终在迭代完整个数据库之后，
+打印出相应的取样结果。</p>
+<hr class="docutils" />
+<p>代码清单 11-2 数据库取样程序：<code class="docutils literal notranslate"><span class="pre">/database/db_sampler.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">type_sample_result</span><span class="p">(</span><span class="n">type_name</span><span class="p">,</span> <span class="n">type_counter</span><span class="p">,</span> <span class="n">db_size</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">: </span><span class="si">{1}</span><span class="s2"> keys, </span><span class="si">{2}% o</span><span class="s2">f the total.&quot;</span>
+    <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">type_name</span><span class="p">,</span> <span class="n">type_counter</span><span class="p">,</span> <span class="n">type_counter</span><span class="o">*</span><span class="mf">100.0</span><span class="o">/</span><span class="n">db_size</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">DbSampler</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+
+    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># 键类型计数器</span>
+        <span class="n">type_counter</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;string&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;list&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;hash&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;set&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;zset&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;stream&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="c1"># 遍历整个数据库</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">scan_iter</span><span class="p">():</span>
+            <span class="c1"># 获取键的类型</span>
+            <span class="nb">type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">type</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="c1"># 对相应的类型计数器执行加一操作</span>
+            <span class="n">type_counter</span><span class="p">[</span><span class="nb">type</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># 获取数据库大小</span>
+        <span class="n">db_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">dbsize</span><span class="p">()</span>
+
+        <span class="c1"># 打印结果</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sampled </span><span class="si">{0}</span><span class="s2"> keys.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">db_size</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">type_sample_result</span><span class="p">(</span><span class="s2">&quot;String&quot;</span><span class="p">,</span> <span class="n">type_counter</span><span class="p">[</span><span class="s2">&quot;string&quot;</span><span class="p">],</span> <span class="n">db_size</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">type_sample_result</span><span class="p">(</span><span class="s2">&quot;List&quot;</span><span class="p">,</span> <span class="n">type_counter</span><span class="p">[</span><span class="s2">&quot;list&quot;</span><span class="p">],</span> <span class="n">db_size</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">type_sample_result</span><span class="p">(</span><span class="s2">&quot;Hash&quot;</span><span class="p">,</span> <span class="n">type_counter</span><span class="p">[</span><span class="s2">&quot;hash&quot;</span><span class="p">],</span> <span class="n">db_size</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">type_sample_result</span><span class="p">(</span><span class="s2">&quot;Set&quot;</span><span class="p">,</span> <span class="n">type_counter</span><span class="p">[</span><span class="s2">&quot;set&quot;</span><span class="p">],</span> <span class="n">db_size</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">type_sample_result</span><span class="p">(</span><span class="s2">&quot;SortedSet&quot;</span><span class="p">,</span> <span class="n">type_counter</span><span class="p">[</span><span class="s2">&quot;zset&quot;</span><span class="p">],</span> <span class="n">db_size</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">type_sample_result</span><span class="p">(</span><span class="s2">&quot;Stream&quot;</span><span class="p">,</span> <span class="n">type_counter</span><span class="p">[</span><span class="s2">&quot;stream&quot;</span><span class="p">],</span> <span class="n">db_size</span><span class="p">))</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>以下代码展示了这个数据库取样程序的使用方法：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">create_random_type_keys</span> <span class="kn">import</span> <span class="n">create_random_type_keys</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">db_sampler</span> <span class="kn">import</span> <span class="n">DbSampler</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">create_random_type_keys</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>  <span class="c1"># 创建 1000 个类型随机的键</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sampler</span> <span class="o">=</span> <span class="n">DbSampler</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sampler</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+<span class="go">Sampled 1000 keys.</span>
+<span class="go">String: 179 keys, 17.9% of the total.</span>
+<span class="go">List: 155 keys, 15.5% of the total.</span>
+<span class="go">Hash: 172 keys, 17.2% of the total.</span>
+<span class="go">Set: 165 keys, 16.5% of the total.</span>
+<span class="go">SortedSet: 161 keys, 16.1% of the total.</span>
+<span class="go">Stream: 168 keys, 16.8% of the total.</span>
+</pre></div>
+</div>
+<p>可以看到，
+取样程序遍历了数据库中的一千个键，
+然后打印出了不同类型键的具体数量以及它们在整个数据库中所占的百分比。</p>
+<p>为了演示方便，
+上面的代码使用了 <code class="docutils literal notranslate"><span class="pre">create_random_type_keys()</span></code> 函数来创建出指定数量的类型随机键，
+代码清单 11-3 展示了这个函数的具体定义。</p>
+<hr class="docutils" />
+<p>代码清单 11-3 随机键生成程序：<code class="docutils literal notranslate"><span class="pre">/database/create_random_type_keys.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">random</span>
+
+<span class="k">def</span> <span class="nf">create_random_type_keys</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    在数据库中创建指定数量的类型随机键。</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number</span><span class="p">):</span>
+        <span class="c1"># 构建键名</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;key:</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="c1"># 从六个键创建函数中随机选择一个</span>
+        <span class="n">create_key_func</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span>
+            <span class="n">create_string</span><span class="p">,</span> 
+            <span class="n">create_hash</span><span class="p">,</span> 
+            <span class="n">create_list</span><span class="p">,</span> 
+            <span class="n">create_set</span><span class="p">,</span> 
+            <span class="n">create_zset</span><span class="p">,</span> 
+            <span class="n">create_stream</span>
+        <span class="p">])</span>
+        <span class="c1"># 实际地创建键</span>
+        <span class="n">create_key_func</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">create_string</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">create_hash</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">hset</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">create_list</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">rpush</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">create_set</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">sadd</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">create_zset</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">zadd</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">})</span>
+
+<span class="k">def</span> <span class="nf">create_stream</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">xadd</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">})</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="renamerenamenx">
+<h2>RENAME、RENAMENX：修改键名<a class="headerlink" href="#renamerenamenx" title="Link to this heading">¶</a></h2>
+<p>Redis 提供了 <code class="docutils literal notranslate"><span class="pre">RENAME</span></code> 命令，
+用户可以使用这个命令对键的名字进行修改：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">RENAME</span> <span class="n">origin</span> <span class="n">new</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">RENAME</span></code> 命令在执行成功时将返回 <code class="docutils literal notranslate"><span class="pre">OK</span></code> 作为结果。</p>
+<p>作为例子，
+以下代码展示了如何将键 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 改名为键 <code class="docutils literal notranslate"><span class="pre">message</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">msg</span>
+<span class="s2">&quot;hello world&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RENAME</span> <span class="n">msg</span> <span class="n">message</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">msg</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>  <span class="o">--</span> <span class="n">原来的键在改名之后已经不复存在</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">message</span>
+<span class="s2">&quot;hello world&quot;</span>  <span class="o">--</span> <span class="n">访问改名之后的新键</span>
+</pre></div>
+</div>
+<section id="id33">
+<h3>覆盖已存在的键<a class="headerlink" href="#id33" title="Link to this heading">¶</a></h3>
+<p>如果用户指定的新键名已经被占用，
+那么 <code class="docutils literal notranslate"><span class="pre">RENAME</span></code> 命令会先移除占用了新键名的那个键，
+然后再执行改名操作。</p>
+<p>在以下这个例子中，
+键 <code class="docutils literal notranslate"><span class="pre">k1</span></code> 和键 <code class="docutils literal notranslate"><span class="pre">k2</span></code> 都存在，
+如果我们使用 <code class="docutils literal notranslate"><span class="pre">RENAME</span></code> 命令将键 <code class="docutils literal notranslate"><span class="pre">k1</span></code> 改名为键 <code class="docutils literal notranslate"><span class="pre">k2</span></code> ，
+那么原来的键 <code class="docutils literal notranslate"><span class="pre">k2</span></code> 将被移除：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">k1</span> <span class="n">v1</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">k2</span> <span class="n">v2</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RENAME</span> <span class="n">k1</span> <span class="n">k2</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">k2</span>
+<span class="s2">&quot;v1&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id34">
+<h3>只在新键名尚未被占用的情况下进行改名<a class="headerlink" href="#id34" title="Link to this heading">¶</a></h3>
+<p>除了 <code class="docutils literal notranslate"><span class="pre">RENAME</span></code> 命令之外，
+Redis 还提供了 <code class="docutils literal notranslate"><span class="pre">RENAMENX</span></code> 命令。
+<code class="docutils literal notranslate"><span class="pre">RENAMENX</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">RENAME</span></code> 命令一样，
+都可以对键进行改名，
+但 <code class="docutils literal notranslate"><span class="pre">RENAMENX</span></code> 命令只会在新键名尚未被占用的情况下进行改名，
+如果用户指定的新键名已经被占用，
+那么 <code class="docutils literal notranslate"><span class="pre">RENAMENX</span></code> 将放弃执行改名操作：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">RENAMENX</span> <span class="n">origin</span> <span class="n">new</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">RENAMENX</span></code> 命令在改名成功时返回 <code class="docutils literal notranslate"><span class="pre">1</span></code> ，
+失败时返回 <code class="docutils literal notranslate"><span class="pre">0</span></code> 。</p>
+<p>比如在以下例子中，
+因为键 <code class="docutils literal notranslate"><span class="pre">k2</span></code> 已经存在，
+所以尝试将键 <code class="docutils literal notranslate"><span class="pre">k1</span></code> 改名为 <code class="docutils literal notranslate"><span class="pre">k2</span></code> 将以失败告终：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">k1</span> <span class="n">v1</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">k2</span> <span class="n">v2</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RENAMENX</span> <span class="n">k1</span> <span class="n">k2</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>  <span class="o">--</span> <span class="n">改名失败</span>
+</pre></div>
+</div>
+<p>与此相反，
+因为键 <code class="docutils literal notranslate"><span class="pre">k3</span></code> 尚未存在，
+所以将键 <code class="docutils literal notranslate"><span class="pre">k1</span></code> 改名为键 <code class="docutils literal notranslate"><span class="pre">k3</span></code> 的操作可以成功执行：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">k3</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RENAMENX</span> <span class="n">k1</span> <span class="n">k3</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>  <span class="o">--</span> <span class="n">改名成功</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">k3</span>
+<span class="s2">&quot;v1&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">k1</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>  <span class="o">--</span> <span class="n">改名之后的</span> <span class="n">k1</span> <span class="n">已经不再存在</span>
+</pre></div>
+</div>
+</section>
+<section id="id35">
+<h3>其他信息<a class="headerlink" href="#id35" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">RENAME</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">RENAMENX</span></code> 命令都从 Redis 1.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="move">
+<h2>MOVE：将给定的键移动到另一个数据库<a class="headerlink" href="#move" title="Link to this heading">¶</a></h2>
+<p>用户可以使用 <code class="docutils literal notranslate"><span class="pre">MOVE</span></code> 命令，
+将一个键从当前数据库移动至目标数据库：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">MOVE</span> <span class="n">key</span> <span class="n">db</span>
+</pre></div>
+</div>
+<p>当 <code class="docutils literal notranslate"><span class="pre">MOVE</span></code> 命令成功将给定键从当前数据库移动至目标数据库时，
+命令返回 <code class="docutils literal notranslate"><span class="pre">1</span></code> ；
+如果给定键并不存在于当前数据库，
+又或者目标数据库里面存在与给定键同名的键，
+那么 <code class="docutils literal notranslate"><span class="pre">MOVE</span></code> 命令将不做动作，
+只返回 <code class="docutils literal notranslate"><span class="pre">0</span></code> 表示移动失败。</p>
+<p>作为例子，
+以下代码展示了怎样将 <code class="docutils literal notranslate"><span class="pre">0</span></code> 号数据库中的 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键移动到 <code class="docutils literal notranslate"><span class="pre">3</span></code> 号数据库：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">msg</span>         <span class="o">--</span> <span class="n">位于</span> <span class="mi">0</span> <span class="n">号数据库中的</span> <span class="n">msg</span> <span class="n">键</span>
+<span class="s2">&quot;This is a message from db 0.&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">MOVE</span> <span class="n">msg</span> <span class="mi">3</span>      <span class="o">--</span> <span class="n">将</span> <span class="n">msg</span> <span class="n">键移动到</span> <span class="mi">3</span> <span class="n">号数据库</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SELECT</span> <span class="mi">3</span>        <span class="o">--</span> <span class="n">切换至</span> <span class="mi">3</span> <span class="n">号数据库</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">msg</span>      <span class="o">--</span> <span class="n">获取被移动的</span> <span class="n">msg</span> <span class="n">键</span>
+<span class="s2">&quot;This is a message from db 0.&quot;</span>
+</pre></div>
+</div>
+<section id="id36">
+<h3>不覆盖同名键<a class="headerlink" href="#id36" title="Link to this heading">¶</a></h3>
+<p>当目标数据库存在与给定键同名的键时，
+<code class="docutils literal notranslate"><span class="pre">MOVE</span></code> 命令将放弃执行移动操作。</p>
+<p>举个例子，
+如果我们在 <code class="docutils literal notranslate"><span class="pre">0</span></code> 号数据库和 <code class="docutils literal notranslate"><span class="pre">5</span></code> 号数据库里面分别设置两个 <code class="docutils literal notranslate"><span class="pre">lucky_number</span></code> 键：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">lucky_number</span> <span class="mi">123456</span>    <span class="o">--</span> <span class="n">在</span> <span class="mi">0</span> <span class="n">号数据库设置</span> <span class="n">lucky_number</span> <span class="n">键</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SELECT</span> <span class="mi">5</span>                   <span class="o">--</span> <span class="n">切换至</span> <span class="mi">5</span> <span class="n">号数据库</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">lucky_number</span> <span class="mi">777</span>    <span class="o">--</span> <span class="n">在</span> <span class="mi">5</span> <span class="n">号数据库设置</span> <span class="n">lucky_number</span> <span class="n">键</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p>然后尝试将 <code class="docutils literal notranslate"><span class="pre">5</span></code> 号数据库的 <code class="docutils literal notranslate"><span class="pre">lucky_number</span></code> 键移动到 <code class="docutils literal notranslate"><span class="pre">0</span></code> 号数据库，
+那么这次移动操作将不会成功：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">&gt;</span> <span class="n">MOVE</span> <span class="n">lucky_number</span> <span class="mi">0</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+</pre></div>
+</div>
+</section>
+<section id="id37">
+<h3>其他信息<a class="headerlink" href="#id37" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">MOVE</span></code> 命令从 Redis 1.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="del">
+<h2>DEL：移除指定的键<a class="headerlink" href="#del" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令允许用户从当前正在使用的数据库里面移除指定的一个或多个键，
+以及与这些键相关联的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DEL</span> <span class="n">key</span> <span class="p">[</span><span class="n">key</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令将返回成功移除的键数量作为返回值。</p>
+<p>举个例子，
+假设我们想要移除数据库中的键 <code class="docutils literal notranslate"><span class="pre">k1</span></code> 和键 <code class="docutils literal notranslate"><span class="pre">k2</span></code> ，
+那么只需要执行以下命令即可：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">DEL</span> <span class="n">k1</span> <span class="n">k2</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2</span>    <span class="o">--</span> <span class="n">有两个键被移除了</span>
+</pre></div>
+</div>
+<p>另一方面，
+如果用户给定的键并不存在，
+那么 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令将不做动作：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">DEL</span> <span class="n">k3</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>    <span class="o">--</span> <span class="n">本次操作没有移除任何键</span>
+</pre></div>
+</div>
+<section id="id38">
+<h3>其他信息<a class="headerlink" href="#id38" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N) ，其中 N 为被移除键的数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令从 Redis 1.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="unlink">
+<h2>UNLINK：以异步方式移除指定的键<a class="headerlink" href="#unlink" title="Link to this heading">¶</a></h2>
+<p>在前面一节，
+我们介绍了如何使用 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令去移除指定的键，
+但这个命令实际上隐含着一个性能问题：
+因为 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令会以同步方式执行移除操作，
+所以如果待移除的键非常庞大又或者数量众多，
+那么服务器在执行移除操作的过程中就有可能会被阻塞。
+比如说，
+移除一个包含上百万个元素的集合，
+移除一个包含数十万个键值对的散列，
+又或者一次移除成千上万个键，
+都有可能会引起服务器阻塞。</p>
+<p>为了解决这个问题，
+Redis 从 4.0 版本开始新添加了一个 <code class="docutils literal notranslate"><span class="pre">UNLINK</span></code> 命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">UNLINK</span> <span class="n">key</span> <span class="p">[</span><span class="n">key</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">UNLINK</span></code> 命令跟 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令一样，
+都可以用于移除指定的键，
+但它跟 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令的区别在于，
+当用户调用 <code class="docutils literal notranslate"><span class="pre">UNLINK</span></code> 命令去移除一个数据库键的时候，
+<code class="docutils literal notranslate"><span class="pre">UNLINK</span></code> 只会在数据库里面移除对该键的引用（reference），
+而对键的实际移除操作则会交给后台线程执行，
+因此 <code class="docutils literal notranslate"><span class="pre">UNLINK</span></code> 命令将不会造成服务器阻塞。</p>
+<p>跟 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令一样，
+<code class="docutils literal notranslate"><span class="pre">UNLINK</span></code> 命令也会返回被移除键的数量作为结果。
+此外，
+由于兼容方面的原因，
+Redis 将在提供异步移除操作 <code class="docutils literal notranslate"><span class="pre">UNLINK</span></code> 命令的同时，
+继续提供同步移除操作 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令。</p>
+<p>以下是一个使用 <code class="docutils literal notranslate"><span class="pre">UNLINK</span></code> 命令的例子：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">MGET</span> <span class="n">k1</span> <span class="n">k2</span> <span class="n">k3</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;v1&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;v2&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;v3&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">UNLINK</span> <span class="n">k1</span> <span class="n">k2</span> <span class="n">k3</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">MGET</span> <span class="n">k1</span> <span class="n">k2</span> <span class="n">k3</span>
+<span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+<span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="id39">
+<h3>其他信息<a class="headerlink" href="#id39" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N)，其中 N 为被移除键的数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">UNLINK</span></code> 命令从 Redis 4.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="flushdb">
+<h2>FLUSHDB：清空当前数据库<a class="headerlink" href="#flushdb" title="Link to this heading">¶</a></h2>
+<p>通过使用 <code class="docutils literal notranslate"><span class="pre">FLUSHDB</span></code> 命令，
+用户可以清空自己当前正在使用的数据库：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">FLUSHDB</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">FLUSHDB</span></code> 命令会遍历用户正在使用的数据库，
+移除其中包含的所有键值对，
+然后返回 <code class="docutils literal notranslate"><span class="pre">OK</span></code> 表示数据库已被清空。</p>
+<section id="async">
+<h3><code class="docutils literal notranslate"><span class="pre">async</span></code> 选项<a class="headerlink" href="#async" title="Link to this heading">¶</a></h3>
+<p>跟 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令一样，
+<code class="docutils literal notranslate"><span class="pre">FLUSHDB</span></code> 命令也是一个同步移除命令，
+并且因为 <code class="docutils literal notranslate"><span class="pre">FLUSHDB</span></code> 移除的是整个数据库而不是单个键，
+所以它常常会引发比 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令更为严重的服务器阻塞现象。</p>
+<p>为了解决这个问题，
+Redis 4.0 给 <code class="docutils literal notranslate"><span class="pre">FLUSHDB</span></code> 命令新添加了一个 <code class="docutils literal notranslate"><span class="pre">async</span></code> 选项：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">FLUSHDB</span> <span class="k">async</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p>如果用户在调用 <code class="docutils literal notranslate"><span class="pre">FLUSHDB</span></code> 命令时使用了 <code class="docutils literal notranslate"><span class="pre">async</span></code> 选项，
+那么实际的数据库清空操作将放在后台线程里面以异步方式进行，
+这样一来 <code class="docutils literal notranslate"><span class="pre">FLUSHDB</span></code> 命令就不会再阻塞服务器了。</p>
+</section>
+<section id="id40">
+<h3>其他信息<a class="headerlink" href="#id40" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N），其中 N 为被清空数据库包含的键值对数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p>不带任何选项的 <code class="docutils literal notranslate"><span class="pre">FLUSHDB</span></code> 命令从 Redis 1.0.0 版本开始可用，
+带有 <code class="docutils literal notranslate"><span class="pre">async</span></code> 选项的 <code class="docutils literal notranslate"><span class="pre">FLUSHDB</span></code> 命令从 Redis 4.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="flushall">
+<h2>FLUSHALL：清空所有数据库<a class="headerlink" href="#flushall" title="Link to this heading">¶</a></h2>
+<p>通过使用 <code class="docutils literal notranslate"><span class="pre">FLUSHALL</span></code> 命令，
+用户可以清空 Redis 服务器包含的所有数据库：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">FLUSHALL</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">FLUSHALL</span></code> 命令会遍历服务器包含的所有数据库，
+并移除其中包含的所有键值对，
+然后返回 <code class="docutils literal notranslate"><span class="pre">OK</span></code> 表示所有数据库均已被清空。</p>
+<section id="id41">
+<h3><code class="docutils literal notranslate"><span class="pre">async</span></code> 选项<a class="headerlink" href="#id41" title="Link to this heading">¶</a></h3>
+<p>跟 <code class="docutils literal notranslate"><span class="pre">FLUSHDB</span></code> 命令一样，
+以同步方式执行的 <code class="docutils literal notranslate"><span class="pre">FLUSHALL</span></code> 命令也可能会导致服务器阻塞，
+因此 Redis 4.0 也给 <code class="docutils literal notranslate"><span class="pre">FLUSHALL</span></code> 命令添加了同样的 <code class="docutils literal notranslate"><span class="pre">async</span></code> 选项：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">FLUSHALL</span> <span class="k">async</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p>通过指定 <code class="docutils literal notranslate"><span class="pre">async</span></code> 选项，
+<code class="docutils literal notranslate"><span class="pre">FLUSHALL</span></code> 命令将以异步方式在后台线程里面执行所有实际的数据库清空操作，
+因此它将不会再阻塞服务器。</p>
+</section>
+<section id="id42">
+<h3>其他信息<a class="headerlink" href="#id42" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N) ，其中 N 为被清空的所有数据库包含的键值对总数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p>不带任何选项的 <code class="docutils literal notranslate"><span class="pre">FLUSHALL</span></code> 命令从 Redis 1.0.0 版本开始可用，
+带有 <code class="docutils literal notranslate"><span class="pre">async</span></code> 选项的 <code class="docutils literal notranslate"><span class="pre">FLUSHALL</span></code> 命令从 Redis 4.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="swapdb">
+<h2>SWAPDB：互换数据库<a class="headerlink" href="#swapdb" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">SWAPDB</span></code> 命令接受两个数据库号码作为输入，
+然后对指定的两个数据库实行互换，
+最后返回 <code class="docutils literal notranslate"><span class="pre">OK</span></code> 作为结果：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SWAPDB</span> <span class="n">x</span> <span class="n">y</span>
+</pre></div>
+</div>
+<p>在 <code class="docutils literal notranslate"><span class="pre">SWAPDB</span></code> 命令执行完毕之后，
+原本储存在数据库 <code class="docutils literal notranslate"><span class="pre">x</span></code> 中的键值对将出现在数据库 <code class="docutils literal notranslate"><span class="pre">y</span></code> 中，
+而原本储存在数据库 <code class="docutils literal notranslate"><span class="pre">y</span></code> 中的键值对将出现在数据库 <code class="docutils literal notranslate"><span class="pre">x</span></code> 中。</p>
+<p>举个例子，
+对于以下这个包含键 <code class="docutils literal notranslate"><span class="pre">k1</span></code> 、 <code class="docutils literal notranslate"><span class="pre">k2</span></code> 和 <code class="docutils literal notranslate"><span class="pre">k3</span></code> 的 0 号数据库：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">db0</span><span class="o">&gt;</span> <span class="n">KEYS</span> <span class="o">*</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;k3&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;k2&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;k1&quot;</span>
+</pre></div>
+</div>
+<p>以及以下这个包含键 <code class="docutils literal notranslate"><span class="pre">k4</span></code> 、 <code class="docutils literal notranslate"><span class="pre">k5</span></code> 和 <code class="docutils literal notranslate"><span class="pre">k6</span></code> 的 1 号数据库来说：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">db1</span><span class="o">&gt;</span> <span class="n">KEYS</span> <span class="o">*</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;k5&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;k4&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;k6&quot;</span>
+</pre></div>
+</div>
+<p>如果我们执行以下命令，
+对 0 号数据库和 1 号数据库实行互换：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">db0</span><span class="o">&gt;</span> <span class="n">SWAPDB</span> <span class="mi">0</span> <span class="mi">1</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p>那么在此之后，
+原本储存在 0 号数据库中的键 <code class="docutils literal notranslate"><span class="pre">k1</span></code> 、 <code class="docutils literal notranslate"><span class="pre">k2</span></code> 和 <code class="docutils literal notranslate"><span class="pre">k3</span></code> 将出现在 1 号数据库中：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">db1</span><span class="o">&gt;</span> <span class="n">KEYS</span> <span class="o">*</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;k3&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;k2&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;k1&quot;</span>
+</pre></div>
+</div>
+<p>而原本储存在 1 号数据库中的键 <code class="docutils literal notranslate"><span class="pre">k4</span></code> 、 <code class="docutils literal notranslate"><span class="pre">k5</span></code> 和 <code class="docutils literal notranslate"><span class="pre">k6</span></code> 将出现在 0 号数据库中：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">db0</span><span class="o">&gt;</span> <span class="n">KEYS</span> <span class="o">*</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;k5&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;k4&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;k6&quot;</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p>因为互换数据库这一操作可以通过调整指向数据库的指针来实现，
+这个过程不需要移动数据库中的任何键值对，
+所以 <code class="docutils literal notranslate"><span class="pre">SWAPDB</span></code> 命令的复杂度是 O(1) 而不是 O(N) ，
+并且执行这个命令也不会导致服务器阻塞。</p>
+</div>
+<section id="id43">
+<h3>其他信息<a class="headerlink" href="#id43" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SWAPDB</span></code> 命令从 Redis 4.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id44">
+<h2>示例：使用 SWAPDB 命令实行在线替换数据库<a class="headerlink" href="#id44" title="Link to this heading">¶</a></h2>
+<p>正如上一节所说，
+<code class="docutils literal notranslate"><span class="pre">SWAPDB</span></code> 命令可以以非阻塞方式互换给定的两个数据库。
+因为这个命令的执行速度是如此之快，
+并且完全不会阻塞服务器，
+所以用户实际上可以使用这个命令来实行在线的数据库替换操作。</p>
+<p>举个例子，
+假设我们拥有一个 Redis 服务器，
+它的 0 号数据库储存了用户的邮件地址以及经过加密的用户密码，
+这些数据可以用于登录用户账号。
+不幸的是，
+因为一次漏洞事故，
+这个服务器遭到了黑客入侵，
+并且经过确认，
+这个服务器储存的所有用户密码均已泄露。
+为了保障用户的信息安全，
+我们决定立即重置所有用户密码，
+具体的做法是：
+遍历所有用户的个人档案，
+为每个用户生成一个新的随机密码，
+并使用这个新密码替换已经泄露的旧密码。</p>
+<p>代码清单 11-4 展示了一个用于重置用户密码的脚本，
+它的 <code class="docutils literal notranslate"><span class="pre">reset_user_password()</span></code> 函数会迭代 <code class="docutils literal notranslate"><span class="pre">origin</span></code> 数据库中的所有用户数据，
+为他们生成新密码，
+并将更新后的用户信息储存到 <code class="docutils literal notranslate"><span class="pre">new</span></code> 数据库里面。
+在此之后，
+函数会使用 <code class="docutils literal notranslate"><span class="pre">SWAPDB</span></code> 命令互换新旧两个数据库，
+并以异步方式移除旧数据库。</p>
+<hr class="docutils" />
+<p>代码清单 11-4 用于重置用户密码的脚本代码：<code class="docutils literal notranslate"><span class="pre">/database/reset_user_password.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">random</span>
+
+<span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="kn">from</span> <span class="nn">hashlib</span> <span class="kn">import</span> <span class="n">sha256</span>
+
+<span class="k">def</span> <span class="nf">generate_new_password</span><span class="p">():</span>
+    <span class="n">random_string</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">getrandbits</span><span class="p">(</span><span class="mi">256</span><span class="p">))</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sha256</span><span class="p">(</span><span class="n">random_string</span><span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">reset_user_password</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span> <span class="n">new</span><span class="p">):</span>
+    <span class="c1"># 两个客户端，分别连接两个数据库</span>
+    <span class="n">origin_db</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">db</span><span class="o">=</span><span class="n">origin</span><span class="p">)</span>
+    <span class="n">new_db</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">db</span><span class="o">=</span><span class="n">new</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">origin_db</span><span class="o">.</span><span class="n">scan_iter</span><span class="p">(</span><span class="n">match</span><span class="o">=</span><span class="s2">&quot;user::*&quot;</span><span class="p">):</span>
+        <span class="c1"># 从源数据库获取现有用户信息</span>
+        <span class="n">user_data</span> <span class="o">=</span> <span class="n">origin_db</span><span class="o">.</span><span class="n">hgetall</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="c1"># 重置用户密码</span>
+        <span class="n">user_data</span><span class="p">[</span><span class="s2">&quot;password&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">generate_new_password</span><span class="p">()</span>
+        <span class="c1"># 将新的用户信息储存到新数据库里面</span>
+        <span class="n">new_db</span><span class="o">.</span><span class="n">hmset</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">user_data</span><span class="p">)</span>
+
+    <span class="c1"># 互换新旧数据库</span>
+    <span class="n">origin_db</span><span class="o">.</span><span class="n">swapdb</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span> <span class="n">new</span><span class="p">)</span>
+
+    <span class="c1"># 以异步方式移除旧数据库</span>
+    <span class="c1"># （new_db 变量现在已经指向旧数据库）</span>
+    <span class="n">new_db</span><span class="o">.</span><span class="n">flushdb</span><span class="p">(</span><span class="n">asynchronous</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>作为例子，
+表 11-5 和表 11-6 分别展示了设置新密码之前和之后的用户数据。
+注意，
+为了凸显新旧密码之间的区别，
+重置之前的用户密码是未经加密的。</p>
+<hr class="docutils" />
+<p>表 11-5 重置之前的用户数据</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>散列键名</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">email</span></code> 字段（邮箱地址）</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">password</span></code> 字段（未加密密码）</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>“user::54209”</p></td>
+<td><p>“<a class="reference external" href="mailto:peter&#37;&#52;&#48;spam&#46;mail">peter<span>&#64;</span>spam<span>&#46;</span>mail</a>”</p></td>
+<td><p>“petergogo128”</p></td>
+</tr>
+<tr class="row-odd"><td><p>“user::73914”</p></td>
+<td><p>“<a class="reference external" href="mailto:jack&#37;&#52;&#48;spam&#46;mail">jack<span>&#64;</span>spam<span>&#46;</span>mail</a>”</p></td>
+<td><p>“happyjack256”</p></td>
+</tr>
+<tr class="row-even"><td><p>“user::98321”</p></td>
+<td><p>“<a class="reference external" href="mailto:tom&#37;&#52;&#48;spam&#46;mail">tom<span>&#64;</span>spam<span>&#46;</span>mail</a>”</p></td>
+<td><p>“tomrocktheworld512”</p></td>
+</tr>
+<tr class="row-odd"><td><p>“user::39281”</p></td>
+<td><p>“<a class="reference external" href="mailto:mary&#37;&#52;&#48;spam&#46;mail">mary<span>&#64;</span>spam<span>&#46;</span>mail</a>”</p></td>
+<td><p>“maryisthebest1024”</p></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<p>表 11-6 重置之后的用户数据</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>散列键名</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">email</span></code> 字段（邮箱地址）</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">password</span></code> 字段（已加密密码）</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>“user::54209”</p></td>
+<td><p>“<a class="reference external" href="mailto:peter&#37;&#52;&#48;spam&#46;mail">peter<span>&#64;</span>spam<span>&#46;</span>mail</a>”</p></td>
+<td><p>“669a533168e4da2fce34…4d2af”</p></td>
+</tr>
+<tr class="row-odd"><td><p>“user::73914”</p></td>
+<td><p>“<a class="reference external" href="mailto:jack&#37;&#52;&#48;spam&#46;mail">jack<span>&#64;</span>spam<span>&#46;</span>mail</a>”</p></td>
+<td><p>“e0caf7fc1245fa13fb34…a18eb”</p></td>
+</tr>
+<tr class="row-even"><td><p>“user::98321”</p></td>
+<td><p>“<a class="reference external" href="mailto:tom&#37;&#52;&#48;spam&#46;mail">tom<span>&#64;</span>spam<span>&#46;</span>mail</a>”</p></td>
+<td><p>“1b9f3944bec47bed3527…388c1”</p></td>
+</tr>
+<tr class="row-odd"><td><p>“user::39281”</p></td>
+<td><p>“<a class="reference external" href="mailto:mary&#37;&#52;&#48;spam&#46;mail">mary<span>&#64;</span>spam<span>&#46;</span>mail</a>”</p></td>
+<td><p>“b7f6e3cd4ca27ac67851…75ccf”</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<hr class="docutils" />
+<section id="id45">
+<h2>重点回顾<a class="headerlink" href="#id45" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>所有 Redis 键，
+无论它们是什么类型，
+都会被储存到数据库里面。</p></li>
+<li><p>一个 Redis 服务器可以同时拥有多个数据库，
+每个数据库都拥有一个独立的命名空间。
+这也即是说，
+同名的键可以出现在不同数据库里面。</p></li>
+<li><p>在默认情况下，
+Redis 服务器在启动时将创建 16 个数据库，
+并使用数字 0 至 15 对其进行标识。</p></li>
+<li><p>因为 <code class="docutils literal notranslate"><span class="pre">KEYS</span></code> 命令在数据库包含大量键的时候可能会阻塞服务器，
+所以我们应该使用 <code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 命令来代替 <code class="docutils literal notranslate"><span class="pre">KEYS</span></code> 命令。</p></li>
+<li><p>通过使用 <code class="docutils literal notranslate"><span class="pre">SORT</span></code> 命令，
+我们可以以多种不同的方式，
+对储存在列表、集合以及有序集合里面的元素进行排序。</p></li>
+<li><p>因为 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令在移除体积较大或者数量众多的键时可能会导致服务器阻塞，
+所以我们应该使用异步移除命令 <code class="docutils literal notranslate"><span class="pre">UNLINK</span></code> 来代替 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令。</p></li>
+<li><p>用户在执行 <code class="docutils literal notranslate"><span class="pre">FLUSHDB</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">FLUSHALL</span></code> 命令时可以带上 <code class="docutils literal notranslate"><span class="pre">async</span></code> 选项，
+让这两个命令以异步方式执行，
+从而避免服务器阻塞。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SWAPDB</span></code> 命令可以在完全不阻塞服务器的情况下，
+对两个给定的数据库实行互换，
+因此这个命令可以用于实现在线的数据库替换操作。</p></li>
+</ul>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">数据库</a><ul>
+<li><a class="reference internal" href="#select">SELECT：切换至指定的数据库</a><ul>
+<li><a class="reference internal" href="#id2">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#keys">KEYS：获取所有与给定匹配符相匹配的键</a><ul>
+<li><a class="reference internal" href="#id3">全局匹配符</a></li>
+<li><a class="reference internal" href="#id4">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#scan">SCAN：以渐进方式迭代数据库中的键</a><ul>
+<li><a class="reference internal" href="#id5">一次简单的迭代示例</a></li>
+<li><a class="reference internal" href="#id6">SCAN 命令的迭代保证</a></li>
+<li><a class="reference internal" href="#id7">游标的使用</a></li>
+<li><a class="reference internal" href="#id8">迭代与给定匹配符相匹配的键</a></li>
+<li><a class="reference internal" href="#id9">指定返回键的期望数量</a></li>
+<li><a class="reference internal" href="#id10">数据结构迭代命令</a><ul>
+<li><a class="reference internal" href="#id11">1. 散列迭代命令</a></li>
+<li><a class="reference internal" href="#id12">2. 渐进式集合迭代命令</a></li>
+<li><a class="reference internal" href="#id13">3. 渐进式有序集合迭代命令</a></li>
+<li><a class="reference internal" href="#id14">4. 迭代命令的共通性质</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id15">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id16">示例：构建数据库迭代器</a></li>
+<li><a class="reference internal" href="#randomkey">RANDOMKEY：随机返回一个键</a><ul>
+<li><a class="reference internal" href="#id17">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#sort">SORT：对键的值进行排序</a><ul>
+<li><a class="reference internal" href="#id18">指定排序方式</a></li>
+<li><a class="reference internal" href="#id19">对字符串值进行排序</a></li>
+<li><a class="reference internal" href="#id20">只获取部分排序结果</a></li>
+<li><a class="reference internal" href="#id21">获取外部键的值作为结果</a><ul>
+<li><a class="reference internal" href="#id22">1. 获取字符串键的值</a></li>
+<li><a class="reference internal" href="#id23">2. 获取散列中的键值</a></li>
+<li><a class="reference internal" href="#id24">3. 获取被排序元素本身</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id25">使用外部键的值作为排序权重</a></li>
+<li><a class="reference internal" href="#id26">保存排序结果</a></li>
+<li><a class="reference internal" href="#id27">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#exists">EXISTS：检查给定键是否存在</a><ul>
+<li><a class="reference internal" href="#id28">只能接受单个键的 <code class="docutils literal notranslate"><span class="pre">EXISTS</span></code> 命令</a></li>
+<li><a class="reference internal" href="#id29">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#dbsize">DBSIZE：获取数据库包含的键值对数量</a><ul>
+<li><a class="reference internal" href="#id30">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#type">TYPE：查看键的类型</a><ul>
+<li><a class="reference internal" href="#id31">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id32">示例：数据库取样程序</a></li>
+<li><a class="reference internal" href="#renamerenamenx">RENAME、RENAMENX：修改键名</a><ul>
+<li><a class="reference internal" href="#id33">覆盖已存在的键</a></li>
+<li><a class="reference internal" href="#id34">只在新键名尚未被占用的情况下进行改名</a></li>
+<li><a class="reference internal" href="#id35">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#move">MOVE：将给定的键移动到另一个数据库</a><ul>
+<li><a class="reference internal" href="#id36">不覆盖同名键</a></li>
+<li><a class="reference internal" href="#id37">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#del">DEL：移除指定的键</a><ul>
+<li><a class="reference internal" href="#id38">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#unlink">UNLINK：以异步方式移除指定的键</a><ul>
+<li><a class="reference internal" href="#id39">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#flushdb">FLUSHDB：清空当前数据库</a><ul>
+<li><a class="reference internal" href="#async"><code class="docutils literal notranslate"><span class="pre">async</span></code> 选项</a></li>
+<li><a class="reference internal" href="#id40">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#flushall">FLUSHALL：清空所有数据库</a><ul>
+<li><a class="reference internal" href="#id41"><code class="docutils literal notranslate"><span class="pre">async</span></code> 选项</a></li>
+<li><a class="reference internal" href="#id42">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#swapdb">SWAPDB：互换数据库</a><ul>
+<li><a class="reference internal" href="#id43">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id44">示例：使用 SWAPDB 命令实行在线替换数据库</a></li>
+<li><a class="reference internal" href="#id45">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="set.html"
+                          title="Previous page">&larr; 集合（Set）</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="expire.html"
+                          title="Next page">&rarr; 自动过期</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>本页</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/database.rst.txt"
+            rel="nofollow">显示源代码</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">快速搜索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="提交" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="expire.html" title="自动过期"
+             >下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="set.html" title="集合（Set）"
+             >上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">数据库</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; 版权所有 2019, 黄健宏.
+      由 <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6创建。
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

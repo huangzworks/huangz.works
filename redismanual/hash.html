@@ -1,0 +1,2159 @@
+
+
+<!DOCTYPE html>
+
+<html lang="zh-CN" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>散列（Hash） &#8212; Redis使用手册</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" href="./" type="text/css" />
+    
+    <script src="_static/documentation_options.js?v=f115507d"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=beaddf03"></script>
+
+    
+    
+     
+        <script src="_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="_static/cloud.js"></script>
+    
+
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+    <link rel="next" title="列表（List）" href="list.html" />
+    <link rel="prev" title="字符串（String）" href="string.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="list.html" title="列表（List）"
+             accesskey="N">下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="string.html" title="字符串（String）"
+             accesskey="P">上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">散列（Hash）</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="hash">
+<h1>散列（Hash）<a class="headerlink" href="#hash" title="Link to this heading">¶</a></h1>
+<p>在前面的《字符串》一章中，
+我们曾经看到过如何使用多个字符串键去储存相关联的一组数据。
+比如在字符串键实现的文章储存程序中，
+程序就会为每篇文章创建四个字符串键，
+并把文章的标题、内容、作者和创建时间分别储存到这四个字符串键里面，
+图 3-1 就展示了一个使用字符串键储存文章数据的例子。</p>
+<hr class="docutils" />
+<p>图 3-1 使用多个字符串键储存文章</p>
+<img alt="_images/IMAGE_ARTICLE_IN_STRINGS.png" src="_images/IMAGE_ARTICLE_IN_STRINGS.png" />
+<hr class="docutils" />
+<p>使用多个字符串键储存相关联数据虽然在技术上是可行的，
+但是在实际应用中却并不是最有效的方法，
+这种储存方法至少存在以下三个问题：</p>
+<ul class="simple">
+<li><p>首先，
+程序每储存一组相关联的数据，
+就必须在数据库里面同时创建多个字符串键，
+这样的数据越多，
+数据库包含的键数量也会越多。
+数量庞大的键会对数据库某些操作的执行速度产生影响，
+并且维护这些键也会产生大量的资源消耗。</p></li>
+<li><p>其次，
+为了在数据库里面标识出相关联的字符串键，
+程序需要为它们加上相同的前缀，
+但键名实际上也是一种数据，
+储存键名也需要耗费内存空间，
+因此重复出现的键名前缀实际上导致很多内存空间被白白浪费了。
+此外，
+带前缀的键名还降低了键名的可读性，
+让人无法一眼看清键的真正用途，
+比如键名 <code class="docutils literal notranslate"><span class="pre">article::10086::author</span></code> 就远不如键名 <code class="docutils literal notranslate"><span class="pre">author</span></code> 简洁，
+而键名 <code class="docutils literal notranslate"><span class="pre">article::10086::title</span></code> 也远不如键名 <code class="docutils literal notranslate"><span class="pre">title</span></code> 来得简洁。</p></li>
+<li><p>最后，
+虽然程序在逻辑上会把带有相同前缀的字符串键看作是相关联的一组数据，
+但是在 Redis 看来，
+它们只不过是储存在同一个数据库中的不同字符串键而已。
+因此当程序需要处理一组相关联的数据时，
+它就必须对所有有关的字符串键都执行相同的操作。
+比如说，
+如果程序想要删除 ID 为 <code class="docutils literal notranslate"><span class="pre">10086</span></code> 的文章，
+那么它就必须把 <code class="docutils literal notranslate"><span class="pre">article::10086::title</span></code> 、 <code class="docutils literal notranslate"><span class="pre">article::10086::content</span></code> 等四个字符串键都删掉才行，
+这给文章的删除操作带来了额外的麻烦，
+并且还可能会因为漏删或者错删了某个键而发生错误。</p></li>
+</ul>
+<p>为了解决以上问题，
+我们需要一种能够真正地把相关联的数据打包起来储存的数据结构，
+而这种数据结构就是本章要介绍的散列键。</p>
+<section id="id1">
+<h2>散列简介<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>Redis 的散列键会将一个键和一个散列在数据库里面关联起来，
+用户可以在散列里面为任意多个字段（field）设置值。
+跟字符串键一样，
+散列的字段和值既可以是文本数据，
+也可以是二进制数据。</p>
+<p>通过使用散列键，
+用户可以把相关联的多项数据储存到同一个散列里面，
+以便对这些数据进行管理，
+又或者针对它们执行批量操作。
+比如图 3-2 就展示了一个使用散列储存文章数据的例子，
+在这个例子中，
+散列的键为 <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> ，
+而这个键对应的散列则包含了四个字段，
+其中：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;title&quot;</span></code> 字段储存着文章的标题 <code class="docutils literal notranslate"><span class="pre">&quot;greeting&quot;</span></code> ；</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;content&quot;</span></code> 字段储存着文章的内容 <code class="docutils literal notranslate"><span class="pre">&quot;hello</span> <span class="pre">world&quot;</span></code> ；</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;author&quot;</span></code> 字段储存着文章的作者名字 <code class="docutils literal notranslate"><span class="pre">&quot;peter&quot;</span></code> ；</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;create_at&quot;</span></code> 字段储存着文章的创建时间 <code class="docutils literal notranslate"><span class="pre">&quot;1442744762.631885&quot;</span></code> 。</p></li>
+</ul>
+<hr class="docutils" />
+<p>图 3-2 使用散列储存文章数据</p>
+<img alt="_images/IMAGE_HASH_EXAMPLE.png" src="_images/IMAGE_HASH_EXAMPLE.png" />
+<hr class="docutils" />
+<p>与之前使用字符串键储存文章数据的做法相比，
+使用散列储存文章数据只需要在数据库里面创建一个键，
+并且因为散列的字段名不需要添加任何前缀，
+所以它们可以直接反映字段值储存的是什么数据。</p>
+<p>Redis 为散列键提供了一系列操作命令，
+通过使用这些命令，
+用户可以：</p>
+<ul class="simple">
+<li><p>为散列的字段设置值，
+又或者只在字段不存在的情况下为它设置值。</p></li>
+<li><p>从散列里面获取给定字段的值。</p></li>
+<li><p>对储存着数字值的字段执行加法操作或者减法操作。</p></li>
+<li><p>检查给定字段是否存在于散列当中。</p></li>
+<li><p>从散列里面删除指定字段。</p></li>
+<li><p>查看散列包含的字段数量。</p></li>
+<li><p>一次为散列的多个字段设置值，
+又或者一次从散列里面获取多个字段的值。</p></li>
+<li><p>获取散列包含的所有字段、所有值又或者所有字段和值。</p></li>
+</ul>
+<p>本章接下来将对以上提到的散列操作进行介绍，
+说明如何使用这些操作去构建各种有用的应用程序，
+并在最后详细地说明散列键与字符串键之间的区别。</p>
+</section>
+<section id="hset">
+<h2>HSET：为字段设置值<a class="headerlink" href="#hset" title="Link to this heading">¶</a></h2>
+<p>用户可以通过执行 <code class="docutils literal notranslate"><span class="pre">HSET</span></code> 命令，
+为散列中的指定字段设置值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HSET</span> <span class="nb">hash</span> <span class="n">field</span> <span class="n">value</span>
+</pre></div>
+</div>
+<p>根据给定的字段是否已经存在于散列里面，
+<code class="docutils literal notranslate"><span class="pre">HSET</span></code> 命令的行为也会有所不同：</p>
+<ul class="simple">
+<li><p>如果给定字段并不存在于散列当中，
+那么这次设置就是一次创建操作，
+命令将在散列里面关联起给定的字段和值，
+然后返回 <code class="docutils literal notranslate"><span class="pre">1</span></code> 。</p></li>
+<li><p>如果给定的字段原本已经存在于散列里面，
+那么这次设置就是一次更新操作，
+命令将使用用户给定的新值去覆盖字段原有的旧值，
+然后返回 <code class="docutils literal notranslate"><span class="pre">0</span></code> 。</p></li>
+</ul>
+<p>举个例子，
+通过执行以下 <code class="docutils literal notranslate"><span class="pre">HSET</span></code> 命令，
+我们可以创建出一个包含了四个字段的散列，
+这四个字段分别储存了文章的标题、内容、作者以及创建日期：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HSET</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">title</span> <span class="s2">&quot;greeting&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HSET</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">content</span> <span class="s2">&quot;hello world&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HSET</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">author</span> <span class="s2">&quot;peter&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HSET</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">created_at</span> <span class="s2">&quot;1442744762.631885&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>图 3-3 展示了以上这些 <code class="docutils literal notranslate"><span class="pre">HSET</span></code> 命令对散列 <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 进行设置的整个过程。</p>
+<hr class="docutils" />
+<p>图 3-3 <code class="docutils literal notranslate"><span class="pre">HSET</span></code> 命令对 <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 进行设置的整个过程</p>
+<p><code class="docutils literal notranslate"><span class="pre">HSET</span></code> 命令执行之前的数据库， <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 散列并不存在</p>
+<img alt="_images/IMAGE_HSET_1.png" src="_images/IMAGE_HSET_1.png" />
+<p>执行 <code class="docutils literal notranslate"><span class="pre">HSET</span> <span class="pre">article::10086</span> <span class="pre">title</span> <span class="pre">&quot;greeting&quot;</span></code> 命令之后</p>
+<img alt="_images/IMAGE_HSET_2.png" src="_images/IMAGE_HSET_2.png" />
+<p>执行 <code class="docutils literal notranslate"><span class="pre">HSET</span> <span class="pre">article::10086</span> <span class="pre">content</span> <span class="pre">&quot;hello</span> <span class="pre">world&quot;</span></code> 命令之后</p>
+<img alt="_images/IMAGE_HSET_3.png" src="_images/IMAGE_HSET_3.png" />
+<p>执行 <code class="docutils literal notranslate"><span class="pre">HSET</span> <span class="pre">article::10086</span> <span class="pre">author</span> <span class="pre">&quot;peter&quot;</span></code> 命令之后</p>
+<img alt="_images/IMAGE_HSET_4.png" src="_images/IMAGE_HSET_4.png" />
+<p>执行 <code class="docutils literal notranslate"><span class="pre">HSET</span> <span class="pre">article::10086</span> <span class="pre">created_at</span> <span class="pre">&quot;1442744762.631885&quot;</span></code> 命令之后</p>
+<img alt="_images/IMAGE_HSET_5.png" src="_images/IMAGE_HSET_5.png" />
+<hr class="docutils" />
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p>散列包含的字段就跟数据库包含的键一样，
+在实际中都是以无序方式进行排列的，
+不过本书为了展示方便，
+一般都会把新字段添加到散列的末尾，
+排在所有已有字段的后面。</p>
+</div>
+<section id="id2">
+<h3>使用新值覆盖旧值<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<p>正如之前所说，
+如果用户在调用 <code class="docutils literal notranslate"><span class="pre">HSET</span></code> 命令时，
+给定的字段已经存在于散列当中，
+那么 <code class="docutils literal notranslate"><span class="pre">HSET</span></code> 命令将使用用户给定的新值去覆盖字段已有的旧值，
+并返回 <code class="docutils literal notranslate"><span class="pre">0</span></code> 表示这是一次更新操作。</p>
+<p>比如说，
+以下代码就展示了如何使用 <code class="docutils literal notranslate"><span class="pre">HSET</span></code> 命令去更新 <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 散列的 <code class="docutils literal notranslate"><span class="pre">title</span></code> 字段以及 <code class="docutils literal notranslate"><span class="pre">content</span></code> 字段：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HSET</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">title</span> <span class="s2">&quot;Redis Tutorial&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HSET</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">content</span> <span class="s2">&quot;Redis is a data structure store, ...&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<p>图 3-4 展示了被更新之后的 <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 散列。</p>
+<hr class="docutils" />
+<p>图 3-4 被更新之后的 <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 散列</p>
+<img alt="_images/IMAGE_UPDATE_HSET.png" src="_images/IMAGE_UPDATE_HSET.png" />
+</section>
+<hr class="docutils" />
+<section id="id3">
+<h3>其他信息<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HSET</span></code> 命令从 Redis 2.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="hsetnx">
+<h2>HSETNX：只在字段不存在的情况下为它设置值<a class="headerlink" href="#hsetnx" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">HSETNX</span></code> 命令的作用和 <code class="docutils literal notranslate"><span class="pre">HSET</span></code> 命令的作用非常相似，
+它们之间的区别在于，
+<code class="docutils literal notranslate"><span class="pre">HSETNX</span></code> 命令只会在指定字段不存在的情况下执行设置操作：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HSETNX</span> <span class="nb">hash</span> <span class="n">field</span> <span class="n">value</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">HSETNX</span></code> 命令在字段不存在并且成功为它设置值时返回 <code class="docutils literal notranslate"><span class="pre">1</span></code> ，
+在字段已经存在并导致设置操作未能成功执行时返回 <code class="docutils literal notranslate"><span class="pre">0</span></code> 。</p>
+<hr class="docutils" />
+<p>图 3-5 <code class="docutils literal notranslate"><span class="pre">HSETNX</span></code> 命令执行之前的 <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 散列</p>
+<img alt="_images/IMAGE_BEFORE_HSETNX.png" src="_images/IMAGE_BEFORE_HSETNX.png" />
+<hr class="docutils" />
+<p>举个例子，
+对于图 3-5 所示的 <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 散列来说，
+执行以下 <code class="docutils literal notranslate"><span class="pre">HSETNX</span></code> 命令将不会对散列产生任何影响，
+因为 <code class="docutils literal notranslate"><span class="pre">HSETNX</span></code> 命令想要设置的 <code class="docutils literal notranslate"><span class="pre">title</span></code> 字段已经存在：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HSETNX</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">title</span> <span class="s2">&quot;Redis Performance Test&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>    <span class="o">--</span> <span class="n">设置失败</span>
+</pre></div>
+</div>
+<p>相反地，
+如果我们使用 <code class="docutils literal notranslate"><span class="pre">HSETNX</span></code> 命令去对尚未存在的 <code class="docutils literal notranslate"><span class="pre">view_count</span></code> 字段进行设置，
+那么这个命令将会顺利执行，
+并将 <code class="docutils literal notranslate"><span class="pre">view_count</span></code> 字段的值设置为 <code class="docutils literal notranslate"><span class="pre">100</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HSETNX</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">view_count</span> <span class="mi">100</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>    <span class="o">--</span> <span class="n">设置成功</span>
+</pre></div>
+</div>
+<p>图 3-6 展示了 <code class="docutils literal notranslate"><span class="pre">HSETNX</span></code> 命令成功执行之后的 <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 散列。</p>
+<hr class="docutils" />
+<p>图 3-6 <code class="docutils literal notranslate"><span class="pre">HSETNX</span></code> 命令执行之后的 <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 散列</p>
+<img alt="_images/IMAGE_AFTER_HSETNX.png" src="_images/IMAGE_AFTER_HSETNX.png" />
+<hr class="docutils" />
+<section id="id4">
+<h3>其他信息<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HSETNX</span></code> 命令从 Redis 2.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="hget">
+<h2>HGET：获取字段的值<a class="headerlink" href="#hget" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">HGET</span></code> 命令可以根据用户给定的字段，
+从散列里面获取该字段的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HGET</span> <span class="nb">hash</span> <span class="n">field</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>图 3-7 两个散列</p>
+<img alt="_images/IMAGE_HGET.png" src="_images/IMAGE_HGET.png" />
+<hr class="docutils" />
+<p>比如对于图 3-7 所示的两个散列键来说，
+执行以下命令可以从 <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 散列里面获取 <code class="docutils literal notranslate"><span class="pre">author</span></code> 字段的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HGET</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">author</span>
+<span class="s2">&quot;peter&quot;</span>
+</pre></div>
+</div>
+<p>而执行以下命令则可以从 <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 散列里面获取 <code class="docutils literal notranslate"><span class="pre">created_at</span></code> 字段的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HGET</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">created_at</span>
+<span class="s2">&quot;1442744762.631885&quot;</span>
+</pre></div>
+</div>
+<p>又比如说，
+如果我们想要从 <code class="docutils literal notranslate"><span class="pre">account::54321</span></code> 散列里面获取 <code class="docutils literal notranslate"><span class="pre">email</span></code> 字段的值，
+那么可以执行以下命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HGET</span> <span class="n">account</span><span class="p">::</span><span class="mi">54321</span> <span class="n">email</span>
+<span class="s2">&quot;peter1984@spam_mail.com&quot;</span>
+</pre></div>
+</div>
+<section id="id5">
+<h3>处理不存在的字段或者不存在的散列<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
+<p>如果用户给定的字段并不存在于散列当中，
+那么 <code class="docutils literal notranslate"><span class="pre">HGET</span></code> 命令将返回一个空值。</p>
+<p>举个例子，
+在以下代码中，
+我们尝试从 <code class="docutils literal notranslate"><span class="pre">account::54321</span></code> 散列里面获取 <code class="docutils literal notranslate"><span class="pre">location</span></code> 字段的值，
+但由于 <code class="docutils literal notranslate"><span class="pre">location</span></code> 字段并不存在于 <code class="docutils literal notranslate"><span class="pre">account::54321</span></code> 散列当中，
+所以 <code class="docutils literal notranslate"><span class="pre">HGET</span></code> 命令将返回一个空值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HGET</span> <span class="n">account</span><span class="p">::</span><span class="mi">54321</span> <span class="n">location</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>尝试从一个不存在的散列里面获取一个不存在的字段值，
+得到的结果也是一样的：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HGET</span> <span class="ow">not</span><span class="o">-</span><span class="n">exists</span><span class="o">-</span><span class="nb">hash</span> <span class="ow">not</span><span class="o">-</span><span class="n">exists</span><span class="o">-</span><span class="n">field</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id6">
+<h3>其他信息<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HGET</span></code> 命令从 Redis 2.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id7">
+<h2>示例：实现短网址生成程序<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
+<p>为了给用户提供更多发言空间，
+并记录用户在网站上的链接点击行为，
+大部分社交网站都会将用户输入的网址转换为相应的短网址。
+比如说，
+如果我们在新浪微博发言时输入网址 <a class="reference external" href="http://redisdoc.com/geo/index.html">http://redisdoc.com/geo/index.html</a> ，
+那么微博将把这个网址转换为相应的短网址 <a class="reference external" href="http://t.cn/RqRRZ8n">http://t.cn/RqRRZ8n</a> ，
+当用户访问这个短网址时，
+微博在后台就会对这次点击进行一些数据统计，
+然后再引导用户的浏览器跳转到 <a class="reference external" href="http://redisdoc.com/geo/index.html">http://redisdoc.com/geo/index.html</a> 上面。</p>
+<p>创建短网址本质上就是要创建出短网址 ID 与目标网址之间的映射，
+并在用户访问短网址时，
+根据短网址的 ID 从映射记录中找出与之相对应的目标网址。
+比如在前面的例子中，
+微博的短网址程序就将短网址 <a class="reference external" href="http://t.cn/RqRRZ8n">http://t.cn/RqRRZ8n</a> 中的 ID 值 RqRRZ8n 映射到了 <a class="reference external" href="http://redisdoc.com/geo/index.html">http://redisdoc.com/geo/index.html</a> 这个网址上面：
+当用户访问短网址 <a class="reference external" href="http://t.cn/RqRRZ8n">http://t.cn/RqRRZ8n</a> 时，
+程序就会根据这个短网址的 ID 值 RqRRZ8n ，
+找出与之对应的目标网址 <a class="reference external" href="http://redisdoc.com/geo/index.html">http://redisdoc.com/geo/index.html</a> ，
+并将用户引导至目标网址上面去。</p>
+<p>作为示例，
+图 3-8 展示了几个微博短网址 ID 与目标网址之间的映射关系。</p>
+<hr class="docutils" />
+<p>图 3-8 微博短网址映射关系示例</p>
+<img alt="_images/IMAGE_URL_MAPPING.png" src="_images/IMAGE_URL_MAPPING.png" />
+<hr class="docutils" />
+<p>因为 Redis 的散列正好就非常适合用来储存短网址 ID 与目标网址之间的映射，
+所以我们可以基于 Redis 的散列实现一个短网址程序，
+代码清单 3-1 展示了一个这样的例子。</p>
+<hr class="docutils" />
+<p>代码清单 3-1 使用散列实现的短网址程序：<code class="docutils literal notranslate"><span class="pre">/hash/shorty_url.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">base36</span> <span class="kn">import</span> <span class="n">base10_to_base36</span>
+
+<span class="n">ID_COUNTER</span> <span class="o">=</span> <span class="s2">&quot;ShortyUrl::id_counter&quot;</span>
+<span class="n">URL_HASH</span> <span class="o">=</span> <span class="s2">&quot;ShortyUrl::url_hash&quot;</span> 
+
+<span class="k">class</span> <span class="nc">ShortyUrl</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+
+    <span class="k">def</span> <span class="nf">shorten</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_url</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        为目标网址创建并储存相应的短网址 ID 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 为目标网址创建新的数字 ID</span>
+        <span class="n">new_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">incr</span><span class="p">(</span><span class="n">ID_COUNTER</span><span class="p">)</span>
+        <span class="c1"># 通过将 10 进制数字转换为 36 进制数字来创建短网址 ID</span>
+        <span class="c1"># 比如说，10 进制数字 10086 将被转换为 36 进制数字 7S6</span>
+        <span class="n">short_id</span> <span class="o">=</span> <span class="n">base10_to_base36</span><span class="p">(</span><span class="n">new_id</span><span class="p">)</span>
+        <span class="c1"># 把短网址 ID 用作字段，目标网址用作值，</span>
+        <span class="c1"># 将它们之间的映射关系储存到散列里面</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hset</span><span class="p">(</span><span class="n">URL_HASH</span><span class="p">,</span> <span class="n">short_id</span><span class="p">,</span> <span class="n">target_url</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">short_id</span>
+
+    <span class="k">def</span> <span class="nf">restore</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">short_id</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        根据给定的短网址 ID ，返回与之对应的目标网址。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hget</span><span class="p">(</span><span class="n">URL_HASH</span><span class="p">,</span> <span class="n">short_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>代码清单 3-2 将 10 进制数字转换成 36 进制数字的程序：<code class="docutils literal notranslate"><span class="pre">/hash/base36.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">base10_to_base36</span><span class="p">(</span><span class="n">number</span><span class="p">):</span>
+    <span class="n">alphabets</span> <span class="o">=</span> <span class="s2">&quot;0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="k">while</span> <span class="n">number</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
+        <span class="n">number</span><span class="p">,</span> <span class="n">i</span> <span class="o">=</span> <span class="nb">divmod</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="mi">36</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">alphabets</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">result</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span> <span class="ow">or</span> <span class="n">alphabets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p><code class="docutils literal notranslate"><span class="pre">ShortyUrl</span></code> 类的 <code class="docutils literal notranslate"><span class="pre">shorten()</span></code> 方法负责为输入的网址生成短网址 ID ，
+它的工作包括以下四个步骤：</p>
+<ol class="arabic simple">
+<li><p>为每个给定的网址创建一个 10 进制数字 ID 。</p></li>
+<li><p>将 10 进制数字 ID 转换为 36 进制，
+并将这个 36 进制数字用作给定网址的短网址 ID ，
+这种方法在数字 ID 长度较大时可以有效地缩短数字 ID 的长度。
+代码清单 3-2 展示了将数字从 10 进制转换成 36 进制的 <code class="docutils literal notranslate"><span class="pre">base10_to_base36</span></code> 函数的具体实现。</p></li>
+<li><p>将短网址 ID 和目标网址之间的映射关系储存到散列里面。</p></li>
+<li><p>向调用者返回刚刚生成的短网址 ID 。</p></li>
+</ol>
+<p>另一方面，
+<code class="docutils literal notranslate"><span class="pre">restore()</span></code> 方法要做的事情和 <code class="docutils literal notranslate"><span class="pre">shorten()</span></code> 方法正好相反：
+它会从储存着映射关系的散列里面取出与给定短网址 ID 相对应的目标网址，
+然后将其返回给调用者。</p>
+<p>以下代码简单地展示了使用 <code class="docutils literal notranslate"><span class="pre">ShortyUrl</span></code> 程序创建短网址 ID 的方法，
+以及根据短网址 ID 获取目标网址的方法：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">shorty_url</span> <span class="kn">import</span> <span class="n">ShortyUrl</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">shorty_url</span> <span class="o">=</span> <span class="n">ShortyUrl</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">shorty_url</span><span class="o">.</span><span class="n">shorten</span><span class="p">(</span><span class="s2">&quot;RedisGuide.com&quot;</span><span class="p">)</span>  <span class="c1"># 创建短网址 ID</span>
+<span class="go">&#39;1&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">shorty_url</span><span class="o">.</span><span class="n">shorten</span><span class="p">(</span><span class="s2">&quot;RedisBook.com&quot;</span><span class="p">)</span>
+<span class="go">&#39;2&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">shorty_url</span><span class="o">.</span><span class="n">shorten</span><span class="p">(</span><span class="s2">&quot;RedisDoc.com&quot;</span><span class="p">)</span>
+<span class="go">&#39;3&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">shorty_url</span><span class="o">.</span><span class="n">restore</span><span class="p">(</span><span class="s2">&quot;1&quot;</span><span class="p">)</span>  <span class="c1"># 根据短网址 ID 查找目标网址</span>
+<span class="go">&#39;RedisGuide.com&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">shorty_url</span><span class="o">.</span><span class="n">restore</span><span class="p">(</span><span class="s2">&quot;2&quot;</span><span class="p">)</span>
+<span class="go">&#39;RedisBook.com&#39;</span>
+</pre></div>
+</div>
+<p>图 3-9 展示了上面这段代码在数据库中创建的散列结构。</p>
+<hr class="docutils" />
+<p>图 3-9 短网址程序在数据库中创建的散列结构</p>
+<img alt="_images/IMAGE_SHORTY_URL_EXAMPLE.png" src="_images/IMAGE_SHORTY_URL_EXAMPLE.png" />
+</section>
+<hr class="docutils" />
+<section id="hincrby">
+<h2>HINCRBY：对字段储存的整数值执行加法或减法操作<a class="headerlink" href="#hincrby" title="Link to this heading">¶</a></h2>
+<p>跟字符串键的 <code class="docutils literal notranslate"><span class="pre">INCRBY</span></code> 命令一样，
+如果散列的字段里面储存着能够被 Redis 解释为整数的数字，
+那么用户就可以使用 <code class="docutils literal notranslate"><span class="pre">HINCRBY</span></code> 命令为该字段的值加上指定的整数增量：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HINCRBY</span> <span class="nb">hash</span> <span class="n">field</span> <span class="n">increment</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">HINCRBY</span></code> 命令在成功执行加法操作之后将返回字段当前的值作为命令的结果。</p>
+<hr class="docutils" />
+<p>图 3-10 储存着文章数据的散列</p>
+<img alt="_images/IMAGE_HINCRBY.png" src="_images/IMAGE_HINCRBY.png" />
+<hr class="docutils" />
+<p>比如说，
+对于图 3-10 所示的 <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 散列，
+我们可以通过执行以下命令，
+为 <code class="docutils literal notranslate"><span class="pre">view_count</span></code> 字段的值加上 <code class="docutils literal notranslate"><span class="pre">1</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HINCRBY</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">view_count</span> <span class="mi">1</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">101</span>
+</pre></div>
+</div>
+<p>也可以通过执行以下命令，
+为 <code class="docutils literal notranslate"><span class="pre">view_count</span></code> 字段的值加上 <code class="docutils literal notranslate"><span class="pre">30</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HINCRBY</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">view_count</span> <span class="mi">30</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">131</span>
+</pre></div>
+</div>
+<section id="id8">
+<h3>执行减法操作<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
+<p>因为 Redis 只为散列提供了用于执行加法操作的 <code class="docutils literal notranslate"><span class="pre">HINCRBY</span></code> 命令，
+但是却并没有为散列提供相应的用于执行减法操作的命令，
+所以如果用户需要对字段储存的整数值执行减法操作的话，
+那么他就需要将一个负数增量传给 <code class="docutils literal notranslate"><span class="pre">HINCRBY</span></code> 命令，
+从而达到对值执行减法计算的目的。</p>
+<p>以下代码展示了如何使用 <code class="docutils literal notranslate"><span class="pre">HINCRBY</span></code> 命令去对 <code class="docutils literal notranslate"><span class="pre">view_count</span></code> 字段储存的整数值执行减法计算：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HGET</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">view_count</span>           <span class="o">--</span> <span class="n">文章现在的浏览次数为</span> <span class="mi">131</span> <span class="n">次</span>
+<span class="s2">&quot;131&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HINCRBY</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">view_count</span> <span class="o">-</span><span class="mi">10</span>    <span class="o">--</span> <span class="n">将文章的浏览次数减少</span> <span class="mi">10</span> <span class="n">次</span>
+<span class="s2">&quot;121&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HINCRBY</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">view_count</span> <span class="o">-</span><span class="mi">21</span>    <span class="o">--</span> <span class="n">将文章的浏览次数减少</span> <span class="mi">21</span> <span class="n">次</span>
+<span class="s2">&quot;100&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HGET</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">view_count</span>           <span class="o">--</span> <span class="n">文章现在的浏览次数只有</span> <span class="mi">100</span> <span class="n">次了</span>
+<span class="s2">&quot;100&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id9">
+<h3>处理异常情况<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">HINCRBY</span></code> 命令只能对储存着整数值的字段执行，
+并且用户给定的增量也必须为整数，
+尝试对非整数值字段执行 <code class="docutils literal notranslate"><span class="pre">HINCRBY</span></code> 命令，
+又或者向 <code class="docutils literal notranslate"><span class="pre">HINCRBY</span></code> 命令提供非整数增量，
+都会导致 <code class="docutils literal notranslate"><span class="pre">HINCRBY</span></code> 命令拒绝执行并报告错误。</p>
+<p>以下是一些导致 <code class="docutils literal notranslate"><span class="pre">HINCRBY</span></code> 命令报错的例子：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HINCRBY</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">view_count</span> <span class="s2">&quot;fifty&quot;</span>    <span class="o">--</span> <span class="n">增量必须能够被解释为整数</span>
+<span class="p">(</span><span class="n">error</span><span class="p">)</span> <span class="n">ERR</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">an</span> <span class="n">integer</span> <span class="ow">or</span> <span class="n">out</span> <span class="n">of</span> <span class="nb">range</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HINCRBY</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">view_count</span> <span class="mf">3.14</span>       <span class="o">--</span> <span class="n">增量不能是浮点数</span>
+<span class="p">(</span><span class="n">error</span><span class="p">)</span> <span class="n">ERR</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">an</span> <span class="n">integer</span> <span class="ow">or</span> <span class="n">out</span> <span class="n">of</span> <span class="nb">range</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HINCRBY</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">content</span> <span class="mi">100</span>           <span class="o">--</span> <span class="n">尝试向储存字符串值的字段执行</span> <span class="n">HINCRBY</span>
+<span class="p">(</span><span class="n">error</span><span class="p">)</span> <span class="n">ERR</span> <span class="nb">hash</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">an</span> <span class="n">integer</span>
+</pre></div>
+</div>
+</section>
+<section id="id10">
+<h3>其他信息<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HINCRBY</span></code> 命令从 Redis 2.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="hincrbyfloat">
+<h2>HINCRBYFLOAT：对字段储存的数字值执行浮点数加法或减法操作<a class="headerlink" href="#hincrbyfloat" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">HINCRBYFLOAT</span></code> 命令的作用和 <code class="docutils literal notranslate"><span class="pre">HINCRBY</span></code> 命令的作用类似，
+它们之间的主要区别在于 <code class="docutils literal notranslate"><span class="pre">HINCRBYFLOAT</span></code> 命令不仅可以使用整数作为增量，
+还可以使用浮点数作为增量：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HINCRBYFLOAT</span> <span class="nb">hash</span> <span class="n">field</span> <span class="n">increment</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">HINCRBYFLOAT</span></code> 命令在成功执行加法操作之后，
+将返回给定字段的当前值作为结果。</p>
+<p>举个例子，
+通过执行以下 <code class="docutils literal notranslate"><span class="pre">HINCRBYFLOAT</span></code> 命令，
+我们可以将 <code class="docutils literal notranslate"><span class="pre">geo::peter</span></code> 散列 <code class="docutils literal notranslate"><span class="pre">longitude</span></code> 字段的值从原来的 <code class="docutils literal notranslate"><span class="pre">100.0099647</span></code> 修改为 <code class="docutils literal notranslate"><span class="pre">113.2099647</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HGET</span> <span class="n">geo</span><span class="p">::</span><span class="n">peter</span> <span class="n">longitude</span>
+<span class="s2">&quot;100.0099647&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HINCRBYFLOAT</span> <span class="n">geo</span><span class="p">::</span><span class="n">peter</span> <span class="n">longitude</span> <span class="mf">13.2</span>  <span class="o">--</span> <span class="n">将字段的值加上</span> <span class="mf">13.2</span>
+<span class="s2">&quot;113.2099647&quot;</span>
+</pre></div>
+</div>
+<section id="id11">
+<h3>增量和字段值的类型限制<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h3>
+<p>正如之前所说，
+<code class="docutils literal notranslate"><span class="pre">HINCRBYFLOAT</span></code> 命令不仅可以使用浮点数作为增量，
+还可以使用整数作为增量：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HGET</span> <span class="n">number</span> <span class="nb">float</span>
+<span class="s2">&quot;3.14&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HINCRBYFLOAT</span> <span class="n">number</span> <span class="nb">float</span> <span class="mi">10086</span>  <span class="o">--</span> <span class="n">整数增量</span>
+<span class="s2">&quot;10089.13999999999999968&quot;</span>
+</pre></div>
+</div>
+<p>此外，
+不仅储存浮点数的字段可以执行 <code class="docutils literal notranslate"><span class="pre">HINCRBYFLOAT</span></code> 命令，
+储存整数的字段也一样可以执行 <code class="docutils literal notranslate"><span class="pre">HINCRBYFLOAT</span></code> 命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HGET</span> <span class="n">number</span> <span class="nb">int</span>  <span class="o">--</span> <span class="n">储存整数的字段</span>
+<span class="s2">&quot;100&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HINCRBYFLOAT</span> <span class="n">number</span> <span class="nb">int</span> <span class="mf">2.56</span>
+<span class="s2">&quot;102.56&quot;</span>
+</pre></div>
+</div>
+<p>最后，
+如果加法计算的结果能够被表示为整数，
+那么 <code class="docutils literal notranslate"><span class="pre">HINCRBYFLOAT</span></code> 命令将使用整数作为计算结果：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HGET</span> <span class="n">number</span> <span class="nb">sum</span>
+<span class="s2">&quot;1.5&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HINCRBYFLOAT</span> <span class="n">number</span> <span class="nb">sum</span> <span class="mf">3.5</span>
+<span class="s2">&quot;5&quot;</span>  <span class="o">--</span> <span class="n">结果被表示为整数</span> <span class="mi">5</span>
+</pre></div>
+</div>
+</section>
+<section id="id12">
+<h3>执行减法操作<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h3>
+<p>跟 <code class="docutils literal notranslate"><span class="pre">HINCRBY</span></code> 命令的情况一样，
+Redis 也没有为 <code class="docutils literal notranslate"><span class="pre">HINCRBYFLOAT</span></code> 命令提供对应的减法操作命令，
+因此如果我们想要对字段储存的数字值执行浮点数减法操作，
+那么只能通过向 <code class="docutils literal notranslate"><span class="pre">HINCRBYFLOAT</span></code> 命令传入负值浮点数来实现：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HGET</span> <span class="n">geo</span><span class="p">::</span><span class="n">peter</span> <span class="n">longitude</span>
+<span class="s2">&quot;113.2099647&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HINCRBYFLOAT</span> <span class="n">geo</span><span class="p">::</span><span class="n">peter</span> <span class="n">longitude</span> <span class="o">-</span><span class="mi">50</span>  <span class="o">--</span> <span class="n">将字段的值减去</span> <span class="mi">50</span>
+<span class="s2">&quot;63.2099647&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id13">
+<h3>其他信息<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HINCRBYFLOAT</span></code> 命令从 Redis 2.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id14">
+<h2>示例：使用散列键重新实现计数器<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h2>
+<p>前面的《字符串》一章曾经展示过怎样使用 <code class="docutils literal notranslate"><span class="pre">INCRBY</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">DECRBY</span></code> 命令去构建一个计数器程序，
+在学习了 <code class="docutils literal notranslate"><span class="pre">HINCRBY</span></code> 命令之后，
+我们同样可以通过类似的原理来构建一个使用散列实现的计数器程序，
+就像代码清单 3-3 展示的那样。</p>
+<hr class="docutils" />
+<p>代码清单 3-3 使用散列实现的计数器：<code class="docutils literal notranslate"><span class="pre">/hash/counter.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Counter</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">hash_key</span><span class="p">,</span> <span class="n">counter_name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hash_key</span> <span class="o">=</span> <span class="n">hash_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">counter_name</span> <span class="o">=</span> <span class="n">counter_name</span>
+
+    <span class="k">def</span> <span class="nf">increase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        将计数器的值加上 n ，然后返回计数器当前的值。</span>
+<span class="sd">        如果用户没有显式地指定 n ，那么将计数器的值加上一。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hincrby</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hash_key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">counter_name</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">decrease</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        将计数器的值减去 n ，然后返回计数器当前的值。</span>
+<span class="sd">        如果用户没有显式地指定 n ，那么将计数器的值减去一。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hincrby</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hash_key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">counter_name</span><span class="p">,</span> <span class="o">-</span><span class="n">n</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回计数器的当前值。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hash_key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">counter_name</span><span class="p">)</span>
+        <span class="c1"># 如果计数器并不存在，那么返回 0 作为默认值。</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        将计数器的值重置为 0 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hash_key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">counter_name</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>这个计数器实现充分地发挥了散列的特长：</p>
+<ul class="simple">
+<li><p>它允许用户将多个相关联的计数器储存到同一个散列键里面实行集中管理，
+而不必像字符串计数器那样，
+为每个计数器单独设置一个字符串键。</p></li>
+<li><p>与此同时，
+通过对散列中的不同字段执行 <code class="docutils literal notranslate"><span class="pre">HINCRBY</span></code> 命令，
+程序可以对指定的计数器执行加法操作和减法操作，
+而不会影响到储存在同一散列中的其他计数器。</p></li>
+</ul>
+<p>作为例子，
+以下代码展示了怎样将三个页面的浏览次数计数器储存到同一个散列里面：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">counter</span> <span class="kn">import</span> <span class="n">Counter</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># 创建一个计数器，用于记录页面 /user/peter 被访问的次数</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">user_peter_counter</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;page_view_counters&quot;</span><span class="p">,</span> <span class="s2">&quot;/user/peter&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">user_peter_counter</span><span class="o">.</span><span class="n">increase</span><span class="p">()</span>
+<span class="go">1L</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">user_peter_counter</span><span class="o">.</span><span class="n">increase</span><span class="p">()</span>
+<span class="go">2L</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># 创建一个计数器，用于记录页面 /product/256 被访问的次数</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">product_256_counter</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;page_view_counters&quot;</span><span class="p">,</span> <span class="s2">&quot;/product/256&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">product_256_counter</span><span class="o">.</span><span class="n">increase</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="go">100L</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># 创建一个计数器，用于记录页面 /product/512 被访问的次数</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">product_512_counter</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;page_view_counters&quot;</span><span class="p">,</span> <span class="s2">&quot;/product/512&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">product_512_counter</span><span class="o">.</span><span class="n">increase</span><span class="p">(</span><span class="mi">300</span><span class="p">)</span>
+<span class="go">300L</span>
+</pre></div>
+</div>
+<p>因为 <code class="docutils literal notranslate"><span class="pre">user_peter_counter</span></code> 、 <code class="docutils literal notranslate"><span class="pre">product_256_counter</span></code> 和 <code class="docutils literal notranslate"><span class="pre">product_512_counter</span></code> 这三个计数器都是用来记录页面浏览次数的，
+所以这些计数器都被放到了 <code class="docutils literal notranslate"><span class="pre">page_view_counters</span></code> 这个散列里面；
+与此类似，
+如果我们要创建一些用途完全不一样的计数器，
+那么只需要把新的计数器放到其他散列里面就可以了。</p>
+<p>比如说，
+以下代码就展示了怎样将文件 <code class="docutils literal notranslate"><span class="pre">dragon_rises.mp3</span></code> 和文件 <code class="docutils literal notranslate"><span class="pre">redisbook.pdf</span></code> 的下载次数计数器放到 <code class="docutils literal notranslate"><span class="pre">download_counters</span></code> 散列里面：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dragon_rises_counter</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;download_counters&quot;</span><span class="p">,</span> <span class="s2">&quot;dragon_rises.mp3&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dragon_rises_counter</span><span class="o">.</span><span class="n">increase</span><span class="p">(</span><span class="mi">10086</span><span class="p">)</span>
+<span class="go">10086L</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">redisbook_counter</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;download_counters&quot;</span><span class="p">,</span> <span class="s2">&quot;redisbook.pdf&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">redisbook_counter</span><span class="o">.</span><span class="n">increase</span><span class="p">(</span><span class="mi">65535</span><span class="p">)</span>
+<span class="go">65535L</span>
+</pre></div>
+</div>
+<p>图 3-11 展示了 <code class="docutils literal notranslate"><span class="pre">page_view_counters</span></code> 和 <code class="docutils literal notranslate"><span class="pre">download_counters</span></code> 这两个散列以及它们包含的各个计数器的样子。</p>
+<hr class="docutils" />
+<p>图 3-11 散列计数器数据结构示意图</p>
+<img alt="_images/IMAGE_COUNTERS_IN_HASH.png" src="_images/IMAGE_COUNTERS_IN_HASH.png" />
+<hr class="docutils" />
+<p>通过使用不同的散列储存不同类型的计数器，
+程序能够让代码生成的数据结构变得更容易理解，
+并且在针对某种类型的计数器执行批量操作时也会变得更加方便。
+比如说，
+当我们不再需要下载计数器的时候，
+只要把 <code class="docutils literal notranslate"><span class="pre">download_counters</span></code> 散列删掉就可以移除所有下载计数器了。</p>
+</section>
+<section id="hstrlen">
+<h2>HSTRLEN：获取字段值的字节长度<a class="headerlink" href="#hstrlen" title="Link to this heading">¶</a></h2>
+<p>用户可以通过使用 <code class="docutils literal notranslate"><span class="pre">HSTRLEN</span></code> 命令，
+获取给定字段值的字节长度：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HSTRLEN</span> <span class="nb">hash</span> <span class="n">field</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>图 3-12 使用散列储存文章数据</p>
+<img alt="_images/IMAGE_HSTRLEN.png" src="_images/IMAGE_HSTRLEN.png" />
+<hr class="docutils" />
+<p>比如对于图 3-12 所示的 <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 散列来说，
+我们可以通过执行以下 <code class="docutils literal notranslate"><span class="pre">HSTRLEN</span></code> 命令，
+取得 <code class="docutils literal notranslate"><span class="pre">title</span></code> 、 <code class="docutils literal notranslate"><span class="pre">content</span></code> 、 <code class="docutils literal notranslate"><span class="pre">author</span></code> 等字段值的字节长度：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HSTRLEN</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">title</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">8</span>    <span class="o">--</span> <span class="n">title</span> <span class="n">字段的值</span> <span class="s2">&quot;greeting&quot;</span> <span class="n">长</span> <span class="mi">8</span> <span class="n">个字节</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HSTRLEN</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">content</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">11</span>    <span class="o">--</span> <span class="n">content</span> <span class="n">字段的值</span> <span class="s2">&quot;hello world&quot;</span> <span class="n">长</span> <span class="mi">11</span> <span class="n">个字节</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HSTRLEN</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">author</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">5</span>    <span class="o">--</span> <span class="n">author</span> <span class="n">字段的值</span> <span class="s2">&quot;peter&quot;</span> <span class="n">长</span> <span class="mi">6</span> <span class="n">个字节</span>
+</pre></div>
+</div>
+<p>如果给定的字段或散列并不存在，
+那么 <code class="docutils literal notranslate"><span class="pre">HSTRLEN</span></code> 命令将返回 <code class="docutils literal notranslate"><span class="pre">0</span></code> 作为结果：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HSTRLEN</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">last_updated_at</span>  <span class="o">--</span> <span class="n">字段不存在</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HSTRLEN</span> <span class="ow">not</span><span class="o">-</span><span class="n">exists</span><span class="o">-</span><span class="nb">hash</span> <span class="ow">not</span><span class="o">-</span><span class="n">exists</span><span class="o">-</span><span class="n">key</span>  <span class="o">--</span> <span class="n">散列不存在</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<section id="id15">
+<h3>其他信息<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HSTRLEN</span></code> 命令从 Redis 3.2.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="hexists">
+<h2>HEXISTS：检查字段是否存在<a class="headerlink" href="#hexists" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">HEXISTS</span></code> 命令可以检查用户给定的字段是否存在于散列当中：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HEXISTS</span> <span class="nb">hash</span> <span class="n">field</span>
+</pre></div>
+</div>
+<p>如果散列包含了给定的字段，
+那么命令返回 <code class="docutils literal notranslate"><span class="pre">1</span></code> ；
+否则的话，
+命令返回 <code class="docutils literal notranslate"><span class="pre">0</span></code> 。</p>
+<p>比如说，
+以下代码就展示了如何使用 <code class="docutils literal notranslate"><span class="pre">HEXISTS</span></code> 命令去检查 <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 散列是否包含某些字段：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HEXISTS</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">author</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>    <span class="o">--</span> <span class="n">包含该字段</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HEXISTS</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">content</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HEXISTS</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">last_updated_at</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>    <span class="o">--</span> <span class="n">不包含该字段</span>
+</pre></div>
+</div>
+<p>从 <code class="docutils literal notranslate"><span class="pre">HEXISTS</span></code> 命令的执行结果可以看出，
+<code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 散列包含了 <code class="docutils literal notranslate"><span class="pre">author</span></code> 字段和 <code class="docutils literal notranslate"><span class="pre">content</span></code> 字段，
+但是却并没有包含 <code class="docutils literal notranslate"><span class="pre">last_updated_at</span></code> 字段。</p>
+<p>如果用户给定的散列并不存在，
+那么 <code class="docutils literal notranslate"><span class="pre">HEXISTS</span></code> 命令对于这个散列所有字段的检查结果都是不存在：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HEXISTS</span> <span class="ow">not</span><span class="o">-</span><span class="n">exists</span><span class="o">-</span><span class="nb">hash</span> <span class="ow">not</span><span class="o">-</span><span class="n">exists</span><span class="o">-</span><span class="n">field</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HEXISTS</span> <span class="ow">not</span><span class="o">-</span><span class="n">exists</span><span class="o">-</span><span class="nb">hash</span> <span class="n">another</span><span class="o">-</span><span class="ow">not</span><span class="o">-</span><span class="n">exists</span><span class="o">-</span><span class="n">field</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<section id="id16">
+<h3>其他信息<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HEXISTS</span></code> 命令从 Redis 2.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="hdel">
+<h2>HDEL：删除字段<a class="headerlink" href="#hdel" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">HDEL</span></code> 命令用于删除散列中的指定字段及其相关联的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HDEL</span> <span class="nb">hash</span> <span class="n">field</span>
+</pre></div>
+</div>
+<p>当给定字段存在于散列当中并且被成功删除时，
+命令返回 <code class="docutils literal notranslate"><span class="pre">1</span></code> ；
+如果给定字段并不存在于散列当中，
+又或者给定的散列并不存在，
+那么命令将返回 <code class="docutils literal notranslate"><span class="pre">0</span></code> 表示删除失败。</p>
+<p>举个例子，
+对于图 3-13 所示的 <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 散列，
+我们可以使用以下命令去删除散列的 <code class="docutils literal notranslate"><span class="pre">author</span></code> 字段和 <code class="docutils literal notranslate"><span class="pre">created_at</span></code> 字段，
+以及与这些字段相关联的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HDEL</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">author</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HDEL</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">created_at</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>图 3-14 展示了以上两个 <code class="docutils literal notranslate"><span class="pre">HDEL</span></code> 命令执行之后，
+<code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 散列的样子。</p>
+<hr class="docutils" />
+<p>图 3-13 <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 散列</p>
+<img alt="_images/IMAGE_BEFORE_HDEL.png" src="_images/IMAGE_BEFORE_HDEL.png" />
+<hr class="docutils" />
+<p>图 3-14 删除了两个字段之后的 <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 散列</p>
+<img alt="_images/IMAGE_AFTER_HDEL.png" src="_images/IMAGE_AFTER_HDEL.png" />
+<hr class="docutils" />
+<section id="id17">
+<h3>其他信息<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HDEL</span></code> 命令从 Redis 2.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="hlen">
+<h2>HLEN：获取散列包含的字段数量<a class="headerlink" href="#hlen" title="Link to this heading">¶</a></h2>
+<p>用户可以通过使用 <code class="docutils literal notranslate"><span class="pre">HLEN</span></code> 命令获取给定散列包含的字段数量：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HLEN</span> <span class="nb">hash</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>图 3-15 两个散列键</p>
+<img alt="_images/IMAGE_HLEN.png" src="_images/IMAGE_HLEN.png" />
+<hr class="docutils" />
+<p>比如对于图 3-15 中展示的 <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 散列和 <code class="docutils literal notranslate"><span class="pre">account::54321</span></code> 散列来说，
+我们可以通过执行以下命令来获取 <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 散列包含的字段数量：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HLEN</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">4</span>    <span class="o">--</span> <span class="n">这个散列包含</span> <span class="mi">4</span> <span class="n">个字段</span>
+</pre></div>
+</div>
+<p>又或者通过执行以下命令来获取 <code class="docutils literal notranslate"><span class="pre">account::54321</span></code> 散列包含的字段数量：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HLEN</span> <span class="n">account</span><span class="p">::</span><span class="mi">54321</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2</span>    <span class="o">--</span> <span class="n">这个散列包含</span> <span class="mi">2</span> <span class="n">个字段</span>
+</pre></div>
+</div>
+<p>另一方面，
+如果用户给定的散列并不存在，
+那么 <code class="docutils literal notranslate"><span class="pre">HLEN</span></code> 命令将返回 <code class="docutils literal notranslate"><span class="pre">0</span></code> 作为结果：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HLEN</span> <span class="ow">not</span><span class="o">-</span><span class="n">exists</span><span class="o">-</span><span class="nb">hash</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<section id="id18">
+<h3>其他信息<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HLEN</span></code> 命令从 Redis 2.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id19">
+<h2>示例：实现用户登录会话<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h2>
+<p>为了方便用户，
+网站一般都会为已登录的用户生成一个加密令牌，
+然后把这个令牌分别储存在服务器端和客户端，
+之后每当用户再次访问该网站的时候，
+网站就可以通过验证客户端提交的令牌来确认用户的身份，
+从而使得用户不必重复地执行登录操作。</p>
+<p>另一方面，
+为了防止用户因为长时间不输入密码而导致遗忘密码，
+并且为了保证令牌的安全性，
+网站一般都会为令牌设置一个过期期限（比如一个月），
+当期限到达之后，
+用户的会话就会过时，
+而网站则会要求用户重新登录。</p>
+<p>上面描述的这种使用令牌来避免重复登录的机制一般被称为登录会话（login session），
+通过使用 Redis 的散列，
+我们可以构建出代码清单 3-4 所示的登录会话程序。</p>
+<hr class="docutils" />
+<p>代码清单 3-4 使用散列实现的登录会话程序：<code class="docutils literal notranslate"><span class="pre">/hash/login_session.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>  <span class="c1"># 获取浮点数格式的 unix 时间戳</span>
+<span class="kn">from</span> <span class="nn">hashlib</span> <span class="kn">import</span> <span class="n">sha256</span>
+
+<span class="c1"># 会话的默认过期时间</span>
+<span class="n">DEFAULT_TIMEOUT</span> <span class="o">=</span> <span class="mi">3600</span><span class="o">*</span><span class="mi">24</span><span class="o">*</span><span class="mi">30</span>    <span class="c1"># 一个月</span>
+
+<span class="c1"># 储存会话令牌以及会话过期时间戳的散列</span>
+<span class="n">SESSION_TOKEN_HASH</span> <span class="o">=</span> <span class="s2">&quot;session::token&quot;</span>
+<span class="n">SESSION_EXPIRE_TS_HASH</span> <span class="o">=</span> <span class="s2">&quot;session::expire_timestamp&quot;</span>
+
+<span class="c1"># 会话状态</span>
+<span class="n">SESSION_NOT_LOGIN</span> <span class="o">=</span> <span class="s2">&quot;SESSION_NOT_LOGIN&quot;</span>
+<span class="n">SESSION_EXPIRED</span> <span class="o">=</span> <span class="s2">&quot;SESSION_EXPIRED&quot;</span>
+<span class="n">SESSION_TOKEN_CORRECT</span> <span class="o">=</span> <span class="s2">&quot;SESSION_TOKEN_CORRECT&quot;</span>
+<span class="n">SESSION_TOKEN_INCORRECT</span> <span class="o">=</span> <span class="s2">&quot;SESSION_TOKEN_INCORRECT&quot;</span>
+
+<span class="k">def</span> <span class="nf">generate_token</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    生成一个随机的会话令牌。</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">random_string</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">getrandbits</span><span class="p">(</span><span class="mi">256</span><span class="p">))</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sha256</span><span class="p">(</span><span class="n">random_string</span><span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">LoginSession</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">user_id</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user_id</span> <span class="o">=</span> <span class="n">user_id</span>
+
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">DEFAULT_TIMEOUT</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        创建新的登录会话并返回会话令牌，</span>
+<span class="sd">        可选的 timeout 参数用于指定会话的过期时间（以秒为单位）。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 生成会话令牌</span>
+        <span class="n">user_token</span> <span class="o">=</span> <span class="n">generate_token</span><span class="p">()</span>
+        <span class="c1"># 计算会话到期时间戳</span>
+        <span class="n">expire_timestamp</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span><span class="o">+</span><span class="n">timeout</span>
+        <span class="c1"># 以用户 ID 为字段，将令牌和到期时间戳分别储存到两个散列里面</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hset</span><span class="p">(</span><span class="n">SESSION_TOKEN_HASH</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_id</span><span class="p">,</span> <span class="n">user_token</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hset</span><span class="p">(</span><span class="n">SESSION_EXPIRE_TS_HASH</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_id</span><span class="p">,</span> <span class="n">expire_timestamp</span><span class="p">)</span>
+        <span class="c1"># 将会话令牌返回给用户</span>
+        <span class="k">return</span> <span class="n">user_token</span>
+
+    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_token</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        根据给定的令牌验证用户身份。</span>
+<span class="sd">        这个方法有四个可能的返回值，分别对应四种不同情况：</span>
+<span class="sd">        1. SESSION_NOT_LOGIN —— 用户尚未登录</span>
+<span class="sd">        2. SESSION_EXPIRED —— 会话已过期</span>
+<span class="sd">        3. SESSION_TOKEN_CORRECT —— 用户已登录，并且给定令牌与用户令牌相匹配</span>
+<span class="sd">        4. SESSION_TOKEN_INCORRECT —— 用户已登录，但给定令牌与用户令牌不匹配</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 尝试从两个散列里面取出用户的会话令牌以及会话的过期时间戳</span>
+        <span class="n">user_token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hget</span><span class="p">(</span><span class="n">SESSION_TOKEN_HASH</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_id</span><span class="p">)</span>
+        <span class="n">expire_timestamp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hget</span><span class="p">(</span><span class="n">SESSION_EXPIRE_TS_HASH</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_id</span><span class="p">)</span>
+
+        <span class="c1"># 如果会话令牌或者过期时间戳不存在，那么说明用户尚未登录</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">user_token</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">expire_timestamp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">SESSION_NOT_LOGIN</span>
+
+        <span class="c1"># 将当前时间戳与会话的过期时间戳进行对比，检查会话是否已过期</span>
+        <span class="c1"># 因为 HGET 命令返回的过期时间戳是字符串格式的</span>
+        <span class="c1"># 所以在进行对比之前要先将它转换成原来的浮点数格式</span>
+        <span class="k">if</span> <span class="n">time</span><span class="p">()</span> <span class="o">&gt;</span> <span class="nb">float</span><span class="p">(</span><span class="n">expire_timestamp</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">SESSION_EXPIRED</span>
+
+        <span class="c1"># 用户令牌存在并且未过期，那么检查它与给定令牌是否一致</span>
+        <span class="k">if</span> <span class="n">input_token</span> <span class="o">==</span> <span class="n">user_token</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">SESSION_TOKEN_CORRECT</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">SESSION_TOKEN_INCORRECT</span>
+
+    <span class="k">def</span> <span class="nf">destroy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        销毁会话。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 从两个散列里面分别删除用户的会话令牌以及会话的过期时间戳</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hdel</span><span class="p">(</span><span class="n">SESSION_TOKEN_HASH</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hdel</span><span class="p">(</span><span class="n">SESSION_EXPIRE_TS_HASH</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p><code class="docutils literal notranslate"><span class="pre">LoginSession</span></code> 的 <code class="docutils literal notranslate"><span class="pre">create()</span></code> 方法首先会计算出随机的会话令牌以及会话的过期时间戳，
+然后使用用户 ID 作为字段，
+将令牌和过期时间戳分别储存到两个散列里面。</p>
+<p>在此之后，
+每当客户端向服务器发送请求并提交令牌的时候，
+程序就会使用 <code class="docutils literal notranslate"><span class="pre">validate()</span></code> 方法验证被提交令牌的正确性：
+<code class="docutils literal notranslate"><span class="pre">validate()</span></code> 方法会根据用户的 ID ，
+从两个散列里面分别取出用户的会话令牌以及会话的过期时间戳，
+然后通过一系列检查判断令牌是否正确以及会话是否过期。</p>
+<p>最后，
+<code class="docutils literal notranslate"><span class="pre">destroy()</span></code> 方法可以在用户手动登出（logout）时调用，
+它可以删除用户的会话令牌以及会话的过期时间戳，
+让用户重新回到未登录状态。</p>
+<p>在拥有 <code class="docutils literal notranslate"><span class="pre">LoginSession</span></code> 程序之后，
+我们可以通过执行以下代码，
+为用户 peter 创建出相应的会话令牌：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">login_session</span> <span class="kn">import</span> <span class="n">LoginSession</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">session</span> <span class="o">=</span> <span class="n">LoginSession</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;peter&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">token</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">token</span>
+<span class="go">&#39;3b000071e59fcdcaa46b900bb5c484f653de67055fde622f34c255a65bd9a561&#39;</span>
+</pre></div>
+</div>
+<p>并通过以下代码，
+验证给定令牌的正确性：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">session</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="s2">&quot;wrong_token&quot;</span><span class="p">)</span>
+<span class="go">&#39;SESSION_TOKEN_INCORRECT&#39;</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">session</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+<span class="go">&#39;SESSION_TOKEN_CORRECT&#39;</span>
+</pre></div>
+</div>
+<p>然后在会话使用完毕之后，
+通过执行以下代码来销毁会话：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">session</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">session</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+<span class="go">&#39;SESSION_NOT_LOGIN&#39;</span>
+</pre></div>
+</div>
+<p>图 3-16 展示了使用 <code class="docutils literal notranslate"><span class="pre">LoginSession</span></code> 程序在数据库里面创建多个会话时的样子。</p>
+<hr class="docutils" />
+<p>图 3-16 登录会话程序数据结构示意图</p>
+<img alt="_images/IMAGE_SESSION_HASHS1.png" src="_images/IMAGE_SESSION_HASHS1.png" />
+</section>
+<hr class="docutils" />
+<section id="hmset">
+<h2>HMSET：一次为多个字段设置值<a class="headerlink" href="#hmset" title="Link to this heading">¶</a></h2>
+<p>用户可以通过 <code class="docutils literal notranslate"><span class="pre">HMSET</span></code> 命令，
+一次为散列中的多个字段设置值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HMSET</span> <span class="nb">hash</span> <span class="n">field</span> <span class="n">value</span> <span class="p">[</span><span class="n">field</span> <span class="n">value</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">HMSET</span></code> 命令在设置成功时返回 <code class="docutils literal notranslate"><span class="pre">OK</span></code> 。</p>
+<hr class="docutils" />
+<p>图 3-17 储存文章数据的散列</p>
+<img alt="_images/IMAGE_HMSET.png" src="_images/IMAGE_HMSET.png" />
+<hr class="docutils" />
+<p>比如说，
+为了构建图 3-17 所示的散列，
+我们可能会执行以下四个 <code class="docutils literal notranslate"><span class="pre">HSET</span></code> 命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HSET</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">title</span> <span class="s2">&quot;greeting&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HSET</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">content</span> <span class="s2">&quot;hello world&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HSET</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">author</span> <span class="s2">&quot;peter&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HSET</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">created_at</span> <span class="s2">&quot;1442744762.631885&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>但是接下来的这一条 <code class="docutils literal notranslate"><span class="pre">HMSET</span></code> 命令可以更方便地完成相同的工作：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HMSET</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">title</span> <span class="s2">&quot;greeting&quot;</span> <span class="n">content</span> <span class="s2">&quot;hello world&quot;</span> <span class="n">author</span> <span class="s2">&quot;peter&quot;</span> <span class="n">created_at</span> <span class="s2">&quot;1442744762.631885&quot;</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p>此外，
+因为客户端在执行这条 <code class="docutils literal notranslate"><span class="pre">HMSET</span></code> 命令时只需要与 Redis 服务器进行一次通信，
+而上面的四条 <code class="docutils literal notranslate"><span class="pre">HSET</span></code> 命令则需要客户端与 Redis 服务器进行四次通信，
+所以前者的执行速度要比后者快得多。</p>
+<section id="id20">
+<h3>使用新值覆盖旧值<a class="headerlink" href="#id20" title="Link to this heading">¶</a></h3>
+<p>如果用户给定的字段已经存在于散列当中，
+那么 <code class="docutils literal notranslate"><span class="pre">HMSET</span></code> 命令将使用用户给定的新值去覆盖字段已有的旧值。</p>
+<p>比如对于 <code class="docutils literal notranslate"><span class="pre">title</span></code> 和 <code class="docutils literal notranslate"><span class="pre">content</span></code> 这两个已经存在于 <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 散列的字段来说：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HGET</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">title</span>
+<span class="s2">&quot;greeting&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HGET</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">content</span>
+<span class="s2">&quot;hello world&quot;</span>
+</pre></div>
+</div>
+<p>如果我们执行以下命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HMSET</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">title</span> <span class="s2">&quot;Redis Tutorial&quot;</span> <span class="n">content</span> <span class="s2">&quot;Redis is a data structure store, ...&quot;</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p>那么 <code class="docutils literal notranslate"><span class="pre">title</span></code> 字段和 <code class="docutils literal notranslate"><span class="pre">content</span></code> 字段已有的旧值将被新值覆盖：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HGET</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">title</span>
+<span class="s2">&quot;Redis Tutorial&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HGET</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">content</span>
+<span class="s2">&quot;Redis is a data structure store, ...&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id21">
+<h3>其他信息<a class="headerlink" href="#id21" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N)，其中 N 为被设置的字段数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HMSET</span></code> 命令从 Redis 2.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="hmget">
+<h2>HMGET：一次获取多个字段的值<a class="headerlink" href="#hmget" title="Link to this heading">¶</a></h2>
+<p>通过使用 <code class="docutils literal notranslate"><span class="pre">HMGET</span></code> 命令，
+用户可以一次从散列里面获取多个字段的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HMGET</span> <span class="nb">hash</span> <span class="n">field</span> <span class="p">[</span><span class="n">field</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">HMGET</span></code> 命令将按照用户给定字段的顺序依次返回与之对应的值。</p>
+<hr class="docutils" />
+<p>图 3-18 储存文章数据的散列</p>
+<img alt="_images/IMAGE_HMGET_EXAMPLE.png" src="_images/IMAGE_HMGET_EXAMPLE.png" />
+<hr class="docutils" />
+<p>比如对于图 3-18 所示的 <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 散列来说，
+我们可以使用以下命令来获取它的 <code class="docutils literal notranslate"><span class="pre">author</span></code> 字段和 <code class="docutils literal notranslate"><span class="pre">created_at</span></code> 字段的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HMGET</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">author</span> <span class="n">created_at</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;peter&quot;</span>                <span class="o">--</span> <span class="n">author</span> <span class="n">字段的值</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;1442744762.631885&quot;</span>    <span class="o">--</span> <span class="n">created_at</span> <span class="n">字段的值</span>
+</pre></div>
+</div>
+<p>又或者使用以下命令来获取它的 <code class="docutils literal notranslate"><span class="pre">title</span></code> 字段和 <code class="docutils literal notranslate"><span class="pre">content</span></code> 字段的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HMGET</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">title</span> <span class="n">content</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;greeting&quot;</span>       <span class="o">--</span> <span class="n">title</span> <span class="n">字段的值</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;hello world&quot;</span>    <span class="o">--</span> <span class="n">content</span> <span class="n">字段的值</span>
+</pre></div>
+</div>
+<p>跟 <code class="docutils literal notranslate"><span class="pre">HGET</span></code> 命令一样，
+如果用户向 <code class="docutils literal notranslate"><span class="pre">HMGET</span></code> 命令提供的字段或者散列不存在，
+那么 <code class="docutils literal notranslate"><span class="pre">HMGET</span></code> 命令将返回空值作为结果：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HMGET</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">title</span> <span class="n">content</span> <span class="n">last_updated_at</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;greeting&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;hello world&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="n">nil</span><span class="p">)</span>    <span class="o">--</span> <span class="n">last_updated_at</span> <span class="n">字段不存在于</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span> <span class="n">散列</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HMGET</span> <span class="ow">not</span><span class="o">-</span><span class="n">exists</span><span class="o">-</span><span class="nb">hash</span> <span class="n">field1</span> <span class="n">field2</span> <span class="n">field3</span>  <span class="o">--</span> <span class="n">散列不存在</span>
+<span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+<span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="id22">
+<h3>其他信息<a class="headerlink" href="#id22" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N)，其中 N 为用户给定的字段数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HMGET</span></code> 命令从 Redis 2.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="hkeyshvalshgetall">
+<h2>HKEYS、HVALS、HGETALL：获取所有字段、所有值或者所有字段和值<a class="headerlink" href="#hkeyshvalshgetall" title="Link to this heading">¶</a></h2>
+<p>Redis 为散列提供了 <code class="docutils literal notranslate"><span class="pre">HKEYS</span></code> 、 <code class="docutils literal notranslate"><span class="pre">HVALS</span></code> 和 <code class="docutils literal notranslate"><span class="pre">HGETALL</span></code> 这三个命令，
+它们可以分别用于获取散列包含的所有字段、所有值以及所有字段和值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HKEYS</span> <span class="nb">hash</span>
+
+<span class="n">HVALS</span> <span class="nb">hash</span>
+
+<span class="n">HGETALL</span> <span class="nb">hash</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>图 3-19 储存文章数据的散列</p>
+<img alt="_images/IMAGE_HKEYS_HVALS_HGETALL.png" src="_images/IMAGE_HKEYS_HVALS_HGETALL.png" />
+<hr class="docutils" />
+<p>举个例子，
+对于图 3-19 所示的 <code class="docutils literal notranslate"><span class="pre">article::10086</span></code> 散列来说，
+我们可以使用 <code class="docutils literal notranslate"><span class="pre">HKEYS</span></code> 命令去获取它包含的所有字段：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HKEYS</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;title&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;content&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;author&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;created_at&quot;</span>
+</pre></div>
+</div>
+<p>也可以使用 <code class="docutils literal notranslate"><span class="pre">HVALS</span></code> 命令去获取它包含的所有值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HVALS</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;greeting&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;hello world&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;peter&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;1442744762.631885&quot;</span>
+</pre></div>
+</div>
+<p>还可以使用 <code class="docutils literal notranslate"><span class="pre">HGETALL</span></code> 命令去获取它包含的所有字段和值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HGETALL</span> <span class="n">article</span><span class="p">::</span><span class="mi">10086</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;title&quot;</span>      <span class="o">--</span> <span class="n">字段</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;greeting&quot;</span>   <span class="o">--</span> <span class="n">字段的值</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;content&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;hello world&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;author&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;peter&quot;</span>
+<span class="mi">7</span><span class="p">)</span> <span class="s2">&quot;created_at&quot;</span>
+<span class="mi">8</span><span class="p">)</span> <span class="s2">&quot;1442744762.631885&quot;</span>
+</pre></div>
+</div>
+<p>在 <code class="docutils literal notranslate"><span class="pre">HGETALL</span></code> 命令返回的结果列表当中，
+每两个连续的元素就代表了散列中的一对字段和值，
+其中单数位置上的元素为字段，
+而复数位置上的元素则为字段的值。</p>
+<p>另一方面，
+如果用户给定的散列并不存在，
+那么 <code class="docutils literal notranslate"><span class="pre">HKEYS</span></code> 、 <code class="docutils literal notranslate"><span class="pre">HVALS</span></code> 和 <code class="docutils literal notranslate"><span class="pre">HGETALL</span></code> 都将返回一个空列表：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HKEYS</span> <span class="ow">not</span><span class="o">-</span><span class="n">exists</span><span class="o">-</span><span class="nb">hash</span>
+<span class="p">(</span><span class="n">empty</span> <span class="nb">list</span> <span class="ow">or</span> <span class="nb">set</span><span class="p">)</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HVALS</span> <span class="ow">not</span><span class="o">-</span><span class="n">exists</span><span class="o">-</span><span class="nb">hash</span>
+<span class="p">(</span><span class="n">empty</span> <span class="nb">list</span> <span class="ow">or</span> <span class="nb">set</span><span class="p">)</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HGETALL</span> <span class="ow">not</span><span class="o">-</span><span class="n">exists</span><span class="o">-</span><span class="nb">hash</span>
+<span class="p">(</span><span class="n">empty</span> <span class="nb">list</span> <span class="ow">or</span> <span class="nb">set</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="id23">
+<h3>字段在散列中的排列顺序<a class="headerlink" href="#id23" title="Link to this heading">¶</a></h3>
+<p>Redis 散列包含的字段在底层是以无序方式储存的，
+根据字段插入的顺序不同，
+包含相同字段的散列在执行 <code class="docutils literal notranslate"><span class="pre">HKEYS</span></code> 命令、 <code class="docutils literal notranslate"><span class="pre">HVALS</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">HGETALL</span></code> 命令时可能会得到不同的结果，
+因此用户在使用这三个命令的时候，
+不应该对它们返回的元素的排列顺序做任何假设。
+如果有需要的话，
+用户可以对这些命令返回的元素进行排序，
+使得它们从无序变为有序。</p>
+<p>举个例子，
+如果我们以不同的设置顺序创建两个完全相同的散列 <code class="docutils literal notranslate"><span class="pre">hash1</span></code> 和 <code class="docutils literal notranslate"><span class="pre">hash2</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HMSET</span> <span class="n">hash1</span> <span class="n">field1</span> <span class="n">value1</span> <span class="n">field2</span> <span class="n">value2</span> <span class="n">field3</span> <span class="n">value3</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HMSET</span> <span class="n">hash2</span> <span class="n">field3</span> <span class="n">value3</span> <span class="n">field2</span> <span class="n">value2</span> <span class="n">field1</span> <span class="n">value1</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p>那么 <code class="docutils literal notranslate"><span class="pre">HKEYS</span></code> 命令将以不同的顺序返回这两个散列的字段：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HKEYS</span> <span class="n">hash1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;field1&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;field2&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;field3&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HKEYS</span> <span class="n">hash2</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;field3&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;field2&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;field1&quot;</span>
+</pre></div>
+</div>
+<p>而 <code class="docutils literal notranslate"><span class="pre">HVALS</span></code> 命令则会以不同的顺序返回这两个散列的字段值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HVALS</span> <span class="n">hash1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;value1&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;value2&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;value3&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HVALS</span> <span class="n">hash2</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;value3&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;value2&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;value1&quot;</span>
+</pre></div>
+</div>
+<p>至于 <code class="docutils literal notranslate"><span class="pre">HGETALL</span></code> 命令则会以不同的顺序返回这两个散列的字段和值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">HGETALL</span> <span class="n">hash1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;field1&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;value1&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;field2&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;value2&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;field3&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;value3&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">HGETALL</span> <span class="n">hash2</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;field3&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;value3&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;field2&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;value2&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;field1&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;value1&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id24">
+<h3>其他信息<a class="headerlink" href="#id24" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HKEYS</span></code> 命令、 <code class="docutils literal notranslate"><span class="pre">HVALS</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">HGETALL</span></code> 命令的复杂度都为 O(N) ，
+其中 N 为散列包含的字段数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HKEYS</span></code> 命令、 <code class="docutils literal notranslate"><span class="pre">HVALS</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">HGETALL</span></code> 命令都从 Redis 2.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id25">
+<h2>示例：储存图数据<a class="headerlink" href="#id25" title="Link to this heading">¶</a></h2>
+<p>在构建地图应用、设计电路图、进行任务调度、分析网络流量等多种任务中，
+都需要对图（graph）数据结构实施建模，
+并储存相关的图数据。
+对于不少数据库来说，
+想要高效直观地储存图数据并不是一件容易的事情，
+但是 Redis 却能够以多种不同的方式表示图数据结构，
+其中一种方法就是使用散列。</p>
+<hr class="docutils" />
+<p>图 3-20 简单的带权重有向图</p>
+<img alt="_images/IMAGE_GRAPH_EXAMPLE.png" src="_images/IMAGE_GRAPH_EXAMPLE.png" />
+<hr class="docutils" />
+<p>图 3-21 图对应的散列键</p>
+<img alt="_images/IMAGE_GRAPH_HASH.png" src="_images/IMAGE_GRAPH_HASH.png" />
+<hr class="docutils" />
+<p>比如说，
+假设我们想要储存图 3-20 所示的带权重有向图，
+那么可以创建一个图 3-21 所示的散列键，
+这个散列键会以 <code class="docutils literal notranslate"><span class="pre">start_vertex-&gt;end_vertex</span></code> 的形式，
+将各个顶点之间的边储存到散列的字段里面，
+并将字段的值设置成边的权重。
+通过这种方法，
+我们可以将图的所有相关数据全部储存到散列里面，
+代码清单 3-5 展示了使用这种方法实现的图数据储存程序。</p>
+<hr class="docutils" />
+<p>代码清单 3-5 使用散列实现的图数据储存程序：<code class="docutils literal notranslate"><span class="pre">/hash/graph.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">make_edge_name_from_vertexs</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    使用边的起点和终点组建边的名字。</span>
+<span class="sd">    例子：对于 start 为 &quot;a&quot; 、 end 为 &quot;b&quot; 的输入，这个函数将返回 &quot;a-&gt;b&quot; 。</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">start</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;-&gt;&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">end</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">decompose_vertexs_from_edge_name</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    从边的名字中分解出边的起点和终点。</span>
+<span class="sd">    例子：对于输入 &quot;a-&gt;b&quot; ，这个函数将返回结果 [&quot;a&quot;, &quot;b&quot;] 。</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&gt;&quot;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Graph</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">add_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">weight</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        添加一条从顶点 start 连接至顶点 end 的边，并将边的权重设置为 weight 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">edge</span> <span class="o">=</span> <span class="n">make_edge_name_from_vertexs</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">edge</span><span class="p">,</span> <span class="n">weight</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">remove_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        移除从顶点 start 连接至顶点 end 的一条边。</span>
+<span class="sd">        这个方法在成功删除边时返回 True ，</span>
+<span class="sd">        因为边不存在而导致删除失败时返回 False 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">edge</span> <span class="o">=</span> <span class="n">make_edge_name_from_vertexs</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hdel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">edge</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_edge_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        获取从顶点 start 连接至顶点 end 的边的权重，</span>
+<span class="sd">        如果给定的边不存在，那么返回 None 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">edge</span> <span class="o">=</span> <span class="n">make_edge_name_from_vertexs</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">edge</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">has_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        检查顶点 start 和顶点 end 之间是否有边，</span>
+<span class="sd">        是的话返回 True ，否则返回 False 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">edge</span> <span class="o">=</span> <span class="n">make_edge_name_from_vertexs</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hexists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">edge</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add_multi_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">tuples</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        一次向图中添加多条边。</span>
+<span class="sd">        这个方法接受任意多个格式为 (start, end, weight) 的三元组作为参数。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># redis-py 客户端的 hmset() 方法接受一个字典作为参数</span>
+        <span class="c1"># 格式为 {field1: value1, field2: value2, ...}</span>
+        <span class="c1"># 为了一次对图中的多条边进行设置</span>
+        <span class="c1"># 我们要将待设置的各条边以及它们的权重储存在以下字典</span>
+        <span class="n">nodes_and_weights</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># 遍历输入的每个三元组，从中取出边的起点、终点和权重</span>
+        <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">weight</span> <span class="ow">in</span> <span class="n">tuples</span><span class="p">:</span>
+            <span class="c1"># 根据边的起点和终点，创建出边的名字</span>
+            <span class="n">edge</span> <span class="o">=</span> <span class="n">make_edge_name_from_vertexs</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+            <span class="c1"># 使用边的名字作为字段，边的权重作为值，把边及其权重储存到字典里面</span>
+            <span class="n">nodes_and_weights</span><span class="p">[</span><span class="n">edge</span><span class="p">]</span> <span class="o">=</span> <span class="n">weight</span>
+
+        <span class="c1"># 根据字典中储存的字段和值，对散列进行设置</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hmset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">nodes_and_weights</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_multi_edge_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">tuples</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        一次获取多条边的权重。</span>
+<span class="sd">        这个方法接受任意多个格式为 (start, end) 的二元组作为参数，</span>
+<span class="sd">        然后返回一个列表作为结果，列表中依次储存着每条输入边的权重。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># hmget() 方法接受一个格式为 [field1, field2, ...] 的列表作为参数</span>
+        <span class="c1"># 为了一次获取图中多条边的权重</span>
+        <span class="c1"># 我们需要把所有想要获取权重的边的名字依次放入到以下列表里面</span>
+        <span class="n">edge_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># 遍历输入的每个二元组，从中获取边的起点和终点</span>
+        <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="ow">in</span> <span class="n">tuples</span><span class="p">:</span>
+            <span class="c1"># 根据边的起点和终点，创建出边的名字</span>
+            <span class="n">edge</span> <span class="o">=</span> <span class="n">make_edge_name_from_vertexs</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+            <span class="c1"># 把边的名字放入到列表中</span>
+            <span class="n">edge_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+
+        <span class="c1"># 根据列表中储存的每条边的名字，从散列里面获取它们的权重</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hmget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">edge_list</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_all_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        以集合形式返回整个图包含的所有边，</span>
+<span class="sd">        集合包含的每个元素都是一个 (start, end) 格式的二元组。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># hkeys() 方法将返回一个列表，列表中包含多条边的名字</span>
+        <span class="c1"># 例如 [&quot;a-&gt;b&quot;, &quot;b-&gt;c&quot;, &quot;c-&gt;d&quot;]</span>
+        <span class="n">edges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hkeys</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+
+        <span class="c1"># 创建一个集合，用于储存二元组格式的边</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="c1"># 遍历每条边的名字</span>
+        <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+            <span class="c1"># 根据边的名字，分解出边的起点和终点</span>
+            <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">decompose_vertexs_from_edge_name</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+            <span class="c1"># 使用起点和终点组成一个二元组，然后把它放入到结果集合里面</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span> <span class="nf">get_all_edges_with_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        以集合形式返回整个图包含的所有边，以及这些边的权重。</span>
+<span class="sd">        集合包含的每个元素都是一个 (start, end, weight) 格式的三元组。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># hgetall() 方法将返回一个包含边和权重的字典作为结果</span>
+        <span class="c1"># 格式为 {edge1: weight1, edge2: weight2, ...}</span>
+        <span class="n">edges_and_weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hgetall</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+
+        <span class="c1"># 创建一个集合，用于储存三元组格式的边和权重</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="c1"># 遍历字典中的每个元素，获取边以及它的权重</span>
+        <span class="k">for</span> <span class="n">edge</span><span class="p">,</span> <span class="n">weight</span> <span class="ow">in</span> <span class="n">edges_and_weights</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># 根据边的名字，分解出边的起点和终点</span>
+            <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">decompose_vertexs_from_edge_name</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+            <span class="c1"># 使用起点、终点和权重构建一个三元组，然后把它添加到结果集合里面</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">weight</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">result</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>这个图数据储存程序的核心概念就是把边（edge）的起点和终点组合成一个字段名，
+并把边的权重（weight）用作字段的值，
+然后使用 <code class="docutils literal notranslate"><span class="pre">HSET</span></code> 命令或者 <code class="docutils literal notranslate"><span class="pre">HMSET</span></code> 命令把它们储存到散列里面。
+比如说，
+如果用户输入的边起点为 <code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code> ，
+终点为 <code class="docutils literal notranslate"><span class="pre">&quot;b&quot;</span></code> ，
+权重为 <code class="docutils literal notranslate"><span class="pre">&quot;30&quot;</span></code> ，
+那么程序将执行命令 <code class="docutils literal notranslate"><span class="pre">HSET</span> <span class="pre">hash</span> <span class="pre">&quot;a-&gt;b&quot;</span> <span class="pre">30</span></code> ，
+把 <code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code> 至 <code class="docutils literal notranslate"><span class="pre">&quot;b&quot;</span></code> 的这条边及其权重 <code class="docutils literal notranslate"><span class="pre">30</span></code> 储存到散列里面。</p>
+<p>在此之后，
+程序就可以使用 <code class="docutils literal notranslate"><span class="pre">HDEL</span></code> 命令去删除图的某条边，
+使用 <code class="docutils literal notranslate"><span class="pre">HGET</span></code> 命令或者 <code class="docutils literal notranslate"><span class="pre">HMGET</span></code> 命令去获取边的权重，
+使用 <code class="docutils literal notranslate"><span class="pre">HEXISTS</span></code> 命令去检查边是否存在，
+又或者使用 <code class="docutils literal notranslate"><span class="pre">HKEYS</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">HGETALL</span></code> 命令去获取图的所有边以及权重。</p>
+<p>比如说，
+我们可以通过执行以下代码，
+构建出前面展示过的带权重有向图 3-20 ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">graph</span> <span class="kn">import</span> <span class="n">Graph</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;test-graph&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>  <span class="c1"># 添加边</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="mi">25</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">graph</span><span class="o">.</span><span class="n">add_multi_edges</span><span class="p">((</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="mi">70</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;d&quot;</span><span class="p">,</span> <span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="mi">19</span><span class="p">))</span>  <span class="c1"># 添加多条边</span>
+</pre></div>
+</div>
+<p>然后通过执行程序提供的方法，
+获取边的权重，
+又或者检查给定的边是否存在：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">graph</span><span class="o">.</span><span class="n">get_edge_weight</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">)</span>  <span class="c1"># 获取边 a-&gt;b 的权重</span>
+<span class="go">&#39;30&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">graph</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">)</span>         <span class="c1"># 边 a-&gt;b 存在</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">graph</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span>         <span class="c1"># 边 b-&gt;a 不存在</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>最后，
+我们还可以获取图的所有边以及它们的权重：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">graph</span><span class="o">.</span><span class="n">get_all_edges</span><span class="p">()</span>  <span class="c1"># 获取所有边</span>
+<span class="go">{(&#39;b&#39;, &#39;d&#39;), (&#39;d&#39;, &#39;e&#39;), (&#39;a&#39;, &#39;b&#39;), (&#39;c&#39;, &#39;b&#39;)}</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">graph</span><span class="o">.</span><span class="n">get_all_edges_with_weight</span><span class="p">()</span>  <span class="c1"># 获取所有边以及它们的权重</span>
+<span class="go">{(&#39;c&#39;, &#39;b&#39;, &#39;25&#39;), (&#39;a&#39;, &#39;b&#39;, &#39;30&#39;), (&#39;d&#39;, &#39;e&#39;, &#39;19&#39;), (&#39;b&#39;, &#39;d&#39;, &#39;70&#39;)}</span>
+</pre></div>
+</div>
+<p>这里展示的图数据储存程序提供了针对边和权重的功能，
+因为它能够非常方便地向图中添加边和移除边，
+并且还可以快速地检查某条边是否存在，
+所以它非常适合用来储存节点较多但边较少的稀疏图（sparse graph）。
+在后续的章节中，
+我们还会继续看到更多使用 Redis 储存图数据的例子。</p>
+</section>
+<section id="id26">
+<h2>示例：使用散列键重新实现文章储存程序<a class="headerlink" href="#id26" title="Link to this heading">¶</a></h2>
+<p>在稍早之前，
+我们用散列重写了《字符串》一章介绍过的计数器程序，
+但是除了计数器程序之外，
+还有另一个程序也非常适合使用散列来重写，
+那就是文章数据储存程序：
+比起用多个字符串键来储存文章的各项数据，
+更好的做法是把每篇文章的所有数据都储存到同一个散列里面，
+代码清单 3-6 展示了这一想法的具体实现。</p>
+<hr class="docutils" />
+<p>代码清单 3-6 使用散列实现的文章数据储存程序：<code class="docutils literal notranslate"><span class="pre">/hash/article.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+
+<span class="k">class</span> <span class="nc">Article</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">article_id</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">article_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">article_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">article_hash</span> <span class="o">=</span> <span class="s2">&quot;article::&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">article_id</span>
+
+    <span class="k">def</span> <span class="nf">is_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        检查给定 ID 对应的文章是否存在。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 如果文章散列里面已经设置了标题，那么我们认为这篇文章存在</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hexists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">article_hash</span><span class="p">,</span> <span class="s2">&quot;title&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">author</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        创建一篇新文章，创建成功时返回 True ，</span>
+<span class="sd">        因为文章已经存在而导致创建失败时返回 False 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 文章已存在，放弃执行创建操作</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_exists</span><span class="p">():</span> 
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># 把所有文章数据都放到字典里面</span>
+        <span class="n">article_data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span>
+            <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">content</span><span class="p">,</span>
+            <span class="s2">&quot;author&quot;</span><span class="p">:</span> <span class="n">author</span><span class="p">,</span>
+            <span class="s2">&quot;create_at&quot;</span><span class="p">:</span> <span class="n">time</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="c1"># redis-py 的 hmset() 方法接受一个字典作为参数，</span>
+        <span class="c1"># 并根据字典内的键和值对散列的字段和值进行设置。</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hmset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">article_hash</span><span class="p">,</span> <span class="n">article_data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回文章的各项信息。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># hgetall() 方法会返回一个包含标题、内容、作者和创建日期的字典</span>
+        <span class="n">article_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hgetall</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">article_hash</span><span class="p">)</span>
+        <span class="c1"># 把文章 ID 也放到字典里面，以便用户操作</span>
+        <span class="n">article_data</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">article_id</span>
+        <span class="k">return</span> <span class="n">article_data</span>
+
+    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">author</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        对文章的各项信息进行更新，</span>
+<span class="sd">        更新成功时返回 True ，失败时返回 False 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 如果文章并不存在，那么放弃执行更新操作</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_exists</span><span class="p">():</span> 
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="n">article_data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">article_data</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">title</span>
+        <span class="k">if</span> <span class="n">content</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">article_data</span><span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">content</span>
+        <span class="k">if</span> <span class="n">author</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">article_data</span><span class="p">[</span><span class="s2">&quot;author&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">author</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hmset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">article_hash</span><span class="p">,</span> <span class="n">article_data</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>新的文章储存程序除了会用到散列之外，
+还有两个需要注意的地方：</p>
+<ol class="arabic simple">
+<li><p>虽然 Redis 为字符串提供了 <code class="docutils literal notranslate"><span class="pre">MSET</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">MSETNX</span></code> 命令，
+但是却并没有为散列提供 <code class="docutils literal notranslate"><span class="pre">HMSET</span></code> 命令对应的 <code class="docutils literal notranslate"><span class="pre">HMSETNX</span></code> 命令，
+所以这个程序在创建一篇新文章之前，
+需要先通过 <code class="docutils literal notranslate"><span class="pre">is_exists()</span></code> 方法检查文章是否存在，
+然后再考虑是否使用 <code class="docutils literal notranslate"><span class="pre">HMSET</span></code> 命令去进行设置。</p></li>
+<li><p>在使用字符串键储存文章数据的时候，
+为了避免数据库中出现键名冲突，
+程序必须为每篇文章的每个属性都设置一个独一无二的键，
+比如使用 <code class="docutils literal notranslate"><span class="pre">article::10086::title</span></code> 键去储存 ID 为 10086 的文章的标题，
+使用 <code class="docutils literal notranslate"><span class="pre">article::12345::title</span></code> 键去储存 ID 为 12345 的文章的标题，
+诸如此类。
+相反地，
+因为新的文章储存程序可以直接将一篇文章的所有相关信息都储存到同一个散列里面，
+所以它可以直接在散列里面使用 <code class="docutils literal notranslate"><span class="pre">title</span></code> 作为标题的字段，
+而不必担心出现命名冲突。</p></li>
+</ol>
+<p>以下代码简单地展示了这个文章储存程序的使用方法：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">article</span> <span class="kn">import</span> <span class="n">Article</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">article</span> <span class="o">=</span> <span class="n">Article</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="mi">10086</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># 创建文章</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">article</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;greeting&quot;</span><span class="p">,</span> <span class="s2">&quot;hello world&quot;</span><span class="p">,</span> <span class="s2">&quot;peter&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># 获取文章内容</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">article</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+<span class="go">{&#39;content&#39;: &#39;hello world&#39;, &#39;id&#39;: &#39;10086&#39;, &#39;created_at&#39;: &#39;1442744762.631885&#39;, &#39;title&#39;: &#39;greeting&#39;, &#39;author&#39;: &#39;peter&#39;}</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># 检查文章是否存在</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">article</span><span class="o">.</span><span class="n">is_exists</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># 更新文章内容</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">article</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="s2">&quot;good morning!&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">article</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+<span class="go">{&#39;content&#39;: &#39;good morning!&#39;, &#39;id&#39;: &#39;10086&#39;,  &#39;created_at&#39;: &#39;1442744762.631885&#39;, &#39;title&#39;: &#39;greeting&#39;, &#39;author&#39;: &#39;peter&#39;}</span>
+</pre></div>
+</div>
+<p>图 3-22 以图形方式展示了这段代码创建的散列键。</p>
+<hr class="docutils" />
+<p>图 3-22 储存在散列里面的文章数据</p>
+<img alt="_images/IMAGE_ARTICLE_IN_HASH.png" src="_images/IMAGE_ARTICLE_IN_HASH.png" />
+</section>
+<hr class="docutils" />
+<section id="id27">
+<h2>散列与字符串<a class="headerlink" href="#id27" title="Link to this heading">¶</a></h2>
+<p>本章从开头到现在，
+陆续介绍了 HSET 、 HSETNX 、 HGET 、 HINCRBY 和 HINCRBYFLOAT 等多个散列命令，
+如果读者对上一章介绍过的字符串命令还有印象的话，
+那么应该会记得，
+字符串也有类似的 SET 、 SETNX 、 GET 、 INCRBY 和 INCRBYFLOAT 命令。
+这种相似并不是巧合，
+正如表 3-1 所示，
+散列的确拥有很多与字符串命令功能相似的命令。</p>
+<hr class="docutils" />
+<p>表 3-1 字符串命令与类似的散列命令</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>字符串</p></th>
+<th class="head"><p>散列</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SET</span></code> —— 为一个字符串键设置值。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HSET</span></code> —— 为散列的给定字段设置值。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SETNX</span></code> —— 仅在字符串键不存在的情况下为它设置值。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HSETNX</span></code> —— 仅在散列不包含指定字段的情况下，为它设置值。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GET</span></code> —— 获取字符串键的值。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HGET</span></code> —— 从散列里面获取给定字段的值。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">STRLEN</span></code> —— 获取字符串值的字节长度。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HSTRLEN</span></code> —— 获取给定字段值的字节长度。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">INCRBY</span></code> —— 对字符串键储存的数字值执行整数加法操作。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HINCRBY</span></code> —— 对字段储存的数字值执行整数加法操作。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> —— 对字符串键储存的数字值执行浮点数加法操作。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HINCRBYFLOAT</span></code> —— 对字段储存的数字值执行浮点数加法操作。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">MSET</span></code> —— 一次为多个字符串键设置值。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HMSET</span></code> —— 一次为散列的多个字段设置值。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">MGET</span></code> —— 一次获取多个字符串键的值。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HMGET</span></code> —— 一次获取散列中多个字段的值。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">EXISTS</span></code> —— 检查给定的键是否存在于数据库当中，
+这个命令可以用于包括字符串键在内的所有数据库键，
+本书稍后将在《数据库》一章对这个命令进行详细的介绍。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HEXISTS</span></code> —— 检查给定字段是否存在于散列当中。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">DEL</span></code> —— 从数据库里面删除指定的键，
+这个命令可以用于包括字符串键在内的所有数据库键，
+本书稍后将在《数据库》一章对这个命令进行详细的介绍。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HDEL</span></code> —— 从散列中删除给定字段，以及它的值。</p></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<p>对于表中列出的字符串命令和散列命令来说，
+它们之间的最大区别就是前者处理的是字符串键，
+而后者处理的则是散列键，
+除此之外，
+这些命令要做的事情几乎都是相同的。</p>
+<p>Redis 之所以会选择同时提供字符串键和散列键这两种数据结构，
+原因在于它们虽然在操作上非常相似，
+但是各自却又拥有不同的优点，
+这使得它们在某些场合无法被对方替代，
+本节接下来将分别介绍这两种数据结构各自的优点。</p>
+<section id="id28">
+<h3>散列键的优点<a class="headerlink" href="#id28" title="Link to this heading">¶</a></h3>
+<p>散列的最大优势，
+就是它只需要在数据库里面创建一个键，
+就可以把任意多的字段和值储存到散列里面。
+相反地，
+因为每个字符串键只能储存一个键值对，
+所以如果用户要使用字符串键去储存多个数据项的话，
+那么就只能在数据库里面创建多个字符串键。</p>
+<p>图 3-23 展示了使用字符串键和散列键储存相同数量的数据项时，
+数据库中创建的字符串键和散列键。</p>
+<hr class="docutils" />
+<p>图 3-23 使用字符串键和散列键去储存相同数量的数据项</p>
+<img alt="_images/IMAGE_DB_COMPARE.png" src="_images/IMAGE_DB_COMPARE.png" />
+<hr class="docutils" />
+<p>从图中可以看到，
+为了储存相同的四个数据项，
+程序需要用到四个字符串键，
+又或者一个散列键。
+按此计算，
+如果我们需要储存一百万篇文章，
+那么在使用散列键的情况下，
+程序只需要在数据库里面创建一百万个散列键就可以了；
+但是如果使用字符串键的话，
+那么程序就需要在数据库里面创建四百万个字符串键。</p>
+<p>数据库键数量增多带来的问题主要和资源有关：</p>
+<ol class="arabic">
+<li><p>为了对数据库以及数据库键的使用情况进行统计，
+Redis 会为每个数据库键储存一些额外的信息，
+并因此带来一些额外的内存消耗。
+对于单个数据库键来说，
+这些额外的内存消耗几乎可以忽略不计，
+但是，
+当数据库键的数量达到上百万、上千万甚至更多的时候，
+这些额外的内存消耗就会变得比较可观。</p></li>
+<li><p>当散列包含的字段数量比较少的时候，
+Redis 就会使用特殊的内存优化结构去储存散列中的字段和值：
+与字符串键相比，
+这种内存优化结构储存相同数据所需的内存要少得多。
+使用内存优化结构的散列越多，
+内存优化结构带来的效果也就越明显。
+在一定条件下，
+对于相同的数据，
+使用散列键进行储存比使用字符串键进行储存要节约一半以上的内存，
+有时候甚至会更多。</p></li>
+<li><p>除了需要耗费更多内存之外，
+更多的数据库键也需要占用更多的 CPU 。
+每当 Redis 需要对数据库中的键进行处理时，
+数据库包含的键越多，
+进行处理所需的 CPU 资源就会越多，
+处理所耗费的时间也会越长，
+典型的情况包括：</p>
+<ul class="simple">
+<li><p>统计数据库和数据库键的使用情况；</p></li>
+<li><p>对数据库执行持久化操作，
+又或者根据持久化文件还原数据库；</p></li>
+<li><p>通过模式匹配在数据库里面查找某个键，
+或者执行类似的查找操作；</p></li>
+</ul>
+<p>这些操作的执行时间都会受到数据库键数量的影响。</p>
+</li>
+</ol>
+<p>最后，
+除了资源方面的优势之外，
+散列键还可以有效地组织起相关的多项数据，
+让程序产生出更容易理解的数据，
+使得针对数据的批量操作变得更为方便。
+比如在上面展示的图 3-23 中，
+使用散列键储存文章数据的做法就比使用字符串键储存文章数据的做法要来得更为清晰、易懂。</p>
+</section>
+<section id="id29">
+<h3>字符串键的优点<a class="headerlink" href="#id29" title="Link to this heading">¶</a></h3>
+<p>虽然使用散列键可以有效地节约资源并更好地组织数据，
+但是字符串键也有自己的优点：</p>
+<ol class="arabic simple">
+<li><p>虽然散列键命令和字符串命令在部分功能上有重合的地方，
+但是字符串键命令提供的操作比散列键命令要更为丰富。
+比如说，
+字符串能够使用 <code class="docutils literal notranslate"><span class="pre">SETRANGE</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">GETRANGE</span></code> 命令设置或者读取字符串值的其中一部分，
+又或者使用 <code class="docutils literal notranslate"><span class="pre">APPEND</span></code> 命令将新内容追加到字符串值的末尾，
+而散列键并不支持这些操作。</p></li>
+<li><p>本书稍后将在《自动过期》一章对 Redis 的键过期功能进行介绍，
+这一功能可以在指定时间到达时，
+自动删除指定的键。
+因为键过期功能针对的是整个键，
+用户无法为散列中的不同字段设置不同的过期时间，
+所以当一个散列键过期的时候，
+它包含的所有字段和值都将被删除。
+与此相反，
+如果用户使用字符串键储存信息项的话，
+就不会遇到这样的问题：
+用户可以为每个字符串键分别设置不同的过期时间，
+让它们根据实际的需要自动被删除掉。</p></li>
+</ol>
+</section>
+<section id="id30">
+<h3>字符串键和散列键的选择<a class="headerlink" href="#id30" title="Link to this heading">¶</a></h3>
+<p>表 3-2 从资源占用、支持的操作以及过期时间三个方面对比了字符串键和散列键的优缺点。</p>
+<hr class="docutils" />
+<p>表 3-2 对比字符串键和散列键</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>比较的范畴</p></th>
+<th class="head"><p>结果</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>资源占用</p></td>
+<td><p>字符串键在数量较多的情况下，将占用大量的内存和 CPU 时间。
+与此相反，将多个数据项储存到同一个散列里面可以有效地减少内存和 CPU 消耗。</p></td>
+</tr>
+<tr class="row-odd"><td><p>支持的操作</p></td>
+<td><p>散列键支持的所有命令，几乎都有相应的字符串键版本，但字符串键支持的 <code class="docutils literal notranslate"><span class="pre">SETRANGE</span></code> 、 <code class="docutils literal notranslate"><span class="pre">GETRANGE</span></code> 等操作散列键并不具备。</p></td>
+</tr>
+<tr class="row-even"><td><p>过期时间</p></td>
+<td><p>字符串键可以为每个键单独设置过期时间，独立删除某个数据项；而散列一旦到期，它包含的所有字段和值都会被删除。</p></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<p>既然字符串键和散列键各有优点，
+那么我们在构建应用程序的时候，
+什么时候应该使用字符串键，
+而什么时候又应该使用散列键呢？
+对于这个问题，
+以下总结了一些选择的条件和方法：</p>
+<ol class="arabic simple">
+<li><p>如果程序需要为每个数据项单独设置过期时间，
+那么使用字符串键。</p></li>
+<li><p>如果程序需要对数据项执行诸如 <code class="docutils literal notranslate"><span class="pre">SETRANGE</span></code> 、 <code class="docutils literal notranslate"><span class="pre">GETRANGE</span></code> 或者 <code class="docutils literal notranslate"><span class="pre">APPEND</span></code> 等操作，
+那么优先考虑使用字符串键。
+当然，
+用户也可以选择把数据储存在散列里面，
+然后将类似 <code class="docutils literal notranslate"><span class="pre">SETRANGE</span></code> 、 <code class="docutils literal notranslate"><span class="pre">GETRANGE</span></code> 这样的操作交给客户端执行。</p></li>
+<li><p>如果程序需要储存的数据项比较多，
+并且你希望尽可能地减少储存数据所需的内存，
+那么就应该优先考虑使用散列键。</p></li>
+<li><p>如果多个数据项在逻辑上属于同一组或者同一类，
+那么应该优先考虑使用散列键。</p></li>
+</ol>
+</section>
+</section>
+<section id="id31">
+<h2>重点回顾<a class="headerlink" href="#id31" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>散列键会将一个键和一个散列在数据库里面关联起来，
+用户可以在散列里面为任意多个字段设置值。
+跟字符串键一样，
+散列的字段和值既可以是文本数据，
+也可以是二进制数据。</p></li>
+<li><p>用户可以通过散列键把相关联的多项数据储存到同一个散列里面，
+以便对其进行管理，
+又或者针对它们执行批量操作。</p></li>
+<li><p>因为 Redis 并没有为散列提供相应的减法操作命令，
+所以如果用户想对字段储存的数字值执行减法操作的话，
+那么就需要将负数增量传递给 <code class="docutils literal notranslate"><span class="pre">HINCRBY</span></code> 命令或 <code class="docutils literal notranslate"><span class="pre">HINCRBYFLOAT</span></code> 命令。</p></li>
+<li><p>Redis 散列包含的字段在底层是以无序方式储存的，
+根据字段插入的顺序不同，
+包含相同字段的散列在执行 <code class="docutils literal notranslate"><span class="pre">HKEYS</span></code> 、 <code class="docutils literal notranslate"><span class="pre">HVALS</span></code> 和 <code class="docutils literal notranslate"><span class="pre">HGETALL</span></code> 等命令时可能会得到不同的结果，
+因此用户在使用这三个命令的时候，
+不应该对命令返回元素的排列顺序作任何假设。</p></li>
+<li><p>字符串键和散列键虽然在操作方式上非常相似，
+但是因为它们都拥有各自独有的优点和缺点，
+所以在一些情况下，
+这两种数据结构是没有办法完全代替对方的。
+因此用户在构建应用程序的时候，
+应该根据自己的实际需要来选择使用相应的数据结构。</p></li>
+</ul>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">散列（Hash）</a><ul>
+<li><a class="reference internal" href="#id1">散列简介</a></li>
+<li><a class="reference internal" href="#hset">HSET：为字段设置值</a><ul>
+<li><a class="reference internal" href="#id2">使用新值覆盖旧值</a></li>
+<li><a class="reference internal" href="#id3">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#hsetnx">HSETNX：只在字段不存在的情况下为它设置值</a><ul>
+<li><a class="reference internal" href="#id4">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#hget">HGET：获取字段的值</a><ul>
+<li><a class="reference internal" href="#id5">处理不存在的字段或者不存在的散列</a></li>
+<li><a class="reference internal" href="#id6">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id7">示例：实现短网址生成程序</a></li>
+<li><a class="reference internal" href="#hincrby">HINCRBY：对字段储存的整数值执行加法或减法操作</a><ul>
+<li><a class="reference internal" href="#id8">执行减法操作</a></li>
+<li><a class="reference internal" href="#id9">处理异常情况</a></li>
+<li><a class="reference internal" href="#id10">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#hincrbyfloat">HINCRBYFLOAT：对字段储存的数字值执行浮点数加法或减法操作</a><ul>
+<li><a class="reference internal" href="#id11">增量和字段值的类型限制</a></li>
+<li><a class="reference internal" href="#id12">执行减法操作</a></li>
+<li><a class="reference internal" href="#id13">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id14">示例：使用散列键重新实现计数器</a></li>
+<li><a class="reference internal" href="#hstrlen">HSTRLEN：获取字段值的字节长度</a><ul>
+<li><a class="reference internal" href="#id15">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#hexists">HEXISTS：检查字段是否存在</a><ul>
+<li><a class="reference internal" href="#id16">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#hdel">HDEL：删除字段</a><ul>
+<li><a class="reference internal" href="#id17">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#hlen">HLEN：获取散列包含的字段数量</a><ul>
+<li><a class="reference internal" href="#id18">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id19">示例：实现用户登录会话</a></li>
+<li><a class="reference internal" href="#hmset">HMSET：一次为多个字段设置值</a><ul>
+<li><a class="reference internal" href="#id20">使用新值覆盖旧值</a></li>
+<li><a class="reference internal" href="#id21">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#hmget">HMGET：一次获取多个字段的值</a><ul>
+<li><a class="reference internal" href="#id22">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#hkeyshvalshgetall">HKEYS、HVALS、HGETALL：获取所有字段、所有值或者所有字段和值</a><ul>
+<li><a class="reference internal" href="#id23">字段在散列中的排列顺序</a></li>
+<li><a class="reference internal" href="#id24">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id25">示例：储存图数据</a></li>
+<li><a class="reference internal" href="#id26">示例：使用散列键重新实现文章储存程序</a></li>
+<li><a class="reference internal" href="#id27">散列与字符串</a><ul>
+<li><a class="reference internal" href="#id28">散列键的优点</a></li>
+<li><a class="reference internal" href="#id29">字符串键的优点</a></li>
+<li><a class="reference internal" href="#id30">字符串键和散列键的选择</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id31">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="string.html"
+                          title="Previous page">&larr; 字符串（String）</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="list.html"
+                          title="Next page">&rarr; 列表（List）</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>本页</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/hash.rst.txt"
+            rel="nofollow">显示源代码</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">快速搜索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="提交" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="list.html" title="列表（List）"
+             >下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="string.html" title="字符串（String）"
+             >上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">散列（Hash）</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; 版权所有 2019, 黄健宏.
+      由 <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6创建。
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

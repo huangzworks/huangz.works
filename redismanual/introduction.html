@@ -1,0 +1,529 @@
+
+
+<!DOCTYPE html>
+
+<html lang="zh-CN" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>引言 &#8212; Redis使用手册</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" href="./" type="text/css" />
+    
+    <script src="_static/documentation_options.js?v=f115507d"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=beaddf03"></script>
+
+    
+    
+     
+        <script src="_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="_static/cloud.js"></script>
+    
+
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+    <link rel="next" title="字符串（String）" href="string.html" />
+    <link rel="prev" title="前言" href="preface.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="string.html" title="字符串（String）"
+             accesskey="N">下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="preface.html" title="前言"
+             accesskey="P">上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">引言</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>引言<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>欢迎来到本书的第一章。
+在这一章，
+我们首先会了解到一些关于 Redis 的基本信息，
+比如它提供了什么功能、它能做什么、它的优点是什么、有哪些公司使用它等等。</p>
+<p>之后我们会快速地了解本书各个章节的具体编排，
+并完成一些学习 Redis 的前期准备工作，
+比如安装 Redis 服务器等等。
+在一切准备就绪之后，
+我们就会开始学习如何执行 Redis 命令，
+以及如何通过配置选项对 Redis 服务器进行配置。</p>
+<p>在本章的最后，
+我们还会看到获取本书示例代码的方法，
+并知悉本书使用的 Redis 版本以及本书配套的读者服务网站。</p>
+<section id="redis">
+<h2>Redis 简介<a class="headerlink" href="#redis" title="Link to this heading">¶</a></h2>
+<p>Redis 是一个主要由 Salvatore Sanfilippo （antirez）开发的开源的内存数据结构存储器，
+它经常被用作数据库、缓存以及消息代理等用途。</p>
+<p>Redis 因为它丰富的数据结构、极快的速度、齐全的功能而为人所知，
+它是目前内存数据库方面的事实标准，
+在互联网上有非常广泛的应用，
+包括微博、Twitter、GitHub、Stack Overflow、知乎等国内外公司都大量地使用了 Redis 。</p>
+<p>Redis 之所以广受开发者欢迎，
+跟它自身拥有强大的功能以及简洁的设计不无关系。</p>
+<p>虽然 Redis 拥有各式各样的特点和优点，
+但其中最重要的不外乎以下这些：</p>
+<ul>
+<li><p><strong>丰富多样的数据结构</strong></p>
+<p>Redis 为用户提供了字符串、散列、列表、集合、有序集合、HyperLogLog、位图、流、地理坐标等一系列丰富的数据结构，
+每种数据结构都适用于解决特定的问题。
+在有需要的时候，
+用户还可以通过事务、Lua 脚本、模块等特性，
+扩展已有数据结构的功能，
+甚至从零实现自己专属的数据结构。
+通过这些数据结构和特性，
+Redis 可以保证，
+用户总是可以使用最适合的工具去解决手头上的问题。</p>
+</li>
+<li><p><strong>完备的功能</strong></p>
+<p>在上述这些数据结构的基础上，
+Redis 提供了很多非常有用和实用的附加功能，
+比如自动过期、流水线、事务、数据持久化等，
+这些功能能够帮助用户将 Redis 应用在更多不同的场景中，
+或者给予用户以方便。
+更重要的是，
+Redis 不仅可以单机使用，
+还可以多机使用：
+通过 Redis 自带的复制、Sentinel 和集群功能，
+用户可以将自己的数据库扩展至任意大小。
+无论你运营的是一个小型的个人网站，
+还是一个为上千万消费者服务的热门站点，
+你都可以在 Redis 找到你想要的功能，
+并将其部署到你的服务器里面。</p>
+</li>
+<li><p><strong>风驰电掣般的执行速度</strong></p>
+<p>Redis 是一款内存数据库，
+它将所有数据都储存在内存里面。
+因为计算机访问内存的速度要远远高于访问硬盘的速度，
+因此与基于硬盘设计的传统数据库相比，
+Redis 在数据的存取速度方面具有天然的优势。
+虽然说“背靠大树好乘凉”，
+但 Redis 并没有因为自己拥有天然的速度优势就放弃了自己在效率方面的追求。
+与此相反，
+Redis 的开发者在实现各项数据结构和特性的时候都经过了大量考量，
+在底层选用了很多非常高效的数据结构和算法，
+以此来确保每个操作都可以在尽可能短的时间内完成，
+并且尽可能地节省内存。</p>
+</li>
+<li><p><strong>对用户友好的API、文档以及社区</strong></p>
+<p>“虽然 Redis 提供了很多很棒的数据结构和特性，
+但如果它们使用起来非常困难的话，
+那么这一切就没有意义。”
+——如果你对此有所担心的话，
+那么现在可以打消你的疑虑了！
+Redis API 遵循的是 UNIX “一次只做一件事，并把它做好”的设计哲学，
+Redis 的 API 虽然丰富，
+但它们大部分都非常简短，
+并且只需接受几个参数就可以完成用户指定的操作。
+更棒的是，
+Redis 在官方网站（redis.io）上为每个 API 以及相关特性都提供了详尽的文档，
+并且客户端本身也可以在线查询这些文档。
+当你遇到文档无法解决的问题时，
+还可以在 Redis 项目的 GitHub 页面（github.com/antirez/redis）、 Google Group（groups.google.com/forum/#!forum/redis-db）甚至作者的 Twitter（twitter.com/antirez） 上提问。</p>
+</li>
+<li><p><strong>广泛的支持</strong></p>
+<p>正如之前所说，
+Redis 已经得到了互联网公司的广泛使用，
+许多开发者为不同的编程语言开发了相应的客户端（redis.io/clients），
+绝大多数编程语言的使用者都可以轻而易举地找到他们所需的客户端，
+然后直接开始使用 Redis 。
+此外，包括亚马逊、谷歌、RedisLabs、阿里云和腾讯云在内的多个云服务提供商都提供了基于 Redis 或兼容 Redis 的服务，
+如果你不打算自己搭建 Redis 服务器，
+那么上述的这些提供商可能是一个不错的选择。</p>
+</li>
+</ul>
+<hr class="docutils" />
+<p>图 1-1 Redis 特色一览</p>
+<img alt="_images/IMAGE_ABOUT_REDIS.png" src="_images/IMAGE_ABOUT_REDIS.png" />
+</section>
+<hr class="docutils" />
+<section id="id2">
+<h2>内容编排<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>本书由数据结构与应用、附加功能和多机功能三个部分共二十章组成。</p>
+<p>在数据结构与应用部分，
+书本介绍了 Redis 核心的九种数据结构，
+列举了操作这些数据结构的众多命令及其详细信息，
+并在其中穿插介绍了多个使用 Redis 命令构建应用程序的示例。
+通过这些程序示例，
+读者可以进一步加深对命令的认识，
+并学会如何在实际中应用这些命令，
+从而达到学而致用的目的。</p>
+<p>附加功能部分介绍了 Redis 在数据结构的基础上，
+为用户提供的额外功能。
+其中包括管理数据结构的数据库管理功能和自动过期功能，
+将数据结构持久化至硬盘从而避免数据丢失的持久化功能，
+提高多条命令执行效率的流水线功能，
+保证命令安全性的事务和 Lua 脚本功能，
+还有扩展服务器特性的模块功能等等。
+这些功能在为用户提供方便的同时，
+也进一步扩大了 Redis 的适用范围，
+读者可以通过阅读这一部分来学会如何将 Redis 应用在更多场景中。</p>
+<p>多机功能部分介绍了 Redis 的三项多机功能，
+它们分别是复制、Sentinel 和集群。
+其中复制用于创建多个 Redis 服务器的副本，
+并藉此提升整个 Redis 系统的读性能以及容灾能力。
+至于 Sentinel 则在复制的基础上，
+为 Redis 系统提供了自动的故障转移功能，
+从而使得整个系统可以更健壮地运行。
+最后，
+通过使用 Redis 集群，
+用户可以在线扩展 Redis 系统的读写能力。
+读者可以通过阅读这一部分来获得扩展 Redis 读写性能的相关知识，
+并根据自己的情况为 Redis 系统选择合适的扩展方式。</p>
+</section>
+<section id="id3">
+<h2>目标读者<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>本书面向所有 Redis 初学者和 Redis 使用者，
+是学习和日常使用 Redis 必不可少的一本书。</p>
+<p>一方面，
+对于 Redis 初学者来说，
+本书的章节经过妥善的编排，
+按照从简单到复杂的顺序详细罗列了 Redis 的各项特性，
+因此 Redis 初学者只需要沿着书本一直阅读下去就可以循序渐进地学习到具体的 Redis 知识，
+而穿插其中的应用示例则让读者有机会亲自实践书中介绍的命令知识，
+真正做到学以致用。</p>
+<p>另一方面，
+对于 Redis 使用者来说，
+本书包含了大量 Redis 新版特性的介绍，
+读者可以通过本书了解到最新的 Redis 知识。
+除此之外，
+对于日常的命令文档查找和应用示例查找，
+本书在目录处也做了优化，
+读者可以通过书本的目录快速定位命令和示例，
+非常便于日常查阅。</p>
+</section>
+<section id="id4">
+<h2>预备工作<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>本书包含大量 Redis 命令操作实例和 Python 代码应用示例，
+执行和测试这些示例需要用到 Redis 服务器及其附带的 redis-cli 客户端、Python 编程环境和 redis-py 客户端，
+如果你尚未安装这些软件，
+那么请查阅本书的附录 A 和附录 B 并按照指引进行安装。</p>
+<p>在正确安装 Redis 服务器之后，
+你应该可以通过执行以下命令来启动 Redis 服务器：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ redis-server
+28393:C 02 Jul 2019 23:49:25.952 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+28393:C 02 Jul 2019 23:49:25.952 # Redis version=999.999.999, bits=64, commit=0cabe0cf, modified=1, pid=28393, just started
+28393:C 02 Jul 2019 23:49:25.952 # Warning: no config file specified, using the default config. In order to specify a config file use /Users/huangz/code/redis/src/redis-server /path/to/redis.conf
+28393:M 02 Jul 2019 23:49:25.953 * Increased maximum number of open files to 10032 (it was originally set to 256).
+                _._
+           _.-``__ &#39;&#39;-._
+      _.-``    `.  `_.  &#39;&#39;-._           Redis 999.999.999 (0cabe0cf/1) 64 bit
+  .-`` .-```.  ```\/    _.,_ &#39;&#39;-._
+ (    &#39;      ,       .-`  | `,    )     Running in standalone mode
+ |`-._`-...-` __...-.``-._|&#39;` _.-&#39;|     Port: 6379
+ |    `-._   `._    /     _.-&#39;    |     PID: 28393
+  `-._    `-._  `-./  _.-&#39;    _.-&#39;
+ |`-._`-._    `-.__.-&#39;    _.-&#39;_.-&#39;|
+ |    `-._`-._        _.-&#39;_.-&#39;    |           http://redis.io
+  `-._    `-._`-.__.-&#39;_.-&#39;    _.-&#39;
+ |`-._`-._    `-.__.-&#39;    _.-&#39;_.-&#39;|
+ |    `-._`-._        _.-&#39;_.-&#39;    |
+  `-._    `-._`-.__.-&#39;_.-&#39;    _.-&#39;
+      `-._    `-.__.-&#39;    _.-&#39;
+          `-._        _.-&#39;
+              `-.__.-&#39;
+
+28393:M 02 Jul 2019 23:49:25.954 # Server initialized
+28393:M 02 Jul 2019 23:49:25.954 * Ready to accept connection
+</pre></div>
+</div>
+<p>并通过以下命令启动 redis-cli 客户端：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ redis-cli
+127.0.0.1:6379&gt;
+</pre></div>
+</div>
+<p>以及通过以下命令启动 Python 解释器并载入 redis-py 库：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ python3
+Python 3.7.3 (default, Mar 27 2019, 09:23:15)
+[Clang 10.0.1 (clang-1001.0.46.3)] on darwin
+Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.
+&gt;&gt;&gt; from redis import Redis
+&gt;&gt;&gt;
+</pre></div>
+</div>
+<p>在上述准备工作圆满完成之后，
+我们就可以开始学习 Redis 命令的基本知识了。</p>
+</section>
+<section id="id5">
+<h2>执行命令<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>Redis 服务器通过接收客户端发送的命令请求来执行指定的命令，
+并在命令执行完毕之后通过响应将命令的执行结果返回给客户端，
+至于结果的内容则被称为命令回复。</p>
+<hr class="docutils" />
+<p>图 1-2 命令请求与响应</p>
+<img alt="_images/IMAGE_REQUEST_AND_RESPONSE.png" src="_images/IMAGE_REQUEST_AND_RESPONSE.png" />
+<hr class="docutils" />
+<p>Redis 为每种数据结构和功能特性都提供了一簇相应的命令，
+学习如何使用这些命令是学习 Redis 的重中之重。
+幸运的是，
+大部分 Redis 命令都非常简单，
+只需要接受少量几个参数就可以完成非常强大的操作。</p>
+<p>Redis 的所有命令都由一个命令名后跟任意多个参数以及可选项组成：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">COMMAND</span> <span class="p">[</span><span class="n">arg1</span> <span class="n">arg2</span> <span class="n">arg3</span> <span class="o">...</span><span class="p">]</span> <span class="p">[[</span><span class="n">OPTION1</span> <span class="n">value1</span><span class="p">]</span> <span class="p">[</span><span class="n">OPTION2</span> <span class="n">value2</span><span class="p">]</span> <span class="p">[</span><span class="o">...</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p>在本书中，
+命令和可选项的名字通常以大写字母形式出现，
+而命令参数和可选项的值则以小写字母形式出现。
+比如上例中的 <code class="docutils literal notranslate"><span class="pre">COMMAND</span></code> 就是命令的名字，
+而 <code class="docutils literal notranslate"><span class="pre">OPTION1</span></code> 和 <code class="docutils literal notranslate"><span class="pre">OPTION2</span></code> 则是可选项的名字。
+至于 <code class="docutils literal notranslate"><span class="pre">arg1</span></code> 、 <code class="docutils literal notranslate"><span class="pre">arg2</span></code> 和 <code class="docutils literal notranslate"><span class="pre">arg3</span></code> 则是命令的参数，
+而 <code class="docutils literal notranslate"><span class="pre">value1</span></code> 和 <code class="docutils literal notranslate"><span class="pre">value2</span></code> 则是可选项的值。</p>
+<p>命令描述中的方括号 <code class="docutils literal notranslate"><span class="pre">[]</span></code> 仅用于包围命令中可选的参数和选项，
+在执行命令的时候并不需要给出这些方括号。
+最后，
+命令描述中的 <code class="docutils literal notranslate"><span class="pre">...</span></code> 用于表示命令接受任意数量的参数或可选项。</p>
+<p>好的，
+关于 Redis 命令格式的描述已经足够多了，
+现在让我们来看一个实际的例子。
+Redis 的 <code class="docutils literal notranslate"><span class="pre">PING</span></code> 命令接受一条可选的消息作为参数，
+这个命令通常用于测试客户端和服务器之间的连接是否正常：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">PING</span> <span class="p">[</span><span class="n">message</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>如果用户以无参数形式执行这个命令，
+那么服务器在连接正常的情况下，
+将向客户端返回 <code class="docutils literal notranslate"><span class="pre">&quot;PONG&quot;</span></code> 作为回复：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">PING</span>
+<span class="n">PONG</span>
+</pre></div>
+</div>
+<p>但是，
+如果用户给定了可选的消息，
+那么服务器将原封不动地向客户端返回该消息：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">PING</span> <span class="s2">&quot;hello world&quot;</span>
+<span class="s2">&quot;hello world&quot;</span>
+</pre></div>
+</div>
+<p>另一方面，
+如果服务器与客户端的连接不正常，
+那么客户端将返回一个错误：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>-- 客户端未能连接服务器，返回一个连接错误
+127.0.0.1:6379&gt; PING
+Could not connect to Redis at 127.0.0.1:6379: Connection refused
+</pre></div>
+</div>
+<p>我们为这个命令调用添加了一条注释，
+用于说明客户端遇到的问题。
+在本书中，
+redis-cli 客户端的命令执行示例都使用 <code class="docutils literal notranslate"><span class="pre">--</span></code> 作为注释前缀，
+这些注释仅用于对被执行的命令做进一步的说明，
+它们并不是被执行命令的一部分。</p>
+<hr class="docutils" />
+<p>图 1-3 在 redis-cli 中执行 Redis 命令</p>
+<img alt="_images/IMAGE_COMMAND_PARTS.png" src="_images/IMAGE_COMMAND_PARTS.png" />
+</section>
+<hr class="docutils" />
+<section id="id6">
+<h2>配置服务器<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<p>在阅读本书的过程中，
+有时候我们还需要使用配置选项对 Redis 服务器进行配置，
+这一点可以通过两种方法来完成。</p>
+<p>第一种方法是在启动 Redis 服务器的时候给定配置选项作为参数，
+格式为：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ redis-server --OPTION1 [value1 value2 ...] --OPTION2 [value1 value2 ...] [...]
+</pre></div>
+</div>
+<p>比如说，
+Redis 服务器默认使用 <code class="docutils literal notranslate"><span class="pre">6379</span></code> 作为端口号，
+但如果你想要使用 <code class="docutils literal notranslate"><span class="pre">10086</span></code> 而不是 <code class="docutils literal notranslate"><span class="pre">6379</span></code> 作为端口号的话，
+那么可以在启动 Redis 服务器时通过给定 <code class="docutils literal notranslate"><span class="pre">port</span></code> 可选项来指定你想要的端口号：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ redis-server --port 10086
+</pre></div>
+</div>
+<p>向 Redis 服务器提供配置选项的第二种方法则是在启动 Redis 服务器的时候为其提供配置文件，
+并将想要修改的配置选项写在配置文件里面：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ redis-server /path/to/your/file
+</pre></div>
+</div>
+<p>比如说，
+为了将 Redis 服务器的端口号改为 12345 ，
+我们可以在当前文件夹中创建配置文件 <code class="docutils literal notranslate"><span class="pre">myredis.conf</span></code> ，
+并在文件中包含以下内容：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">port</span> <span class="mi">10086</span>
+</pre></div>
+</div>
+<p>然后在启动 Redis 服务器时向其提供该配置文件：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ redis-server myredis.conf
+</pre></div>
+</div>
+</section>
+<section id="id7">
+<h2>示例代码<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
+<p>正如上面提到的那样，
+本书提供了大量 Python 代码示例，
+这些示例的源码可以通过访问以下页面获取：
+github.com/huangz1990/RedisGuide-code 。</p>
+<p>本书在展示代码示例的同时，
+会在示例标题的旁边给出源代码的具体访问路径。
+比如说，
+对于代码清单 1-1 中展示的连接检查脚本 <code class="docutils literal notranslate"><span class="pre">check_connection.py</span></code> 来说，
+该文件就位于 <code class="docutils literal notranslate"><span class="pre">/introduction</span></code> 文件夹中：</p>
+<hr class="docutils" />
+<p>代码清单 1-1 检查连接的脚本：<code class="docutils literal notranslate"><span class="pre">/introduction/check_connection.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+
+<span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">()</span>
+
+<span class="c1"># ping() 方法在连接正常时将返回 True</span>
+<span class="k">if</span> <span class="n">client</span><span class="o">.</span><span class="n">ping</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;connecting&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;disconnected&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="id8">
+<h2>版本说明<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<p>本书基于 Redis 5.0 版本撰写，
+它是书本创作期间 Redis 的最新版本。</p>
+<p>为了方便使用旧版 Redis 的读者，
+本书在介绍每个命令和特性的时候都指出了它们具体可用的版本，
+读者通过查阅这一信息就可以知道特定的命令和特性在自己的版本中是否可用。</p>
+<p>另一方面，
+得益于 Redis 极好的向后兼容性，
+即使读者将来使用的是 Redis 6.0 、7.0 甚至更新的版本，
+本书的绝大部分知识对于读者来说仍将是有效的。</p>
+</section>
+<section id="id9">
+<h2>读者服务器网站<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h2>
+<p>本书配套了读者服务网站 RedisGuide.com ，
+上面列举了书本的介绍信息、购买链接、目录、试读章节、示例代码和勘误等内容，
+有兴趣的读者朋友可以上去浏览一下。</p>
+</section>
+<section id="id10">
+<h2>启程！<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h2>
+<p>一切准备就绪，
+是时候开始我们的 Redis 旅程了。
+在接下来的一章，
+我们将开始学习 Redis 最基本的数据结构 —— 字符串。</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">引言</a><ul>
+<li><a class="reference internal" href="#redis">Redis 简介</a></li>
+<li><a class="reference internal" href="#id2">内容编排</a></li>
+<li><a class="reference internal" href="#id3">目标读者</a></li>
+<li><a class="reference internal" href="#id4">预备工作</a></li>
+<li><a class="reference internal" href="#id5">执行命令</a></li>
+<li><a class="reference internal" href="#id6">配置服务器</a></li>
+<li><a class="reference internal" href="#id7">示例代码</a></li>
+<li><a class="reference internal" href="#id8">版本说明</a></li>
+<li><a class="reference internal" href="#id9">读者服务器网站</a></li>
+<li><a class="reference internal" href="#id10">启程！</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="preface.html"
+                          title="Previous page">&larr; 前言</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="string.html"
+                          title="Next page">&rarr; 字符串（String）</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>本页</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/introduction.rst.txt"
+            rel="nofollow">显示源代码</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">快速搜索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="提交" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="string.html" title="字符串（String）"
+             >下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="preface.html" title="前言"
+             >上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">引言</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; 版权所有 2019, 黄健宏.
+      由 <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6创建。
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

@@ -1,0 +1,2562 @@
+
+
+<!DOCTYPE html>
+
+<html lang="zh-CN" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>字符串（String） &#8212; Redis使用手册</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" href="./" type="text/css" />
+    
+    <script src="_static/documentation_options.js?v=f115507d"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=beaddf03"></script>
+
+    
+    
+     
+        <script src="_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="_static/cloud.js"></script>
+    
+
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+    <link rel="next" title="散列（Hash）" href="hash.html" />
+    <link rel="prev" title="引言" href="introduction.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="hash.html" title="散列（Hash）"
+             accesskey="N">下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="introduction.html" title="引言"
+             accesskey="P">上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">字符串（String）</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="string">
+<h1>字符串（String）<a class="headerlink" href="#string" title="Link to this heading">¶</a></h1>
+<p>字符串键是 Redis 最基本的键值对类型，
+这种类型的键值对会在数据库里面把单独的一个键和单独的一个值关联起来，
+被关联的键和值既可以是普通的文字数据，
+也可以是图片、视频、音频、压缩文件等更为复杂的二进制数据。</p>
+<p>作为例子，
+图 2-1 展示了数据库视角下的四个字符串键，
+其中：</p>
+<ul class="simple">
+<li><p>与键 <code class="docutils literal notranslate"><span class="pre">&quot;message&quot;</span></code> 相关联的值是 <code class="docutils literal notranslate"><span class="pre">&quot;hello</span> <span class="pre">world&quot;</span></code> ；</p></li>
+<li><p>与键 <code class="docutils literal notranslate"><span class="pre">&quot;number&quot;</span></code> 相关联的值是 <code class="docutils literal notranslate"><span class="pre">&quot;10086&quot;</span></code> ；</p></li>
+<li><p>与键 <code class="docutils literal notranslate"><span class="pre">&quot;homepage&quot;</span></code> 相关联的值是 <code class="docutils literal notranslate"><span class="pre">&quot;redis.io&quot;</span></code> ；</p></li>
+<li><p>与键 <code class="docutils literal notranslate"><span class="pre">&quot;redis-logo.jpg&quot;</span></code> 相关联的值是二进制数据 <code class="docutils literal notranslate"><span class="pre">&quot;\xff\xd8\xff\xe0\x00\x10JFIF\x00...&quot;</span></code> 。</p></li>
+</ul>
+<hr class="docutils" />
+<p>图 2-1 数据库中的字符串键示例</p>
+<img alt="_images/IMAGE_STRING_IN_DATABASE.png" src="_images/IMAGE_STRING_IN_DATABASE.png" />
+<hr class="docutils" />
+<p>Redis 为字符串键提供了一系列操作命令，
+通过使用这些命令，
+用户可以：</p>
+<ul class="simple">
+<li><p>为字符串键设置值。</p></li>
+<li><p>获取字符串键的值。</p></li>
+<li><p>在获取旧值的同时为字符串键设置新值。</p></li>
+<li><p>同时为多个字符串键设置值，或者同时获取多个字符串键的值。</p></li>
+<li><p>取得字符串值的长度。</p></li>
+<li><p>获取字符串值指定索引范围上的内容，或者对字符串值指定索引范围上的内容进行修改。</p></li>
+<li><p>将一些内容追加到字符串值的末尾。</p></li>
+<li><p>对字符串键储存的整数值或者浮点数值执行加法操作或减法操作。</p></li>
+</ul>
+<p>本章接下来将对以上提到的这些字符串键命令进行介绍，
+并演示如何使用这些命令去解决各种实际的问题。</p>
+<section id="set">
+<h2>SET：为字符串键设置值<a class="headerlink" href="#set" title="Link to this heading">¶</a></h2>
+<p>创建字符串键最常用的方法就是使用 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令，
+这个命令可以为一个字符串键设置相应的值。
+在最基本的情况下，
+用户只需要向 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令提供一个键和一个值就可以了：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SET</span> <span class="n">key</span> <span class="n">value</span>
+</pre></div>
+</div>
+<p>跟之前提到过的一样，
+这里的键和值既可以是文字也可以是二进制数据。</p>
+<p><code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令在成功创建字符串键之后将返回 <code class="docutils literal notranslate"><span class="pre">OK</span></code> 作为结果。
+比如说，
+通过执行以下命令，
+我们可以创建出一个字符串键，
+它的键为 <code class="docutils literal notranslate"><span class="pre">&quot;number&quot;</span></code> ，
+值为 <code class="docutils literal notranslate"><span class="pre">&quot;10086&quot;</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">number</span> <span class="s2">&quot;10086&quot;</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p>又比如说，
+通过执行以下命令，
+我们可以创建出一个键为 <code class="docutils literal notranslate"><span class="pre">&quot;book&quot;</span></code> ，
+值为 <code class="docutils literal notranslate"><span class="pre">&quot;The</span> <span class="pre">Design</span> <span class="pre">and</span> <span class="pre">Implementation</span> <span class="pre">of</span> <span class="pre">Redis&quot;</span></code> 的字符串键：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">book</span> <span class="s2">&quot;The Design and Implementation of Redis&quot;</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p>图 2-2 和图 2-3 分别展示了数据库在以上两条 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令执行之前以及执行之后的状态。</p>
+<hr class="docutils" />
+<p>图 2-2 执行 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令之前，数据库的状态</p>
+<img alt="_images/IMAGE_BEFORE_SET.png" src="_images/IMAGE_BEFORE_SET.png" />
+<hr class="docutils" />
+<p>图 2-3 执行 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令之后，数据库的状态</p>
+<img alt="_images/IMAGE_AFTER_SET.png" src="_images/IMAGE_AFTER_SET.png" />
+<hr class="docutils" />
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p>数据库键的存放方式</p>
+<p>为了方便阅读，
+本书总会将数据库中新出现的键放置到已有键的下方。
+比如在上面展示的数据库图 2-3 里面，
+我们就将新添加的 <code class="docutils literal notranslate"><span class="pre">&quot;number&quot;</span></code> 键和 <code class="docutils literal notranslate"><span class="pre">&quot;book&quot;</span></code> 键放置到了已有键的下方。</p>
+<p>在实际中，
+Redis 数据库是以无序的方式存放数据库键的，
+一个新加入的键可能会出现在数据库的任何位置上，
+因此我们在使用 Redis 的过程中不应该对键在数据库中的摆放位置做任何假设，
+以免造成错误。</p>
+</div>
+<section id="id1">
+<h3>改变覆盖规则<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<p>在默认情况下，
+对一个已经设置了值的字符串键执行 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令将导致键的旧值被新值覆盖。</p>
+<p>举个例子，
+如果我们连续执行以下两条 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令，
+那么第一条 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令设置的值将被第二条 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令设置的值所覆盖：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">song_title</span> <span class="s2">&quot;Get Wild&quot;</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">song_title</span> <span class="s2">&quot;Running to Horizon&quot;</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p>在第二条 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令执行完毕之后，
+<code class="docutils literal notranslate"><span class="pre">song_title</span></code> 键的值将从原来的 <code class="docutils literal notranslate"><span class="pre">&quot;Get</span> <span class="pre">Wild&quot;</span></code> 变为 <code class="docutils literal notranslate"><span class="pre">&quot;Running</span> <span class="pre">to</span> <span class="pre">Horizon&quot;</span></code> 。</p>
+<p>从 Redis 2.6.12 版本开始，
+用户可以通过向 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令提供可选的 <code class="docutils literal notranslate"><span class="pre">NX</span></code> 选项或者 <code class="docutils literal notranslate"><span class="pre">XX</span></code> 选项来指示 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令是否要覆盖一个已经存在的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SET</span> <span class="n">key</span> <span class="n">value</span> <span class="p">[</span><span class="n">NX</span><span class="o">|</span><span class="n">XX</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>如果用户在执行 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令时给定了 <code class="docutils literal notranslate"><span class="pre">NX</span></code> 选项，
+那么 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令只会在键没有值的情况下执行设置操作，
+并返回 <code class="docutils literal notranslate"><span class="pre">OK</span></code> 表示设置成功；
+如果键已经存在，
+那么 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令将放弃执行设置操作，
+并返回空值 <code class="docutils literal notranslate"><span class="pre">nil</span></code> 表示设置失败。</p>
+<p>以下代码展示了带有 <code class="docutils literal notranslate"><span class="pre">NX</span></code> 选项的 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令的行为：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>redis&gt; SET password &quot;123456&quot; NX
+OK    -- 对尚未有值的 password 键进行设置，成功
+
+redis&gt; SET password &quot;999999&quot; NX
+(nil)    -- password 键已经有了值，设置失败
+</pre></div>
+</div>
+<p>因为第二条 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令没有改变 <code class="docutils literal notranslate"><span class="pre">password</span></code> 键的值，
+所以 <code class="docutils literal notranslate"><span class="pre">password</span></code> 键的值仍然是刚开始时设置的 <code class="docutils literal notranslate"><span class="pre">&quot;123456&quot;</span></code> 。</p>
+<p>另一方面，
+如果用户在执行 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令时给定了 <code class="docutils literal notranslate"><span class="pre">XX</span></code> 选项，
+那么 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令只会在键已经有值的情况下执行设置操作，
+并返回 <code class="docutils literal notranslate"><span class="pre">OK</span></code> 表示设置成功；
+如果给定的键并没有值，
+那么 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令将放弃执行设置操作，
+并返回空值表示设置失败。</p>
+<p>举个例子，
+如果我们对一个没有值的键 <code class="docutils literal notranslate"><span class="pre">mongodb-homepage</span></code> 执行以下 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令，
+那么命令将因为 <code class="docutils literal notranslate"><span class="pre">XX</span></code> 选项的作用而放弃执行设置操作：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">mongodb</span><span class="o">-</span><span class="n">homepage</span> <span class="s2">&quot;mongodb.com&quot;</span> <span class="n">XX</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>相反地，
+如果我们对一个已经有值的键执行带有 <code class="docutils literal notranslate"><span class="pre">XX</span></code> 选项的 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令，
+那么命令将使用新值去覆盖已有的旧值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">mysql</span><span class="o">-</span><span class="n">homepage</span> <span class="s2">&quot;mysql.org&quot;</span>
+<span class="n">OK</span>    <span class="o">--</span> <span class="n">为键</span> <span class="n">mysql</span><span class="o">-</span><span class="n">homepage</span> <span class="n">设置一个值</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">mysql</span><span class="o">-</span><span class="n">homepage</span> <span class="s2">&quot;mysql.com&quot;</span> <span class="n">XX</span>
+<span class="n">OK</span>    <span class="o">--</span> <span class="n">对键的值进行更新</span>
+</pre></div>
+</div>
+<p>在第二条 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令执行之后，
+<code class="docutils literal notranslate"><span class="pre">mysql-homepage</span></code> 键的值将从原来的 <code class="docutils literal notranslate"><span class="pre">&quot;mysql.org&quot;</span></code> 更新为 <code class="docutils literal notranslate"><span class="pre">&quot;mysql.com&quot;</span></code> 。</p>
+</section>
+<section id="id2">
+<h3>其他信息<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p>不带任何可选项的 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令从 Redis 1.0.0 版本开始可用；
+带有 <code class="docutils literal notranslate"><span class="pre">NX</span></code> 、 <code class="docutils literal notranslate"><span class="pre">XX</span></code> 等可选项的 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令从 Redis 2.6.12 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="get">
+<h2>GET：获取字符串键的值<a class="headerlink" href="#get" title="Link to this heading">¶</a></h2>
+<p>用户可以通过使用 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令，
+从数据库里面获取指定字符串键的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">GET</span> <span class="n">key</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令接受一个字符串键作为参数，
+然后返回与该键相关联的值。</p>
+<p>比如对于图 2-4 所示的数据库来说，
+我们可以通过执行以下 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令来取得各个字符串键相关联的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">message</span>
+<span class="s2">&quot;hello world&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">number</span>
+<span class="s2">&quot;10086&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">homepage</span>
+<span class="s2">&quot;redis.io&quot;</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>图 2-4 使用 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令获取数据库键的值</p>
+<img alt="_images/IMAGE_GET.png" src="_images/IMAGE_GET.png" />
+<hr class="docutils" />
+<p>另一方面，
+如果用户给定的字符串键在数据库中并没有与之相关联的值，
+那么 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令将返回一个空值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">date</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>上面这个 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令的执行结果表示数据库中并不存在 <code class="docutils literal notranslate"><span class="pre">date</span></code> 键，
+它也没有与之相关联的值。</p>
+<p>因为 Redis 的数据库要求所有键必须拥有与之相关联的值，
+所以如果一个键有值，
+那么我们就说这个键存在于数据库；
+相反地，
+如果一个键没有值，
+那么我们就说这个键不存在于数据库。
+比如对于上面展示的几个键来说，
+<code class="docutils literal notranslate"><span class="pre">date</span></code> 键就不存在于数据库，
+而 <code class="docutils literal notranslate"><span class="pre">message</span></code> 键、 <code class="docutils literal notranslate"><span class="pre">number</span></code> 键和 <code class="docutils literal notranslate"><span class="pre">homepage</span></code> 键则存在于数据库。</p>
+<section id="id3">
+<h3>其他信息<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令从 Redis 1.0.0 开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="getset">
+<h2>GETSET：获取旧值并设置新值<a class="headerlink" href="#getset" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">GETSET</span></code> 命令就像 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令的组合版本，
+它首先获取字符串键目前已有的值，
+接着为键设置新值，
+最后把之前获取到的旧值返回给用户：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">GETSET</span> <span class="n">key</span> <span class="n">new_value</span>
+</pre></div>
+</div>
+<p>以下代码展示了如何使用 <code class="docutils literal notranslate"><span class="pre">GETSET</span></code> 命令去获取 <code class="docutils literal notranslate"><span class="pre">number</span></code> 键的旧值并为它设置新值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">number</span>    <span class="o">--</span> <span class="n">number</span> <span class="n">键现在的值为</span> <span class="s2">&quot;10086&quot;</span>
+<span class="s2">&quot;10086&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GETSET</span> <span class="n">number</span> <span class="s2">&quot;12345&quot;</span>
+<span class="s2">&quot;10086&quot;</span>    <span class="o">--</span> <span class="n">返回旧值</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">number</span>    <span class="o">--</span> <span class="n">number</span> <span class="n">键的值已被更新为</span> <span class="s2">&quot;12345&quot;</span>
+<span class="s2">&quot;12345&quot;</span>
+</pre></div>
+</div>
+<p>另一方面，
+如果被设置的键并不存在于数据库，
+那么 <code class="docutils literal notranslate"><span class="pre">GETSET</span></code> 命令将返回空值作为键的旧值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">counter</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>    <span class="o">--</span> <span class="n">键不存在</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GETSET</span> <span class="n">counter</span> <span class="mi">50</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>    <span class="o">--</span> <span class="n">返回空值作为旧值</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">counter</span>
+<span class="s2">&quot;50&quot;</span>
+</pre></div>
+</div>
+<section id="id4">
+<h3>其他信息<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">GETSET</span></code> 命令从 Redis 1.0.0 开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id5">
+<h2>示例：缓存<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>对数据进行缓存是 Redis 最常见的用法之一：
+因为 Redis 把数据储存在内存而不是硬盘上面，
+并且访问内存数据的速度比访问硬盘数据的速度要快得多，
+所以用户可以通过把需要快速访问的数据储存在 Redis 里面来提升应用程序访问这些数据时的速度。</p>
+<p>代码清单 2-1 展示了一个使用 Redis 实现的缓存程序代码，
+这个程序使用 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令来将需要被缓存的数据储存到指定的字符串键里面，
+并使用 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令来从指定的字符串键里面获取被缓存的数据。</p>
+<hr class="docutils" />
+<p>代码清单 2-1 使用字符串键实现的缓存程序：<code class="docutils literal notranslate"><span class="pre">/string/cache.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Cache</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+
+    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        把需要被缓存的数据储存到键 key 里面，</span>
+<span class="sd">        如果键 key 已经有值，那么使用新值去覆盖旧值。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        获取储存在键 key 里面的缓存数据，</span>
+<span class="sd">        如果数据不存在，那么返回 None 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">new_value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        对键 key 储存的缓存数据进行更新，</span>
+<span class="sd">        并返回键 key 在被更新之前储存的缓存数据。</span>
+<span class="sd">        如果键 key 之前并没有储存数据，</span>
+<span class="sd">        那么返回 None 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">getset</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">new_value</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>除了用于设置缓存的 <code class="docutils literal notranslate"><span class="pre">set()</span></code> 方法以及用于获取缓存的 <code class="docutils literal notranslate"><span class="pre">get()</span></code> 方法之外，
+缓存程序还提供了由 <code class="docutils literal notranslate"><span class="pre">GETSET</span></code> 命令实现的 <code class="docutils literal notranslate"><span class="pre">update()</span></code> 方法：
+这个方法可以让用户在对缓存进行设置的同时，
+获得之前被缓存的旧值。
+用户可以根据自己的需要决定是使用 <code class="docutils literal notranslate"><span class="pre">set()</span></code> 方法还是 <code class="docutils literal notranslate"><span class="pre">update()</span></code> 方法对缓存进行设置。</p>
+<p>以下代码展示了怎样使用这个程序来缓存一个 HTML 页面，
+并在有需要时获取它：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cache</span> <span class="kn">import</span> <span class="n">Cache</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># 使用文本编码方式打开客户端</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cache</span> <span class="o">=</span> <span class="n">Cache</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;greeting-page&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;html&gt;&lt;p&gt;hello world&lt;/p&gt;&lt;/html&gt;&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;greeting-page&quot;</span><span class="p">)</span>
+<span class="go">&#39;&lt;html&gt;&lt;p&gt;hello world&lt;/p&gt;&lt;/html&gt;&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cache</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s2">&quot;greeting-page&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;html&gt;&lt;p&gt;good morning&lt;/p&gt;&lt;/html&gt;&quot;</span><span class="p">)</span>
+<span class="go">&#39;&lt;html&gt;&lt;p&gt;hello world&lt;/p&gt;&lt;/html&gt;&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;greeting-page&quot;</span><span class="p">)</span>
+<span class="go">&#39;&lt;html&gt;&lt;p&gt;good morning&lt;/p&gt;&lt;/html&gt;&#39;</span>
+</pre></div>
+</div>
+<p>因为 Redis 的字符串键不仅可以储存文本数据，
+还可以储存二进制数据，
+所以这个缓存程序不仅可以用来缓存网页等文本数据，
+还可以用来缓存图片和视频等二进制数据。
+比如说，
+如果你正在运营一个图片网站，
+那么你同样可以使用这个缓存程序来缓存网站上的热门图片，
+从而提高用户访问这些热门图片的速度。</p>
+<p>作为例子，
+以下代码展示了将 Redis 的 Logo 图片缓存到键 <code class="docutils literal notranslate"><span class="pre">redis-logo.jpg</span></code> 里面的方法：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cache</span> <span class="kn">import</span> <span class="n">Cache</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">()</span>                      <span class="c1"># 使用二进制编码方式打开客户端</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cache</span> <span class="o">=</span> <span class="n">Cache</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">image</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;redis-logo.jpg&quot;</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span>  <span class="c1"># 以二进制只读方式打开图片文件</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>                   <span class="c1"># 读取文件内容</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">image</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>                         <span class="c1"># 关闭文件</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;redis-logo.jpg&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>     <span class="c1"># 将内存缓存到键 redis-logo.jpg 里面</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;redis-logo.jpg&quot;</span><span class="p">)[:</span><span class="mi">20</span><span class="p">]</span>      <span class="c1"># 读取二进制数据的前 20 个字节</span>
+<span class="go">b&#39;\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00H\x00H\x00\x00&#39;</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p>在测试以上两段代码的时候，
+请务必以正确的编码方式打开客户端（第一段代码采用文本方式，第二段代码采用二进制方式），
+否则测试代码将会出现编码错误。</p>
+</div>
+</section>
+<section id="id6">
+<h2>示例：锁<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<p>锁是一种同步机制，
+它可以保证一项资源在任何时候只能被一个进程使用，
+如果有其他进程想要使用相同的资源，
+那么它们就必须等待，
+直到正在使用资源的进程放弃使用权为止。</p>
+<p>一个锁实现通常会有获取（acquire）和释放（release）这两种操作：</p>
+<ul class="simple">
+<li><p>获取操作用于取得资源的独占使用权。
+在任何时候，
+最多只能有一个进程取得锁，
+我们把成功取得锁的这个进程称之为锁的持有者。
+在锁已经被持有的情况下，
+所有尝试再次获取锁的操作都会失败。</p></li>
+<li><p>释放操作用于放弃资源的独占使用权，
+一般由锁的持有者调用。
+在锁被释放之后，
+其他进程就可以再次尝试获取这个锁了。</p></li>
+</ul>
+<p>代码清单 2-2 展示了一个使用字符串键实现的锁程序，
+这个程序会根据给定的字符串键是否有值来判断锁是否已经被获取，
+而针对锁的获取操作和释放操作则是分别通过设置字符串键和删除字符串键来完成的。</p>
+<hr class="docutils" />
+<p>代码清单 2-2 使用字符串键实现的锁程序：<code class="docutils literal notranslate"><span class="pre">/string/lock.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">VALUE_OF_LOCK</span> <span class="o">=</span> <span class="s2">&quot;locking&quot;</span>
+
+<span class="k">class</span> <span class="nc">Lock</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        尝试获取锁。</span>
+<span class="sd">        成功时返回 True ，失败时返回 False 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">VALUE_OF_LOCK</span><span class="p">,</span> <span class="n">nx</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span> <span class="ow">is</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">release</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        尝试释放锁。</span>
+<span class="sd">        成功时返回 True ，失败时返回 False 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>获取操作 <code class="docutils literal notranslate"><span class="pre">acquire()</span></code> 方法是通过执行带有 <code class="docutils literal notranslate"><span class="pre">NX</span></code> 选项的 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令来实现的：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">VALUE_OF_LOCK</span><span class="p">,</span> <span class="n">nx</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">NX</span></code> 选项的效果确保了代表锁的字符串键只会在没有值的情况下被设置：</p>
+<ul class="simple">
+<li><p>如果给定的字符串键没有值，
+那么说明锁尚未被获取，
+<code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令将执行设置操作，
+并将 <code class="docutils literal notranslate"><span class="pre">result</span></code> 变量的值设置为 <code class="docutils literal notranslate"><span class="pre">True</span></code> ；</p></li>
+<li><p>与此相反，
+如果给定的字符串键已经有值了，
+那么说明锁已经被获取，
+<code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令将放弃执行设置操作，
+并将 <code class="docutils literal notranslate"><span class="pre">result</span></code> 变量的值将为 <code class="docutils literal notranslate"><span class="pre">None</span></code> ；</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">acquire()</span></code> 方法最后会通过检查 <code class="docutils literal notranslate"><span class="pre">result</span></code> 变量的值是否为 <code class="docutils literal notranslate"><span class="pre">True</span></code> 来判断自己是否成功取得了锁。</p>
+<p>释放操作 <code class="docutils literal notranslate"><span class="pre">release()</span></code> 方法使用了本书之前没有介绍过的 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令，
+这个命令接受一个或多个数据库键作为参数，
+尝试删除这些键以及与之相关联的值，
+并返回被成功删除的键数量作为结果：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DEL</span> <span class="n">key</span> <span class="p">[</span><span class="n">key</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>因为 Redis 的 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令和 Python 的 <code class="docutils literal notranslate"><span class="pre">del</span></code> 关键字重名，
+所以在 redis-py 客户端中，
+执行 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令实际上是通过调用 <code class="docutils literal notranslate"><span class="pre">delete()</span></code> 方法来完成的：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">release()</span></code> 方法通过检查 <code class="docutils literal notranslate"><span class="pre">delete()</span></code> 方法的返回值是否为 <code class="docutils literal notranslate"><span class="pre">1</span></code> 来判断删除操作是否执行成功：
+如果用户尝试对一个尚未被获取的锁执行 <code class="docutils literal notranslate"><span class="pre">release()</span></code> 方法，
+那么方法将返回 <code class="docutils literal notranslate"><span class="pre">false</span></code> ，
+表示没有锁被释放。</p>
+<p>在使用 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令删除代表锁的字符串键之后，
+字符串键将重新回到没有值的状态，
+这时用户就可以再次调用 <code class="docutils literal notranslate"><span class="pre">acquire()</span></code> 方法去获取锁了。</p>
+<p>以下代码演示了这个锁的使用方法：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">lock</span> <span class="kn">import</span> <span class="n">Lock</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lock</span> <span class="o">=</span> <span class="n">Lock</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s1">&#39;test-lock&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>  <span class="c1"># 成功获取锁</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>  <span class="c1"># 锁已被获取，无法再次获取</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>  <span class="c1"># 释放锁</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>  <span class="c1"># 锁释放之后可以再次被获取</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>虽然代码清单 2-2 中展示的锁实现了基本的获取和释放功能，
+但它并不完美：</p>
+<ol class="arabic simple">
+<li><p>因为这个锁的释放操作无法验证进程的身份，
+所以无论执行释放操作的进程是否就是锁的持有者，
+锁都会被释放。
+如果锁被持有者以外的其他进程释放了的话，
+那么系统中可能就会同时出现多个锁，
+导致锁的唯一性被破坏。</p></li>
+<li><p>这个锁的获取操作不能设置最大加锁时间，
+它无法让锁在超过给定的时限之后自动释放。
+因此，
+如果持有锁的进程因为故障或者编程错误而没有在退出之前主动释放锁，
+那么锁就会一直处于已被获取的状态，
+导致其他进程永远无法取得锁。</p></li>
+</ol>
+<p>本书后续将继续改进这个锁实现，
+使得它可以解决这两个问题。</p>
+</section>
+<section id="mset">
+<h2>MSET：一次为多个字符串键设置值<a class="headerlink" href="#mset" title="Link to this heading">¶</a></h2>
+<p>除了 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">GETSET</span></code> 命令之外，
+Redis 还提供了 <code class="docutils literal notranslate"><span class="pre">MSET</span></code> 命令用于对字符串键进行设置。
+跟 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">GETSET</span></code> 命令只能设置单个字符串键的做法不同，
+<code class="docutils literal notranslate"><span class="pre">MSET</span></code> 命令可以一次为多个字符串键设置值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">MSET</span> <span class="n">key</span> <span class="n">value</span> <span class="p">[</span><span class="n">key</span> <span class="n">value</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>作为例子，
+以下代码展示了如何使用一条 <code class="docutils literal notranslate"><span class="pre">MSET</span></code> 命令去设置 <code class="docutils literal notranslate"><span class="pre">message</span></code> 、 <code class="docutils literal notranslate"><span class="pre">number</span></code> 和 <code class="docutils literal notranslate"><span class="pre">homepage</span></code> 三个键：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">MSET</span> <span class="n">message</span> <span class="s2">&quot;hello world&quot;</span> <span class="n">number</span> <span class="s2">&quot;10086&quot;</span> <span class="n">homepage</span> <span class="s2">&quot;redis.io&quot;</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">message</span>
+<span class="s2">&quot;hello world&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">number</span>
+<span class="s2">&quot;10086&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">homepage</span>
+<span class="s2">&quot;redis.io&quot;</span>
+</pre></div>
+</div>
+<p>跟 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令一样，
+<code class="docutils literal notranslate"><span class="pre">MSET</span></code> 命令也会在执行设置操作之后返回 <code class="docutils literal notranslate"><span class="pre">OK</span></code> 表示设置成功。
+此外，
+如果给定的字符串键已经有相关联的值，
+那么 <code class="docutils literal notranslate"><span class="pre">MSET</span></code> 命令也会直接使用新值去覆盖已有的旧值。</p>
+<p>比如以下代码就展示了怎样使用 <code class="docutils literal notranslate"><span class="pre">MSET</span></code> 命令去覆盖上一个 <code class="docutils literal notranslate"><span class="pre">MSET</span></code> 命令为 <code class="docutils literal notranslate"><span class="pre">message</span></code> 键和 <code class="docutils literal notranslate"><span class="pre">number</span></code> 键设置的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">MSET</span> <span class="n">message</span> <span class="s2">&quot;good morning!&quot;</span> <span class="n">number</span> <span class="s2">&quot;12345&quot;</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">message</span>
+<span class="s2">&quot;good morning!&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">number</span>
+<span class="s2">&quot;12345&quot;</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">MSET</span></code> 命令除了可以让用户更为方便地执行多个设置操作之外，
+还能够有效地提高程序的效率：
+执行多条 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令需要客户端和服务器之间进行多次网络通信，
+并因此耗费大量的时间；
+通过使用一条 <code class="docutils literal notranslate"><span class="pre">MSET</span></code> 命令去代替多条 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令，
+可以将原本所需的多次网络通信降低为只需一次网络通信，
+从而有效地减少程序执行多个设置操作时所需的时间。</p>
+<section id="id7">
+<h3>其他信息<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N)，其中 N 为用户给定的字符串键数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">MSET</span></code> 命令从 Redis 1.0.1 开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="mget">
+<h2>MGET：一次获取多个字符串键的值<a class="headerlink" href="#mget" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">MGET</span></code> 命令就是一个多键版本的 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令，
+它接受一个或多个字符串键作为参数，
+并返回这些字符串键的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">MGET</span> <span class="n">key</span> <span class="p">[</span><span class="n">key</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">MGET</span></code> 命令返回一个列表作为结果，
+这个列表按照用户执行命令时给定键的顺序排列各个键的值：
+比如说，
+列表的第一个元素就是第一个给定键的值，
+而列表的第二个元素则是第二个给定键的值，
+以此类推。</p>
+<p>作为例子，
+以下代码展示了如何使用一条 <code class="docutils literal notranslate"><span class="pre">MGET</span></code> 命令去获取 <code class="docutils literal notranslate"><span class="pre">message</span></code> 、 <code class="docutils literal notranslate"><span class="pre">number</span></code> 和 <code class="docutils literal notranslate"><span class="pre">homepage</span></code> 三个键的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">MGET</span> <span class="n">message</span> <span class="n">number</span> <span class="n">homepage</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;hello world&quot;</span>    <span class="o">--</span> <span class="n">message</span> <span class="n">键的值</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;10086&quot;</span>          <span class="o">--</span> <span class="n">number</span> <span class="n">键的值</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;redis.io&quot;</span>       <span class="o">--</span> <span class="n">homepage</span> <span class="n">键的值</span>
+</pre></div>
+</div>
+<p>跟 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令一样，
+<code class="docutils literal notranslate"><span class="pre">MGET</span></code> 命令在碰到不存在的键时也会返回空值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">MGET</span> <span class="ow">not</span><span class="o">-</span><span class="n">exists</span><span class="o">-</span><span class="n">key</span>
+<span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>跟 <code class="docutils literal notranslate"><span class="pre">MSET</span></code> 命令类似，
+<code class="docutils literal notranslate"><span class="pre">MGET</span></code> 命令也可以将执行多个获取操作所需的网络通信次数从原来的 N 次降低至只需一次，
+从而有效地提高程序的运行效率。</p>
+<section id="id8">
+<h3>其他信息<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N)，其中 N 为用户给定的字符串键数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">MGET</span></code> 命令从 Redis 1.0.0 开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="msetnx">
+<h2>MSETNX：只在键不存在的情况下，一次为多个字符串键设置值<a class="headerlink" href="#msetnx" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">MSETNX</span></code> 命令跟 <code class="docutils literal notranslate"><span class="pre">MSET</span></code> 命令一样，
+都可以对多个字符串键进行设置：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">MSETNX</span> <span class="n">key</span> <span class="n">value</span> <span class="p">[</span><span class="n">key</span> <span class="n">value</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">MSETNX</span></code> 跟 <code class="docutils literal notranslate"><span class="pre">MSET</span></code> 的主要区别在于 <code class="docutils literal notranslate"><span class="pre">MSETNX</span></code> 只会在所有给定键都不存在的情况下对键进行设置，
+而不会像 <code class="docutils literal notranslate"><span class="pre">MSET</span></code> 那样直接覆盖键已有的值：
+如果在给定键当中，
+有哪怕一个键已经有值了，
+那么 <code class="docutils literal notranslate"><span class="pre">MSETNX</span></code> 命令也会放弃对所有给定键的设置操作。
+<code class="docutils literal notranslate"><span class="pre">MSETNX</span></code> 命令在成功执行设置操作时返回 <code class="docutils literal notranslate"><span class="pre">1</span></code> ，
+在放弃执行设置操作时则返回 <code class="docutils literal notranslate"><span class="pre">0</span></code> 。</p>
+<p>在以下的这段代码中，
+因为键 <code class="docutils literal notranslate"><span class="pre">k4</span></code> 已经存在，
+所以 <code class="docutils literal notranslate"><span class="pre">MSETNX</span></code> 将放弃对键 <code class="docutils literal notranslate"><span class="pre">k1</span></code> 、 <code class="docutils literal notranslate"><span class="pre">k2</span></code> 、 <code class="docutils literal notranslate"><span class="pre">k3</span></code> 和 <code class="docutils literal notranslate"><span class="pre">k4</span></code> 进行设置操作：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>redis&gt; MGET k1 k2 k3 k4
+1) (nil)            -- 键 k1 、 k2 和 k3 都不存在
+2) (nil)
+3) (nil)
+4) &quot;hello world&quot;    -- 键 k4 已存在
+
+redis&gt; MSETNX k1 &quot;one&quot; k2 &quot;two&quot; k3 &quot;three&quot; k4 &quot;four&quot;
+(integer) 0    -- 因为键 k4 已存在，所以 MSETNX 未能执行设置操作
+
+redis&gt; MGET k1 k2 k3 k4    -- 各个键的值没有变化
+1) (nil)
+2) (nil)
+3) (nil)
+4) &quot;hello world&quot;
+</pre></div>
+</div>
+<p>但是如果我们只对不存在的键 <code class="docutils literal notranslate"><span class="pre">k1</span></code> 、 <code class="docutils literal notranslate"><span class="pre">k2</span></code> 和 <code class="docutils literal notranslate"><span class="pre">k3</span></code> 进行设置，
+那么 <code class="docutils literal notranslate"><span class="pre">MSETNX</span></code> 可以正常地完成设置操作：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>redis&gt; MSETNX k1 &quot;one&quot; k2 &quot;two&quot; k3 &quot;three&quot;
+(integer) 1    -- 所有给定键都不存在，成功执行设置操作
+
+redis&gt; MGET k1 k2 k3 k4
+1) &quot;one&quot;            -- 刚刚使用 MSETNX 设置的三个值
+2) &quot;two&quot;
+3) &quot;three&quot;
+4) &quot;hello world&quot;    -- 之前已经存在的键 k4 的值没有改变
+</pre></div>
+</div>
+<section id="id9">
+<h3>其他信息<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N)，其中 N 为用户给定的字符串键数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">MSETNX</span></code> 命令从 Redis 1.0.1 开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id10">
+<h2>示例：储存文章信息<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h2>
+<p>在构建应用程序的时候，
+我们经常会需要批量地设置和获取多项信息。
+以博客程序为例子：</p>
+<ul class="simple">
+<li><p>当用户想要注册成为博客的作者时，
+程序就需要把这位作者的名字、账号、密码、注册时间等多项信息储存起来，
+并在用户登录的时候取出这些信息。</p></li>
+<li><p>又比如说，
+当博客的作者想要撰写一篇新文章的时候，
+程序就需要把文章的标题、内容、作者、发表时间等多项信息储存起来，
+并在用户阅读文章的时候取出这些信息。</p></li>
+</ul>
+<p>通过使用 <code class="docutils literal notranslate"><span class="pre">MSET</span></code> 命令、 <code class="docutils literal notranslate"><span class="pre">MSETNX</span></code> 命令以及 <code class="docutils literal notranslate"><span class="pre">MGET</span></code> 命令，
+我们可以实现上面提到的这些批量设置操作和批量获取操作。
+比如代码清单 2-3 就展示了一个文章储存程序，
+这个程序使用 <code class="docutils literal notranslate"><span class="pre">MSET</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">MSETNX</span></code> 命令将文章的标题、内容、作者、发表时间等多项信息储存到不同的字符串键里面，
+并通过 <code class="docutils literal notranslate"><span class="pre">MGET</span></code> 命令从这些键里面获取文章的各项信息。</p>
+<hr class="docutils" />
+<p>代码清单 2-3 文章储存程序：<code class="docutils literal notranslate"><span class="pre">/string/article.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>  <span class="c1"># time() 函数用于获取当前 Unix 时间戳</span>
+
+<span class="k">class</span> <span class="nc">Article</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">article_id</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">article_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title_key</span> <span class="o">=</span> <span class="s2">&quot;article::&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">+</span> <span class="s2">&quot;::title&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">content_key</span> <span class="o">=</span> <span class="s2">&quot;article::&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">+</span> <span class="s2">&quot;::content&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">author_key</span> <span class="o">=</span> <span class="s2">&quot;article::&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">+</span> <span class="s2">&quot;::author&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_at_key</span> <span class="o">=</span> <span class="s2">&quot;article::&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">+</span> <span class="s2">&quot;::create_at&quot;</span>
+
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">author</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        创建一篇新的文章，创建成功时返回 True ，</span>
+<span class="sd">        因为文章已存在而导致创建失败时返回 False 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">article_data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">title_key</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">content_key</span><span class="p">:</span> <span class="n">content</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">author_key</span><span class="p">:</span> <span class="n">author</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_at_key</span><span class="p">:</span> <span class="n">time</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">msetnx</span><span class="p">(</span><span class="n">article_data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回 ID 对应的文章信息。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">mget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">title_key</span><span class="p">,</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">content_key</span><span class="p">,</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">author_key</span><span class="p">,</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">create_at_key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="s2">&quot;author&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;create_at&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="mi">3</span><span class="p">]}</span>
+
+    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">author</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        对文章的各项信息进行更新，</span>
+<span class="sd">        更新成功时返回 True ，失败时返回 False 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">article_data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">article_data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">title_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">title</span>
+        <span class="k">if</span> <span class="n">content</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">article_data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">content_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">content</span>
+        <span class="k">if</span> <span class="n">author</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">article_data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">author_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">author</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">mset</span><span class="p">(</span><span class="n">article_data</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>这个文章储存程序比较长，
+让我们来逐个分析它的各项功能。
+首先，
+<code class="docutils literal notranslate"><span class="pre">Article</span></code> 类的初始化方法 <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> 接受一个 Redis 客户端和一个文章 ID 作为参数，
+并将文章 ID 从数字转换为字符串：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">article_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>接着程序会使用这个字符串格式的文章 ID ，
+构建出用于储存文章各项信息的字符串键的键名：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">title_key</span> <span class="o">=</span> <span class="s2">&quot;article::&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">+</span> <span class="s2">&quot;::title&quot;</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">content_key</span> <span class="o">=</span> <span class="s2">&quot;article::&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">+</span> <span class="s2">&quot;::content&quot;</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">author_key</span> <span class="o">=</span> <span class="s2">&quot;article::&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">+</span> <span class="s2">&quot;::author&quot;</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">create_at_key</span> <span class="o">=</span> <span class="s2">&quot;article::&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">+</span> <span class="s2">&quot;::create_at&quot;</span>
+</pre></div>
+</div>
+<p>在这些键当中，
+第一个键将用于储存文章的标题，
+第二个键将用于储存文章的内容，
+第三个键将用于储存文章的作者，
+而第四个键则会用于储存文章的创建时间。</p>
+<p>当用户想要根据给定的文章 ID 创建具体的文章时，
+他就需要调用 <code class="docutils literal notranslate"><span class="pre">create()</span></code> 方法，
+并传入文章的标题、内容以及作者作为参数。
+<code class="docutils literal notranslate"><span class="pre">create()</span></code> 方法会把以上这些信息以及当前的 UNIX 时间戳放入到一个 Python 字典里面：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">article_data</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">title_key</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">content_key</span><span class="p">:</span> <span class="n">content</span><span class="p">,</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">author_key</span><span class="p">:</span> <span class="n">author</span><span class="p">,</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">create_at_key</span><span class="p">:</span> <span class="n">time</span><span class="p">()</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">article_data</span></code> 字典的键储存了代表文章各项信息的字符串键的键名，
+而与这些键相关联的则是这些字符串键将要被设置的值。
+接下来，
+程序会调用 <code class="docutils literal notranslate"><span class="pre">MSETNX</span></code> 命令，
+对字典中给定的字符串键进行设置：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">msetnx</span><span class="p">(</span><span class="n">article_data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>因为 <code class="docutils literal notranslate"><span class="pre">create()</span></code> 方法的设置操作是通过 <code class="docutils literal notranslate"><span class="pre">MSETNX</span></code> 命令来进行的，
+所以这一操作只会在所有给定字符串键都不存在的情况下进行：</p>
+<ul class="simple">
+<li><p>如果给定的字符串键已经有值了，
+那么说明与给定 ID 相对应的文章已经存在。
+在这种情况下，
+<code class="docutils literal notranslate"><span class="pre">MSETNX</span></code> 命令将放弃执行设置操作，
+并且 <code class="docutils literal notranslate"><span class="pre">create()</span></code> 方法也会向调用者返回 <code class="docutils literal notranslate"><span class="pre">False</span></code> 表示文章创建失败。</p></li>
+<li><p>与此相反，
+如果给定的字符串键尚未有值，
+那么 <code class="docutils literal notranslate"><span class="pre">create()</span></code> 方法将根据用户给定的信息创建文章，
+并在成功之后返回 <code class="docutils literal notranslate"><span class="pre">True</span></code> 。</p></li>
+</ul>
+<p>在成功创建文章之后，
+用户就可以使用 <code class="docutils literal notranslate"><span class="pre">get()</span></code> 方法去获取文章的各项信息了。
+<code class="docutils literal notranslate"><span class="pre">get()</span></code> 方法会调用 <code class="docutils literal notranslate"><span class="pre">MGET</span></code> 命令，
+从各个字符串键里面取出文章的标题、内容、作者等信息，
+并把这些信息储存到 <code class="docutils literal notranslate"><span class="pre">result</span></code> 列表中：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">mget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">title_key</span><span class="p">,</span>
+                          <span class="bp">self</span><span class="o">.</span><span class="n">content_key</span><span class="p">,</span>
+                          <span class="bp">self</span><span class="o">.</span><span class="n">author_key</span><span class="p">,</span>
+                          <span class="bp">self</span><span class="o">.</span><span class="n">create_at_key</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>为了让用户可以更方便地访问文章的各项信息，
+<code class="docutils literal notranslate"><span class="pre">get()</span></code> 方法会将储存在 <code class="docutils literal notranslate"><span class="pre">result</span></code> 列表里面的文章信息放入到一个字典里面，
+然后再返回给用户：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">return</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+        <span class="s2">&quot;author&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;create_at&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="mi">3</span><span class="p">]}</span>
+</pre></div>
+</div>
+<p>这样做的好处有两点：</p>
+<ol class="arabic simple">
+<li><p>它隐藏了 <code class="docutils literal notranslate"><span class="pre">get()</span></code> 方法由 <code class="docutils literal notranslate"><span class="pre">MGET</span></code> 命令实现这一底层细节。
+如果程序直接向用户返回 <code class="docutils literal notranslate"><span class="pre">result</span></code> 列表，
+那么用户就必须知道列表中的各个元素代表文章的哪一项信息，
+然后通过列表索引来访问文章的各项信息。
+这种做法非常不方便，
+而且也非常容易出错。</p></li>
+<li><p>返回一个字典可以让用户以 <code class="docutils literal notranslate"><span class="pre">dict[key]</span></code> 这样的方式去访问文章的各个属性，
+比如使用 <code class="docutils literal notranslate"><span class="pre">article[&quot;title&quot;]</span></code> 去访问文章的标题，
+使用 <code class="docutils literal notranslate"><span class="pre">article[&quot;content&quot;]</span></code> 去访问文章的内容，
+诸如此类，
+这使得针对文章数据的各项操作可以更方便地进行。</p></li>
+</ol>
+<p>另外要注意的一点是，
+虽然用户可以通过访问 <code class="docutils literal notranslate"><span class="pre">Article</span></code> 类的 <code class="docutils literal notranslate"><span class="pre">id</span></code> 属性来获得文章的 ID ，
+但是为了方便起见，
+<code class="docutils literal notranslate"><span class="pre">get()</span></code> 方法在返回文章信息的时候也会将文章的 ID 包含在字典里面一并返回。</p>
+<p>对文章信息进行更新的 <code class="docutils literal notranslate"><span class="pre">update()</span></code> 方法是整个程序最复杂的部分。
+首先，
+为了让用户可以自由选择需要更新的信息项，
+这个函数在定义时使用了 Python 的具名参数特性：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">author</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+</pre></div>
+</div>
+<p>通过具名参数，
+用户可以根据自己想要更新的文章信息项来决定传入哪个参数，
+而不需要更新的信息项则会被赋予默认值 <code class="docutils literal notranslate"><span class="pre">None</span></code> ：</p>
+<ul class="simple">
+<li><p>比如说，
+如果用户只想要更新文章的标题，
+那么只需要调用 <code class="docutils literal notranslate"><span class="pre">update(title=new_title)</span></code> 即可；</p></li>
+<li><p>又比如说，
+如果用户想要同时更新文章的内容和作者，
+那么只需要调用 <code class="docutils literal notranslate"><span class="pre">update(content=new_content,</span> <span class="pre">author=new_author)</span></code> 即可；</p></li>
+</ul>
+<p>诸如此类。</p>
+<p>在定义了具名参数之后，
+<code class="docutils literal notranslate"><span class="pre">update()</span></code> 方法会检查各个参数的值，
+并将那些不为 <code class="docutils literal notranslate"><span class="pre">None</span></code> 的参数以及与之相对应的字符串键键名放入到 <code class="docutils literal notranslate"><span class="pre">article_data</span></code> 字典里面：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">article_data</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">article_data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">title_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">title</span>
+<span class="k">if</span> <span class="n">content</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">article_data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">content_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">content</span>
+<span class="k">if</span> <span class="n">author</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">article_data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">author_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">author</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">article_data</span></code> 字典中的键就是需要更新的字符串键的键名，
+而与之相关联的则是这些字符串键的新值。</p>
+<p>在一切准备就绪之后，
+<code class="docutils literal notranslate"><span class="pre">update()</span></code> 方法会根据 <code class="docutils literal notranslate"><span class="pre">article_data</span></code> 字典中设置好的键值对，
+调用 <code class="docutils literal notranslate"><span class="pre">MSET</span></code> 命令对文章进行更新：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">mset</span><span class="p">(</span><span class="n">article_data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>以下代码展示了这个文章储存程序的使用方法：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">article</span> <span class="kn">import</span> <span class="n">Article</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">article</span> <span class="o">=</span> <span class="n">Article</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="mi">10086</span><span class="p">)</span>                   <span class="c1"># 指定文章 ID</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">article</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="s1">&#39;hello world&#39;</span><span class="p">,</span> <span class="s1">&#39;peter&#39;</span><span class="p">)</span>  <span class="c1"># 创建文章</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">article</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>                                      <span class="c1"># 获取文章</span>
+<span class="go">{&#39;id&#39;: &#39;10086&#39;, &#39;title&#39;: &#39;message&#39;, &#39;content&#39;: &#39;hello world&#39;,</span>
+<span class="go"> &#39;author&#39;: &#39;peter&#39;, &#39;create_at&#39;: &#39;1551199163.4296808&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">article</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">author</span><span class="o">=</span><span class="s2">&quot;john&quot;</span><span class="p">)</span>                      <span class="c1"># 更新文章的作者</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">article</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>                                      <span class="c1"># 再次获取文章</span>
+<span class="go">{&#39;id&#39;: &#39;10086&#39;, &#39;title&#39;: &#39;message&#39;, &#39;content&#39;: &#39;hello world&#39;,</span>
+<span class="go"> &#39;author&#39;: &#39;john&#39;, &#39;create_at&#39;: &#39;1551199163.4296808&#39;}</span>
+</pre></div>
+</div>
+<p>表 1-1 展示了上面这段代码创建出的键，以及这些键的值。</p>
+<hr class="docutils" />
+<p>表 1-1 文章数据储存示例</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>被储存的内容</p></th>
+<th class="head"><p>数据库中的键</p></th>
+<th class="head"><p>键的值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>文章的标题</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">article::10086::title</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">'message'</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>文章的内容</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">article::10086::content</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">'hello</span> <span class="pre">world'</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>文章的作者</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">article::10086::author</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">'john'</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>文章的创建时间戳</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">article::10086::create_at</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">'1461145575.631885'</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p>键的命名格式</p>
+<p><code class="docutils literal notranslate"><span class="pre">Article</span></code> 程序使用了多个字符串键去储存文章信息，
+并且每个字符串键的名字都是以 <code class="docutils literal notranslate"><span class="pre">article::&lt;id&gt;::&lt;attribute&gt;</span></code> 格式命名的，
+这是一种 Redis 使用惯例：
+Redis 用户通常会为逻辑上相关联的键设置相同的前缀，
+并通过分隔符来区分键名的各个部分，
+以此来构建一种键的命名格式。</p>
+<p>比如对于 <code class="docutils literal notranslate"><span class="pre">article::10086::title</span></code> 、 <code class="docutils literal notranslate"><span class="pre">article::10086::author</span></code> 这些键来说，
+<code class="docutils literal notranslate"><span class="pre">article</span></code> 前缀表明这些键都储存着与文章信息相关的数据，
+而分隔符 <code class="docutils literal notranslate"><span class="pre">::</span></code> 则区分开了键名里面的前缀、ID 以及具体的属性。
+除了 <code class="docutils literal notranslate"><span class="pre">::</span></code> 符号之外，
+常用的键名分隔符还包括 <code class="docutils literal notranslate"><span class="pre">.</span></code> 符号，
+比如 <code class="docutils literal notranslate"><span class="pre">article.10086.title</span></code> ；
+或者 <code class="docutils literal notranslate"><span class="pre">-&gt;</span></code> 符号，
+比如 <code class="docutils literal notranslate"><span class="pre">article-&gt;10086-&gt;title</span></code> ；
+又或者 <code class="docutils literal notranslate"><span class="pre">|</span></code> 符号，
+比如 <code class="docutils literal notranslate"><span class="pre">article|10086|title</span></code> ；
+诸如此类。</p>
+<p>分隔符的选择通常只是一个个人喜好的问题，
+而键名的具体格式也可以根据需要进行构造：
+比如说，
+如果你不喜欢 <code class="docutils literal notranslate"><span class="pre">article::&lt;id&gt;::&lt;attribute&gt;</span></code> 格式，
+那么也可以考虑使用 <code class="docutils literal notranslate"><span class="pre">article::&lt;attribute&gt;::&lt;id&gt;</span></code> 格式，
+诸如此类。
+唯一需要注意的是，
+一个程序应该只使用一种键名分隔符，
+并且持续地使用同一种键名格式，
+以免造成混乱。</p>
+<p>通过使用相同的格式去命名逻辑上相关联的键，
+我们可以让程序产生的数据结构变得更容易被理解，
+并且在有需要的时候，
+还可以根据特定的键名格式，
+在数据库里面以模式匹配的方式查找指定的键。</p>
+</div>
+</section>
+<section id="strlen">
+<h2>STRLEN：获取字符串值的字节长度<a class="headerlink" href="#strlen" title="Link to this heading">¶</a></h2>
+<p>通过对字符串键执行 <code class="docutils literal notranslate"><span class="pre">STRLEN</span></code> 命令，
+用户可以取得字符串键储存的值的字节长度：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">STRLEN</span> <span class="n">key</span>
+</pre></div>
+</div>
+<p>以下代码展示了如何使用 <code class="docutils literal notranslate"><span class="pre">STRLEN</span></code> 去获取不同字符串值的字节长度：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">number</span>
+<span class="s2">&quot;10086&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">STRLEN</span> <span class="n">number</span>    <span class="o">--</span> <span class="n">number</span> <span class="n">键的值长</span> <span class="mi">5</span> <span class="n">字节</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">5</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">message</span>
+<span class="s2">&quot;hello world&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">STRLEN</span> <span class="n">message</span>   <span class="o">--</span> <span class="n">message</span> <span class="n">键的值长</span> <span class="mi">11</span> <span class="n">字节</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">11</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">book</span>
+<span class="s2">&quot;The Design and Implementation of Redis&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">STRLEN</span> <span class="n">book</span>      <span class="o">--</span> <span class="n">book</span> <span class="n">键的值长</span> <span class="mi">38</span> <span class="n">字节</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">38</span>
+</pre></div>
+</div>
+<p>对于不存在的键，
+<code class="docutils literal notranslate"><span class="pre">STRLEN</span></code> 命令将返回 <code class="docutils literal notranslate"><span class="pre">0</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">STRLEN</span> <span class="ow">not</span><span class="o">-</span><span class="n">exists</span><span class="o">-</span><span class="n">key</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<section id="id11">
+<h3>其他信息<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">STRLEN</span></code> 命令从 Redis 2.2.0 开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id12">
+<h2>字符串值的索引<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h2>
+<p>因为每个字符串都是由一系列连续的字节组成的，
+所以字符串中的每个字节实际上都拥有与之相对应的索引。
+Redis 为字符串键提供了一系列索引操作命令，
+这些命令允许用户通过正数索引或者负数索引，
+对字符串值的某个字节或者某个部分进行处理，
+其中：</p>
+<ul class="simple">
+<li><p>字符串值的正数索引以 0 为开始，
+从字符串的开头向结尾不断递增；</p></li>
+<li><p>字符串值的负数索引以 -1 为开始，
+从字符串的结尾向开头不断递减。</p></li>
+</ul>
+<p>图 2-5 就展示了值为 <code class="docutils literal notranslate"><span class="pre">&quot;hello</span> <span class="pre">world&quot;</span></code> 的字符串，
+以及它的各个字节相对应的正数索引和负数索引。</p>
+<hr class="docutils" />
+<p>图 2-5 字符串的索引示例</p>
+<img alt="_images/IMAGE_STRING_INDEX.png" src="_images/IMAGE_STRING_INDEX.png" />
+<hr class="docutils" />
+<p>本章接下来将对 <code class="docutils literal notranslate"><span class="pre">GETRANGE</span></code> 和 <code class="docutils literal notranslate"><span class="pre">SETRANGE</span></code> 这两个字符串键的索引操作命令进行介绍。</p>
+</section>
+<section id="getrange">
+<h2>GETRANGE：获取字符串值指定索引范围上的内容<a class="headerlink" href="#getrange" title="Link to this heading">¶</a></h2>
+<p>通过使用 <code class="docutils literal notranslate"><span class="pre">GETRANGE</span></code> 命令，
+用户可以获取字符串值从 <code class="docutils literal notranslate"><span class="pre">start</span></code> 索引开始，
+直到 <code class="docutils literal notranslate"><span class="pre">end</span></code> 索引为止的所有内容：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">GETRANGE</span> <span class="n">key</span> <span class="n">start</span> <span class="n">end</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">GETRANGE</span></code> 命令接受的是闭区间索引范围，
+也即是说，
+位于 <code class="docutils literal notranslate"><span class="pre">start</span></code> 索引和 <code class="docutils literal notranslate"><span class="pre">end</span></code> 索引上的值也会被包含在命令返回的内容当中。</p>
+<p>举个例子，
+以下代码展示了如何使用 <code class="docutils literal notranslate"><span class="pre">GETRANGE</span></code> 命令去获取 <code class="docutils literal notranslate"><span class="pre">message</span></code> 键的值的不同部分：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">GETRANGE</span> <span class="n">message</span> <span class="mi">0</span> <span class="mi">4</span>     <span class="o">--</span> <span class="n">获取字符串值索引</span> <span class="mi">0</span> <span class="n">至索引</span> <span class="mi">4</span> <span class="n">上的内容</span>
+<span class="s2">&quot;hello&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GETRANGE</span> <span class="n">message</span> <span class="mi">6</span> <span class="mi">10</span>    <span class="o">--</span> <span class="n">获取字符串值索引</span> <span class="mi">6</span> <span class="n">至索引</span> <span class="mi">10</span> <span class="n">上的内容</span>
+<span class="s2">&quot;world&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GETRANGE</span> <span class="n">message</span> <span class="mi">3</span> <span class="mi">7</span>     <span class="o">--</span> <span class="n">获取字符串值的中间部分</span>
+<span class="s2">&quot;lo wo&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GETRANGE</span> <span class="n">message</span> <span class="o">-</span><span class="mi">11</span> <span class="o">-</span><span class="mi">7</span>  <span class="o">--</span> <span class="n">使用负数索引获取指定内容</span>
+<span class="s2">&quot;hello&quot;</span>
+</pre></div>
+</div>
+<p>图 2-6 展示了上面的这四个命令是如何根据索引去获取值的内容的。</p>
+<hr class="docutils" />
+<p>图 2-6 <code class="docutils literal notranslate"><span class="pre">GETRANGE</span></code> 命令执行示例</p>
+<img alt="_images/IMAGE_GETRANGE_1.png" src="_images/IMAGE_GETRANGE_1.png" />
+<img alt="_images/IMAGE_GETRANGE_2.png" src="_images/IMAGE_GETRANGE_2.png" />
+<img alt="_images/IMAGE_GETRANGE_3.png" src="_images/IMAGE_GETRANGE_3.png" />
+<img alt="_images/IMAGE_GETRANGE_4.png" src="_images/IMAGE_GETRANGE_4.png" />
+<hr class="docutils" />
+<section id="id13">
+<h3>其他信息<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N)，其中 N 为被返回内容的长度。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">GETRANGE</span></code> 命令从 Redis 2.4.0 开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="setrange">
+<h2>SETRANGE：对字符串值的指定索引范围进行设置<a class="headerlink" href="#setrange" title="Link to this heading">¶</a></h2>
+<p>通过使用 <code class="docutils literal notranslate"><span class="pre">SETRANGE</span></code> 命令，
+用户可以将字符串键的值从索引 <code class="docutils literal notranslate"><span class="pre">index</span></code> 开始的部分替换为指定的新内容，
+被替换内容的长度取决于新内容的长度：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SETRANGE</span> <span class="n">key</span> <span class="n">index</span> <span class="n">substitute</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">SETRANGE</span></code> 命令在执行完设置操作之后，
+会返回字符串值当前的长度作为结果。</p>
+<p>比如说，
+我们可以通过执行以下命令，
+将 <code class="docutils literal notranslate"><span class="pre">message</span></code> 键的值从原来的 <code class="docutils literal notranslate"><span class="pre">&quot;hello</span> <span class="pre">world&quot;</span></code> 修改为 <code class="docutils literal notranslate"><span class="pre">&quot;hello</span> <span class="pre">Redis&quot;</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">message</span>
+<span class="s2">&quot;hello world&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SETRANGE</span> <span class="n">message</span> <span class="mi">6</span> <span class="s2">&quot;Redis&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">11</span>    <span class="o">--</span> <span class="n">字符串值当前的长度为</span> <span class="mi">11</span> <span class="n">字节</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">message</span>
+<span class="s2">&quot;hello Redis&quot;</span>
+</pre></div>
+</div>
+<p>这个例子中的 <code class="docutils literal notranslate"><span class="pre">SETRANGE</span></code> 命令会将 <code class="docutils literal notranslate"><span class="pre">message</span></code> 键的值从索引 6 开始的内容替换为 <code class="docutils literal notranslate"><span class="pre">&quot;Redis&quot;</span></code> ，
+图 2-7 展示了这个命令的执行过程。</p>
+<hr class="docutils" />
+<p>图 2-7 <code class="docutils literal notranslate"><span class="pre">SETRANGE</span></code> 命令修改 <code class="docutils literal notranslate"><span class="pre">message</span></code> 键的过程</p>
+<img alt="_images/IMAGE_SETRANGE_MESSAGE_1.png" src="_images/IMAGE_SETRANGE_MESSAGE_1.png" />
+<img alt="_images/IMAGE_SETRANGE_MESSAGE_2.png" src="_images/IMAGE_SETRANGE_MESSAGE_2.png" />
+<img alt="_images/IMAGE_SETRANGE_MESSAGE_3.png" src="_images/IMAGE_SETRANGE_MESSAGE_3.png" />
+<img alt="_images/IMAGE_SETRANGE_MESSAGE_4.png" src="_images/IMAGE_SETRANGE_MESSAGE_4.png" />
+<img alt="_images/IMAGE_SETRANGE_MESSAGE_5.png" src="_images/IMAGE_SETRANGE_MESSAGE_5.png" />
+<img alt="_images/IMAGE_SETRANGE_MESSAGE_6.png" src="_images/IMAGE_SETRANGE_MESSAGE_6.png" />
+<section id="id14">
+<h3>自动扩展被修改的字符串<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h3>
+<p>当用户给定的新内容比被替换的内容更长时，
+<code class="docutils literal notranslate"><span class="pre">SETRANGE</span></code> 命令就会自动扩展被修改的字符串值，
+从而确保新内容可以顺利写入。</p>
+<p>比如说，
+以下代码就展示了如何通过 <code class="docutils literal notranslate"><span class="pre">SETRANGE</span></code> 命令，
+将 <code class="docutils literal notranslate"><span class="pre">message</span></code> 键的值从原来的 11 字节长修改为 41 字节长：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">message</span>
+<span class="s2">&quot;hello Redis&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SETRANGE</span> <span class="n">message</span> <span class="mi">5</span> <span class="s2">&quot;, this is a message send from peter.&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">41</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">message</span>
+<span class="s2">&quot;hello, this is a message send from peter.&quot;</span>
+</pre></div>
+</div>
+<p>图 2-8 展示了这个 <code class="docutils literal notranslate"><span class="pre">SETRANGE</span></code> 命令扩展字符串并进行写入的过程。</p>
+<hr class="docutils" />
+<p>图 2-8  <code class="docutils literal notranslate"><span class="pre">SETRANGE</span></code> 命令的执行过程示例</p>
+<p>SETRANGE 命令执行之前的字符串值</p>
+<img alt="_images/IMAGE_EXPAND_SETRANGE_1.png" src="_images/IMAGE_EXPAND_SETRANGE_1.png" />
+<p>将字符串值扩展至 41 字节长</p>
+<img alt="_images/IMAGE_EXPAND_SETRANGE_2.png" src="_images/IMAGE_EXPAND_SETRANGE_2.png" />
+<p>对字符串值进行设置</p>
+<img alt="_images/IMAGE_EXPAND_SETRANGE_3.png" src="_images/IMAGE_EXPAND_SETRANGE_3.png" />
+</section>
+<section id="id15">
+<h3>在值里面填充空字节<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">SETRANGE</span></code> 命令除了会根据用户给定的新内容自动扩展字符串值之外，
+还会根据用户给定的 <code class="docutils literal notranslate"><span class="pre">index</span></code> 索引扩展字符串：
+当用户给定的 <code class="docutils literal notranslate"><span class="pre">index</span></code> 索引超出字符串值的长度时，
+字符串值末尾直到索引 <code class="docutils literal notranslate"><span class="pre">index-1</span></code> 之间的部分将使用空字节进行填充，
+换句话说，
+这些字节的所有二进制位都会被设置为 <code class="docutils literal notranslate"><span class="pre">0</span></code> 。</p>
+<p>举个例子，
+对于字符串键 <code class="docutils literal notranslate"><span class="pre">greeting</span></code> 来说：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">greeting</span>
+<span class="s2">&quot;hello&quot;</span>
+</pre></div>
+</div>
+<p>当我们执行以下命令时：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SETRANGE</span> <span class="n">greeting</span> <span class="mi">10</span> <span class="s2">&quot;world&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">15</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">SETRANGE</span></code> 命令会先将字符串值扩展为 <code class="docutils literal notranslate"><span class="pre">15</span></code> 个字节长，
+然后将 <code class="docutils literal notranslate"><span class="pre">&quot;hello&quot;</span></code> 末尾直到索引 <code class="docutils literal notranslate"><span class="pre">9</span></code> 之间的所有字节都填充为空字节，
+最后再将索引 <code class="docutils literal notranslate"><span class="pre">10</span></code> 到索引 <code class="docutils literal notranslate"><span class="pre">14</span></code> 的内容设置为 <code class="docutils literal notranslate"><span class="pre">&quot;world&quot;</span></code> 。
+图 2-9 展示了这个扩展、填充、最后设置的过程。</p>
+<hr class="docutils" />
+<p>图 2-9 <code class="docutils literal notranslate"><span class="pre">SETRANGE</span> <span class="pre">greeting</span> <span class="pre">10</span> <span class="pre">&quot;world&quot;</span></code> 的执行过程</p>
+<p>执行 SETRANGE 之前的字符串值</p>
+<img alt="_images/IMAGE_FILLED_SETRANGE_1.png" src="_images/IMAGE_FILLED_SETRANGE_1.png" />
+<p>将字符串值从 5 个字节扩展至 15 个字节</p>
+<img alt="_images/IMAGE_FILLED_SETRANGE_2.png" src="_images/IMAGE_FILLED_SETRANGE_2.png" />
+<p>使用空字节填充索引 5 至索引 9</p>
+<img alt="_images/IMAGE_FILLED_SETRANGE_3.png" src="_images/IMAGE_FILLED_SETRANGE_3.png" />
+<p>将索引 10 至索引 14 的内容设置为 “world”</p>
+<img alt="_images/IMAGE_FILLED_SETRANGE_4.png" src="_images/IMAGE_FILLED_SETRANGE_4.png" />
+<hr class="docutils" />
+<p>通过执行 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令，
+我们可以取得 <code class="docutils literal notranslate"><span class="pre">greeting</span></code> 键在执行 <code class="docutils literal notranslate"><span class="pre">SETRANGE</span></code> 命令之后的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">greeting</span>
+<span class="s2">&quot;hello</span><span class="se">\x00\x00\x00\x00\x00</span><span class="s2">world&quot;</span>
+</pre></div>
+</div>
+<p>可以看到，
+<code class="docutils literal notranslate"><span class="pre">greeting</span></code> 键的值现在包含了多个 <code class="docutils literal notranslate"><span class="pre">\x00</span></code> 符号，
+而每个 <code class="docutils literal notranslate"><span class="pre">\x00</span></code> 符号就代表一个空字节。</p>
+</section>
+<section id="id16">
+<h3>其他信息<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N)，其中 N 为被修改内容的长度。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SETRANGE</span></code> 命令从 Redis 2.2.0 开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id17">
+<h2>示例：给文章储存程序加上文章长度计数功能和文章预览功能<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h2>
+<p>在前面的内容中，
+我们使用 <code class="docutils literal notranslate"><span class="pre">MSET</span></code> 、 <code class="docutils literal notranslate"><span class="pre">MGET</span></code> 等命令构建了一个储存文章信息的程序，
+在学习了 <code class="docutils literal notranslate"><span class="pre">STRLEN</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">GETRANGE</span></code> 命令之后，
+我们可以给这个文章储存程序加上两个新功能，
+其中一个是文章长度计数功能，
+而另一个则是文章预览功能：</p>
+<ul class="simple">
+<li><p>文章长度计数功能用于显示文章内容的长度，
+读者可以通过这个长度值来了解一篇文章大概有多长，
+从而决定是否阅读一篇文章。</p></li>
+<li><p>文章预览功能则用于显示文章开头的一部分内容，
+这些内容可以帮助读者快速地了解文章本身，
+并吸引读者进一步阅读整篇文章。</p></li>
+</ul>
+<p>代码清单 2-4 展示了这两个功能的具体实现代码，
+其中文章长度计数功能是通过对文章内容执行 <code class="docutils literal notranslate"><span class="pre">STRLEN</span></code> 命令来实现的，
+而文章预览功能则是通过对文章内容执行 <code class="docutils literal notranslate"><span class="pre">GETRANGE</span></code> 命令来实现的。</p>
+<hr class="docutils" />
+<p>代码清单 2-4 带有长度计数功能和预览功能的文章储存程序：<code class="docutils literal notranslate"><span class="pre">/string/article.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>  <span class="c1"># time() 函数用于获取当前 Unix 时间戳</span>
+
+<span class="k">class</span> <span class="nc">Article</span><span class="p">:</span>
+
+    <span class="c1"># 省略之前展示过的 __init__()、create() 、update() 等方法……</span>
+
+    <span class="k">def</span> <span class="nf">get_content_len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回文章内容的字节长度。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">strlen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">content_key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_content_preview</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">preview_len</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回指定长度的文章预览内容。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">start_index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">end_index</span> <span class="o">=</span> <span class="n">preview_len</span><span class="o">-</span><span class="mi">1</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">getrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">content_key</span><span class="p">,</span> <span class="n">start_index</span><span class="p">,</span> <span class="n">end_index</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p><code class="docutils literal notranslate"><span class="pre">get_content_len()</span></code> 方法的实现非常简单直接，
+没有什么需要说明的。
+与此相比，
+<code class="docutils literal notranslate"><span class="pre">get_content_preview()</span></code> 方法显得更复杂一些，
+让我们来对它进行一些分析。</p>
+<p>首先，
+<code class="docutils literal notranslate"><span class="pre">get_content_preview()</span></code> 方法会接受一个 <code class="docutils literal notranslate"><span class="pre">preview_len</span></code> 参数，
+用于记录调用者指定的预览长度。
+接着程序会根据这个预览长度，
+计算出预览内容的起始索引和结束索引：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">start_index</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">end_index</span> <span class="o">=</span> <span class="n">preview_len</span><span class="o">-</span><span class="mi">1</span>
+</pre></div>
+</div>
+<p>因为预览功能要做的就是返回文章内容的前 <code class="docutils literal notranslate"><span class="pre">preview_len</span></code> 个字节，
+所以上面的这两条赋值语句要做的就是计算并记录文章前 <code class="docutils literal notranslate"><span class="pre">preview_len</span></code> 个字节所在的索引范围，
+其中 <code class="docutils literal notranslate"><span class="pre">start_index</span></code> 的值总是 <code class="docutils literal notranslate"><span class="pre">0</span></code> ，
+而 <code class="docutils literal notranslate"><span class="pre">end_index</span></code> 的值则为 <code class="docutils literal notranslate"><span class="pre">preview_len</span></code> 减一。
+举个例子，
+假如用户输入的预览长度为 <code class="docutils literal notranslate"><span class="pre">150</span></code> ，
+那么 <code class="docutils literal notranslate"><span class="pre">start_index</span></code> 将被赋值为 <code class="docutils literal notranslate"><span class="pre">0</span></code> ，
+而 <code class="docutils literal notranslate"><span class="pre">end_index</span></code> 将被赋值为 <code class="docutils literal notranslate"><span class="pre">149</span></code> 。</p>
+<p>最后，
+程序会调用 <code class="docutils literal notranslate"><span class="pre">GETRANGE</span></code> 命令，
+根据上面计算出的两个索引，
+从储存着文章内容的字符串键里面取出指定的预览内容：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">getrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">content_key</span><span class="p">,</span> <span class="n">start_index</span><span class="p">,</span> <span class="n">end_index</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>以下代码展示了如何使用文章长度计数功能以及文章预览功能：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">article</span> <span class="kn">import</span> <span class="n">Article</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">article</span> <span class="o">=</span> <span class="n">Article</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="mi">12345</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;Improving map data on GitHub&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">content</span> <span class="o">=</span> <span class="s2">&quot;You&#39;ve been able to view and diff geospatial data on GitHub for a while, but now, in addition to being able to collaborate on the GeoJSON files you upload to GitHub, you can now more easily contribute to the underlying, shared basemap, that provides your data with context.&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">author</span> <span class="o">=</span> <span class="s2">&quot;benbalter&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">article</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">author</span><span class="p">)</span>  <span class="c1"># 将一篇比较长的文章储存起来</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">article</span><span class="o">.</span><span class="n">get_content_len</span><span class="p">()</span>               <span class="c1"># 文章总长 273 字节</span>
+<span class="go">273</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">article</span><span class="o">.</span><span class="n">get_content_preview</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>        <span class="c1"># 获取文章前 100 字节的内容</span>
+<span class="go">&quot;You&#39;ve been able to view and diff geospatial data on GitHub for a while, but now, in addition to bei&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="append">
+<h2>APPEND：追加新内容到值的末尾<a class="headerlink" href="#append" title="Link to this heading">¶</a></h2>
+<p>通过调用 <code class="docutils literal notranslate"><span class="pre">APPEND</span></code> 命令，
+用户可以将给定的内容追加到字符串键已有值的末尾：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">APPEND</span> <span class="n">key</span> <span class="n">suffix</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">APPEND</span></code> 命令在执行追加操作之后，
+会返回字符串值当前的长度作为返回值。</p>
+<p>举个例子，
+对于以下这个名为 <code class="docutils literal notranslate"><span class="pre">description</span></code> 的键来说：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">description</span>
+<span class="s2">&quot;Redis&quot;</span>
+</pre></div>
+</div>
+<p>我们可以通过执行以下命令，
+将字符串 <code class="docutils literal notranslate"><span class="pre">&quot;</span> <span class="pre">is</span> <span class="pre">a</span> <span class="pre">database&quot;</span></code> 追加到 <code class="docutils literal notranslate"><span class="pre">description</span></code> 键已有值的末尾：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>redis&gt; APPEND description &quot; is a database&quot;
+(integer) 19    -- 追加操作执行完毕之后，值的长度
+</pre></div>
+</div>
+<p>以下是 <code class="docutils literal notranslate"><span class="pre">description</span></code> 键在执行完追加操作之后的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">description</span>
+<span class="s2">&quot;Redis is a database&quot;</span>
+</pre></div>
+</div>
+<p>在此之后，
+我们可以继续执行以下 <code class="docutils literal notranslate"><span class="pre">APPEND</span></code> 命令，
+将字符串 <code class="docutils literal notranslate"><span class="pre">&quot;</span> <span class="pre">with</span> <span class="pre">many</span> <span class="pre">different</span> <span class="pre">data</span> <span class="pre">structure.&quot;</span></code> 追加到 <code class="docutils literal notranslate"><span class="pre">description</span></code> 键已有值的末尾：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">APPEND</span> <span class="n">description</span> <span class="s2">&quot; with many different data structure.&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">55</span>
+</pre></div>
+</div>
+<p>现在，
+<code class="docutils literal notranslate"><span class="pre">description</span></code> 键的值又变成了以下这个样子：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">description</span>
+<span class="s2">&quot;Redis is a database with many different data structure.&quot;</span>
+</pre></div>
+</div>
+<p>图 2-10 展示了 <code class="docutils literal notranslate"><span class="pre">description</span></code> 键的值是如何随着 <code class="docutils literal notranslate"><span class="pre">APPEND</span></code> 命令的执行而变化的。</p>
+<hr class="docutils" />
+<p>图 2-10 <code class="docutils literal notranslate"><span class="pre">description</span></code> 键的值随着 <code class="docutils literal notranslate"><span class="pre">APPEND</span></code> 命令的执行而变化</p>
+<img alt="_images/IMAGE_APPEND.png" src="_images/IMAGE_APPEND.png" />
+<section id="id18">
+<h3>处理不存在的键<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h3>
+<p>如果用户给定的键并不存在，
+那么 <code class="docutils literal notranslate"><span class="pre">APPEND</span></code> 命令会先将键的值初始化为空字符串 <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> ，
+然后再执行追加操作，
+最终效果跟使用 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令为键设置值的情况类似：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">append_msg</span>  <span class="o">--</span> <span class="n">键不存在</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">APPEND</span> <span class="n">append_msg</span> <span class="s2">&quot;hello&quot;</span>  <span class="o">--</span> <span class="n">效果相当于执行</span> <span class="n">SET</span> <span class="n">append_msg</span> <span class="s2">&quot;hello&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">5</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">append_msg</span>
+<span class="s2">&quot;hello&quot;</span>
+</pre></div>
+</div>
+<p>当键有了值之后，
+<code class="docutils literal notranslate"><span class="pre">APPEND</span></code> 又会像平时一样，
+将用户给定的值追加到已有值的末尾：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">APPEND</span> <span class="n">append_msg</span> <span class="s2">&quot;, how are you?&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">19</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">append_msg</span>
+<span class="s2">&quot;hello, how are you?&quot;</span>
+</pre></div>
+</div>
+<p>图 2-11 展示了 <code class="docutils literal notranslate"><span class="pre">APPEND</span></code> 命令是如何根据键是否存在来判断应该执行哪种操作的。</p>
+<hr class="docutils" />
+<p>图 2-11 <code class="docutils literal notranslate"><span class="pre">APPEND</span></code> 的判断过程</p>
+<img alt="_images/IMAGE_TWO_CASE_APPEND.png" src="_images/IMAGE_TWO_CASE_APPEND.png" />
+</section>
+<hr class="docutils" />
+<section id="id19">
+<h3>其他信息<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N)，其中 N 为新追加内容的长度。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">APPEND</span></code> 命令从 Redis 2.0.0 开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id20">
+<h2>示例：储存日志<a class="headerlink" href="#id20" title="Link to this heading">¶</a></h2>
+<p>很多程序在运行的时候都会生成一些日志，
+这些日志记录了程序的运行状态以及执行过的重要操作。</p>
+<p>比如说，
+以下展示的就是 Redis 服务器运行时输出的一些日志，
+这些日志记录了 Redis 开始运行的时间，
+载入数据库所耗费的时长，
+接收客户端连接所使用的端口号，
+以及进行数据持久化操作的时间点等信息：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">6066</span><span class="p">:</span><span class="n">M</span> <span class="mi">06</span> <span class="n">Jul</span> <span class="mi">17</span><span class="p">:</span><span class="mi">40</span><span class="p">:</span><span class="mf">49.611</span> <span class="c1"># Server started, Redis version 3.1.999</span>
+<span class="mi">6066</span><span class="p">:</span><span class="n">M</span> <span class="mi">06</span> <span class="n">Jul</span> <span class="mi">17</span><span class="p">:</span><span class="mi">40</span><span class="p">:</span><span class="mf">49.627</span> <span class="o">*</span> <span class="n">DB</span> <span class="n">loaded</span> <span class="kn">from</span> <span class="nn">disk</span><span class="p">:</span> <span class="mf">0.016</span> <span class="n">seconds</span>
+<span class="mi">6066</span><span class="p">:</span><span class="n">M</span> <span class="mi">06</span> <span class="n">Jul</span> <span class="mi">17</span><span class="p">:</span><span class="mi">40</span><span class="p">:</span><span class="mf">49.627</span> <span class="o">*</span> <span class="n">The</span> <span class="n">server</span> <span class="ow">is</span> <span class="n">now</span> <span class="n">ready</span> <span class="n">to</span> <span class="n">accept</span> <span class="n">connections</span> <span class="n">on</span> <span class="n">port</span> <span class="mi">6379</span>
+<span class="mi">6066</span><span class="p">:</span><span class="n">M</span> <span class="mi">06</span> <span class="n">Jul</span> <span class="mi">18</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mf">20.009</span> <span class="o">*</span> <span class="n">DB</span> <span class="n">saved</span> <span class="n">on</span> <span class="n">disk</span>
+</pre></div>
+</div>
+<p>为了记录程序运行的状态，
+又或者为了对日志进行分析，
+我们有时候会需要把程序生成的日志储存起来。</p>
+<p>比如说，
+我们可以通过使用 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令，
+将日志的生成时间用作键、日志的内容用作值，
+把上面展示的日志储存到多个字符串键里面：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="s2">&quot;06 Jul 17:40:49.611&quot;</span> <span class="s2">&quot;# Server started, Redis version 3.1.999&quot;</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="s2">&quot;06 Jul 17:40:49.627&quot;</span> <span class="s2">&quot;* DB loaded from disk: 0.016 seconds&quot;</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="s2">&quot;06 Jul 17:40:49.627&quot;</span> <span class="s2">&quot;* The server is now ready to accept connections on port 6379&quot;</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="s2">&quot;06 Jul 18:29:20.009&quot;</span> <span class="s2">&quot;* DB saved on disk&quot;</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p>遗憾的是，
+这种日志储存方式并不理想，
+它的主要问题有两个：</p>
+<ol class="arabic simple">
+<li><p>这种方法需要在数据库里面创建非常多的键。
+因为 Redis 每创建一个键就需要消耗一定的额外资源（overhead）来对键进行维护，
+所以键的数量越多，
+消耗的额外资源就会越多。</p></li>
+<li><p>这种方法将全部日志分散地储存在不同的键里面，
+当程序想要对特定的日志进行分析的时候，
+它就需要花费额外的时间和资源去查找指定的日志，
+这给分析操作带来了额外的麻烦和资源消耗。</p></li>
+</ol>
+<p>代码清单 2-5 展示了另一种更为方便和高效的日志储存方式，
+这个程序会把同一天之内产生的所有日志都储存在同一个字符串键里面，
+从而使得用户可以非常高效地取得指定日期内产生的所有日志。</p>
+<hr class="docutils" />
+<p>代码清单 2-5 使用字符串键实现高效的日志储存程序：<code class="docutils literal notranslate"><span class="pre">/string/log.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">LOG_SEPARATOR</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+<span class="k">class</span> <span class="nc">Log</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_log</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        将给定的日志储存起来。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">new_log</span> <span class="o">+=</span> <span class="n">LOG_SEPARATOR</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">new_log</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        以列表形式返回所有日志。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">all_logs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">all_logs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">log_list</span> <span class="o">=</span> <span class="n">all_logs</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">LOG_SEPARATOR</span><span class="p">)</span>
+            <span class="n">log_list</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">log_list</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>日志储存程序的 <code class="docutils literal notranslate"><span class="pre">add()</span></code> 方法负责将新日志储存起来。
+这个方法首先会将分隔符追加到新日志的末尾：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">new_log</span> <span class="o">+=</span> <span class="n">LOG_SEPARATOR</span>
+</pre></div>
+</div>
+<p>然后调用 <code class="docutils literal notranslate"><span class="pre">APPEND</span></code> 命令，
+将新日志追加到已有日志的末尾：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">new_log</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>举个例子，
+如果用户输入的日志是：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;this is log1&quot;</span>
+</pre></div>
+</div>
+<p>那么 <code class="docutils literal notranslate"><span class="pre">add()</span></code> 方法首先会把分隔符 <code class="docutils literal notranslate"><span class="pre">&quot;\n&quot;</span></code> 追加到这行日志的末尾，
+使之变成：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;this is log1</span><span class="se">\n</span><span class="s2">&quot;</span>
+</pre></div>
+</div>
+<p>然后调用以下命令，
+将新日志追到已有日志的末尾：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">APPEND</span> <span class="n">key</span> <span class="s2">&quot;this is log1</span><span class="se">\n</span><span class="s2">&quot;</span>
+</pre></div>
+</div>
+<p>负责获取所有日志的 <code class="docutils literal notranslate"><span class="pre">get_all()</span></code> 方法比较复杂，
+因为它不仅需要从字符串键里面取出包含了所有日志的字符串值，
+还需要从这个字符串值里面分割出每一条日志。
+首先，
+这个方法使用 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令从字符串键里面取出包含了所有日志的字符串值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">all_logs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>接着，
+程序会检查 <code class="docutils literal notranslate"><span class="pre">all_logs</span></code> 这个值是否为空，
+如果为空则表示没有日志被储存，
+程序直接返回空列表 <code class="docutils literal notranslate"><span class="pre">[]</span></code> 作为 <code class="docutils literal notranslate"><span class="pre">get_all()</span></code> 方法的执行结果；
+另一方面，
+如果值不为空，
+那么程序将调用 Python 的 <code class="docutils literal notranslate"><span class="pre">split()</span></code> 方法对字符串值进行分割，
+并将分割结果储存到 <code class="docutils literal notranslate"><span class="pre">log_list</span></code> 列表里面：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">log_list</span> <span class="o">=</span> <span class="n">all_logs</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">LOG_SEPARATOR</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>因为 <code class="docutils literal notranslate"><span class="pre">split()</span></code> 方法会在结果中包含一个空字符串，
+而我们并不需要这个空字符串，
+所以程序还会调用 <code class="docutils literal notranslate"><span class="pre">remove()</span></code> 方法，
+将空字符串从分割结果中移除，
+使得 <code class="docutils literal notranslate"><span class="pre">log_list</span></code> 列表里面只保留被分割的日志：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">log_list</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>在此之后，
+程序只需要将包含了多条日志的 <code class="docutils literal notranslate"><span class="pre">log_list</span></code> 列表返回给调用者就可以了：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">return</span> <span class="n">log_list</span>
+</pre></div>
+</div>
+<p>举个例子，
+假设我们使用 <code class="docutils literal notranslate"><span class="pre">add()</span></code> 方法，
+在一个字符串键里面储存了 <code class="docutils literal notranslate"><span class="pre">&quot;this</span> <span class="pre">is</span> <span class="pre">log1&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">this</span> <span class="pre">is</span> <span class="pre">log2&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">this</span> <span class="pre">is</span> <span class="pre">log3&quot;</span></code> 这三条日志，
+那么 <code class="docutils literal notranslate"><span class="pre">get_all()</span></code> 方法在使用 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令获取字符串键的值时，
+将得到以下结果：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;this is log1</span><span class="se">\n</span><span class="s2">this is log2</span><span class="se">\n</span><span class="s2">this is log3&quot;</span>
+</pre></div>
+</div>
+<p>在使用 <code class="docutils literal notranslate"><span class="pre">split(LOG_SEPARATOR)</span></code> 方法对这个结果进行分割之后，
+程序将得到一个包含四个元素的列表，
+其中列表最后的元素为空字符串：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="s2">&quot;this is log1&quot;</span><span class="p">,</span> <span class="s2">&quot;this is log2&quot;</span><span class="p">,</span> <span class="s2">&quot;this is log3&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>在调用 <code class="docutils literal notranslate"><span class="pre">remove(&quot;&quot;)</span></code> 方法移除列表中的空字符串之后，
+列表里面就只会包含被储存的日志：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="s2">&quot;this is log1&quot;</span><span class="p">,</span> <span class="s2">&quot;this is log2&quot;</span><span class="p">,</span> <span class="s2">&quot;this is log3&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>这时 <code class="docutils literal notranslate"><span class="pre">get_all()</span></code> 方法只需要把这个列表返回给调用者就可以了。</p>
+<p>以下代码展示了这个日志储存程序的使用方法：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">log</span> <span class="kn">import</span> <span class="n">Log</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># 按日期归类日志</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">log</span> <span class="o">=</span> <span class="n">Log</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;06 Jul&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># 储存日志</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">log</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;17:40:49.611 # Server started, Redis version 3.1.999&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">log</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;17:40:49.627 * DB loaded from disk: 0.016 seconds&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">log</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;17:40:49.627 * The server is now ready to accept connections on port 6379&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">log</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;18:29:20.009 * DB saved on disk&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># 以列表形式返回所有日志</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">log</span><span class="o">.</span><span class="n">get_all</span><span class="p">()</span>
+<span class="go">[&#39;17:40:49.611 # Server started, Redis version 3.1.999&#39;, &#39;17:40:49.627 * DB loaded from disk: 0.016 seconds&#39;, &#39;17:40:49.627 * The server is now ready to accept connections on port 6379&#39;, &#39;18:29:20.009 * DB saved on disk&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># 单独打印每条日志</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">log</span><span class="o">.</span><span class="n">get_all</span><span class="p">():</span>
+<span class="gp">... </span>  <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">17:40:49.611 # Server started, Redis version 3.1.999</span>
+<span class="go">17:40:49.627 * DB loaded from disk: 0.016 seconds</span>
+<span class="go">17:40:49.627 * The server is now ready to accept connections on port 6379</span>
+<span class="go">18:29:20.009 * DB saved on disk</span>
+</pre></div>
+</div>
+</section>
+<section id="id21">
+<h2>使用字符串键储存数字值<a class="headerlink" href="#id21" title="Link to this heading">¶</a></h2>
+<p>每当用户将一个值储存到字符串键里面的时候，
+Redis 都会对这个值进行检测，
+如果这个值能够被解释为以下两种类型的其中一种，
+那么 Redis 就会把这个值当做数字来处理：</p>
+<ul class="simple">
+<li><p>一种是能够使用 C 语言的 <code class="docutils literal notranslate"><span class="pre">long</span> <span class="pre">long</span> <span class="pre">int</span></code> 类型储存的整数，
+在大多数系统中，
+这种类型储存的都是 64 位长度的有符号整数，
+取值范围介于 <code class="docutils literal notranslate"><span class="pre">-9223372036854775808</span></code> 和 <code class="docutils literal notranslate"><span class="pre">9223372036854775807</span></code> 之间；</p></li>
+<li><p>第二种是能够使用 C 语言的 <code class="docutils literal notranslate"><span class="pre">long</span> <span class="pre">double</span></code> 类型储存的浮点数，
+在大多数系统中，
+这种类型储存的都是 128 位长度的有符号浮点数，
+取值范围介于 <code class="docutils literal notranslate"><span class="pre">3.36210314311209350626e-4932</span></code> 和 <code class="docutils literal notranslate"><span class="pre">1.18973149535723176502e+4932L</span></code> 之间。</p></li>
+</ul>
+<p>作为例子，
+表 1-2 展示了一些不同类型的值，
+并说明了 Redis 对它们的解释方式。</p>
+<hr class="docutils" />
+<p>表 1-2 一些能够被 Redis 解释为数字的例子</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>值</p></th>
+<th class="head"><p>Redis 解释这个值的方式</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">10086</span></code></p></td>
+<td><p>解释为整数。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">+894</span></code></p></td>
+<td><p>解释为整数。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-123</span></code></p></td>
+<td><p>解释为整数。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">3.14</span></code></p></td>
+<td><p>解释为浮点数。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">+2.56</span></code></p></td>
+<td><p>解释为浮点数。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">-5.12</span></code></p></td>
+<td><p>解释为浮点数。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">12345678901234567890</span></code></p></td>
+<td><p>这个值虽然是整数，
+但是因为它的大小超出了 <code class="docutils literal notranslate"><span class="pre">long</span> <span class="pre">long</span> <span class="pre">int</span></code> 类型能够容纳的范围，
+所以只能被解释为字符串。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">3.14e5</span></code></p></td>
+<td><p>因为 Redis 不能解释使用科学记数法表示的浮点数，
+所以这个值只能被解释为字符串。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;one&quot;</span></code></p></td>
+<td><p>解释为字符串。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;123abc&quot;</span></code></p></td>
+<td><p>解释为字符串。</p></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<p>为了能够更方便地处理那些使用字符串键储存的数字值，
+Redis 提供了一系列加法操作命令以及减法操作命令，
+用户可以通过这些命令直接对字符串键储存的数字值执行加法操作或减法操作，
+本章接下来将对这些命令进行介绍。</p>
+</section>
+<section id="incrbydecrby">
+<h2>INCRBY、DECRBY：对整数值执行加法操作和减法操作<a class="headerlink" href="#incrbydecrby" title="Link to this heading">¶</a></h2>
+<p>当字符串键储存的值能够被 Redis 解释为整数时，
+用户就可以通过 <code class="docutils literal notranslate"><span class="pre">INCRBY</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">DECRBY</span></code> 命令，
+对被储存的整数值执行加法操作或是减法操作。</p>
+<p><code class="docutils literal notranslate"><span class="pre">INCRBY</span></code> 命令用于为整数值加上指定的整数增量，
+并返回键在执行加法操作之后的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">INCRBY</span> <span class="n">key</span> <span class="n">increment</span>
+</pre></div>
+</div>
+<p>以下代码展示了如何使用 <code class="docutils literal notranslate"><span class="pre">INCRBY</span></code> 命令去增加一个字符串键的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">number</span> <span class="mi">100</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">number</span>
+<span class="s2">&quot;100&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">INCRBY</span> <span class="n">number</span> <span class="mi">300</span>     <span class="o">--</span> <span class="n">将键的值加上</span> <span class="mi">300</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">400</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">INCRBY</span> <span class="n">number</span> <span class="mi">256</span>     <span class="o">--</span> <span class="n">将键的值加上</span> <span class="mi">256</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">656</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">INCRBY</span> <span class="n">number</span> <span class="mi">1000</span>    <span class="o">--</span> <span class="n">将键的值加上</span> <span class="mi">1000</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1656</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">number</span>
+<span class="s2">&quot;1656&quot;</span>
+</pre></div>
+</div>
+<p>与 <code class="docutils literal notranslate"><span class="pre">INCRBY</span></code> 命令的作用正好相反，
+<code class="docutils literal notranslate"><span class="pre">DECRBY</span></code> 命令用于为整数值减去指定的整数减量，
+并返回键在执行减法操作之后的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DECRBY</span> <span class="n">key</span> <span class="n">increment</span>
+</pre></div>
+</div>
+<p>以下代码展示了如何使用 <code class="docutils literal notranslate"><span class="pre">DECRBY</span></code> 命令去减少一个字符串键的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">number</span> <span class="mi">10086</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">number</span>
+<span class="s2">&quot;10086&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">DECRBY</span> <span class="n">number</span> <span class="mi">300</span>     <span class="o">--</span> <span class="n">将键的值减去</span> <span class="mi">300</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">9786</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">DECRBY</span> <span class="n">number</span> <span class="mi">786</span>     <span class="o">--</span> <span class="n">将键的值减去</span> <span class="mi">786</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">9000</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">DECRBY</span> <span class="n">number</span> <span class="mi">5500</span>    <span class="o">--</span> <span class="n">将键的值减去</span> <span class="mi">5500</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3500</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">number</span>
+<span class="s2">&quot;3500&quot;</span>
+</pre></div>
+</div>
+<section id="id22">
+<h3>类型限制<a class="headerlink" href="#id22" title="Link to this heading">¶</a></h3>
+<p>当字符串键的值不能被 Redis 解释为整数时，
+对键执行 <code class="docutils literal notranslate"><span class="pre">INCRBY</span></code> 命令或是 <code class="docutils literal notranslate"><span class="pre">DECRBY</span></code> 命令将返回一个错误：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">pi</span> <span class="mf">3.14</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">INCRBY</span> <span class="n">pi</span> <span class="mi">100</span>    <span class="o">--</span> <span class="n">不能对浮点数值执行</span>
+<span class="p">(</span><span class="n">error</span><span class="p">)</span> <span class="n">ERR</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">an</span> <span class="n">integer</span> <span class="ow">or</span> <span class="n">out</span> <span class="n">of</span> <span class="nb">range</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">message</span> <span class="s2">&quot;hello world&quot;</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">INCRBY</span> <span class="n">message</span>    <span class="o">--</span> <span class="n">不能对字符串值执行</span>
+<span class="p">(</span><span class="n">error</span><span class="p">)</span> <span class="n">ERR</span> <span class="n">wrong</span> <span class="n">number</span> <span class="n">of</span> <span class="n">arguments</span> <span class="k">for</span> <span class="s1">&#39;incrby&#39;</span> <span class="n">command</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">big</span><span class="o">-</span><span class="n">number</span> <span class="mi">123456789123456789123456789</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">INCRBY</span> <span class="n">big</span><span class="o">-</span><span class="n">number</span> <span class="mi">100</span>    <span class="o">--</span> <span class="n">不能对超过</span> <span class="mi">64</span> <span class="n">位长度的整数执行</span>
+<span class="p">(</span><span class="n">error</span><span class="p">)</span> <span class="n">ERR</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">an</span> <span class="n">integer</span> <span class="ow">or</span> <span class="n">out</span> <span class="n">of</span> <span class="nb">range</span>
+</pre></div>
+</div>
+<p>另外需要注意的一点是，
+<code class="docutils literal notranslate"><span class="pre">INCRBY</span></code> 和 <code class="docutils literal notranslate"><span class="pre">DECRBY</span></code> 的增量和减量也必须能够被 Redis 解释为整数，
+使用其他类型的值作为增量或减量将返回一个错误：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">INCRBY</span> <span class="n">number</span> <span class="mf">3.14</span>    <span class="o">--</span> <span class="n">不能使用浮点数作为增量</span>
+<span class="p">(</span><span class="n">error</span><span class="p">)</span> <span class="n">ERR</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">an</span> <span class="n">integer</span> <span class="ow">or</span> <span class="n">out</span> <span class="n">of</span> <span class="nb">range</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">INCRBY</span> <span class="n">number</span> <span class="s2">&quot;hello world&quot;</span>    <span class="o">--</span> <span class="n">不能使用字符串值作为增量</span>
+<span class="p">(</span><span class="n">error</span><span class="p">)</span> <span class="n">ERR</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">an</span> <span class="n">integer</span> <span class="ow">or</span> <span class="n">out</span> <span class="n">of</span> <span class="nb">range</span>
+</pre></div>
+</div>
+</section>
+<section id="id23">
+<h3>处理不存在的键<a class="headerlink" href="#id23" title="Link to this heading">¶</a></h3>
+<p>当 <code class="docutils literal notranslate"><span class="pre">INCRBY</span></code> 命令或 <code class="docutils literal notranslate"><span class="pre">DECRBY</span></code> 命令遇到不存在的键时，
+命令会先将键的值初始化为 <code class="docutils literal notranslate"><span class="pre">0</span></code> ，
+然后再执行相应的加法操作或减法操作。</p>
+<p>以下代码展示了 <code class="docutils literal notranslate"><span class="pre">INCRBY</span></code> 命令是如何处理不存在的键 <code class="docutils literal notranslate"><span class="pre">x</span></code> 的：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>redis&gt; GET x    -- 键 x 不存在
+(nil)
+
+redis&gt; INCRBY x 123    -- 先将键 x 的值初始化为 0 ，然后再执行加上 123 的操作
+(integer) 123
+
+redis&gt; GET x
+&quot;123&quot;
+</pre></div>
+</div>
+<p>而以下代码则展示了 <code class="docutils literal notranslate"><span class="pre">DECRBY</span></code> 命令是如何处理不存在的键 <code class="docutils literal notranslate"><span class="pre">y</span></code> 的：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>redis&gt; GET y    -- 键 y 不存在
+(nil)
+
+redis&gt; DECRBY y 256    -- 先将键 y 的值初始化为 0 ，然后再执行减去 256 的操作
+(integer) -256
+
+redis&gt; GET y
+&quot;-256&quot;
+</pre></div>
+</div>
+</section>
+<section id="id24">
+<h3>其他信息<a class="headerlink" href="#id24" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">INCRBY</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">DECRBY</span></code> 命令从 Redis 1.0.0 开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="incrdecr">
+<h2>INCR、DECR：对整数值执行加一操作和减一操作<a class="headerlink" href="#incrdecr" title="Link to this heading">¶</a></h2>
+<p>因为对整数值执行加一操作或是减一操作的场景经常会出现，
+所以为了能够更方便地执行这两个操作，
+Redis 分别提供了用于执行加一操作的 <code class="docutils literal notranslate"><span class="pre">INCR</span></code> 命令以及用于执行减一操作的 <code class="docutils literal notranslate"><span class="pre">DECR</span></code> 命令。</p>
+<p><code class="docutils literal notranslate"><span class="pre">INCR</span></code> 命令的作用就是将字符串键储存的整数值加上一，
+它的效果相当于执行 <code class="docutils literal notranslate"><span class="pre">INCRBY</span> <span class="pre">key</span> <span class="pre">1</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">INCR</span> <span class="n">key</span>
+</pre></div>
+</div>
+<p>而 <code class="docutils literal notranslate"><span class="pre">DECR</span></code> 命令的作用就是将字符串键储存的整数值减去一，
+它的效果相当于执行 <code class="docutils literal notranslate"><span class="pre">DECRBY</span> <span class="pre">key</span> <span class="pre">1</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DECR</span> <span class="n">key</span>
+</pre></div>
+</div>
+<p>以下代码展示了 <code class="docutils literal notranslate"><span class="pre">INCR</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">DECR</span></code> 命令的作用：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">counter</span> <span class="mi">100</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">INCR</span> <span class="n">counter</span>    <span class="o">--</span> <span class="n">对整数值执行加一操作</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">101</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">INCR</span> <span class="n">counter</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">102</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">INCR</span> <span class="n">counter</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">103</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">DECR</span> <span class="n">counter</span>    <span class="o">--</span> <span class="n">对整数值执行减一操作</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">102</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">DECR</span> <span class="n">counter</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">101</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">DECR</span> <span class="n">counter</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">100</span>
+</pre></div>
+</div>
+<p>除了增量和减量被固定为一之外，
+<code class="docutils literal notranslate"><span class="pre">INCR</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">DECR</span></code> 命令的其他方面与 <code class="docutils literal notranslate"><span class="pre">INCRBY</span></code> 命令以及 <code class="docutils literal notranslate"><span class="pre">DECRBY</span></code> 命令完全相同。</p>
+<section id="id25">
+<h3>其他信息<a class="headerlink" href="#id25" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">INCR</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">DECR</span></code> 命令从 Redis 1.0.0 开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="incrbyfloat">
+<h2>INCRBYFLOAT：对数字值执行浮点数加法操作<a class="headerlink" href="#incrbyfloat" title="Link to this heading">¶</a></h2>
+<p>除了用于执行整数加法操作的 <code class="docutils literal notranslate"><span class="pre">INCR</span></code> 命令以及 <code class="docutils literal notranslate"><span class="pre">INCRBY</span></code> 命令之外，
+Redis 还提供了用于执行浮点数加法操作的 <code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> 命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">INCRBYFLOAT</span> <span class="n">key</span> <span class="n">increment</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> 命令可以把一个浮点数增量加到字符串键储存的数字值上面，
+并返回键在执行加法操作之后的数字值作为命令的返回值。</p>
+<p>以下代码展示了如何使用 <code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> 命令去增加一个浮点数的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">decimal</span> <span class="mf">3.14</span>    <span class="o">--</span> <span class="n">一个储存着浮点数值的键</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">decimal</span>
+<span class="s2">&quot;3.14&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">INCRBYFLOAT</span> <span class="n">decimal</span> <span class="mf">2.55</span>    <span class="o">--</span> <span class="n">将键</span> <span class="n">decimal</span> <span class="n">的值加上</span> <span class="mf">2.55</span>
+<span class="s2">&quot;5.69&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">decimal</span>
+<span class="s2">&quot;5.69&quot;</span>
+</pre></div>
+</div>
+<section id="id26">
+<h3>处理不存在的键<a class="headerlink" href="#id26" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> 命令在遇到不存在的键时，
+会先将键的值初始化为 <code class="docutils literal notranslate"><span class="pre">0</span></code> ，
+然后再执行相应的加法操作。</p>
+<p>在以下展示的代码里面，
+<code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> 命令就是先把 <code class="docutils literal notranslate"><span class="pre">x-point</span></code> 键的值初始化为 <code class="docutils literal notranslate"><span class="pre">0</span></code> ，
+然后再执行加法操作的：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">x</span><span class="o">-</span><span class="n">point</span>    <span class="o">--</span> <span class="n">不存在的键</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">INCRBYFLOAT</span> <span class="n">x</span><span class="o">-</span><span class="n">point</span> <span class="mf">12.7829</span>
+<span class="s2">&quot;12.7829&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">x</span><span class="o">-</span><span class="n">point</span>
+<span class="s2">&quot;12.7829&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id27">
+<h3>使用 <code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> 执行浮点数减法操作<a class="headerlink" href="#id27" title="Link to this heading">¶</a></h3>
+<p>Redis 为 <code class="docutils literal notranslate"><span class="pre">INCR</span></code> 命令提供了相应的减法版本 <code class="docutils literal notranslate"><span class="pre">DECR</span></code> 命令，
+也为 <code class="docutils literal notranslate"><span class="pre">INCRBY</span></code> 命令提供了相应的减法版本 <code class="docutils literal notranslate"><span class="pre">DECRBY</span></code> 命令，
+但是并没有为 <code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> 命令提供相应的减法版本，
+因此用户只能通过给 <code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> 命令传入负数增量来执行浮点数减法操作。</p>
+<p>以下代码展示了如何使用 <code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> 命令执行浮点数减法计算：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">pi</span> <span class="mf">3.14</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">pi</span>
+<span class="s2">&quot;3.14&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">INCRBYFLOAT</span> <span class="n">pi</span> <span class="o">-</span><span class="mf">1.1</span>    <span class="o">--</span> <span class="n">值减去</span> <span class="mf">1.1</span>
+<span class="s2">&quot;2.04&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">INCRBYFLOAT</span> <span class="n">pi</span> <span class="o">-</span><span class="mf">0.7</span>    <span class="o">--</span> <span class="n">值减去</span> <span class="mf">0.7</span>
+<span class="s2">&quot;1.34&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">INCRBYFLOAT</span> <span class="n">pi</span> <span class="o">-</span><span class="mf">1.3</span>    <span class="o">--</span> <span class="n">值减去</span> <span class="mf">1.3</span>
+<span class="s2">&quot;0.04&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id28">
+<h3><code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> 与整数值<a class="headerlink" href="#id28" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> 命令对于类型限制的要求比 <code class="docutils literal notranslate"><span class="pre">INCRBY</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">INCR</span></code> 命令要宽松得多，
+<code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> 命令不仅可以用于处理浮点数值，
+它还可以用于处理整数值：</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> 命令既可用于浮点数值，
+也可以用于整数值。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> 命令的增量既可以是浮点数，
+又可以是整数。</p></li>
+<li><p>当 <code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> 命令的执行结果可以表示为整数时，
+命令的执行结果将以整数形式储存。</p></li>
+</ol>
+<p>以下代码展示了如何使用 <code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> 去处理一个储存着整数值的键：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">pi</span> <span class="mi">1</span>    <span class="o">--</span> <span class="n">创建一个整数值</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">pi</span>
+<span class="s2">&quot;1&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">INCRBYFLOAT</span> <span class="n">pi</span> <span class="mf">2.14</span>
+<span class="s2">&quot;3.14&quot;</span>
+</pre></div>
+</div>
+<p>以下代码展示了如何使用整数值作为 <code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> 命令的增量：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">pi</span> <span class="mf">3.14</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">pi</span>
+<span class="s2">&quot;3.14&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">INCRBYFLOAT</span> <span class="n">pi</span> <span class="mi">20</span>    <span class="o">--</span> <span class="n">增量为整数值</span>
+<span class="s2">&quot;23.14&quot;</span>
+</pre></div>
+</div>
+<p>而以下代码则展示了 <code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> 命令是如何把计算结果储存为整数的：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">pi</span> <span class="mf">3.14</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">pi</span>
+<span class="s2">&quot;3.14&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">INCRBYFLOAT</span> <span class="n">pi</span> <span class="mf">0.86</span>    <span class="o">--</span> <span class="n">计算结果被储存为整数</span>
+<span class="s2">&quot;4&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id29">
+<h3>小数位长度限制<a class="headerlink" href="#id29" title="Link to this heading">¶</a></h3>
+<p>虽然 Redis 并不限制字符串键储存的浮点数的小数位长度，
+但是在使用 <code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> 命令处理浮点数的时候，
+命令最多只会保留计算结果小数点后的 17 位数字，
+超过这个范围的小数将被截断：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>redis&gt; GET i
+&quot;0.01234567890123456789&quot;    -- 这个数字的小数部分有 20 位长
+
+redis&gt; INCRBYFLOAT i 0
+&quot;0.01234567890123457&quot;    -- 执行加法操作之后，小数部分只保留了 17 位
+</pre></div>
+</div>
+</section>
+<section id="id30">
+<h3>其他信息<a class="headerlink" href="#id30" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> 命令从 Redis 2.6.0 开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id">
+<h2>示例：ID 生成器<a class="headerlink" href="#id" title="Link to this heading">¶</a></h2>
+<p>在构建应用程序的时候，
+我们经常会用到各式各样的 ID （identifier，标识符）。
+比如说，
+储存用户信息的程序在每次出现一个新用户的时候就需要创建一个新的用户 ID ，
+而博客程序在作者每次发表一篇新文章的时候也需要创建一个新的文章 ID ，
+诸如此类。</p>
+<p>ID 通常会以数字形式出现，
+并且通过递增的方式来创建出新的 ID 。
+比如说，
+如果当前最新的 ID 值为 <code class="docutils literal notranslate"><span class="pre">10086</span></code> ，
+那么下一个 ID 就应该是 <code class="docutils literal notranslate"><span class="pre">10087</span></code> ，
+而再下一个 ID 则是 <code class="docutils literal notranslate"><span class="pre">10088</span></code> ，
+以此类推。</p>
+<p>代码清单 2-6 展示了一个使用字符串键实现的 ID 生成器，
+这个生成器通过执行 <code class="docutils literal notranslate"><span class="pre">INCR</span></code> 命令来产生新的 ID ，
+并且它还可以通过执行 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令来保留指定数字之前的 ID ，
+从而避免用户为了得到某个指定的 ID 而生成大量无效 ID 。</p>
+<hr class="docutils" />
+<p>代码清单 2-6 使用字符串键实现的 ID 生成器：<code class="docutils literal notranslate"><span class="pre">/string/id_generator.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">IdGenerator</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">produce</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        生成并返回下一个 ID 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">incr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">reserve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        保留前 n 个 ID ，使得之后执行的 produce() 方法产生的 ID 都大于 n 。</span>
+<span class="sd">        为了避免 produce() 方法产生重复 ID ，</span>
+<span class="sd">        这个方法只能在 produce() 方法和 reserve() 方法都没有执行过的情况下使用。</span>
+<span class="sd">        这个方法在 ID 被成功保留时返回 True ，</span>
+<span class="sd">        在 produce() 方法或 reserve() 方法已经执行过而导致保留失败时返回 False 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">nx</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span> <span class="ow">is</span> <span class="kc">True</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>在这个 ID 生成器程序中，
+<code class="docutils literal notranslate"><span class="pre">produce()</span></code> 方法要做的就是调用 <code class="docutils literal notranslate"><span class="pre">INCR</span></code> 命令，
+对字符串键储存的整数值执行加一操作，
+并将执行加法操作之后得到的新值用作 ID 。</p>
+<p>另一方面，
+用于保留指定 ID 的 <code class="docutils literal notranslate"><span class="pre">reserve()</span></code> 方法是通过执行 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令为键设置值来实现的：
+当用户把一个字符串键的值设置为 <code class="docutils literal notranslate"><span class="pre">N</span></code> 之后，
+对这个键执行 <code class="docutils literal notranslate"><span class="pre">INCR</span></code> 命令总是会返回比 <code class="docutils literal notranslate"><span class="pre">N</span></code> 更大的值，
+因此在效果上就相当于把所有小于等于 <code class="docutils literal notranslate"><span class="pre">N</span></code> 的 ID 都保留下来了。</p>
+<p>需要注意的是，
+这种保留 ID 的方法只能在字符串键还没有值的情况下使用，
+如果用户已经使用过 <code class="docutils literal notranslate"><span class="pre">produce()</span></code> 方法来生成 ID ，
+又或者已经执行过 <code class="docutils literal notranslate"><span class="pre">reserve()</span></code> 方法来保留 ID ，
+那么再使用 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令去设置 ID 值可能就会导致 <code class="docutils literal notranslate"><span class="pre">produce()</span></code> 方法产生出一些已经用过的 ID ，
+并因此引发 ID 冲突。</p>
+<p>为此，
+<code class="docutils literal notranslate"><span class="pre">reserve()</span></code> 方法在设置字符串键时使用了带有 <code class="docutils literal notranslate"><span class="pre">NX</span></code> 选项的 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令，
+从而确保了对键的设置操作只会在键不存在的情况下执行：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">nx</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>以下代码展示了这个 ID 生成器的使用方法：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">id_generator</span> <span class="kn">import</span> <span class="n">IdGenerator</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">id_generator</span> <span class="o">=</span> <span class="n">IdGenerator</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;user::id&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">id_generator</span><span class="o">.</span><span class="n">reserve</span><span class="p">(</span><span class="mi">1000000</span><span class="p">)</span>  <span class="c1"># 保留前一百万个 ID</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">id_generator</span><span class="o">.</span><span class="n">produce</span><span class="p">()</span>         <span class="c1"># 生成 ID ，这些 ID 的值都大于一百万</span>
+<span class="go">1000001</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">id_generator</span><span class="o">.</span><span class="n">produce</span><span class="p">()</span>
+<span class="go">1000002</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">id_generator</span><span class="o">.</span><span class="n">produce</span><span class="p">()</span>
+<span class="go">1000003</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">id_generator</span><span class="o">.</span><span class="n">reserve</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>     <span class="c1"># 键已经有值，无法再次执行 reserve() 方法</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</section>
+<section id="id31">
+<h2>示例：计数器<a class="headerlink" href="#id31" title="Link to this heading">¶</a></h2>
+<p>除了 ID 生成器之外，
+计数器也是构建应用程序时必不可少的组件之一：
+网站的访客数量、用户执行某个操作的次数、某首歌或者某个视频的播放量、论坛帖子的回复数量等等，
+记录这些信息都需要用到计数器。
+实际上，
+计数器在互联网中几乎无处不在，
+因此如何简单高效地实现计数器一直都是构建应用程序时经常会遇到的一个问题。</p>
+<p>代码清单 2-7 展示了一个计数器实现，
+这个程序把计数器的值储存在一个字符串键里面，
+并通过 <code class="docutils literal notranslate"><span class="pre">INCRBY</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">DECRBY</span></code> 命令，
+对计数器的值执行加法操作和减法操作；
+在有需要的时候，
+用户还可以通过调用 <code class="docutils literal notranslate"><span class="pre">GETSET</span></code> 方法来清零计数器并取得清零之前的旧值。</p>
+<hr class="docutils" />
+<p>代码清单 2-7 使用字符串键实现的计数器：<code class="docutils literal notranslate"><span class="pre">/string/counter.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Counter</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">increase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        将计数器的值加上 n ，然后返回计数器当前的值。</span>
+<span class="sd">        如果用户没有显式地指定 n ，那么将计数器的值加上一。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">incr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">decrease</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        将计数器的值减去 n ，然后返回计数器当前的值。</span>
+<span class="sd">        如果用户没有显式地指定 n ，那么将计数器的值减去一。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">decr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回计数器当前的值。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 尝试获取计数器当前的值</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+        <span class="c1"># 如果计数器并不存在，那么返回 0 作为计数器的默认值</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># 因为 redis-py 的 get() 方法返回的是字符串值</span>
+            <span class="c1"># 所以这里需要使用 int() 函数，将字符串格式的数字转换为真正的数字类型</span>
+            <span class="c1"># 比如将 &quot;10&quot; 转换为 10</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        清零计数器，并返回计数器在被清零之前的值。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">old_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">getset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># 如果计数器之前并不存在，那么返回 0 作为它的旧值</span>
+        <span class="k">if</span> <span class="n">old_value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># 跟 redis-py 的 get() 方法一样， getset() 方法返回的也是字符串值</span>
+            <span class="c1"># 所以程序在将计数器的旧值返回给调用者之前，需要先将它转换成真正的数字</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">old_value</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>在这个程序中，
+<code class="docutils literal notranslate"><span class="pre">increase()</span></code> 方法和 <code class="docutils literal notranslate"><span class="pre">decrease()</span></code> 方法在定义时都使用了 Python 的参数默认值特性：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">increase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">decrease</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+</pre></div>
+</div>
+<p>以上定义表明，
+如果用户直接以无参数的方式调用 <code class="docutils literal notranslate"><span class="pre">increase()</span></code> 或者 <code class="docutils literal notranslate"><span class="pre">decrease()</span></code> ，
+那么参数 <code class="docutils literal notranslate"><span class="pre">n</span></code> 的值将会被设置为 <code class="docutils literal notranslate"><span class="pre">1</span></code> 。</p>
+<p>在设置了参数 <code class="docutils literal notranslate"><span class="pre">n</span></code> 之后，
+<code class="docutils literal notranslate"><span class="pre">increase()</span></code> 方法和 <code class="docutils literal notranslate"><span class="pre">decrease()</span></code> 方法会分别调用 <code class="docutils literal notranslate"><span class="pre">INCRBY</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">DECRBY</span></code> 命令，
+根据参数 <code class="docutils literal notranslate"><span class="pre">n</span></code> 的值，
+对给定的键执行加法或减法操作：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># increase() 方法</span>
+<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">incr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># decrease() 方法</span>
+<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">decr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>注意，
+<code class="docutils literal notranslate"><span class="pre">increase()</span></code> 方法在内部调用的是 <code class="docutils literal notranslate"><span class="pre">incr()</span></code> 方法而不是 <code class="docutils literal notranslate"><span class="pre">incrby()</span></code> 方法，
+并且 <code class="docutils literal notranslate"><span class="pre">decrease()</span></code> 方法在内部调用的也是 <code class="docutils literal notranslate"><span class="pre">decr()</span></code> 方法而不是 <code class="docutils literal notranslate"><span class="pre">decrby()</span></code> 方法，
+这是因为在 redis-py 客户端中，
+<code class="docutils literal notranslate"><span class="pre">INCR</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">INCRBY</span></code> 命令都是由 <code class="docutils literal notranslate"><span class="pre">incr()</span></code> 方法负责执行的：</p>
+<ul class="simple">
+<li><p>如果用户在调用 <code class="docutils literal notranslate"><span class="pre">incr()</span></code> 方法时没有给定增量，
+那么 <code class="docutils literal notranslate"><span class="pre">incr()</span></code> 方法就默认用户指定的增量为 <code class="docutils literal notranslate"><span class="pre">1</span></code> ，
+并执行 <code class="docutils literal notranslate"><span class="pre">INCR</span></code> 命令；</p></li>
+<li><p>另一方面，
+如果用户在调用 <code class="docutils literal notranslate"><span class="pre">incr()</span></code> 方法时给定了增量，
+那么 <code class="docutils literal notranslate"><span class="pre">incr()</span></code> 方法就会执行 <code class="docutils literal notranslate"><span class="pre">INCRBY</span></code> 命令，
+并根据给定的增量执行加法操作；</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">decr()</span></code> 方法的情况也与此类似，
+只是被调用的命令变成了 <code class="docutils literal notranslate"><span class="pre">DECR</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">DECRBY</span></code> 命令。</p>
+<p>以下代码展示了这个计数器的使用方法：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">counter</span> <span class="kn">import</span> <span class="n">Counter</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;counter::page_view&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">increase</span><span class="p">()</span>    <span class="c1"># 将计数器的值加上 1</span>
+<span class="go">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">increase</span><span class="p">()</span>    <span class="c1"># 将计数器的值加上 1</span>
+<span class="go">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">increase</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>  <span class="c1"># 将计数器的值加上 10</span>
+<span class="go">12</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">decrease</span><span class="p">()</span>    <span class="c1"># 将计数器的值减去 1</span>
+<span class="go">11</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">decrease</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>   <span class="c1"># 将计数器的值减去 5</span>
+<span class="go">6</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>       <span class="c1"># 重置计数器，并返回旧值</span>
+<span class="go">6</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>         <span class="c1"># 返回计数器当前的值</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+</section>
+<section id="id32">
+<h2>示例：限速器<a class="headerlink" href="#id32" title="Link to this heading">¶</a></h2>
+<p>为了保障系统的安全性和性能，
+并保证系统的重要资源不被滥用，
+应用程序常常会对用户的某些行为进行限制，
+比如说：</p>
+<ul class="simple">
+<li><p>为了防止网站内容被网络爬虫抓取，
+网站管理者通常会限制每个 IP 地址在固定时间段内能够访问的页面数量
+—— 比如一分钟之内最多只能访问 30 个页面 ——
+超过这一限制的用户将被要求进行身份验证，
+确认本人并非网络爬虫，
+又或者等到限制解除了之后再进行访问。</p></li>
+<li><p>为了防止用户的账号遭到暴力破解，
+网上银行通常会对访客的密码试错次数进行限制，
+如果一个访客在尝试登录某个账号的过程中，
+连续好几次输入了错误的密码，
+那么这个账号将被冻结，
+只能等到第二天再尝试登录，
+有的银行还会向账号持有者的手机发送通知来汇报这一情况。</p></li>
+</ul>
+<p>实现这些限制机制的其中一种方法是使用限速器，
+它可以限制用户在指定时间段之内能够执行某项操作的次数。</p>
+<p>代码清单 2-8 展示了一个使用字符串键实现的限速器，
+这个限速器程序会把操作的最大可执行次数储存在一个字符串键里面，
+然后在用户每次尝试执行被限制的操作之前，
+使用 <code class="docutils literal notranslate"><span class="pre">DECR</span></code> 命令将操作的可执行次数减去一，
+最后通过检查可执行次数的值来判断是否执行该操作。</p>
+<hr class="docutils" />
+<p>代码清单 2-8 倒计时式的限速器：<code class="docutils literal notranslate"><span class="pre">/string/limiter.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Limiter</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">set_max_execute_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_execute_times</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        设置操作的最大可执行次数。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">max_execute_times</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">still_valid_to_execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        检查是否可以继续执行被限制的操作。</span>
+<span class="sd">        是的话返回 True ，否则返回 False 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">num</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">decr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">num</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">remaining_execute_times</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回操作的剩余可执行次数。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">num</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">num</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">num</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>这个限速器的关键在于 <code class="docutils literal notranslate"><span class="pre">set_max_execute_times()</span></code> 方法和 <code class="docutils literal notranslate"><span class="pre">still_valid_to_execute()</span></code> 方法：
+前者用于将最大可执行次数储存在一个字符串键里面，
+而后者则会在每次被调用时对可执行次数执行减一操作，
+并检查目前剩余的可执行次数是否已经变为负数：
+如果为负数则表示可执行次数已经耗尽，
+不为负数则表示操作可以继续执行。</p>
+<p>以下代码展示了这个限制器的使用方法：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">limiter</span> <span class="kn">import</span> <span class="n">Limiter</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">limiter</span> <span class="o">=</span> <span class="n">Limiter</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s1">&#39;wrong_password_limiter&#39;</span><span class="p">)</span>  <span class="c1"># 密码错误限制器</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">limiter</span><span class="o">.</span><span class="n">set_max_execute_times</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>  <span class="c1"># 最多只能输入错三次密码</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">limiter</span><span class="o">.</span><span class="n">still_valid_to_execute</span><span class="p">()</span>  <span class="c1"># 前三次操作能够顺利执行</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">limiter</span><span class="o">.</span><span class="n">still_valid_to_execute</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">limiter</span><span class="o">.</span><span class="n">still_valid_to_execute</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">limiter</span><span class="o">.</span><span class="n">still_valid_to_execute</span><span class="p">()</span>  <span class="c1"># 从第四次开始，操作将被拒绝执行</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">limiter</span><span class="o">.</span><span class="n">still_valid_to_execute</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>而以下伪代码则展示了如何使用这个限速器去限制密码的错误次数：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># 试错次数未超过限制</span>
+<span class="k">while</span> <span class="n">limiter</span><span class="o">.</span><span class="n">still_valid_to_execute</span><span class="p">():</span>
+    <span class="c1"># 获取访客输入的账号和密码</span>
+    <span class="n">account</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="n">get_user_input_account_and_password</span><span class="p">()</span>
+    <span class="c1"># 验证账号和密码是否匹配</span>
+    <span class="k">if</span> <span class="n">password_match</span><span class="p">(</span><span class="n">account</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+        <span class="n">ui_print</span><span class="p">(</span><span class="s2">&quot;密码验证成功&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ui_print</span><span class="p">(</span><span class="s2">&quot;密码验证失败，请重新输入&quot;</span><span class="p">)</span>
+<span class="c1"># 试错次数已超过限制</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="c1"># 锁定账号</span>
+    <span class="n">lock_account</span><span class="p">(</span><span class="n">account</span><span class="p">)</span>
+    <span class="n">ui_print</span><span class="p">(</span><span class="s2">&quot;连续尝试登录失败，账号已被锁定，请明天再来尝试登录。&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id33">
+<h2>重点回顾<a class="headerlink" href="#id33" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Redis 的字符串键可以把单独的一个键和单独的一个值在数据库里面关联起来，
+并且这个键和值既可以储存文字数据，
+又可以储存二进制数据。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令在默认情况下会直接覆盖字符串键已有的值，
+如果我们只想在键不存在的情况下为它设置值，
+那么可以使用带有 <code class="docutils literal notranslate"><span class="pre">NX</span></code> 选项的 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令；
+相反地，
+如果我们只想在键已经存在的情况下为它设置新值，
+那么可以使用带有 <code class="docutils literal notranslate"><span class="pre">XX</span></code> 选项的 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令。</p></li>
+<li><p>使用 <code class="docutils literal notranslate"><span class="pre">MSET</span></code> 、 <code class="docutils literal notranslate"><span class="pre">MSETNX</span></code> 以及 <code class="docutils literal notranslate"><span class="pre">MGET</span></code> 命令可以有效地减少程序的网络通信次数，
+从而提升程序的执行效率。</p></li>
+<li><p>Redis 用户可以通过制定命名格式来提升 Redis 数据的可读性并避免键名冲突。</p></li>
+<li><p>字符串值的正数索引以 <code class="docutils literal notranslate"><span class="pre">0</span></code> 为开始，
+从字符串的开头向结尾不断递增；
+字符串值的负数索引以 <code class="docutils literal notranslate"><span class="pre">-1</span></code> 为开始，
+从字符串的结尾向开头不断递减。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GETRANGE</span> <span class="pre">key</span> <span class="pre">start</span> <span class="pre">end</span></code> 命令接受的是闭区间索引范围，
+位于 <code class="docutils literal notranslate"><span class="pre">start</span></code> 索引和 <code class="docutils literal notranslate"><span class="pre">end</span></code> 索引上的值也会被包含在命令返回的内容当中。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SETRANGE</span></code> 命令在有需要时会自动对字符串值进行扩展，
+并使用空字节填充新扩展空间中没有内容的部分。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">APPEND</span></code> 命令在键不存在时执行设置操作，
+在键存在时执行追加操作。</p></li>
+<li><p>Redis 会把能够被表示为 <code class="docutils literal notranslate"><span class="pre">long</span> <span class="pre">long</span> <span class="pre">int</span></code> 类型的整数以及能够被表示为 <code class="docutils literal notranslate"><span class="pre">long</span> <span class="pre">double</span></code> 类型的浮点数当做数字来处理。</p></li>
+</ul>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">字符串（String）</a><ul>
+<li><a class="reference internal" href="#set">SET：为字符串键设置值</a><ul>
+<li><a class="reference internal" href="#id1">改变覆盖规则</a></li>
+<li><a class="reference internal" href="#id2">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#get">GET：获取字符串键的值</a><ul>
+<li><a class="reference internal" href="#id3">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#getset">GETSET：获取旧值并设置新值</a><ul>
+<li><a class="reference internal" href="#id4">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id5">示例：缓存</a></li>
+<li><a class="reference internal" href="#id6">示例：锁</a></li>
+<li><a class="reference internal" href="#mset">MSET：一次为多个字符串键设置值</a><ul>
+<li><a class="reference internal" href="#id7">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#mget">MGET：一次获取多个字符串键的值</a><ul>
+<li><a class="reference internal" href="#id8">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#msetnx">MSETNX：只在键不存在的情况下，一次为多个字符串键设置值</a><ul>
+<li><a class="reference internal" href="#id9">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id10">示例：储存文章信息</a></li>
+<li><a class="reference internal" href="#strlen">STRLEN：获取字符串值的字节长度</a><ul>
+<li><a class="reference internal" href="#id11">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id12">字符串值的索引</a></li>
+<li><a class="reference internal" href="#getrange">GETRANGE：获取字符串值指定索引范围上的内容</a><ul>
+<li><a class="reference internal" href="#id13">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#setrange">SETRANGE：对字符串值的指定索引范围进行设置</a><ul>
+<li><a class="reference internal" href="#id14">自动扩展被修改的字符串</a></li>
+<li><a class="reference internal" href="#id15">在值里面填充空字节</a></li>
+<li><a class="reference internal" href="#id16">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id17">示例：给文章储存程序加上文章长度计数功能和文章预览功能</a></li>
+<li><a class="reference internal" href="#append">APPEND：追加新内容到值的末尾</a><ul>
+<li><a class="reference internal" href="#id18">处理不存在的键</a></li>
+<li><a class="reference internal" href="#id19">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id20">示例：储存日志</a></li>
+<li><a class="reference internal" href="#id21">使用字符串键储存数字值</a></li>
+<li><a class="reference internal" href="#incrbydecrby">INCRBY、DECRBY：对整数值执行加法操作和减法操作</a><ul>
+<li><a class="reference internal" href="#id22">类型限制</a></li>
+<li><a class="reference internal" href="#id23">处理不存在的键</a></li>
+<li><a class="reference internal" href="#id24">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#incrdecr">INCR、DECR：对整数值执行加一操作和减一操作</a><ul>
+<li><a class="reference internal" href="#id25">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#incrbyfloat">INCRBYFLOAT：对数字值执行浮点数加法操作</a><ul>
+<li><a class="reference internal" href="#id26">处理不存在的键</a></li>
+<li><a class="reference internal" href="#id27">使用 <code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> 执行浮点数减法操作</a></li>
+<li><a class="reference internal" href="#id28"><code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> 与整数值</a></li>
+<li><a class="reference internal" href="#id29">小数位长度限制</a></li>
+<li><a class="reference internal" href="#id30">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id">示例：ID 生成器</a></li>
+<li><a class="reference internal" href="#id31">示例：计数器</a></li>
+<li><a class="reference internal" href="#id32">示例：限速器</a></li>
+<li><a class="reference internal" href="#id33">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="introduction.html"
+                          title="Previous page">&larr; 引言</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="hash.html"
+                          title="Next page">&rarr; 散列（Hash）</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>本页</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/string.rst.txt"
+            rel="nofollow">显示源代码</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">快速搜索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="提交" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="hash.html" title="散列（Hash）"
+             >下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="introduction.html" title="引言"
+             >上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">字符串（String）</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; 版权所有 2019, 黄健宏.
+      由 <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6创建。
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

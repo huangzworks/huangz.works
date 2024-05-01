@@ -1,0 +1,1093 @@
+
+
+<!DOCTYPE html>
+
+<html lang="zh-CN" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>复制 &#8212; Redis使用手册</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" href="./" type="text/css" />
+    
+    <script src="_static/documentation_options.js?v=f115507d"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=beaddf03"></script>
+
+    
+    
+     
+        <script src="_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="_static/cloud.js"></script>
+    
+
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+    <link rel="next" title="附录 A ：Redis 安装方法" href="appendix_a.html" />
+    <link rel="prev" title="流水线与事务" href="pipeline-and-transaction.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="appendix_a.html" title="附录 A ：Redis 安装方法"
+             accesskey="N">下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="pipeline-and-transaction.html" title="流水线与事务"
+             accesskey="P">上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">复制</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>复制<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>Redis 的复制功能是 Redis 提供的多机功能中最基础的一个，
+这个功能是通过主从复制（master-slave replication）模式实现的，
+它允许用户为储存着目标数据库的服务器创建出多个拥有相同数据库副本的服务器，
+其中储存目标数据库的服务器被称为主服务器（master server），
+而储存数据库副本的服务器则被称为从服务器（slave server，或者简称 replica），
+如图 18-1 所示。</p>
+<hr class="docutils" />
+<p>图 18-1 主服务器和从服务器</p>
+<img alt="_images/IMAGE_MASTER_AND_SLAVE.png" src="_images/IMAGE_MASTER_AND_SLAVE.png" />
+<hr class="docutils" />
+<p>对于 Redis 来说，
+一个主服务器可以拥有任意多个从服务器，
+而从服务器本身也可以用作其他服务器的主服务器，
+并以此构建出一个树状的服务器结构，
+如图 18-2 所示。
+需要注意的是，
+虽然一个主服务器可以拥有多个从服务器，
+但一个从服务器只能拥有一个主服务器。
+换句话说，
+Redis 提供的是单主复制功能，
+而不是多主复制功能。</p>
+<hr class="docutils" />
+<p>图 18-2 树状服务器结构</p>
+<img alt="_images/IMAGE_REPLICATION_TREE.png" src="_images/IMAGE_REPLICATION_TREE.png" />
+<hr class="docutils" />
+<p>在默认情况下，
+处于复制模式的主服务器既可以执行写操作也可以执行读操作，
+而从服务器则只能执行读操作，
+图 18-3 和 18-4 分别展示了 Redis 服务器在无复制和有复制两种状态下的客户端访问模式。</p>
+<hr class="docutils" />
+<p>图 18-3 没有启用复制功能的 Redis 服务器可以执行读写操作</p>
+<img alt="_images/IMAGE_WITHOUT_REPL.png" src="_images/IMAGE_WITHOUT_REPL.png" />
+<hr class="docutils" />
+<p>图 18-4 启用了复制功能的主服务器可以执行读写操作，但从服务器默认只能执行读操作</p>
+<img alt="_images/IMAGE_WITH_REPL.png" src="_images/IMAGE_WITH_REPL.png" />
+<hr class="docutils" />
+<p>对于开启了复制功能的主从服务器，
+主服务器在每次执行写操作之后，
+都会与所有从服务器进行数据同步，
+以此来将写操作产生的改动反映到各个从服务器之上。
+举个例子，
+在主服务器执行了客户端发来的写命令 W 之后，
+主服务器会将相同的写命令 W 发送至所有从服务器执行，
+以此来保持主从服务器之间的数据一致性，
+如图 18-5 所示。</p>
+<hr class="docutils" />
+<p>图 18-5 主服务器将执行过的写命令发送给从服务器执行</p>
+<img alt="_images/IMAGE_REPL_SYNC.png" src="_images/IMAGE_REPL_SYNC.png" />
+<hr class="docutils" />
+<p>Redis 的复制功能可以从性能、安全性和可用性三个方面提升整个 Redis 系统：</p>
+<ul class="simple">
+<li><p>首先，
+在性能方面，
+Redis 的复制功能可以给系统的读性能带来线性级别的提升。
+从理论上来说，
+用户每增加一倍数量的从服务器，
+整个系统的读性能就会提升一倍。</p></li>
+<li><p>其次，
+通过增加从服务器的数量，
+用户可以降低系统在遭遇灾难故障时丢失数据的可能性。
+具体来说，
+如果用户只有一台服务器储存着目标数据库，
+那么当这个服务器遭遇灾难故障时，
+目标数据库很有可能会随着服务器故障而丢失。
+但如果用户为 Redis 服务器（也即是主服务器）设置了从服务器，
+那么即使主服务器遭遇灾难故障，
+用户也可以通过从服务器访问数据库。
+从服务器的数量越多，
+因为主服务器遭遇灾难故障而出现数据库丢失的可能性就越低。</p></li>
+<li><p>最后，
+通过同时使用 Redis 的复制功能和 Sentinel 功能，
+用户可以为整个 Redis 系统提供高可用特性。
+具有这一特性的 Redis 系统在主服务器停机时，
+将会自动挑选一个从服务器作为新的主服务器，
+以此来继续为客户提供服务，
+避免造成整个系统停机。</p></li>
+</ul>
+<p>在本章接下来的内容中，
+我们将会学到：</p>
+<ul class="simple">
+<li><p>如何为主服务器创建从服务器，
+从而开启 Redis 的主从复制功能；</p></li>
+<li><p>如何查看服务器在复制中担当的角色以及相关数据；</p></li>
+<li><p>Redis 复制功能的实现原理；</p></li>
+<li><p>如何在主服务器不创建 RDB 文件的情况下实现数据同步；</p></li>
+<li><p>如何通过复制功能提升不同类型 Redis 命令的执行效率；</p></li>
+</ul>
+<p>在本章的最后，
+我们还会看到 Redis 服务器通过复制传播 Lua 脚本的方法，
+至于 Sentinel 相关的内容将在下一章再行介绍。</p>
+<section id="replicaof">
+<h2>REPLICAOF：将服务器设置为从服务器<a class="headerlink" href="#replicaof" title="Link to this heading">¶</a></h2>
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p>复制命令的命名变化</p>
+<p>在很长的一段时间里，
+Redis 一直使用 <code class="docutils literal notranslate"><span class="pre">SLAVEOF</span></code> 作为复制命令，
+但是从 5.0.0 版本开始，
+Redis 正式将 <code class="docutils literal notranslate"><span class="pre">SLAVEOF</span></code> 命令改名成了 <code class="docutils literal notranslate"><span class="pre">REPLICAOF</span></code> 命令并逐渐废弃原来的 <code class="docutils literal notranslate"><span class="pre">SLAVEOF</span></code> 命令。
+因此，
+如果你使用的是 Redis 5.0.0 之前的版本，
+那么请使用 <code class="docutils literal notranslate"><span class="pre">SLAVEOF</span></code> 命令代替本章中的 <code class="docutils literal notranslate"><span class="pre">REPLICAOF</span></code> 命令，
+并使用 <code class="docutils literal notranslate"><span class="pre">slaveof</span></code> 配置选项代替本章中的 <code class="docutils literal notranslate"><span class="pre">replicaof</span></code> 配置选项。
+与此相反，
+如果你使用的是 Redis 5.0.0 或之后的版本，
+那么就应该使用 <code class="docutils literal notranslate"><span class="pre">REPLICAOF</span></code> 命令而不是 <code class="docutils literal notranslate"><span class="pre">SLAVEOF</span></code> 命令，
+因为后者可能会在未来的某个时候被正式废弃。</p>
+</div>
+<p>用户可以通过执行 <code class="docutils literal notranslate"><span class="pre">REPLICAOF</span></code> 命令，
+将接收这个命令的 Redis 服务器设置为另一个 Redis 服务器的从服务器：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">REPLICAOF</span> <span class="n">host</span> <span class="n">port</span>
+</pre></div>
+</div>
+<p>命令的 <code class="docutils literal notranslate"><span class="pre">host</span></code> 参数用于指定主服务器的地址，
+而 <code class="docutils literal notranslate"><span class="pre">port</span></code> 参数则用于指定主服务器的端口号。
+因为 Redis 的复制操作是以异步方式进行的，
+所以收到 <code class="docutils literal notranslate"><span class="pre">REPLICAOF</span></code> 命令的服务器在记录主服务器的地址和端口之后就会向客户端返回 <code class="docutils literal notranslate"><span class="pre">OK</span></code> ，
+至于实际的复制操作则会在后台开始执行。</p>
+<p>现在，
+假设我们的客户端正连接着服务器 <code class="docutils literal notranslate"><span class="pre">127.0.0.1:12345</span></code> ，
+如果我们想让这个服务器成为 <code class="docutils literal notranslate"><span class="pre">127.0.0.1:6379</span></code> 的从服务器，
+那么只需要执行以下命令即可：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">12345</span><span class="o">&gt;</span> <span class="n">REPLICAOF</span> <span class="mf">127.0.0.1</span> <span class="mi">6379</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p>在接收到 <code class="docutils literal notranslate"><span class="pre">REPLICAOF</span></code> 命令之后，
+主从服务器将执行数据同步操作：
+从服务器原有的数据将被清空，
+取而代之的是主服务器传送过来的数据副本。
+数据同步完成之后，
+主从服务器将拥有相同的数据。</p>
+<p>在将 <code class="docutils literal notranslate"><span class="pre">127.0.0.1:12345</span></code> 设置为 <code class="docutils literal notranslate"><span class="pre">127.0.0.1:6379</span></code> 的从服务器之后，
+如果我们在主服务器 <code class="docutils literal notranslate"><span class="pre">127.0.0.1:6379</span></code> 执行以下命令，
+创建出一个 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">msg</span> <span class="s2">&quot;hello world&quot;</span>
+<span class="n">OK</span>
+
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">msg</span>
+<span class="s2">&quot;hello world&quot;</span>
+</pre></div>
+</div>
+<p>那么这个 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键在从服务器 <code class="docutils literal notranslate"><span class="pre">127.0.0.1:12345</span></code> 上应该也能够访问到：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">12345</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">msg</span>
+<span class="s2">&quot;hello world&quot;</span>
+</pre></div>
+</div>
+<section id="id2">
+<h3>通过配置选项设置从服务器<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<p>用户除了可以使用 <code class="docutils literal notranslate"><span class="pre">REPLICAOF</span></code> 命令将运行中的 Redis 服务器设置为从服务器之外，
+还可以通过设置 <code class="docutils literal notranslate"><span class="pre">replicaof</span></code> 配置选项，
+在启动 Redis 服务器的同时将它设置为从服务器：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">replicaof</span> <span class="o">&lt;</span><span class="n">host</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">port</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>比如说，
+通过执行以下命令，
+我们可以在启动服务器 <code class="docutils literal notranslate"><span class="pre">127.0.0.1:10086</span></code> 的同时，
+将它设置为 <code class="docutils literal notranslate"><span class="pre">127.0.0.1:6379</span></code> 的从服务器：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ redis-server --port 10086 --replicaof 127.0.0.1 6379
+</pre></div>
+</div>
+</section>
+<section id="id3">
+<h3>取消复制<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<p>在使用 <code class="docutils literal notranslate"><span class="pre">REPLICAOF</span></code> 命令或者 <code class="docutils literal notranslate"><span class="pre">replicaof</span></code> 配置选项将一个服务器设置为从服务器之后，
+我们可以通过执行以下命令，
+让从服务器停止进行复制，
+重新变回主服务器：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">REPLICAOF</span> <span class="n">no</span> <span class="n">one</span>
+</pre></div>
+</div>
+<p>服务器在停止复制之后不会清空数据库，
+而是会继续保留复制产生的所有数据。</p>
+<p>比如说，
+对于之前设置的从服务器 <code class="docutils literal notranslate"><span class="pre">127.0.0.1:12345</span></code> ，
+我们可以通过执行以下命令，
+让它停止进行复制，
+重新变回主服务器：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">12345</span><span class="o">&gt;</span> <span class="n">REPLICAOF</span> <span class="n">no</span> <span class="n">one</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p>命令返回 <code class="docutils literal notranslate"><span class="pre">OK</span></code> 表示复制已经停止。
+因为服务器在停止复制之后仍然会保留复制时产生的数据，
+所以我们可以继续访问之前设置的 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">12345</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">msg</span>
+<span class="s2">&quot;hello world&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id4">
+<h3>其他信息<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">REPLICAOF</span></code> 命令本身的复杂度为 O(1) ，
+但它引起的异步复制操作的复杂度为 O(N) ，
+其中 N 为主服务器包含的键值对总数量。
+<code class="docutils literal notranslate"><span class="pre">REPLICAOF</span> <span class="pre">no</span> <span class="pre">one</span></code> 命令的复杂度为 O(1) 。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">REPLICAOF</span></code> 命令从 Redis 5.0.0 版本开始可用。
+<code class="docutils literal notranslate"><span class="pre">SLAVEOF</span></code> 命令从 1.0.0 版本开始可用，
+但从 5.0.0 版本开始逐渐废弃。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="role">
+<h2>ROLE：查看服务器的角色<a class="headerlink" href="#role" title="Link to this heading">¶</a></h2>
+<p>用户可以通过执行 <code class="docutils literal notranslate"><span class="pre">ROLE</span></code> 命令来查看服务器当前担任的角色：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ROLE</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">ROLE</span></code> 命令在主服务器或者从服务器上执行将产生不同的结果，
+以下两个小节将分别介绍这两种情况。</p>
+<section id="id5">
+<h3>主服务器执行 <code class="docutils literal notranslate"><span class="pre">ROLE</span></code> 命令<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
+<p>如果执行 <code class="docutils literal notranslate"><span class="pre">ROLE</span></code> 命令的是主服务器，
+那么命令将返回一个由三个元素组成的数组作为结果：</p>
+<ul class="simple">
+<li><p>数组的第一个元素是字符串 <code class="docutils literal notranslate"><span class="pre">&quot;master&quot;</span></code> ，
+它表示这个服务器的角色为主服务器。</p></li>
+<li><p>数组的第二个元素是这个主服务器的复制偏移量（replication offset），
+它是一个整数，
+记录了主服务器目前向复制数据流发送的数据数量。</p></li>
+<li><p>数组的第三个元素是一个数组，
+它记录了这个主服务器属下的所有从服务器。
+这个数组的每个元素都由三个子元素组成，
+第一个子元素为从服务器的 IP 地址，
+第二个子元素为从服务器的端口号，
+而第三个子元素则为从服务器的复制偏移量。
+从服务器的复制偏移量记录了从服务器通过复制数据流接收到的复制数据数量，
+当从服务器的复制偏移量跟主服务器的复制偏移量保持一致时，
+它们的数据就是一致的。</p></li>
+</ul>
+<p>以下是一个主服务器执行 <code class="docutils literal notranslate"><span class="pre">ROLE</span></code> 命令的例子：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">ROLE</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;master&quot;</span>             <span class="o">--</span> <span class="n">这是一个主服务器</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">155</span>        <span class="o">--</span> <span class="n">它的复制偏移量为</span> <span class="mi">155</span>
+<span class="mi">3</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;127.0.0.1&quot;</span>    <span class="o">--</span> <span class="n">第一个从服务器的</span> <span class="n">IP</span> <span class="n">地址为</span> <span class="mf">127.0.0.1</span>
+      <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;12345&quot;</span>        <span class="o">--</span> <span class="n">这个从服务器的端口号为</span> <span class="mi">12345</span>
+      <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;155&quot;</span>          <span class="o">--</span> <span class="n">它的复制偏移量为</span> <span class="mi">155</span>
+   <span class="mi">2</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;127.0.0.1&quot;</span>    <span class="o">--</span> <span class="n">第二个从服务器的</span> <span class="n">IP</span> <span class="n">地址为</span> <span class="mf">127.0.0.1</span>
+      <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;10086&quot;</span>        <span class="o">--</span> <span class="n">端口号为</span> <span class="mi">10086</span>
+      <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;155&quot;</span>          <span class="o">--</span> <span class="n">复制偏移量为</span> <span class="mi">155</span>
+</pre></div>
+</div>
+</section>
+<section id="id6">
+<h3>从服务器执行 <code class="docutils literal notranslate"><span class="pre">ROLE</span></code> 命令<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
+<p>如果执行 <code class="docutils literal notranslate"><span class="pre">ROLE</span></code> 命令的是从服务器，
+那么命令将返回一个由五个元素组成的数组作为结果：</p>
+<ul class="simple">
+<li><p>数组的第一个元素是字符串 <code class="docutils literal notranslate"><span class="pre">&quot;slave&quot;</span></code> ，
+它表示这个服务器的角色是从服务器。</p></li>
+<li><p>数组的第二个元素和第三个元素记录了这个从服务器正在复制的主服务器的 IP 地址和端口号。</p></li>
+<li><p>数组的第四个元素是主服务器与从服务器当前的连接状态，
+这个状态的值及其表示的意思如下：</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;none&quot;</span></code> ：主从服务器尚未建立连接；</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;connect&quot;</span></code> ：主从服务器正在握手；</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;connecting&quot;</span></code> ：主从服务器成功建立了连接；</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;sync&quot;</span></code> ：主从服务器正在进行数据同步；</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;connected&quot;</span></code> ：主从服务器已经进入在线更新状态；</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;unknown&quot;</span></code> ：主从服务器连接状态未知。</p></li>
+</ul>
+</li>
+<li><p>数组的第五个元素是从服务器当前的复制偏移量。</p></li>
+</ul>
+<p>以下是一个从服务器执行 <code class="docutils literal notranslate"><span class="pre">ROLE</span></code> 命令的例子：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">12345</span><span class="o">&gt;</span> <span class="n">ROLE</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;slave&quot;</span>          <span class="o">--</span> <span class="n">这是一个从服务器</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;127.0.0.1&quot;</span>      <span class="o">--</span> <span class="n">主服务器的</span> <span class="n">IP</span> <span class="n">地址</span>
+<span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">6379</span>   <span class="o">--</span> <span class="n">主服务器的端口号</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;connected&quot;</span>      <span class="o">--</span> <span class="n">主从服务器已经进入在线更新状态</span>
+<span class="mi">5</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1765</span>   <span class="o">--</span> <span class="n">这个从服务器的复制偏移量为</span> <span class="mi">1765</span>
+</pre></div>
+</div>
+</section>
+<section id="id7">
+<h3>其他信息<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ROLE</span></code> 命令从 Redis 2.8.12 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id8">
+<h2>数据同步<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<p>当用户将一个服务器设置为从服务器，
+让它去复制另一个服务器的时候，
+主从服务器需要通过数据同步机制来让两个服务器的数据库状态保持一致。</p>
+<p>这一节将对 Redis 主从服务器的数据同步机制进行介绍，
+理解同步机制的运作原理是阅读本章后续内容的基础。</p>
+<section id="id9">
+<h3>完整同步<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h3>
+<p>当一个 Redis 服务器接收到 <code class="docutils literal notranslate"><span class="pre">REPLICAOF</span></code> 命令，
+开始对另一个服务器进行复制的时候，
+主从服务器会执行以下操作：</p>
+<ol class="arabic simple">
+<li><p>主服务器执行 <code class="docutils literal notranslate"><span class="pre">BGSAVE</span></code> 命令，
+生成一个 RDB 文件，
+并使用缓冲区储存起在 <code class="docutils literal notranslate"><span class="pre">BGSAVE</span></code> 命令之后执行的所有写命令。</p></li>
+<li><p>在 RDB 文件创建完毕之后，
+主服务器会通过套接字，
+将 RDB 文件传送给从服务器。</p></li>
+<li><p>从服务器在接收完主服务器传送过来的 RDB 文件之后，
+就会载入这个 RDB 文件，
+从而获得主服务器在执行 <code class="docutils literal notranslate"><span class="pre">BGSAVE</span></code> 命令时的所有数据。</p></li>
+<li><p>当从服务器完成 RDB 文件载入操作，
+并开始上线接受命令请求时，
+主服务器就会把之前储存在缓存区里面的所有写命令发送给从服务器执行。</p></li>
+</ol>
+<p>因为主服务器储存的写命令都是在执行 <code class="docutils literal notranslate"><span class="pre">BGSAVE</span></code> 命令之后执行的，
+所以当从服务器载入完 RDB 文件，
+并执行完主服务器储存在缓冲区里面的所有写命令之后，
+主从服务器两者包含的数据库数据将完全相同。</p>
+<p>这个通过创建、传送并载入 RDB 文件来达成数据一致的步骤，
+我们称之为完整同步操作。
+每个从服务器在刚开始进行复制的时候，
+都需要与主服务器进行一次完整同步。</p>
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p>在进行数据同步时重用 RDB 文件</p>
+<p>为了提高数据同步操作的执行效率，
+如果主服务器在接收到 <code class="docutils literal notranslate"><span class="pre">REPLICAOF</span></code> 命令之前已经完成了一次 RDB 创建操作，
+并且它的数据库在创建 RDB 文件之后没有发生过任何变化，
+那么主服务器将直接向从服务器发送已有的 RDB 文件，
+以此来避免无谓的 RDB 文件生成操作。</p>
+<p>此外，
+如果在主服务器创建 RDB 文件期间，
+有多个从服务器向主服务器发送数据同步请求，
+那么主服务器将把发送请求的从服务器全部放入到队列里面，
+等到 RDB 文件创建完毕之后，
+再把它发送给队列里面的所有从服务器，
+以此来复用 RDB 文件并避免多余的 RDB 文件创建操作。</p>
+</div>
+</section>
+<section id="id10">
+<h3>在线更新<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h3>
+<p>主从服务器在执行完完整同步操作之后，
+它们的数据就达到了一致状态，
+但这种一致并不是永久的：
+每当主服务器执行了新的写命令之后，
+它的数据库就会被改变，
+这时主从服务器的数据一致性就会被破坏。</p>
+<p>为了让主从服务器的数据一致性可以保持下去，
+让它们一直拥有相同的数据，
+Redis 会对从服务器进行在线更新：</p>
+<ul class="simple">
+<li><p>每当主服务器执行完一个写命令之后，
+它就会将相同的写命令又或者具有相同效果的写命令发送给从服务器执行。</p></li>
+<li><p>因为完整同步之后的主从服务器在执行最新出现的写命令之前，
+两者的数据库是完全相同的，
+而导致两者数据库出现不一致的正是最新被执行的写命令。
+因此从服务器只要接收并执行主服务器发来的写命令，
+就可以让自己的数据库重新与主服务器数据库保持一致。</p></li>
+</ul>
+<p>只要从服务器一直与主服务器保持连接，
+在线更新操作就会不断进行，
+使得从服务器的数据库可以一直被更新，
+并与主服务器的数据库保持一致。</p>
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p>异步更新引起的数据不一致</p>
+<p>需要注意的是，
+因为在线更新是异步进行的，
+所以在主服务器执行完写命令之后，
+直到从服务器也执行完相同写命令的这段时间里，
+主从服务器的数据库将出现短暂的不一致，
+因此要求强一致性的程序可能需要直接读取主服务器而不是读取从服务器。</p>
+<p>此外，
+因为主服务器可能在执行完写命令并向从服务器发送相同写命令的过程中由于故障而下线，
+所以从服务器在主服务器下线之后可能会丢失主服务器已经执行的一部分写命令，
+导致从服务器的数据库与下线之前的主服务器数据库处于不一致状态。</p>
+<p>因为在线更新的异步本质，
+Redis 的复制功能是无法杜绝不一致的。
+不过本章之后会介绍一种方法，
+它可以尽量减少不一致出现的可能性。</p>
+</div>
+</section>
+<section id="id11">
+<h3>部分同步<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h3>
+<p>当故障下线的从服务器重新上线时，
+主从服务器的数据通常已经不再一致，
+因此它们必须重新进行同步，
+让两者的数据库再次回到一致状态。</p>
+<p>在 Redis 2.8 版本以前，
+重同步操作是通过直接进行完整同步来实现的，
+但是，
+这种重同步方法在从服务器只是短暂下线的情况下是非常浪费资源的：
+主从服务器的数据库在连接断开之前一直都是相同的，
+造成数据不一致的原因可能仅仅是因为主服务器比从服务器多执行了几个写命令，
+而为了补上这小部分写命令所产生的数据，
+却要大费周章地重新进行一次完整同步，
+这毫无疑问是非常低效的。</p>
+<p>为了解决这个问题，
+Redis 从 2.8 版本开始使用新的重同步功能去代替原来的重同步功能：</p>
+<ul class="simple">
+<li><p>当一个 Redis 服务器成为另一个服务器的主服务器时，
+它会把每个被执行的写命令都记录到一个特定长度的先进先出队列里面。</p></li>
+<li><p>当断线的从服务器尝试重新连接主服务器的时候，
+主服务器将检查从服务器断线期间，
+被执行的那些写命令是否仍然保存在队列里面。
+如果是的话，
+那么主服务器就会直接把从服务器缺失的那些写命令发送给从服务器执行，
+从服务器通过执行这些写命令就可以重新与主服务器保持一致，
+这样就避免了重新进行完整同步的麻烦。</p></li>
+<li><p>另一方面，
+如果从服务器缺失的那些写命令已经不存在于队列当中，
+那么主从服务器将进行一次完整同步。</p></li>
+</ul>
+<p>因为新的重同步功能需要使用先进先出队列来记录主服务器执行过的写命令，
+所以这个队列的体积越大，
+它能够记录的写命令就越多，
+从服务器断线之后能够快速地重新回到一致状态的机会也就越大。
+Redis 为这个队列设置的默认大小为 1 MB ，
+用户也可以根据自己的需要，
+通过配置选项 <code class="docutils literal notranslate"><span class="pre">repl-backlog-size</span></code> 来修改这个队列的大小。</p>
+</section>
+</section>
+<section id="id12">
+<h2>无需硬盘的复制<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h2>
+<p>正如之前所说，
+主服务器在进行完整同步的时候，
+需要在本地创建 RDB 文件，
+然后通过套接字将这个 RDB 文件传送给从服务器。</p>
+<p>但是，
+如果主服务器所在宿主机器的硬盘负载非常大又或者性能不佳，
+创建 RDB 文件引起的大量硬盘写入将对主服务器的性能造成影响，
+并导致复制进程变慢。</p>
+<p>为了解决这个问题，
+Redis 从 2.8.18 版本开始引入无需硬盘的复制特性（diskless replication）：
+启用了这个特性的主服务器在接收到 <code class="docutils literal notranslate"><span class="pre">REPLICAOF</span></code> 命令时将不会再在本地创建 RDB 文件，
+而是会派生出一个子进程，
+然后由子进程通过套接字直接将 RDB 文件写入至从服务器。
+这样主服务器就可以在不创建 RDB 文件的情况下，
+完成与从服务器的数据同步。</p>
+<p>要使用无需硬盘的复制特性，
+我们只需要将 <code class="docutils literal notranslate"><span class="pre">repl-diskless-sync</span></code> 配置选项的值设置为 <code class="docutils literal notranslate"><span class="pre">yes</span></code> 就可以了：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">repl</span><span class="o">-</span><span class="n">diskless</span><span class="o">-</span><span class="n">sync</span> <span class="o">&lt;</span><span class="n">yes</span><span class="o">|</span><span class="n">no</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>比如以下代码就展示了如何在启动 Redis 服务器的同时，
+启用服务器的无需硬盘复制特性：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ redis-server --repl-diskless-sync yes
+</pre></div>
+</div>
+<p>最后要注意的是，
+无需硬盘的复制特性只是避免了在主服务器上创建 RDB 文件，
+但仍然需要在从服务器上创建 RDB 文件。
+Redis 目前还无法在完全不使用硬盘的情况下完成完整数据同步，
+但不排除将来会出现这样的功能。</p>
+</section>
+<section id="id13">
+<h2>降低数据不一致的出现几率<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h2>
+<p>本章前面在介绍复制原理时曾经提到过，
+因为复制的在线更新操作以异步方式进行，
+所以当主从服务器之间的连接不稳定，
+又或者从服务器未能收到主服务器发送的更新命令时，
+主从服务器就会出现数据不一致的情况。</p>
+<p>为了尽可能地降低数据不一致的出现几率，
+Redis 从 2.8 版本开始引入了两个以 <code class="docutils literal notranslate"><span class="pre">min-replicas</span></code> 开头的配置选项：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">min</span><span class="o">-</span><span class="n">replicas</span><span class="o">-</span><span class="nb">max</span><span class="o">-</span><span class="n">lag</span> <span class="o">&lt;</span><span class="n">seconds</span><span class="o">&gt;</span>
+
+<span class="nb">min</span><span class="o">-</span><span class="n">replicas</span><span class="o">-</span><span class="n">to</span><span class="o">-</span><span class="n">write</span> <span class="o">&lt;</span><span class="n">numbers</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>用户设置了这两个配置选项之后，
+主服务器只会在从服务器的数量大于等于 <code class="docutils literal notranslate"><span class="pre">min-replicas-to-write</span></code> 选项的值，
+并且这些从服务器与主服务器最后一次成功通讯的间隔不超过 <code class="docutils literal notranslate"><span class="pre">min-replicas-max-lag</span></code> 选项的值时才会执行写命令。</p>
+<p>举个例子，
+假设我们想要让主服务器只在拥有至少 3 个从服务器，
+并且这些从服务器与主服务器最后一次成功通讯的间隔不超过 10 秒钟的情况下才执行写命令，
+那么可以使用配置选项：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">min</span><span class="o">-</span><span class="n">replicas</span><span class="o">-</span><span class="nb">max</span><span class="o">-</span><span class="n">lag</span> <span class="mi">10</span>
+
+<span class="nb">min</span><span class="o">-</span><span class="n">replicas</span><span class="o">-</span><span class="n">to</span><span class="o">-</span><span class="n">write</span> <span class="mi">3</span>
+</pre></div>
+</div>
+<p>通过使用这两个配置选项，
+我们可以让主服务器只在主从服务器连接良好的情况下执行写命令。
+因为在线更新的异步性质，
+<code class="docutils literal notranslate"><span class="pre">min-replicas-max-lag</span></code> 和 <code class="docutils literal notranslate"><span class="pre">min-replicas-to-write</span></code> 并没有办法完全地杜绝数据不一致出现，
+但它们可以有效地减少因为主从服务器连接不稳定而导致的数据不一致，
+并降低因为没有从服务器可用而导致数据丢失的可能性。</p>
+</section>
+<section id="id14">
+<h2>可写的从服务器<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h2>
+<p>从 Redis 2.6 版本开始，
+Redis 的从服务器在默认状态下只允许执行读命令。
+如果用户尝试对一个只读从服务器执行写命令，
+那么从服务器将返回以下错误信息：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">12345</span><span class="o">&gt;</span> <span class="n">REPLICAOF</span> <span class="mf">127.0.0.1</span> <span class="mi">6379</span>
+<span class="n">OK</span>
+
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">12345</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">msg</span> <span class="s2">&quot;hello world&quot;</span>
+<span class="p">(</span><span class="n">error</span><span class="p">)</span> <span class="n">READONLY</span> <span class="n">You</span> <span class="n">can</span><span class="s1">&#39;t write against a read only replica.</span>
+</pre></div>
+</div>
+<p>Redis 之所以将从服务器默认设置为只读服务器，
+是为了确保从服务器只能通过与主服务器进行数据同步来得到更新，
+从而保证主从服务器之间的数据一致性。</p>
+<p>但在某些情况下，
+我们可能想要将一些不太重要或者临时性的数据储存在从服务器里面，
+又或者不得不在从服务器里面执行一些带有写性质的命令
+（比如 <code class="docutils literal notranslate"><span class="pre">ZINTERSTORE</span></code> 命令，它只能将计算结果储存在数据库里面，不能直接返回计算结果）。
+这时我们可以通过将 <code class="docutils literal notranslate"><span class="pre">replica-read-only</span></code> 配置选项的值设置为 <code class="docutils literal notranslate"><span class="pre">no</span></code> 来打开从服务器的写功能：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">replica</span><span class="o">-</span><span class="n">read</span><span class="o">-</span><span class="n">only</span> <span class="o">&lt;</span><span class="n">yes</span><span class="o">|</span><span class="n">no</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>比如说，
+如果我们在启动服务器 <code class="docutils literal notranslate"><span class="pre">127.0.0.1:12345</span></code> 的时候，
+将 <code class="docutils literal notranslate"><span class="pre">replica-read-only</span></code> 配置选项的值设置为 <code class="docutils literal notranslate"><span class="pre">no</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ redis-server --port 12345 --replica-read-only no
+</pre></div>
+</div>
+<p>那么即使它变成了一个从服务器，
+它也能够正常地执行客户端发送的写命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">12345</span><span class="o">&gt;</span> <span class="n">REPLICAOF</span> <span class="mf">127.0.0.1</span> <span class="mi">6379</span>
+<span class="n">OK</span>
+
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">12345</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">msg</span> <span class="s2">&quot;hello world again!&quot;</span>
+<span class="n">OK</span>
+
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">12345</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">msg</span>
+<span class="s2">&quot;hello world again!&quot;</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p>使用可写从服务器的注意事项</p>
+<p>在使用可写的从服务器时，
+用户需要注意以下几个方面：</p>
+<ul class="simple">
+<li><p>在主从服务器都可写的情况下，
+程序必须将写命令发送到正确的服务器上面，
+不能把需要在主服务器执行的写命令发送给从服务器执行，
+也不能把需要在从服务器执行的写命令发送给主服务器执行，
+否则就会出现数据错误。</p></li>
+<li><p>从服务器执行写命令得到的数据，
+可能会被主服务器发送的写命令覆盖。
+比如说，
+如果从服务器在执行了客户端发送的 <code class="docutils literal notranslate"><span class="pre">SET</span> <span class="pre">msg</span> <span class="pre">&quot;hello</span> <span class="pre">from</span> <span class="pre">client&quot;</span></code> 命令之后，
+又接收到了主服务器发送的 <code class="docutils literal notranslate"><span class="pre">SET</span> <span class="pre">msg</span> <span class="pre">&quot;hello</span> <span class="pre">from</span> <span class="pre">master&quot;</span></code> 命令，
+那么客户端写入的 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键将被主服务器写入的 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键覆盖。
+因为这个原因，
+客户端在从服务器上面执行写命令时，
+应该尽量避免与主服务器发生键冲突，
+换句话说，
+用户应该让客户端和主服务器分别对从服务器数据库中不同的键进行写入，
+而不要让客户端和主服务器都去写相同的键。</p></li>
+<li><p>当从服务器与主服务器进行完整同步时，
+从服务器数据库包含的所有数据都将被清空，
+其中包括客户端写入的数据。</p></li>
+<li><p>为了减少内存占用，
+降低键冲突发生的可能性，
+并确保主从服务器的数据同步操作可以顺利进行，
+客户端写入到从服务器的数据应该在使用完毕之后尽快删除。
+一个比较简单的方法是在客户端向从服务器写入数据的同时，
+为数据设置一个比较短的过期时间，
+使得这些数据可以在使用完毕之后自动被删除。</p></li>
+</ul>
+</div>
+</section>
+<section id="id15">
+<h2>示例：使用从服务器处理复杂计算操作<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h2>
+<p>Redis 的数据相关命令基本上可以划分为两个种类：</p>
+<ul class="simple">
+<li><p>第一种是简单的读写操作，
+比如 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令、 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令、 <code class="docutils literal notranslate"><span class="pre">ZADD</span></code> 命令等等，
+这种命令只需要对数据库进行简单的读写，
+它们的执行速度一般都非常快。</p></li>
+<li><p>第二种是比较复杂的计算操作，
+比如 <code class="docutils literal notranslate"><span class="pre">SUNION</span></code> 命令、 <code class="docutils literal notranslate"><span class="pre">ZINTERSTORE</span></code> 命令、 <code class="docutils literal notranslate"><span class="pre">BITOP</span></code> 命令等等，
+这种命令需要对数据库中的元素进行聚合计算，
+并且随着元素数量的增加，
+计算耗费的时间也会增加，
+因此这种命令的执行速度一般都比较慢。</p></li>
+</ul>
+<p>从效率的角度考虑，
+如果我们在同一个 Redis 服务器里面同时处理以上两种命令，
+那么执行第二种命令产生的阻塞时间将导致第一种命令执行时的延迟值显著地增加。</p>
+<p>为此，
+我们可以通过复制功能创建出当前服务器的从服务器，
+然后让主服务器只处理第一种命令，
+而第二种命令则交给从服务器处理，
+如图 18-6 所示。</p>
+<hr class="docutils" />
+<p>图 18-6 使用从服务器执行计算命令</p>
+<p>之前：使用服务器处理简单的读写命令和计算命令</p>
+<img alt="_images/IMAGE_SPEEDUP_CMD_1.png" src="_images/IMAGE_SPEEDUP_CMD_1.png" />
+<p>之后：使用主服务器处理简单的读写命令，使用从服务器处理计算命令</p>
+<img alt="_images/IMAGE_SPEEDUP_CMD_2.png" src="_images/IMAGE_SPEEDUP_CMD_2.png" />
+<hr class="docutils" />
+<p>为了能够在从服务器执行诸如 <code class="docutils literal notranslate"><span class="pre">ZINTERSTORE</span></code> 这样的写命令，
+我们需要把从服务器的可写特性打开，
+并且在将计算结果储存到从服务器之后，
+为它设置一个比较短的过期时间，
+使得结果可以自动过期。
+又或者在客户端获得结果之后，
+由客户端将结果写入到主服务器进行保存。</p>
+<p>如果只使用一个从服务器处理第二种命令的速度还不够快，
+我们可以继续增加从服务器，
+直到从服务器处理第二种命令的速度和延迟值达到我们的要求为止。</p>
+</section>
+<section id="id16">
+<h2>脚本复制<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h2>
+<p>在了解了 Redis 服务器传播普通 Redis 命令的方法之后，
+我们接下来要了解的将是 Redis 传播 Lua 脚本的具体方法。</p>
+<p>Redis 服务器拥有两种不同的脚本复制模式，
+第一种是从 Redis 2.6 版本开始支持的脚本传播模式（whole script replication），
+而另一种则是从 Redis 3.2 版本开始支持的命令传播模式（script effect replication），
+本节接下来将分别介绍这两种模式。</p>
+<section id="id17">
+<h3>脚本传播模式<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h3>
+<p>处于脚本传播模式的主服务器会将被执行的脚本及其参数（也即是 <code class="docutils literal notranslate"><span class="pre">EVAL</span></code> 命令本身）复制到 AOF 文件以及从服务器里面。
+因为带有副作用的函数在不同服务器上运行时可能会产生不同的结果，
+从而导致主从服务器不一致，
+所以在这一模式下执行的脚本必须是纯函数：
+换句话说，
+对于相同的数据集，
+相同的脚本以及参数必须产生相同的效果。</p>
+<p>为了保证脚本的纯函数性质，
+Redis 对处于脚本传播模式的 Lua 脚本设置了以下限制：</p>
+<ul class="simple">
+<li><p>脚本不能访问 Lua 的时间模块、内部状态又或者除给定参数之外的其他外部信息。</p></li>
+<li><p>在 Redis 的命令当中，
+存在着一部分带有随机性质的命令，
+这些命令对于相同的数据集以及相同的参数可能会返回不同的结果。
+如果脚本在执行这类带有随机性质的命令之后，
+尝试继续执行写命令，
+那么 Redis 将拒接执行该命令并返回一个错误。
+带有随机性质的 Redis 命令分别为：
+<code class="docutils literal notranslate"><span class="pre">SPOP</span></code> 、
+<code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 、
+<code class="docutils literal notranslate"><span class="pre">SCAN</span></code> 、
+<code class="docutils literal notranslate"><span class="pre">SSCAN</span></code> 、
+<code class="docutils literal notranslate"><span class="pre">ZSCAN</span></code> 、
+<code class="docutils literal notranslate"><span class="pre">HSCAN</span></code> 、
+<code class="docutils literal notranslate"><span class="pre">RANDOMKEY</span></code> 、
+<code class="docutils literal notranslate"><span class="pre">LASTSAVE</span></code> 、
+<code class="docutils literal notranslate"><span class="pre">PUBSUB</span></code> 、
+<code class="docutils literal notranslate"><span class="pre">TIME</span></code> 。</p></li>
+<li><p>当用户在脚本中调用 <code class="docutils literal notranslate"><span class="pre">SINTER</span></code> 、 <code class="docutils literal notranslate"><span class="pre">SUNION</span></code> 、 <code class="docutils literal notranslate"><span class="pre">SDIFF</span></code> 、 <code class="docutils literal notranslate"><span class="pre">SMEMBERS</span></code> 、 <code class="docutils literal notranslate"><span class="pre">HKEYS</span></code> 、 <code class="docutils literal notranslate"><span class="pre">HVALS</span></code> 、 <code class="docutils literal notranslate"><span class="pre">KEYS</span></code> 这七个会以随机顺序返回结果元素的命令时，
+为了消除其随机性质，
+Lua 环境在返回这些命令的结果之前会先对结果中包含的元素进行排序，
+以此来确保命令返回的元素总是有序的。</p></li>
+<li><p>Redis 会确保每个被执行的脚本都拥有相同的随机数生成器种子，
+这意味着如果用户不主动修改这一种子，
+那么所有脚本在默认情况下产生的伪随机数列都将是相同的。</p></li>
+</ul>
+<p>脚本传播模式是 Redis 复制脚本时默认使用的模式。
+如果用户在执行脚本之前没有修改过相关的配置选项，
+那么 Redis 将使用脚本传播模式来复制脚本。</p>
+<p>作为例子，
+如果我们在启用了脚本传播模式的主服务器执行以下命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">EVAL</span> <span class="s2">&quot;redis.call(&#39;SET&#39;, KEYS[1], &#39;hello world&#39;);redis.call(&#39;SET&#39;, KEYS[2], 10086);redis.call(&#39;SADD&#39;, KEYS[3], &#39;apple&#39;, &#39;banana&#39;, &#39;cherry&#39;)&quot;</span> <span class="mi">3</span> <span class="s1">&#39;msg&#39;</span> <span class="s1">&#39;number&#39;</span> <span class="s1">&#39;fruits&#39;</span>
+</pre></div>
+</div>
+<p>那么主服务器将向从服务器发送完全相同的 <code class="docutils literal notranslate"><span class="pre">EVAL</span></code> 命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">EVAL</span> <span class="s2">&quot;redis.call(&#39;SET&#39;, KEYS[1], &#39;hello world&#39;);redis.call(&#39;SET&#39;, KEYS[2], 10086);redis.call(&#39;SADD&#39;, KEYS[3], &#39;apple&#39;, &#39;banana&#39;, &#39;cherry&#39;)&quot;</span> <span class="mi">3</span> <span class="s1">&#39;msg&#39;</span> <span class="s1">&#39;number&#39;</span> <span class="s1">&#39;fruits&#39;</span>
+</pre></div>
+</div>
+</section>
+<section id="id18">
+<h3>命令传播模式<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h3>
+<p>处于命令传播模式的主服务器会将执行脚本产生的所有写命令用事务包裹起来，
+然后将事务复制到 AOF 文件以及从服务器里面。
+因为命令传播模式复制的是写命令而不是脚本本身，
+所以即使脚本本身包含副作用，
+主服务器给所有从服务器复制的写命令仍然是相同的，
+因此处于命令传播模式的主服务器能够执行带有副作用的非纯函数脚本。</p>
+<p>除了脚本可以不是纯函数之外，
+与脚本传播模式相比，
+命令传播模式对 Lua 环境还有以下放松：</p>
+<ul class="simple">
+<li><p>用户可以在执行 <code class="docutils literal notranslate"><span class="pre">RANDOMKEY</span></code> 、 <code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 等带有随机性质的命令之后继续执行写命令。</p></li>
+<li><p>脚本的伪随机数生成器在每次调用之前，
+都会随机地设置种子。
+换句话说，
+被执行的每个脚本在默认情况下产生的伪随机数列都是不一样的。</p></li>
+</ul>
+<p>除了以上两点之外，
+命令传播模式跟脚本传播模式的 Lua 环境限制是一样的，
+比如说，
+即使在命令传播模式下，
+脚本还是无法访问 Lua 的时间模块以及内部状态。</p>
+<p>为了开启命令传播模式，
+用户在使用脚本执行任何写操作之前，
+需要先在脚本里面调用以下函数：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">.</span><span class="n">replicate_commands</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">redis.replicate_commands()</span></code> 只对调用该函数的脚本有效：
+在使用命令传播模式执行完当前脚本之后，
+服务器将自动切换回默认的脚本传播模式。</p>
+<p>作为例子，
+如果我们在主服务器执行以下命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">EVAL</span> <span class="s2">&quot;redis.replicate_commands();redis.call(&#39;SET&#39;, KEYS[1], &#39;hello world&#39;);redis.call(&#39;SET&#39;, KEYS[2], 10086);redis.call(&#39;SADD&#39;, KEYS[3], &#39;apple&#39;, &#39;banana&#39;, &#39;cherry&#39;)&quot;</span> <span class="mi">3</span> <span class="s1">&#39;msg&#39;</span> <span class="s1">&#39;number&#39;</span> <span class="s1">&#39;fruits&#39;</span>
+</pre></div>
+</div>
+<p>那么主服务器将向从服务器复制以下命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">MULTI</span>
+<span class="n">SET</span> <span class="s2">&quot;msg&quot;</span> <span class="s2">&quot;hello world&quot;</span>
+<span class="n">SET</span> <span class="s2">&quot;number&quot;</span> <span class="s2">&quot;10086&quot;</span>
+<span class="n">SADD</span> <span class="s2">&quot;fruits&quot;</span> <span class="s2">&quot;apple&quot;</span> <span class="s2">&quot;banana&quot;</span> <span class="s2">&quot;cherry&quot;</span>
+<span class="n">EXEC</span>
+</pre></div>
+</div>
+</section>
+<section id="id19">
+<h3>选择性命令传播<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h3>
+<p>为了进一步提升命令传播模式的威力，
+Redis 允许用户在脚本里面选择性地打开或者关闭命令传播功能，
+这一点可以通过在脚本里面调用 <code class="docutils literal notranslate"><span class="pre">redis.set_repl()</span></code> 函数并向它传入以下四个值来完成：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">redis.REPL_ALL</span></code> —— 默认值，将写命令传播至 AOF 文件以及所有从服务器。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">redis.REPL_AOF</span></code> —— 只将写命令传播至 AOF 文件。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">redis.REPL_SLAVE</span></code> —— 只将写命令传播至所有从服务器。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">redis.REPL_NONE</span></code> —— 不传播写命令。</p></li>
+</ul>
+<p>跟 <code class="docutils literal notranslate"><span class="pre">redis.replicate_commands()</span></code> 函数一样，
+<code class="docutils literal notranslate"><span class="pre">redis.set_repl()</span></code> 函数也只对执行该函数的脚本有效。
+用户可以通过这一功能来定制被传播的命令序列，
+以此来确保只有真正需要的命令会被传播至 AOF 文件以及从服务器。</p>
+<hr class="docutils" />
+<p>代码清单 18-1 储存并集计算结果的脚本</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>-- 打开目录传播模式
+-- 以便在执行 SRANDMEMBER 之后继续执行 DEL
+redis.replicate_commands()
+
+-- 集合键
+local set_a = KEYS[1]
+local set_b = KEYS[2]
+local result_key = KEYS[3]
+
+-- 随机元素的数量
+local count = tonumber(ARGV[1])
+
+-- 计算并集，随机选出指定数量的并集元素，然后删除并集
+redis.call(&#39;SUNIONSTORE&#39;, result_key, set_a, set_b)
+local elements = redis.call(&#39;SRANDMEMBER&#39;, result_key, count)
+redis.call(&#39;DEL&#39;, result_key)
+
+-- 返回随机选出的并集元素
+return elements
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>举个例子，
+代码清单 18-1 所示的脚本会将给定的两个集合的并集计算结果储存到一个集合里面，
+接着使用 <code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 命令从结果集合里面随机选出指定数量的元素，
+然后删除结果集合并向调用者返回被选中的随机元素。</p>
+<p>如果我们使用以下方式执行这个脚本：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">-</span><span class="n">cli</span> <span class="o">--</span><span class="nb">eval</span> <span class="n">union_random</span><span class="o">.</span><span class="n">lua</span> <span class="n">set_a</span> <span class="n">set_b</span> <span class="n">union_random</span> <span class="p">,</span> <span class="mi">3</span>
+</pre></div>
+</div>
+<p>那么主服务器将向从服务器复制以下写命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">MULTI</span>
+<span class="n">SUNIONSTORE</span> <span class="s2">&quot;union_random&quot;</span> <span class="s2">&quot;set_a&quot;</span> <span class="s2">&quot;set_b&quot;</span>
+<span class="n">DEL</span> <span class="s2">&quot;union_random&quot;</span>
+<span class="n">EXEC</span>
+</pre></div>
+</div>
+<p>但仔细地思考一下就会发现，
+<code class="docutils literal notranslate"><span class="pre">SUNIONSTORE</span></code> 命令创建的 <code class="docutils literal notranslate"><span class="pre">union_random</span></code> 实际上只是一个临时集合，
+脚本在取出并集元素之后就会使用 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令将其删除，
+因此主服务器即使不将 <code class="docutils literal notranslate"><span class="pre">SUNIONSTORE</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令复制给从服务器，
+主从服务器包含的数据也是相同的。</p>
+<p>代码清单 18-2 展示了根据上述想法对脚本进行修改之后得出的新脚本，
+新旧两个脚本在执行时将得到相同的结果，
+但主服务器在执行新脚本时将不会向从服务器复制任何命令。</p>
+<hr class="docutils" />
+<p>代码清单 18-2 带有选择性命令传播特性的脚本</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>-- 打开目录传播模式
+-- 以便在执行 SRANDMEMBER 之后继续执行 DEL
+redis.replicate_commands()
+
+-- 因为这个脚本即使不向从服务器传播 SUNIONSTORE 命令和 DEL 命令
+-- 也不会导致主从服务器数据不一致，所以我们可以把命令传播功能关掉
+redis.set_repl(redis.REPL_NONE)
+
+-- 集合键
+local set_a = KEYS[1]
+local set_b = KEYS[2]
+local result_key = KEYS[3]
+
+-- 随机元素的数量
+local count = tonumber(ARGV[1])
+
+-- 计算并集，随机选出指定数量的并集元素，然后删除并集
+redis.call(&#39;SUNIONSTORE&#39;, result_key, set_a, set_b)
+local elements = redis.call(&#39;SRANDMEMBER&#39;, result_key, count)
+redis.call(&#39;DEL&#39;, result_key)
+
+-- 返回随机选出的并集元素
+return elements
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>需要注意的是，
+虽然选择性复制功能非常强大，
+但用户如果没有正确地使用这个功能的话，
+那么就可能会导致主从服务器的数据出现不一致，
+因此用户在使用这个功能的时候必须慎之又慎。</p>
+</section>
+<section id="id20">
+<h3>模式的选择<a class="headerlink" href="#id20" title="Link to this heading">¶</a></h3>
+<p>既然存在着两种不同的脚本复制模式，
+那么如何选择正确的模式来复制脚本就显得至关重要了。
+一般来说，
+用户可以根据以下情况来判断应该使用哪种复制模式：</p>
+<ul class="simple">
+<li><p>如果脚本的体积不大，
+执行的计算也不多，
+但是却会产生大量命令调用，
+那么使用脚本传播模式可以有效地节约网络资源。</p></li>
+<li><p>相反地，
+如果一个脚本的体积非常大，
+执行的计算非常多，
+但是只会产生少量命令调用，
+那么使用命令传播模式可以通过重用已有的计算结果来节约计算资源以及网络资源。</p></li>
+</ul>
+<p>举个例子，
+假设我们正在开发一个游戏系统，
+该系统的其中一项功能就是在节日给符合条件的一批用户增加指定数量的金币。
+为此，
+我们可能会写出包含以下代码的脚本，
+并在执行这个脚本的时候，
+通过 <code class="docutils literal notranslate"><span class="pre">KEYS</span></code> 变量将数量庞大的用户余额键名传递给脚本：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>local user_balance_keys = KEYS
+local increment = ARGV[1]
+
+-- 遍历所有给定的用户余额键，对它们执行 INCRBY 操作
+for i = 1, #user_balance_keys do
+    redis.call(&#39;INCRBY&#39;, user_balance_keys[i], increment)
+end
+</pre></div>
+</div>
+<p>很明显，
+这个脚本将产生相当于传入键数量的 <code class="docutils literal notranslate"><span class="pre">INCRBY</span></code> 命令：
+在用户数量极其庞大的情况下，
+使用命令传播模式对这个脚本进行复制将耗费大量网络资源，
+但使用脚本传播模式来复制这个脚本则会是一件非常容易的事。</p>
+<p>现在，
+考虑另一种情况，
+假设我们正在开发一个数据聚合脚本，
+它包含了一个需要进行大量聚合计算以及大量数据库读写操作的 <code class="docutils literal notranslate"><span class="pre">aggregate_work()</span></code> 函数：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">local</span> <span class="n">result_key</span> <span class="o">=</span> <span class="n">KEYS</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="n">local</span> <span class="n">aggregate_work</span> <span class="o">=</span> <span class="n">function</span><span class="p">()</span>
+    <span class="o">--</span> <span class="o">...</span> <span class="n">省略大量代码</span>
+<span class="n">end</span>
+
+<span class="n">redis</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="s1">&#39;SET&#39;</span><span class="p">,</span> <span class="n">result_key</span><span class="p">,</span> <span class="n">aggregate_work</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>因为执行 <code class="docutils literal notranslate"><span class="pre">aggregate_work()</span></code> 函数需要耗费大量计算资源，
+所以如果我们直接复制整个脚本的话，
+那么相同的操作就要在每个从服务器上面都执行一遍，
+这对于宝贵的计算资源来说无疑是一种巨大的浪费；
+相反地，
+如果我们使用命令传播模式来复制这个脚本，
+那么主服务器在执行完这个脚本之后，
+就可以通过 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令直接将函数的计算结果复制给各个从服务器。</p>
+</section>
+</section>
+<section id="id21">
+<h2>重点回顾<a class="headerlink" href="#id21" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Redis 的复制功能允许用户为一个服务器创建出多个副本，
+其中被复制的服务器为主服务器，
+而复制产生的副本则是从服务器。</p></li>
+<li><p>Redis 提供的复制功能是通过主从复制模式实现的，
+一个主服务器可以有多个从服务器，
+但每个从服务器只能有一个主服务器。</p></li>
+<li><p>Redis 的复制功能可以从性能、安全性和可用性三个方面提升整个 Redis 系统。</p></li>
+<li><p>Redis 主从服务器的数据同步涉及三个操作：1）完整同步；2）在线更新；3）部分同步。</p></li>
+<li><p>Redis 的复制功能提供了脚本传播模式和命令传播模式两种脚本复制模式可用，
+前者传播的是 Lua 脚本本身，
+而后者传播的则是 Redis 命令。
+这两种传播模式各有特色，
+用户应该根据自己的需求选择合适的模式。</p></li>
+</ul>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">复制</a><ul>
+<li><a class="reference internal" href="#replicaof">REPLICAOF：将服务器设置为从服务器</a><ul>
+<li><a class="reference internal" href="#id2">通过配置选项设置从服务器</a></li>
+<li><a class="reference internal" href="#id3">取消复制</a></li>
+<li><a class="reference internal" href="#id4">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#role">ROLE：查看服务器的角色</a><ul>
+<li><a class="reference internal" href="#id5">主服务器执行 <code class="docutils literal notranslate"><span class="pre">ROLE</span></code> 命令</a></li>
+<li><a class="reference internal" href="#id6">从服务器执行 <code class="docutils literal notranslate"><span class="pre">ROLE</span></code> 命令</a></li>
+<li><a class="reference internal" href="#id7">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id8">数据同步</a><ul>
+<li><a class="reference internal" href="#id9">完整同步</a></li>
+<li><a class="reference internal" href="#id10">在线更新</a></li>
+<li><a class="reference internal" href="#id11">部分同步</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id12">无需硬盘的复制</a></li>
+<li><a class="reference internal" href="#id13">降低数据不一致的出现几率</a></li>
+<li><a class="reference internal" href="#id14">可写的从服务器</a></li>
+<li><a class="reference internal" href="#id15">示例：使用从服务器处理复杂计算操作</a></li>
+<li><a class="reference internal" href="#id16">脚本复制</a><ul>
+<li><a class="reference internal" href="#id17">脚本传播模式</a></li>
+<li><a class="reference internal" href="#id18">命令传播模式</a></li>
+<li><a class="reference internal" href="#id19">选择性命令传播</a></li>
+<li><a class="reference internal" href="#id20">模式的选择</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id21">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="pipeline-and-transaction.html"
+                          title="Previous page">&larr; 流水线与事务</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="appendix_a.html"
+                          title="Next page">&rarr; 附录 A ：Redis 安装方法</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>本页</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/replication.rst.txt"
+            rel="nofollow">显示源代码</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">快速搜索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="提交" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="appendix_a.html" title="附录 A ：Redis 安装方法"
+             >下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="pipeline-and-transaction.html" title="流水线与事务"
+             >上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">复制</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; 版权所有 2019, 黄健宏.
+      由 <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6创建。
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

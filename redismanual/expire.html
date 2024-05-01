@@ -1,0 +1,1302 @@
+
+
+<!DOCTYPE html>
+
+<html lang="zh-CN" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>自动过期 &#8212; Redis使用手册</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" href="./" type="text/css" />
+    
+    <script src="_static/documentation_options.js?v=f115507d"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=beaddf03"></script>
+
+    
+    
+     
+        <script src="_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="_static/cloud.js"></script>
+    
+
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+    <link rel="next" title="流水线与事务" href="pipeline-and-transaction.html" />
+    <link rel="prev" title="数据库" href="database.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="pipeline-and-transaction.html" title="流水线与事务"
+             accesskey="N">下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="database.html" title="数据库"
+             accesskey="P">上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">自动过期</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>自动过期<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>在构建应用时，
+我们常常会碰到一些在特定时间之后就不再有用的数据，
+比如说：</p>
+<ul class="simple">
+<li><p>随着内容的不断更新，
+一个网页的缓存可能在 5 分钟之后就没有阅读价值了，
+为了让用户能够及时地获取到最新的信息，
+程序必须定期地移除旧缓存并设置新缓存。</p></li>
+<li><p>为了保障用户的信息安全，
+应用通常会在用户登录一周或者一个月之后移除用户的会话信息，
+然后通过强制要求用户重新登录来创建新的会话。</p></li>
+<li><p>程序在进行聚合计算的时候，
+常常会创建出大量临时数据，
+这些数据在计算完毕之后通常就不再有用，
+而且储存这些数据还会花费大量内存空间和硬盘空间。</p></li>
+</ul>
+<p>在遇到上述情况时，
+我们虽然可以自行编写程序来处理这些不再有用的数据，
+但如果数据库本身能够提供自动移除无用数据的功能，
+那么就会给我们带来非常大的方便。</p>
+<p>为了解决这个问题，
+Redis 提供了自动的键过期功能（key expiring）。
+通过这个功能，
+用户可以让特定的键在指定的时间之后自动被移除，
+从而避免了需要在指定时间内手动执行删除操作的麻烦。</p>
+<p>本章将对 Redis 的键过期功能进行介绍，
+说明与该功能有关的各个命令的使用方法，
+并展示如何使用这一功能去构建一些非常实用的程序。</p>
+<section id="expirepexpire">
+<h2>EXPIRE、PEXPIRE：设置生存时间<a class="headerlink" href="#expirepexpire" title="Link to this heading">¶</a></h2>
+<p>用户可以通过执行 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> 命令或者 <code class="docutils literal notranslate"><span class="pre">PEXPIRE</span></code> 命令，
+为键设置一个生存时间（TTL，time to live）：
+键的生存时间在设置之后就会随着时间的流逝而不断地减少，
+当一个键的生存时间被消耗殆尽时，
+Redis 就会移除这个键。</p>
+<p>Redis 提供了 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> 命令用于设置秒级精度的生存时间，
+它可以让键在指定的秒数之后自动被移除：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">EXPIRE</span> <span class="n">key</span> <span class="n">seconds</span>
+</pre></div>
+</div>
+<p>而 <code class="docutils literal notranslate"><span class="pre">PEXPIRE</span></code> 命令则用于设置毫秒级精度的生存时间，
+它可以让键在指定的毫秒数之后自动被移除：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">PEXPIRE</span> <span class="n">key</span> <span class="n">milliseconds</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">PEXPIRE</span></code> 命令在生存时间设置成功时返回 <code class="docutils literal notranslate"><span class="pre">1</span></code> ；
+如果用户给定的键并不存在，
+那么命令返回 <code class="docutils literal notranslate"><span class="pre">0</span></code> 表示设置失败。</p>
+<p>以下是一个使用 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> 命令的例子：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>redis&gt; SET msg &quot;hello world&quot;
+OK
+
+redis&gt; EXPIRE msg 5
+(integer) 1
+
+redis&gt; GET msg    -- 在 5 秒钟之内访问，键存在
+&quot;hello world&quot;
+
+redis&gt; GET msg    -- 在 5 秒钟之后访问，键不再存在
+(nil)
+</pre></div>
+</div>
+<p>上面的代码通过执行 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> 命令为 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键设置了 5 秒钟的生存时间：</p>
+<ul class="simple">
+<li><p>如果我们在 5 秒钟之内访问 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键，
+那么 Redis 将返回 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键的值 <code class="docutils literal notranslate"><span class="pre">&quot;hello</span> <span class="pre">world&quot;</span></code> ；</p></li>
+<li><p>但如果我们在 5 秒钟之后访问 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键，
+那么 Redis 将返回一个空值，
+因为 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键已经自动被移除了。</p></li>
+</ul>
+<p>表 12-1 展示了 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键从设置生存时间到被移除的整个过程。</p>
+<hr class="docutils" />
+<p>表 12-1 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键从设置生存时间到被移除的整个过程</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>时间（以秒为单位）</p></th>
+<th class="head"><p>动作</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0000</p></td>
+<td><p>执行 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span> <span class="pre">msg</span> <span class="pre">5</span></code> ，将 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键的生存时间设置为 5 秒钟。</p></td>
+</tr>
+<tr class="row-odd"><td><p>0001</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">msg</span></code> 键的生存时间变为 4 秒钟。</p></td>
+</tr>
+<tr class="row-even"><td><p>0002</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">msg</span></code> 键的生存时间变为 3 秒钟。</p></td>
+</tr>
+<tr class="row-odd"><td><p>0003</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">msg</span></code> 键的生存时间变为 2 秒钟。</p></td>
+</tr>
+<tr class="row-even"><td><p>0004</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">msg</span></code> 键的生存时间变为 1 秒钟。</p></td>
+</tr>
+<tr class="row-odd"><td><p>0005</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">msg</span></code> 键因为过期被移除。</p></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<p>而以下则是一个使用 <code class="docutils literal notranslate"><span class="pre">PEXPIRE</span></code> 命令的例子：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>redis&gt; SET number 10086
+OK
+
+redis&gt; PEXPIRE number 6500
+(integer) 1
+
+redis&gt; GET number    -- 在 6500 毫秒（也即是 6.5 秒）之内访问，键存在
+&quot;10086&quot;
+
+redis&gt; GET number    -- 在 6500 毫秒之后访问，键不再存在
+(nil)
+</pre></div>
+</div>
+<p>表 12-2 展示了 <code class="docutils literal notranslate"><span class="pre">number</span></code> 键从设置生存时间到被移除的整个过程。</p>
+<hr class="docutils" />
+<p>表 12-2 <code class="docutils literal notranslate"><span class="pre">number</span></code> 键从设置生存时间到被移除的整个过程</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>时间（以毫秒为单位）</p></th>
+<th class="head"><p>动作</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0000</p></td>
+<td><p>执行 <code class="docutils literal notranslate"><span class="pre">PEXPIRE</span> <span class="pre">number</span> <span class="pre">6500</span></code> ，将 <code class="docutils literal notranslate"><span class="pre">number</span></code> 键的生存时间设置为 6500 毫秒。</p></td>
+</tr>
+<tr class="row-odd"><td><p>0001</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">number</span></code> 键的生存时间变为 6499 毫秒。</p></td>
+</tr>
+<tr class="row-even"><td><p>0002</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">number</span></code> 键的生存时间变为 6498 毫秒。</p></td>
+</tr>
+<tr class="row-odd"><td><p>0003</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">number</span></code> 键的生存时间变为 6497 毫秒。</p></td>
+</tr>
+<tr class="row-even"><td><p>……</p></td>
+<td><p>……</p></td>
+</tr>
+<tr class="row-odd"><td><p>6497</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">number</span></code> 键的生存时间变为 3 毫秒。</p></td>
+</tr>
+<tr class="row-even"><td><p>6498</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">number</span></code> 键的生存时间变为 2 毫秒。</p></td>
+</tr>
+<tr class="row-odd"><td><p>6499</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">number</span></code> 键的生存时间变为 1 毫秒。</p></td>
+</tr>
+<tr class="row-even"><td><p>6500</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">number</span></code> 键因为过期而被移除。</p></td>
+</tr>
+</tbody>
+</table>
+<section id="id2">
+<h3>更新键的生存时间<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<p>当用户对一个已经带有生存时间的键执行 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> 命令或是 <code class="docutils literal notranslate"><span class="pre">PEXPIRE</span></code> 命令时，
+键原有的生存时间将会被移除，
+并设置上新的生存时间。</p>
+<p>举个例子，
+如果我们执行以下命令，
+将 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键的生存时间设置为 10 秒钟：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">EXPIRE</span> <span class="n">msg</span> <span class="mi">10</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>然后在 10 秒钟之内执行以下命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">EXPIRE</span> <span class="n">msg</span> <span class="mi">50</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>那么 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键的生存时间将被更新为 50 秒钟，
+并重新开始倒数，
+表 12-3 展示了这个更新过程。</p>
+<hr class="docutils" />
+<p>表 12-3 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键生存时间的更新过程</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>时间（以秒为单位）</p></th>
+<th class="head"><p>动作</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0000</p></td>
+<td><p>执行 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span> <span class="pre">msg</span> <span class="pre">10</span></code> 命令，
+将 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键的生存时间设置为 10 秒钟。</p></td>
+</tr>
+<tr class="row-odd"><td><p>0001</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">msg</span></code> 键的生存时间变为 9 秒钟。</p></td>
+</tr>
+<tr class="row-even"><td><p>0002</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">msg</span></code> 键的生存时间变为 8 秒钟。</p></td>
+</tr>
+<tr class="row-odd"><td><p>0003</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">msg</span></code> 键的生存时间变为 7 秒钟。</p></td>
+</tr>
+<tr class="row-even"><td><p>0004</p></td>
+<td><p>执行 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span> <span class="pre">msg</span> <span class="pre">50</span></code> 命令，
+将 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键的生存时间更新为 50 秒钟。</p></td>
+</tr>
+<tr class="row-odd"><td><p>0005</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">msg</span></code> 键的生存时间变为 49 秒钟。</p></td>
+</tr>
+<tr class="row-even"><td><p>0006</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">msg</span></code> 键的生存时间变为 48 秒钟。</p></td>
+</tr>
+<tr class="row-odd"><td><p>0007</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">msg</span></code> 键的生存时间变为 47 秒钟。</p></td>
+</tr>
+<tr class="row-even"><td><p>……</p></td>
+<td><p>……</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<hr class="docutils" />
+<section id="id3">
+<h3>其他信息<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">PEXPIRE</span></code> 命令的复杂度都为 O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> 命令从 Redis 1.0.0 版本开始可用，
+<code class="docutils literal notranslate"><span class="pre">PEXPIRE</span></code> 命令从 Redis 2.6.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id4">
+<h2>示例：带有自动移除特性的缓存程序<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>用户在使用缓存程序的时候，
+必须要考虑缓存的时效性：
+对于内容不断变换的应用来说，
+一份缓存存在的时间越长，
+它与实际内容之间的差异往往也就越大，
+因此为了让缓存能够及时地反映真实的内容，
+程序必须定期对缓存进行更新。</p>
+<p>本书前面在《字符串》一章曾经展示过怎样使用字符串键构建缓存程序，
+但那个缓存程序有一个明显的缺陷，
+那就是，
+它无法自动移除过时的缓存。
+如果我们真的要在实际中使用那个程序的话，
+那么就必须再编写一个辅助程序来定期地删除旧缓存才行，
+这样一来使用缓存将会变得非常麻烦。</p>
+<p>幸运的是，
+通过使用 Redis 的键过期功能，
+我们可以为缓存程序加上自动移除特性，
+并通过这个特性自动移除过期的、无效的缓存。</p>
+<p>代码清单 12-1 展示了一个能够为缓存设置最大有效时间的缓存程序，
+这个程序跟《字符串》一章展示的缓存程序的绝大部分代码都是相同的，
+新程序的主要区别在于，
+它除了会把指定的内容缓存起来之外，
+还会使用 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> 命令为缓存设置生存时间，
+从而使得缓存可以在指定时间到达之后自动被移除。</p>
+<hr class="docutils" />
+<p>代码清单 12-1 带有自动移除特性的缓存程序：<code class="docutils literal notranslate"><span class="pre">/expire/unsafe_volatile_cache.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">VolatileCache</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+
+    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        把数据缓存到键 key 里面，并为其设置过期时间。</span>
+<span class="sd">        如果键 key 已经有值，那么使用新值去覆盖旧值。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">expire</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        获取键 key 储存的缓存数据。</span>
+<span class="sd">        如果键不存在，又或者缓存已经过期，那么返回 None 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>以下代码简单地展示了这个缓存程序的使用方法：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">unsafe_volatile_cache</span> <span class="kn">import</span> <span class="n">VolatileCache</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cache</span> <span class="o">=</span> <span class="n">VolatileCache</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;homepage&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;html&gt;&lt;p&gt;hello world&lt;/p&gt;&lt;/html&gt;&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>  <span class="c1"># 设置缓存</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;homepage&quot;</span><span class="p">)</span>  <span class="c1"># 这个缓存在 10 秒钟之内有效</span>
+<span class="go">&#39;&lt;html&gt;&lt;p&gt;hello world&lt;/p&gt;&lt;/html&gt;&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;homepage&quot;</span><span class="p">)</span>  <span class="c1"># 10 秒钟过后，缓存自动被移除</span>
+<span class="gp">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</section>
+<section id="set-ex-px">
+<h2>SET 命令的 EX 选项和 PX 选项<a class="headerlink" href="#set-ex-px" title="Link to this heading">¶</a></h2>
+<p>在使用键过期功能时，
+组合使用 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> / <code class="docutils literal notranslate"><span class="pre">PEXIRE</span></code> 命令的做法非常常见，
+比如上面展示的带有自动移除特性的缓存程序就是这样做的。</p>
+<p>因为 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> / <code class="docutils literal notranslate"><span class="pre">PEXPIRE</span></code> 命令组合使用的情况是如此的常见，
+所以为了方便用户使用这两组命令，
+Redis 从 2.6.12 版本开始为 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令提供 <code class="docutils literal notranslate"><span class="pre">EX</span></code> 选项和 <code class="docutils literal notranslate"><span class="pre">PX</span></code> 选项，
+用户可以通过使用这两个选项的其中一个来达到同时执行 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> / <code class="docutils literal notranslate"><span class="pre">PEXPIRE</span></code> 命令的效果：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SET</span> <span class="n">key</span> <span class="n">value</span> <span class="p">[</span><span class="n">EX</span> <span class="n">seconds</span><span class="p">]</span> <span class="p">[</span><span class="n">PX</span> <span class="n">milliseconds</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>这也就是说，
+如果我们之前执行的是 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> 命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SET</span> <span class="n">key</span> <span class="n">value</span>
+<span class="n">EXPIRE</span> <span class="n">key</span> <span class="n">seconds</span>
+</pre></div>
+</div>
+<p>那么现在只需要执行一条带有 <code class="docutils literal notranslate"><span class="pre">EX</span></code> 选项的 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令就可以了：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SET</span> <span class="n">key</span> <span class="n">value</span> <span class="n">EX</span> <span class="n">seconds</span>
+</pre></div>
+</div>
+<p>与此类似，
+如果我们之前执行的是 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">PEXPIRE</span></code> 命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SET</span> <span class="n">key</span> <span class="n">value</span>
+<span class="n">PEXPIRE</span> <span class="n">key</span> <span class="n">milliseconds</span>
+</pre></div>
+</div>
+<p>那么现在只需要执行一条带有 <code class="docutils literal notranslate"><span class="pre">PX</span></code> 选项的 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令就可以了：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SET</span> <span class="n">key</span> <span class="n">value</span> <span class="n">PX</span> <span class="n">milliseconds</span>
+</pre></div>
+</div>
+<section id="id5">
+<h3>组合命令的安全问题<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
+<p>使用带有 <code class="docutils literal notranslate"><span class="pre">EX</span></code> 选项或 <code class="docutils literal notranslate"><span class="pre">PX</span></code> 选项的 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令除了可以减少命令的调用数量并提升程序的执行速度之外，
+更重要的是保证了操作的原子性，
+使得“为键设置值”和“为键设置生存时间”这两个操作可以一起执行。</p>
+<p>比如说，
+前面在实现带有自动移除特性的缓存程序时，
+我们首先使用了 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令设置缓存，
+然后又使用了 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> 命令为缓存设置生存时间，
+这相当于让程序依次地向 Redis 服务器发送以下两条命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SET</span> <span class="n">key</span> <span class="n">value</span>
+
+<span class="n">EXPIRE</span> <span class="n">key</span> <span class="n">timeout</span>
+</pre></div>
+</div>
+<p>因为这两条命令是完全独立的，
+所以服务器在执行它们的时候，
+就可能会出现 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令被执行了，
+但是 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> 命令却没有被执行的情况。
+比如说，
+如果 Redis 服务器在成功执行 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令之后因为故障下线，
+导致 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> 命令没有被执行，
+那么 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令设置的缓存就会一直存在，
+而不会因为过期而自动被移除。</p>
+<p>与此相反，
+使用带有 <code class="docutils literal notranslate"><span class="pre">EX</span></code> 选项或 <code class="docutils literal notranslate"><span class="pre">PX</span></code> 选项的 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令就没有这个问题：
+当服务器成功执行了一条带有 <code class="docutils literal notranslate"><span class="pre">EX</span></code> 选项或 <code class="docutils literal notranslate"><span class="pre">PX</span></code> 选项的 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令时，
+键的值和生存时间都会同时被设置好，
+因此程序就不会出现只设置了值但是却没有设置生存时间的情况。</p>
+<p>基于上述原因，
+我们把前面展示的缓存程序实现称之为“不安全”（unsafe）实现。
+为了修复这个问题，
+我们可以使用带有 <code class="docutils literal notranslate"><span class="pre">EX</span></code> 选项的 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令来重写缓存程序，
+重写之后的程序正如代码清单 12-2 所示。</p>
+<hr class="docutils" />
+<p>代码清单 12-2 重写之后的缓存程序：<code class="docutils literal notranslate"><span class="pre">/expire/volatile_cache.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">VolatileCache</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+
+    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        把数据缓存到键 key 里面，并为其设置过期时间。</span>
+<span class="sd">        如果键 key 已经有值，那么使用新值去覆盖旧值。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">ex</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        获取键 key 储存的缓存数据。</span>
+<span class="sd">        如果键不存在，又或者缓存已经过期，那么返回 None 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>重写之后的缓存程序实现是“安全的”：
+设置缓存和设置生存时间这两个操作要么就一起成功，
+要么就一起失败，
+“设置缓存成功了，但是设置生存时间却失败了”这样的情况将不会出现。
+后续的章节也会介绍如何通过 Redis 的事务功能来保证执行多条命令时的安全性。</p>
+</section>
+<section id="id6">
+<h3>其他信息<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p>带有 <code class="docutils literal notranslate"><span class="pre">EX</span></code> 选项和 <code class="docutils literal notranslate"><span class="pre">PX</span></code> 选项的 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令从 Redis 2.6.12 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id7">
+<h2>示例：带有自动释放特性的锁<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
+<p>在前面的《字符串》一章，
+我们曾经实现过一个锁程序，
+它的其中一个缺陷就是无法自行释放：
+如果锁的持有者因为故障下线，
+那么锁将一直处于持有状态，
+导致其他进程永远也无法获得锁。</p>
+<p>为了解决这个问题，
+我们可以在获取锁的同时，
+通过 Redis 的自动过期特性为锁设置一个最大加锁时限，
+这样的话，
+即使锁的持有者由于故障下线，
+锁也会在时限到达之后自动释放。</p>
+<p>代码清单 12-3 展示了使用上述原理实现的锁程序。</p>
+<hr class="docutils" />
+<p>代码清单 12-3 带有自动释放特性的锁：<code class="docutils literal notranslate"><span class="pre">/expire/timing_lock.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">VALUE_OF_LOCK</span> <span class="o">=</span> <span class="s2">&quot;locking&quot;</span>
+
+<span class="k">class</span> <span class="nc">TimingLock</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        尝试获取一个带有秒级最大使用时限的锁，</span>
+<span class="sd">        成功时返回 True ，失败时返回 False 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">VALUE_OF_LOCK</span><span class="p">,</span> <span class="n">ex</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span> <span class="n">nx</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">release</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        尝试释放锁。</span>
+<span class="sd">        成功时返回 True ，失败时返回 False 。 </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>以下代码演示了这个锁的自动释放特性：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">timing_lock</span> <span class="kn">import</span> <span class="n">TimingLock</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lock</span> <span class="o">=</span> <span class="n">TimingLock</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;test-lock&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>  <span class="c1"># 获取一个在 5 秒钟之后自动释放的锁</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>  <span class="c1"># 在 5 秒钟之内尝试再次获取锁，但是由于锁未被释放而失败</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>  <span class="c1"># 在 5 秒钟之后尝试再次获取锁</span>
+<span class="go">True                 # 因为之前获取的锁已经自动被释放，所以这次将成功取得新的锁</span>
+</pre></div>
+</div>
+</section>
+<section id="expireatpexpireat">
+<h2>EXPIREAT、PEXPIREAT：设置过期时间<a class="headerlink" href="#expireatpexpireat" title="Link to this heading">¶</a></h2>
+<p>Redis 用户不仅可以通过设置生存时间来让键在指定的秒数或毫秒数之后自动被移除，
+还可以通过设置过期时间（expire time），
+让 Redis 在指定 UNIX 时间来临之后自动移除给定的键。</p>
+<p>设置过期时间这一操作可以通过 <code class="docutils literal notranslate"><span class="pre">EXPIREAT</span></code> 命令或者 <code class="docutils literal notranslate"><span class="pre">PEXPIREAT</span></code> 命令来完成。
+其中，
+<code class="docutils literal notranslate"><span class="pre">EXPIREAT</span></code> 命令接受一个键和一个秒级精度的 UNIX 时间戳为参数，
+当系统的当前 UNIX 时间超过命令指定的 UNIX 时间时，
+给定的键就会被移除：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">EXPIREAT</span> <span class="n">key</span> <span class="n">seconds_timestamp</span>
+</pre></div>
+</div>
+<p>与此类似，
+<code class="docutils literal notranslate"><span class="pre">PEXPIREAT</span></code> 命令接受一个键和一个毫秒级精度的 UNIX 时间戳为参数，
+当系统的当前 UNIX 时间超过命令指定的 UNIX 时间时，
+给定的键就会被移除：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">PEXPIREAT</span> <span class="n">key</span> <span class="n">milliseconds_timestamp</span>
+</pre></div>
+</div>
+<section id="expireat">
+<h3><code class="docutils literal notranslate"><span class="pre">EXPIREAT</span></code> 使用示例<a class="headerlink" href="#expireat" title="Link to this heading">¶</a></h3>
+<p>如果我们想要让 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键在 UNIX 时间 1450005000 秒之后不再存在，
+那么可以执行以下命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">EXPIREAT</span> <span class="n">msg</span> <span class="mi">1450005000</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>在执行这个 <code class="docutils literal notranslate"><span class="pre">EXPIREAT</span></code> 命令之后，
+如果我们在 UNIX 时间 1450005000 秒或之前访问 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键，
+那么 Redis 将返回 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">msg</span>
+<span class="s2">&quot;hello world&quot;</span>
+</pre></div>
+</div>
+<p>另一方面，
+如果我们在 UNIX 时间 1450005000 秒之后访问 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键，
+那么 Redis 将返回一个空值，
+因为这时 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键已经因为过期而自动被移除了：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">msg</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>表 12-4 展示了 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键从设置过期时间到被移除的整个过程。</p>
+<hr class="docutils" />
+<p>表 12-4 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键从设置过期时间到被移除的整个过程</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>UNIX 时间（以秒为单位）</p></th>
+<th class="head"><p>动作</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1450004000</p></td>
+<td><p>执行 <code class="docutils literal notranslate"><span class="pre">EXPIREAT</span> <span class="pre">msg</span> <span class="pre">1450005000</span></code> 命令，
+将 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键的过期时间设置为 <code class="docutils literal notranslate"><span class="pre">1450005000</span></code> 秒。</p></td>
+</tr>
+<tr class="row-odd"><td><p>1450004001</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">msg</span></code> 键未过期，不做动作。</p></td>
+</tr>
+<tr class="row-even"><td><p>1450004002</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">msg</span></code> 键未过期，不做动作。</p></td>
+</tr>
+<tr class="row-odd"><td><p>1450004003</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">msg</span></code> 键未过期，不做动作。</p></td>
+</tr>
+<tr class="row-even"><td><p>……</p></td>
+<td><p>……</p></td>
+</tr>
+<tr class="row-odd"><td><p>1450004999</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">msg</span></code> 键未过期，不做动作。</p></td>
+</tr>
+<tr class="row-even"><td><p>1450005000</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">msg</span></code> 键未过期，不做动作。</p></td>
+</tr>
+<tr class="row-odd"><td><p>1450005001</p></td>
+<td><p>系统当前的 UNIX 时间已经超过 1450005000 秒，移除 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<hr class="docutils" />
+<section id="pexpireat">
+<h3><code class="docutils literal notranslate"><span class="pre">PEXPIREAT</span></code> 命令使用示例<a class="headerlink" href="#pexpireat" title="Link to this heading">¶</a></h3>
+<p>以下是一个使用 <code class="docutils literal notranslate"><span class="pre">PEXPIREAT</span></code> 命令设置过期时间的例子，
+这个命令可以将 <code class="docutils literal notranslate"><span class="pre">number</span></code> 键的过期时间设置为 UNIX 时间 1450005000000 毫秒：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">PEXPIREAT</span> <span class="n">number</span> <span class="mi">1450005000000</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>在 UNIX 时间 1450005000000 毫秒或之前访问 <code class="docutils literal notranslate"><span class="pre">number</span></code> 键可以得到它的值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">number</span>
+<span class="s2">&quot;10086&quot;</span>
+</pre></div>
+</div>
+<p>而在 UNIX 时间 1450005000000 毫秒之后访问 <code class="docutils literal notranslate"><span class="pre">number</span></code> 键则只会得到一个空值，
+因为这时 <code class="docutils literal notranslate"><span class="pre">number</span></code> 键已经因为过期而自动被移除了：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">number</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>表 12-5 展示了 <code class="docutils literal notranslate"><span class="pre">number</span></code> 键从设置过期时间到被移除的整个过程。</p>
+<hr class="docutils" />
+<p>表 12-5 <code class="docutils literal notranslate"><span class="pre">number</span></code> 键从设置过期时间到被移除的整个过程</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>UNIX 时间（以毫秒为单位）</p></th>
+<th class="head"><p>动作</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1450003000000</p></td>
+<td><p>执行 <code class="docutils literal notranslate"><span class="pre">PEXPIREAT</span> <span class="pre">number</span> <span class="pre">1450005000000</span></code> 命令，
+将 <code class="docutils literal notranslate"><span class="pre">number</span></code> 键的过期时间设置为 1450005000000 毫秒。</p></td>
+</tr>
+<tr class="row-odd"><td><p>1450003000001</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">number</span></code> 键未过期，不做动作。</p></td>
+</tr>
+<tr class="row-even"><td><p>1450003000002</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">number</span></code> 键未过期，不做动作。</p></td>
+</tr>
+<tr class="row-odd"><td><p>1450003000003</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">number</span></code> 键未过期，不做动作。</p></td>
+</tr>
+<tr class="row-even"><td><p>……</p></td>
+<td><p>……</p></td>
+</tr>
+<tr class="row-odd"><td><p>1450004999999</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">number</span></code> 键未过期，不做动作。</p></td>
+</tr>
+<tr class="row-even"><td><p>1450005000000</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">number</span></code> 键未过期，不做动作。</p></td>
+</tr>
+<tr class="row-odd"><td><p>1450005000001</p></td>
+<td><p>系统当前的 UNIX 时间已经超过 1450005000000 毫秒，移除 <code class="docutils literal notranslate"><span class="pre">number</span></code> 键。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<hr class="docutils" />
+<section id="id8">
+<h3>更新键的过期时间<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
+<p>跟 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> / <code class="docutils literal notranslate"><span class="pre">PEXPIRE</span></code> 命令会更新键的生存时间一样，
+<code class="docutils literal notranslate"><span class="pre">EXPIREAT</span></code> / <code class="docutils literal notranslate"><span class="pre">PEXPIREAT</span></code> 命令也会更新键的过期时间：
+如果用户在执行 <code class="docutils literal notranslate"><span class="pre">EXPIREAT</span></code> 命令或 <code class="docutils literal notranslate"><span class="pre">PEXPIREAT</span></code> 命令的时候，
+给定键已经带有过期时间，
+那么命令首先会移除键已有的过期时间，
+然后再为其设置新的过期时间。</p>
+<p>比如在以下调用中，
+第二条 <code class="docutils literal notranslate"><span class="pre">EXPIREAT</span></code> 命令就将 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键的过期时间从原来的 <code class="docutils literal notranslate"><span class="pre">1500000000</span></code> 修改成了 <code class="docutils literal notranslate"><span class="pre">1600000000</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">EXPIREAT</span> <span class="n">msg</span> <span class="mi">1500000000</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">EXPIREAT</span> <span class="n">msg</span> <span class="mi">1600000000</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+</pre></div>
+</div>
+</section>
+<section id="id9">
+<h3>自动过期特性的不足之处<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h3>
+<p>无论是本节介绍的 <code class="docutils literal notranslate"><span class="pre">EXPIREAT</span></code> / <code class="docutils literal notranslate"><span class="pre">PEXPIREAT</span></code> ，
+还是前面介绍的 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> / <code class="docutils literal notranslate"><span class="pre">PEXIRE</span></code> ，
+它们都只能对整个键进行设置，
+而无法对键中的某个元素进行设置：
+比如说，
+用户只能对整个集合或者整个散列设置生存时间/过期时间，
+但是却无法为集合中的某个元素或者散列中的某个字段单独设置生存时间/过期时间，
+这也是目前 Redis 的自动过期功能不足的一个地方。</p>
+</section>
+<section id="id10">
+<h3>其他信息<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">EXPIREAT</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">PEXPIREAT</span></code> 命令的复杂度都为 <code class="docutils literal notranslate"><span class="pre">O(1)</span></code> 。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">EXPIREAT</span></code> 命令从 Redis 1.2.0 版本开始可用，
+<code class="docutils literal notranslate"><span class="pre">PEXPIREAT</span></code> 命令从 Redis 2.6.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="ttlpttl">
+<h2>TTL、PTTL：获取键的剩余生存时间<a class="headerlink" href="#ttlpttl" title="Link to this heading">¶</a></h2>
+<p>在为键设置了生存时间或者过期时间之后，
+用户可以使用 <code class="docutils literal notranslate"><span class="pre">TTL</span></code> 命令或者 <code class="docutils literal notranslate"><span class="pre">PTTL</span></code> 命令查看键的剩余生存时间，
+也即是，
+键还有多久才会因为过期而被移除。</p>
+<p>其中，
+<code class="docutils literal notranslate"><span class="pre">TTL</span></code> 命令将以秒为单位返回键的剩余生存时间：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">TTL</span> <span class="n">key</span>
+</pre></div>
+</div>
+<p>而 <code class="docutils literal notranslate"><span class="pre">PTTL</span></code> 命令则会以毫秒为单位返回键的剩余生存时间：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">PTTL</span> <span class="n">key</span>
+</pre></div>
+</div>
+<p>作为例子，
+以下代码展示了如何使用 <code class="docutils literal notranslate"><span class="pre">TTL</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">PTTL</span></code> 命令去获取 <code class="docutils literal notranslate"><span class="pre">msg</span></code> 键的剩余生存时间：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">TTL</span> <span class="n">msg</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">297</span>       <span class="o">--</span> <span class="n">msg</span> <span class="n">键距离被移除还有</span> <span class="mi">297</span> <span class="n">秒</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">PTTL</span> <span class="n">msg</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">295561</span>    <span class="o">--</span> <span class="n">msg</span> <span class="n">键距离被移除还有</span> <span class="mi">295561</span> <span class="n">毫秒</span>
+</pre></div>
+</div>
+<section id="id11">
+<h3>没有剩余生存时间的键和不存在的键<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h3>
+<p>如果给定的键存在，
+但是并没有设置生存时间或者过期时间，
+那么 <code class="docutils literal notranslate"><span class="pre">TTL</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">PTTL</span></code> 命令将返回 <code class="docutils literal notranslate"><span class="pre">-1</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">song_title</span> <span class="s2">&quot;Rise up, Rhythmetal&quot;</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">TTL</span> <span class="n">song_title</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="o">-</span><span class="mi">1</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">PTTL</span> <span class="n">song_title</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="o">-</span><span class="mi">1</span>
+</pre></div>
+</div>
+<p>另一方面，
+如果给定的键并不存在，
+那么 <code class="docutils literal notranslate"><span class="pre">TTL</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">PTTL</span></code> 命令将返回 <code class="docutils literal notranslate"><span class="pre">-2</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">TTL</span> <span class="n">not_exists_key</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="o">-</span><span class="mi">2</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">PTTL</span> <span class="n">not_exists_key</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="o">-</span><span class="mi">2</span>
+</pre></div>
+</div>
+</section>
+<section id="ttl">
+<h3><code class="docutils literal notranslate"><span class="pre">TTL</span></code> 命令的精度问题<a class="headerlink" href="#ttl" title="Link to this heading">¶</a></h3>
+<p>在使用 <code class="docutils literal notranslate"><span class="pre">TTL</span></code> 命令时，
+我们有时候会碰到命令返回 <code class="docutils literal notranslate"><span class="pre">0</span></code> 的情况：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">TTL</span> <span class="n">msg</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<p>出现这种情况的原因在于 <code class="docutils literal notranslate"><span class="pre">TTL</span></code> 命令只能返回秒级精度的生存时间，
+所以当给定键的剩余生存时间不足一秒钟时，
+<code class="docutils literal notranslate"><span class="pre">TTL</span></code> 命令只能返回 <code class="docutils literal notranslate"><span class="pre">0</span></code> 作为结果。
+这时，
+如果我们使用精度更高的 <code class="docutils literal notranslate"><span class="pre">PTTL</span></code> 命令去检查这些键，
+那么就会看到它们实际的剩余生存时间，
+表 12-6 非常详细地描述了这一情景。</p>
+<hr class="docutils" />
+<p>表 12-6 <code class="docutils literal notranslate"><span class="pre">PTTL</span></code> 命令在 <code class="docutils literal notranslate"><span class="pre">TTL</span></code> 命令返回 <code class="docutils literal notranslate"><span class="pre">0</span></code> 时仍然可以检测到键的剩余生存时间</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>键的剩余生存时间（以毫秒为单位）</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">TTL</span></code> 命令的返回值</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">PTTL</span></code> 命令的返回值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1001</p></td>
+<td><p>1</p></td>
+<td><p>1001</p></td>
+</tr>
+<tr class="row-odd"><td><p>1000</p></td>
+<td><p>1</p></td>
+<td><p>1000</p></td>
+</tr>
+<tr class="row-even"><td><p>999</p></td>
+<td><p>0</p></td>
+<td><p>999</p></td>
+</tr>
+<tr class="row-odd"><td><p>998</p></td>
+<td><p>0</p></td>
+<td><p>998</p></td>
+</tr>
+<tr class="row-even"><td><p>997</p></td>
+<td><p>0</p></td>
+<td><p>997</p></td>
+</tr>
+<tr class="row-odd"><td><p>……</p></td>
+<td><p>……</p></td>
+<td><p>……</p></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>0</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>0</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>-2（键已被移除）</p></td>
+<td><p>-2</p></td>
+<td><p>-2</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<hr class="docutils" />
+<section id="id12">
+<h3>其他信息<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">TTL</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">PTTL</span></code> 命令的复杂度都为 O(1) 。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">TTL</span></code> 命令从 Redis 1.0.0 版本开始可用，
+<code class="docutils literal notranslate"><span class="pre">PTTL</span></code> 命令从 Redis 2.6.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id13">
+<h2>示例：自动过期的登录会话<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h2>
+<p>在前面的《散列》一章，
+我们了解到了如何使用散列去构建一个会话程序。
+正如 12-1 所示，
+当时的会话程序会使用两个散列分别储存会话的令牌以及过期时间戳。
+这种做法虽然可行，
+但是储存过期时间戳需要消耗额外的内存，
+并且判断会话是否过期也需要用到额外的代码。</p>
+<hr class="docutils" />
+<p>图 12-1 会话程序创建的散列数据结构</p>
+<img alt="_images/IMAGE_SESSION_HASHS.png" src="_images/IMAGE_SESSION_HASHS.png" />
+<hr class="docutils" />
+<p>在学习了 Redis 的自动过期特性之后，
+我们可以对会话程序进行修改，
+通过给会话令牌设置过期时间来让它在指定的时间之后自动被移除。
+这样一来，
+程序只需要检查会话令牌是否存在，
+就能够知道是否应该让用户重新登录了。</p>
+<p>代码清单 12-4 展示了修改之后的会话程序。
+因为 Redis 的自动过期特性只能对整个键使用，
+所以这个程序使用了字符串而不是散列来储存会话令牌，
+但总的来说，
+这个程序的逻辑跟之前的会话程序的逻辑基本相同。
+不过由于新程序无需手动检查会话是否过期，
+所以它的逻辑简洁了不少。</p>
+<hr class="docutils" />
+<p>代码清单 12-4 带有自动过期特性的会话程序：<code class="docutils literal notranslate"><span class="pre">/expire/login_session.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">from</span> <span class="nn">hashlib</span> <span class="kn">import</span> <span class="n">sha256</span>
+
+<span class="c1"># 会话的默认过期时间</span>
+<span class="n">DEFAULT_TIMEOUT</span> <span class="o">=</span> <span class="mi">3600</span><span class="o">*</span><span class="mi">24</span><span class="o">*</span><span class="mi">30</span>    <span class="c1"># 一个月</span>
+
+<span class="c1"># 会话状态</span>
+<span class="n">SESSION_NOT_LOGIN_OR_EXPIRED</span> <span class="o">=</span> <span class="s2">&quot;SESSION_NOT_LOGIN_OR_EXPIRED&quot;</span>
+<span class="n">SESSION_TOKEN_CORRECT</span> <span class="o">=</span> <span class="s2">&quot;SESSION_TOKEN_CORRECT&quot;</span>
+<span class="n">SESSION_TOKEN_INCORRECT</span> <span class="o">=</span> <span class="s2">&quot;SESSION_TOKEN_INCORRECT&quot;</span>
+
+<span class="k">def</span> <span class="nf">generate_token</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    生成一个随机的会话令牌。</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">random_string</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">getrandbits</span><span class="p">(</span><span class="mi">256</span><span class="p">))</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sha256</span><span class="p">(</span><span class="n">random_string</span><span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">LoginSession</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">user_id</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user_id</span> <span class="o">=</span> <span class="n">user_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;user::</span><span class="si">{0}</span><span class="s2">::token&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">DEFAULT_TIMEOUT</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        创建新的登录会话并返回会话令牌，</span>
+<span class="sd">        可选的 timeout 参数用于指定会话的过期时间（以秒为单位）。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 生成会话令牌</span>
+        <span class="n">token</span> <span class="o">=</span> <span class="n">generate_token</span><span class="p">()</span>
+        <span class="c1"># 储存令牌，并为其设置过期时间</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">token</span><span class="p">,</span> <span class="n">ex</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+        <span class="c1"># 返回令牌</span>
+        <span class="k">return</span> <span class="n">token</span>
+
+    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_token</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        根据给定的令牌验证用户身份。</span>
+<span class="sd">        这个方法有三个可能的返回值，分别对应三种不同情况：</span>
+<span class="sd">        1. SESSION_NOT_LOGIN_OR_EXPIRED —— 用户尚未登录或者令牌已过期</span>
+<span class="sd">        2. SESSION_TOKEN_CORRECT —— 用户已登录，并且给定令牌与用户令牌相匹配</span>
+<span class="sd">        3. SESSION_TOKEN_INCORRECT —— 用户已登录，但给定令牌与用户令牌不匹配</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 获取用户令牌</span>
+        <span class="n">user_token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+        <span class="c1"># 令牌不存在</span>
+        <span class="k">if</span> <span class="n">user_token</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">SESSION_NOT_LOGIN_OR_EXPIRED</span>
+        <span class="c1"># 令牌存在并且未过期，那么检查它与给定令牌是否一致</span>
+        <span class="k">if</span> <span class="n">input_token</span> <span class="o">==</span> <span class="n">user_token</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">SESSION_TOKEN_CORRECT</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">SESSION_TOKEN_INCORRECT</span>
+
+    <span class="k">def</span> <span class="nf">destroy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        销毁会话。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>以下代码展示了这个会话程序的基本使用方法：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">login_session</span> <span class="kn">import</span> <span class="n">LoginSession</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">uid</span> <span class="o">=</span> <span class="s2">&quot;peter&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">session</span> <span class="o">=</span> <span class="n">LoginSession</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">uid</span><span class="p">)</span>  <span class="c1"># 创建会话</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">token</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>             <span class="c1"># 创建令牌</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">token</span>
+<span class="go">&#39;89e77eb856a3383bb8718286802d32f6d40e135c08dedcccd143a5e8ba335d44&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">session</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="s2">&quot;wrong token&quot;</span><span class="p">)</span>      <span class="c1"># 验证令牌</span>
+<span class="go">&#39;SESSION_TOKEN_INCORRECT&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">session</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+<span class="go">&#39;SESSION_TOKEN_CORRECT&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">session</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>                    <span class="c1"># 销毁令牌</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">session</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>              <span class="c1"># 令牌已不存在</span>
+<span class="go">&#39;SESSION_NOT_LOGIN_OR_EXPIRED&#39;</span>
+</pre></div>
+</div>
+<p>为了演示这个会话程序的自动过期特性，
+我们可以创建一个有效期非常短的令牌，
+并在指定的时间后再次尝试验证该令牌：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">token</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>  <span class="c1"># 创建有效期为三秒钟的令牌</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">session</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>            <span class="c1"># 三秒内访问</span>
+<span class="go">&#39;SESSION_TOKEN_CORRECT&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">session</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>            <span class="c1"># 超过三秒之后，令牌已被自动销毁</span>
+<span class="go">&#39;SESSION_NOT_LOGIN_OR_EXPIRED&#39;</span>
+</pre></div>
+</div>
+</section>
+<section id="id14">
+<h2>示例：自动淘汰冷门数据<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h2>
+<p>本章开头在介绍 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">PEXPIRE</span></code> 命令的时候曾经提到过，
+当用户对一个已经带有生存时间的键执行 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> 命令或是 <code class="docutils literal notranslate"><span class="pre">PEXPIRE</span></code> 命令时，
+键原有的生存时间将被新的生存时间取代。
+值得一提的是，
+这个特性可以用于淘汰冷门数据并保留热门数据。</p>
+<p>举个例子，
+前面的《有序集合》一章曾经介绍过如何使用有序集合来实现自动补全功能，
+但是如果我们仔细地分析这个自动补全程序，
+就会发现它有一个潜在的问题：
+为了实现自动补全功能，
+程序需要创建大量自动补全结果，
+而补全结果的数量越多、体积越大，
+需要耗费的内存也会越多。</p>
+<p>为了尽可能地节约内存，
+一个高效的自动补全程序应该只储存热门关键字的自动补全结果，
+并移除那些无人访问的冷门关键字的自动补全结果。
+要做到这一点，
+其中一种方法就是使用《有序集合》里面介绍过的排行榜程序，
+为用户输入的关键字构建一个排行榜，
+然后定期地删除排名靠后关键字的自动补全结果。</p>
+<p>排行榜的方法虽然可行，
+但是却需要使用程序定期删除自动补全结果，
+使用起来相当麻烦。
+一个更方便也更优雅的方法，
+就是使用 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">PEXPIRE</span></code> 命令的更新特性去实现自动的冷门数据淘汰机制：
+为此，
+我们可以修改自动补全程序，
+让它在每次处理用户输入的时候，
+为相应关键字的自动补全结果设置生存时间。
+这样一来，
+对于用户经常输入的那些关键字，
+它们的自动补全结果的生存时间将会不断得到更新，
+从而产生出一种“续期”效果，
+使得热门关键字的自动补全结果可以不断地存在下去，
+而冷门关键字的自动补全结果则会由于生存时间得不到更新而自动被移除。</p>
+<p>经过上述修改，
+自动补全程序就可以在无需手动删除冷门数据的情况下，
+通过自动的数据淘汰机制达到节约内存的目的，
+代码清单 12-5 展示了修改后的自动补全程序。</p>
+<hr class="docutils" />
+<p>代码清单 12-5 能够自动淘汰冷门数据的自动补全程序：<code class="docutils literal notranslate"><span class="pre">/expire/auto_complete.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">AutoComplete</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+
+    <span class="k">def</span> <span class="nf">feed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        根据用户输入的内容构建自动补全结果，</span>
+<span class="sd">        其中 content 参数为内容本身，而可选的 weight 参数则用于指定内容的权重值，</span>
+<span class="sd">        至于可选的 timeout 参数则用于指定自动补全结果的保存时长（单位为秒）。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">content</span><span class="p">)):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;auto_complete::&quot;</span> <span class="o">+</span> <span class="n">content</span><span class="p">[:</span><span class="n">i</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">zincrby</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">timeout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">expire</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>  <span class="c1"># 设置/更新键的生存时间</span>
+
+    <span class="k">def</span> <span class="nf">hint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">count</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        根据给定的前缀 prefix ，获取 count 个自动补全结果。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;auto_complete::&quot;</span> <span class="o">+</span> <span class="n">prefix</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">zrevrange</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">count</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>在以下代码中，
+我们同时向自动补全程序输入了 <code class="docutils literal notranslate"><span class="pre">&quot;Redis&quot;</span></code> 和 <code class="docutils literal notranslate"><span class="pre">&quot;Coffee&quot;</span></code> 这两个关键字，
+并分别为它们的自动补全结果设置了 10 秒钟的生存时间：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">auto_complete</span> <span class="kn">import</span> <span class="n">AutoComplete</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ac</span> <span class="o">=</span> <span class="n">AutoComplete</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ac</span><span class="o">.</span><span class="n">feed</span><span class="p">(</span><span class="s2">&quot;Redis&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">);</span> <span class="n">ac</span><span class="o">.</span><span class="n">feed</span><span class="p">(</span><span class="s2">&quot;Coffee&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>  <span class="c1"># 同时执行两个调用</span>
+</pre></div>
+</div>
+<p>然后在 10 秒钟之内，
+我们再次输入 <code class="docutils literal notranslate"><span class="pre">&quot;Redis&quot;</span></code> 关键字，
+并同样为它的自动补全结果设置 10 秒钟的生存时间：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ac</span><span class="o">.</span><span class="n">feed</span><span class="p">(</span><span class="s2">&quot;Redis&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>现在，
+在距离最初的 <code class="docutils literal notranslate"><span class="pre">feed()</span></code> 调用执行十多秒钟之后，
+如果我们执行 <code class="docutils literal notranslate"><span class="pre">hint()</span></code> 方法，
+并尝试获取 <code class="docutils literal notranslate"><span class="pre">&quot;Re&quot;</span></code> 前缀和 <code class="docutils literal notranslate"><span class="pre">&quot;Co&quot;</span></code> 前缀的自动补全结果，
+那么就会发现，
+只有 <code class="docutils literal notranslate"><span class="pre">&quot;Redis&quot;</span></code> 关键字的自动补全结果还保留着，
+而 <code class="docutils literal notranslate"><span class="pre">&quot;Coffee&quot;</span></code> 关键字的自动补全结果已经因为过期而被移除了：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ac</span><span class="o">.</span><span class="n">hint</span><span class="p">(</span><span class="s2">&quot;Re&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="go">[&#39;Redis&#39;]</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ac</span><span class="o">.</span><span class="n">hint</span><span class="p">(</span><span class="s2">&quot;Co&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="go">[]</span>
+</pre></div>
+</div>
+<p>表 12-7 完整地展示了在执行以上代码时，
+<code class="docutils literal notranslate"><span class="pre">&quot;Redis&quot;</span></code> 关键字的自动补全结果是如何进行续期的，
+而 <code class="docutils literal notranslate"><span class="pre">&quot;Coffee&quot;</span></code> 关键字的自动补全结果又是如何被移除的。
+在这个表格中，
+<code class="docutils literal notranslate"><span class="pre">&quot;Redis&quot;</span></code> 关键字代表的就是热门数据，
+而 <code class="docutils literal notranslate"><span class="pre">&quot;Coffee&quot;</span></code> 关键字代表的就是冷门数据：
+一直有用户访问的热门数据将持续地存在下去，
+而无人问津的冷门数据则会因为过期而被移除。</p>
+<hr class="docutils" />
+<p>表 12-7 冷门数据淘汰示例</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>时间（以秒为单位）</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">&quot;Redis&quot;</span></code> 关键字的自动补全结果</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">&quot;Coffee&quot;</span></code> 关键字的自动补全结果</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0000</p></td>
+<td><p>执行 <code class="docutils literal notranslate"><span class="pre">ac.feed(&quot;Redis&quot;,</span> <span class="pre">timeout=10)</span></code> ，
+将自动补全结果的生存时间设置为 10 秒钟。</p></td>
+<td><p>执行 <code class="docutils literal notranslate"><span class="pre">ac.feed(&quot;Coffee&quot;,</span> <span class="pre">timeout=10)</span></code> ，
+将自动补全结果的生存时间设置为 10 秒钟。</p></td>
+</tr>
+<tr class="row-odd"><td><p>0001</p></td>
+<td><p>自动补全结果的生存时间变为 9 秒钟。</p></td>
+<td><p>自动补全结果的生存时间变为 9 秒钟。</p></td>
+</tr>
+<tr class="row-even"><td><p>0002</p></td>
+<td><p>自动补全结果的生存时间变为 8 秒钟。</p></td>
+<td><p>自动补全结果的生存时间变为 8 秒钟。</p></td>
+</tr>
+<tr class="row-odd"><td><p>……</p></td>
+<td><p>……</p></td>
+<td><p>……</p></td>
+</tr>
+<tr class="row-even"><td><p>0007</p></td>
+<td><p>执行 <code class="docutils literal notranslate"><span class="pre">ac.feed(&quot;Redis&quot;,</span> <span class="pre">timeout=10)</span></code> ，
+将自动补全结果的生存时间更新为 10 秒钟。</p></td>
+<td><p>自动补全结果的生存时间变为 3 秒钟。</p></td>
+</tr>
+<tr class="row-odd"><td><p>0008</p></td>
+<td><p>自动补全结果的生存时间变为 9 秒钟。</p></td>
+<td><p>自动补全结果的生存时间变为 2 秒钟。</p></td>
+</tr>
+<tr class="row-even"><td><p>0009</p></td>
+<td><p>自动补全结果的生存时间变为 8 秒钟。</p></td>
+<td><p>自动补全结果的生存时间变为 1 秒钟。</p></td>
+</tr>
+<tr class="row-odd"><td><p>0010</p></td>
+<td><p>自动补全结果的生存时间变为 7 秒钟。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;Coffee&quot;</span></code> 关键字的自动补全结果因为过期而被移除。</p></td>
+</tr>
+<tr class="row-even"><td><p>0011</p></td>
+<td><p>自动补全结果的生存时间变为 6 秒钟。</p></td>
+<td><p>自动补全结果已不存在。</p></td>
+</tr>
+<tr class="row-odd"><td><p>0012</p></td>
+<td><p>自动补全结果的生存时间变为 5 秒钟。</p></td>
+<td><p>自动补全结果已不存在。</p></td>
+</tr>
+<tr class="row-even"><td><p>0013</p></td>
+<td><p>执行 <code class="docutils literal notranslate"><span class="pre">ac.hint(&quot;Re&quot;,</span> <span class="pre">10)</span></code> ，
+返回结果 <code class="docutils literal notranslate"><span class="pre">['Redis']</span></code> 。</p></td>
+<td><p>执行 <code class="docutils literal notranslate"><span class="pre">ac.hint(&quot;Co&quot;,</span> <span class="pre">10)</span></code> ，
+返回空列表 <code class="docutils literal notranslate"><span class="pre">[]</span></code> 为结果。</p></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<p>除了自动补全程序之外，
+我们还可以把这一机制应用到其他需要淘汰冷门数据的程序上面。
+为了做到这一点，
+我们必须理解上面所说的“不断更新键的生存时间，使得它一直存在”这个原理。</p>
+</section>
+<section id="id15">
+<h2>重点回顾<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">PEXPIRE</span></code> 命令可以为键设置生存时间，
+当键的生存时间随着时间的流逝而消耗殆尽时，
+键就会被移除。</p></li>
+<li><p>对已经带有生存时间的键执行 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> 命令或是 <code class="docutils literal notranslate"><span class="pre">PEXPIRE</span></code> 命令，
+将导致键已有的生存时间被新的生存时间替代。</p></li>
+<li><p>为了方便用户，
+Redis 给 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令增加了 <code class="docutils literal notranslate"><span class="pre">EX</span></code> 和 <code class="docutils literal notranslate"><span class="pre">PX</span></code> 两个选项，
+它们可以让用户在执行 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令的同时，
+执行 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> 命令或是 <code class="docutils literal notranslate"><span class="pre">PEXPIRE</span></code> 命令。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">EXPIREAT</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">PEXPIREAT</span></code> 命令可以为键设置 UNIX 时间戳格式的过期时间，
+当系统时间超过这个过期时间时，
+键就会被移除。</p></li>
+<li><p>Redis 的自动过期特性只能应用于整个键，
+它无法对键中的某个元素单独执行过期操作。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TTL</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">PTTL</span></code> 命令可以分别以秒级和毫秒级这两种精度来获取键的剩余生存时间。</p></li>
+<li><p>通过重复对键执行 <code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code> 命令或是 <code class="docutils literal notranslate"><span class="pre">PEXPIRE</span></code> 命令，
+程序可以构建出一种自动淘汰冷数据并保留热数据的机制。</p></li>
+</ul>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">自动过期</a><ul>
+<li><a class="reference internal" href="#expirepexpire">EXPIRE、PEXPIRE：设置生存时间</a><ul>
+<li><a class="reference internal" href="#id2">更新键的生存时间</a></li>
+<li><a class="reference internal" href="#id3">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id4">示例：带有自动移除特性的缓存程序</a></li>
+<li><a class="reference internal" href="#set-ex-px">SET 命令的 EX 选项和 PX 选项</a><ul>
+<li><a class="reference internal" href="#id5">组合命令的安全问题</a></li>
+<li><a class="reference internal" href="#id6">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id7">示例：带有自动释放特性的锁</a></li>
+<li><a class="reference internal" href="#expireatpexpireat">EXPIREAT、PEXPIREAT：设置过期时间</a><ul>
+<li><a class="reference internal" href="#expireat"><code class="docutils literal notranslate"><span class="pre">EXPIREAT</span></code> 使用示例</a></li>
+<li><a class="reference internal" href="#pexpireat"><code class="docutils literal notranslate"><span class="pre">PEXPIREAT</span></code> 命令使用示例</a></li>
+<li><a class="reference internal" href="#id8">更新键的过期时间</a></li>
+<li><a class="reference internal" href="#id9">自动过期特性的不足之处</a></li>
+<li><a class="reference internal" href="#id10">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#ttlpttl">TTL、PTTL：获取键的剩余生存时间</a><ul>
+<li><a class="reference internal" href="#id11">没有剩余生存时间的键和不存在的键</a></li>
+<li><a class="reference internal" href="#ttl"><code class="docutils literal notranslate"><span class="pre">TTL</span></code> 命令的精度问题</a></li>
+<li><a class="reference internal" href="#id12">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id13">示例：自动过期的登录会话</a></li>
+<li><a class="reference internal" href="#id14">示例：自动淘汰冷门数据</a></li>
+<li><a class="reference internal" href="#id15">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="database.html"
+                          title="Previous page">&larr; 数据库</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="pipeline-and-transaction.html"
+                          title="Next page">&rarr; 流水线与事务</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>本页</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/expire.rst.txt"
+            rel="nofollow">显示源代码</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">快速搜索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="提交" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="pipeline-and-transaction.html" title="流水线与事务"
+             >下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="database.html" title="数据库"
+             >上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">自动过期</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; 版权所有 2019, 黄健宏.
+      由 <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6创建。
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

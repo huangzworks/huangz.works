@@ -1,0 +1,2296 @@
+
+
+<!DOCTYPE html>
+
+<html lang="zh-CN" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>列表（List） &#8212; Redis使用手册</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" href="./" type="text/css" />
+    
+    <script src="_static/documentation_options.js?v=f115507d"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=beaddf03"></script>
+
+    
+    
+     
+        <script src="_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="_static/cloud.js"></script>
+    
+
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+    <link rel="next" title="集合（Set）" href="set.html" />
+    <link rel="prev" title="散列（Hash）" href="hash.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="set.html" title="集合（Set）"
+             accesskey="N">下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="hash.html" title="散列（Hash）"
+             accesskey="P">上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">列表（List）</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="list">
+<h1>列表（List）<a class="headerlink" href="#list" title="Link to this heading">¶</a></h1>
+<p>Redis 的列表是一种线性的有序结构，
+它可以按照元素被推入到列表中的顺序来储存元素，
+这些元素既可以是文字数据，
+又可以是二进制数据，
+并且列表中的元素可以出现重复。</p>
+<p>作为例子，
+图 4-1 展示了一个包含多个字符串的列表，
+这个列表按照从左到右的方式，
+依次储存了 <code class="docutils literal notranslate"><span class="pre">&quot;one&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;two&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;three&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;four&quot;</span></code> 四个元素。</p>
+<hr class="docutils" />
+<p>图 4-1 横向表示的列表</p>
+<img alt="_images/IMAGE_GRAPH_LIST.jpeg" src="_images/IMAGE_GRAPH_LIST.jpeg" />
+<hr class="docutils" />
+<p>为了展示方便，
+本书给出的列表图片一般都会像图 4-1 那样只展示列表本身而忽略列表的键名，
+但是在有需要的时候，
+本书也会像图 4-2 那样，
+将列表及其键名一并给出。</p>
+<hr class="docutils" />
+<p>图 4-2 完整的列表键视图</p>
+<img alt="_images/IMAGE_LIST_WITH_KEY.jpeg" src="_images/IMAGE_LIST_WITH_KEY.jpeg" />
+<hr class="docutils" />
+<p>Redis 为列表提供了丰富的操作命令，
+通过这些命令，
+用户可以：</p>
+<ul class="simple">
+<li><p>将新元素推入到列表的左端或者右端；</p></li>
+<li><p>移除位于列表最左端或者最右端的元素；</p></li>
+<li><p>移除列表最右端的元素，
+然后把被移除的元素推入到另一个列表的左端；</p></li>
+<li><p>获取列表包含的元素数量；</p></li>
+<li><p>获取列表在指定索引上的单个元素，
+又或者获取列表在指定索引范围内的多个元素；</p></li>
+<li><p>为列表的指定索引设置新元素，
+或者把新元素添加到某个指定元素的前面或者后面；</p></li>
+<li><p>对列表进行修剪，
+只保留指定索引范围内的元素；</p></li>
+<li><p>从列表里面移除指定元素；</p></li>
+<li><p>执行能够阻塞客户端的推入和移除操作；</p></li>
+</ul>
+<p>本章接下来将对以上提到的各个列表操作命令进行介绍，
+并说明如何使用这些命令去构建各种实用的程序。</p>
+<section id="lpush">
+<h2>LPUSH：将元素推入到列表左端<a class="headerlink" href="#lpush" title="Link to this heading">¶</a></h2>
+<p>用户可以通过 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令，
+将一个或多个元素推入到给定列表的左端：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">LPUSH</span> <span class="nb">list</span> <span class="n">item</span> <span class="p">[</span><span class="n">item</span> <span class="n">item</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>在推入操作执行完毕之后，
+<code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令会返回列表当前包含的元素数量作为返回值。</p>
+<p>比如以下代码就展示了如何通过 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令，
+将 <code class="docutils literal notranslate"><span class="pre">&quot;buy</span> <span class="pre">some</span> <span class="pre">milk&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;watch</span> <span class="pre">tv&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;finish</span> <span class="pre">homework&quot;</span></code> 等元素依次推入到 <code class="docutils literal notranslate"><span class="pre">todo</span></code> 列表的左端：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LPUSH</span> <span class="n">todo</span> <span class="s2">&quot;buy some milk&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>    <span class="o">--</span> <span class="n">列表现在包含一个元素</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LPUSH</span> <span class="n">todo</span> <span class="s2">&quot;watch tv&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2</span>    <span class="o">--</span> <span class="n">列表现在包含两个元素</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LPUSH</span> <span class="n">todo</span> <span class="s2">&quot;finish homework&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>    <span class="o">--</span> <span class="n">列表现在包含三个元素</span>
+</pre></div>
+</div>
+<p>图 4-3 展示了以上三个 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令的执行过程：</p>
+<ol class="arabic simple">
+<li><p>首先，在操作执行之前， <code class="docutils literal notranslate"><span class="pre">todo</span></code> 列表为空，也即是不存在于数据库中；</p></li>
+<li><p>执行第一个 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令，将元素 <code class="docutils literal notranslate"><span class="pre">&quot;buy</span> <span class="pre">some</span> <span class="pre">milk&quot;</span></code> 推入到列表左端；</p></li>
+<li><p>执行完第一个 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令的列表现在包含一个元素；</p></li>
+<li><p>执行第二个 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令，将元素 <code class="docutils literal notranslate"><span class="pre">&quot;watch</span> <span class="pre">tv&quot;</span></code> 推入到列表左端；</p></li>
+<li><p>执行完第二个 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令的列表现在包含两个元素；</p></li>
+<li><p>执行第三个 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令，将元素 <code class="docutils literal notranslate"><span class="pre">&quot;finish</span> <span class="pre">homework&quot;</span></code> 推入到列表左端；</p></li>
+<li><p>执行完第三个 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令的 <code class="docutils literal notranslate"><span class="pre">todo</span></code> 列表现在包含三个元素。</p></li>
+</ol>
+<hr class="docutils" />
+<p>图 4-3 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令执行过程</p>
+<img alt="_images/IMAGE_LPUSH_EXAMPLE.jpeg" src="_images/IMAGE_LPUSH_EXAMPLE.jpeg" />
+<hr class="docutils" />
+<section id="id1">
+<h3>一次推入多个元素<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令允许用户一次将多个元素推入到列表左端：
+如果用户在执行 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令时给定了多个元素，
+那么 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令将按照元素给定的顺序，
+从左到右依次地将所有给定元素推入到列表左端。</p>
+<p>举个例子，
+如果用户执行以下命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LPUSH</span> <span class="n">another</span><span class="o">-</span><span class="n">todo</span> <span class="s2">&quot;buy some milk&quot;</span> <span class="s2">&quot;watch tv&quot;</span> <span class="s2">&quot;finish homework&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+</pre></div>
+</div>
+<p>那么 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令将按照图 4-4 所示的顺序，
+将三个给定元素依次推入到 <code class="docutils literal notranslate"><span class="pre">another-todo</span></code> 列表的左端。</p>
+<hr class="docutils" />
+<p>图 4-4 一次推入多个元素</p>
+<img alt="_images/IMAGE_MULTI_LPUSH.jpeg" src="_images/IMAGE_MULTI_LPUSH.jpeg" />
+<hr class="docutils" />
+<p>最终，
+这条 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令将产生图 4-5 所示的列表，
+它和上一小节使用三条 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令构建出的列表完全相同。</p>
+<hr class="docutils" />
+<p>图 4-5 <code class="docutils literal notranslate"><span class="pre">another-todo</span></code> 列表及其包含的元素</p>
+<img alt="_images/IMAGE_ANOTHER_TODO.jpeg" src="_images/IMAGE_ANOTHER_TODO.jpeg" />
+</section>
+<hr class="docutils" />
+<section id="id2">
+<h3>其他信息<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N)，其中 N 为被推入到列表的元素数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令从 Redis 1.0.0 版本开始可用，
+但是只有 Redis 2.4.0 或以上版本的 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令可以一次推入多个元素，
+Redis 2.4.0 以下版本的 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令每次只能推入一个元素。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="rpush">
+<h2>RPUSH：将元素推入到列表右端<a class="headerlink" href="#rpush" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令类似，
+这两个命令执行的都是元素推入操作，
+它们之间唯一的区别就在于 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令会将元素推入列表左端，
+而 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令则会将元素推入列表右端：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">RPUSH</span> <span class="nb">list</span> <span class="n">item</span> <span class="p">[</span><span class="n">item</span> <span class="n">item</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>在推入操作执行完毕之后，
+<code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令会返回列表当前包含的元素数量作为返回值。</p>
+<p>举个例子，
+以下代码展示了如何通过 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令，
+将 <code class="docutils literal notranslate"><span class="pre">&quot;buy</span> <span class="pre">some</span> <span class="pre">milk&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;watch</span> <span class="pre">tv&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;finish</span> <span class="pre">homework&quot;</span></code> 等元素依次推入到 <code class="docutils literal notranslate"><span class="pre">todo</span></code> 列表的右端：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPUSH</span> <span class="n">todo</span> <span class="s2">&quot;buy some milk&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>    <span class="o">--</span> <span class="n">列表现在包含一个元素</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPUSH</span> <span class="n">todo</span> <span class="s2">&quot;watch tv&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2</span>    <span class="o">--</span> <span class="n">列表现在包含两个元素</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPUSH</span> <span class="n">todo</span> <span class="s2">&quot;finish homework&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>    <span class="o">--</span> <span class="n">列表现在包含三个元素</span>
+</pre></div>
+</div>
+<p>图 4-6 展示了以上三个 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令的执行过程：</p>
+<ol class="arabic simple">
+<li><p>首先，在操作执行之前， <code class="docutils literal notranslate"><span class="pre">todo</span></code> 列表为空，也即是不存在于数据库中；</p></li>
+<li><p>执行第一个 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令，
+将元素 <code class="docutils literal notranslate"><span class="pre">&quot;buy</span> <span class="pre">some</span> <span class="pre">milk&quot;</span></code> 推入到列表右端；</p></li>
+<li><p>执行完第一个 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令的列表现在包含一个元素；</p></li>
+<li><p>执行第二个 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令，
+将元素 <code class="docutils literal notranslate"><span class="pre">&quot;watch</span> <span class="pre">tv&quot;</span></code> 推入到列表右端；</p></li>
+<li><p>执行完第二个 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令的列表现在包含两个元素；</p></li>
+<li><p>执行第三个 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令，
+将元素 <code class="docutils literal notranslate"><span class="pre">&quot;finish</span> <span class="pre">homework&quot;</span></code> 推入到列表右端；</p></li>
+<li><p>执行完第三个 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令的 <code class="docutils literal notranslate"><span class="pre">todo</span></code> 列表现在包含三个元素。</p></li>
+</ol>
+<hr class="docutils" />
+<p>图 4-6 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令执行过程</p>
+<img alt="_images/IMAGE_RPUSH_EXAMPLE.jpeg" src="_images/IMAGE_RPUSH_EXAMPLE.jpeg" />
+<hr class="docutils" />
+<section id="id3">
+<h3>一次推入多个元素<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<p>跟 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令一样，
+<code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令也允许用户一次推入多个元素：
+如果用户在执行 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令时给定了多个元素，
+那么 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令将按照元素给定的顺序，
+从左到右依次地将所有给定元素推入到列表右端。</p>
+<p>举个例子，
+如果用户执行以下命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPUSH</span> <span class="n">another</span><span class="o">-</span><span class="n">todo</span> <span class="s2">&quot;buy some milk&quot;</span> <span class="s2">&quot;watch tv&quot;</span> <span class="s2">&quot;finish homework&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+</pre></div>
+</div>
+<p>那么 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令将按照图 4-7 展示的顺序，
+将三个给定元素依次推入到 <code class="docutils literal notranslate"><span class="pre">another-todo</span></code> 列表的右端。</p>
+<hr class="docutils" />
+<p>图 4-7 一次推入多个元素</p>
+<img alt="_images/IMAGE_MULTI_RPUSH.jpeg" src="_images/IMAGE_MULTI_RPUSH.jpeg" />
+<hr class="docutils" />
+<p>最终，
+这条 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令将产生图 4-8 所示的列表，
+这个列表和上一小节使用三条 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令构建出的列表完全相同。</p>
+<hr class="docutils" />
+<p>图 4-8 <code class="docutils literal notranslate"><span class="pre">another-todo</span></code> 列表及其包含的元素</p>
+<img alt="_images/IMAGE_TODO_AGAIN.jpeg" src="_images/IMAGE_TODO_AGAIN.jpeg" />
+</section>
+<hr class="docutils" />
+<section id="id4">
+<h3>其他信息<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N)，其中 N 为被推入到列表的元素数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令从 Redis 1.0.0 版本开始可用，
+但是只有 Redis 2.4.0 或以上版本的 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令可以一次推入多个元素，
+Redis 2.4.0 以下版本的 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令每次只能推入一个元素。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="lpushxrpushx">
+<h2>LPUSHX、RPUSHX：只对已存在的列表执行推入操作<a class="headerlink" href="#lpushxrpushx" title="Link to this heading">¶</a></h2>
+<p>当用户调用 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令或是 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令尝试将元素推入到列表的时候，
+如果给定的列表并不存在，
+那么命令将自动创建一个空列表，
+并将元素推入到刚刚创建的列表里面。</p>
+<p>比如对于空列表 <code class="docutils literal notranslate"><span class="pre">list1</span></code> 和 <code class="docutils literal notranslate"><span class="pre">list2</span></code> 来说，
+执行以下命令将创建图 4-9 所示的两个列表：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LPUSH</span> <span class="n">list1</span> <span class="s2">&quot;item1&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPUSH</span> <span class="n">list2</span> <span class="s2">&quot;item1&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>图 4-9 两个只包含单个元素的列表</p>
+<img alt="_images/IMAGE_LIST1_LIST2.jpeg" src="_images/IMAGE_LIST1_LIST2.jpeg" />
+<hr class="docutils" />
+<p>除了 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令之外，
+Redis 还提供了 <code class="docutils literal notranslate"><span class="pre">LPUSHX</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">RPUSHX</span></code> 命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">LPUSHX</span> <span class="nb">list</span> <span class="n">item</span>
+
+<span class="n">RPUSHX</span> <span class="nb">list</span> <span class="n">item</span>
+</pre></div>
+</div>
+<p>这两个命令对待空列表的方式跟 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令正好相反：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">LPUSHX</span></code> 命令只会在列表已经存在的情况下，
+将元素推入列表左端；</p></li>
+<li><p>而 <code class="docutils literal notranslate"><span class="pre">RPUSHX</span></code> 命令只会在列表已经存在的情况下，
+将元素推入列表右端；</p></li>
+</ul>
+<p>如果给定列表并不存在，
+那么 <code class="docutils literal notranslate"><span class="pre">LPUSHX</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">RPUSHX</span></code> 命令将放弃执行推入操作。</p>
+<p><code class="docutils literal notranslate"><span class="pre">LPUSHX</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">RPUSHX</span></code> 命令在成功执行推入操作之后，
+将返回列表当前的长度作为返回值；
+如果推入操作未能成功执行，
+那么命令将返回 <code class="docutils literal notranslate"><span class="pre">0</span></code> 作为结果。</p>
+<p>举个例子，
+如果我们对不存在的列表 <code class="docutils literal notranslate"><span class="pre">list3</span></code> 执行以下 <code class="docutils literal notranslate"><span class="pre">LPUSHX</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">RPUSHX</span></code> 命令，
+那么这两个推入操作都将被拒绝：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LPUSHX</span> <span class="n">list3</span> <span class="s2">&quot;item-x&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>    <span class="o">--</span> <span class="n">没有推入任何元素</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPUSHX</span> <span class="n">list3</span> <span class="s2">&quot;item-y&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>    <span class="o">--</span> <span class="n">没有推入任何元素</span>
+</pre></div>
+</div>
+<p>另一方面，
+如果我们先使用 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令，
+将一个元素推入到 <code class="docutils literal notranslate"><span class="pre">list3</span></code> 列表里面，
+使得 <code class="docutils literal notranslate"><span class="pre">list3</span></code> 变成非空列表，
+那么 <code class="docutils literal notranslate"><span class="pre">LPUSHX</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">RPUSHX</span></code> 命令就可以成功地执行推入操作：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>redis&gt; LPUSH list3 &quot;item1&quot;
+(integer) 1    -- 推入一个元素，使列表变为非空
+
+redis&gt; LPUSHX list3 &quot;item-x&quot;
+(integer) 2    -- 执行推入操作之后，列表包含两个元素
+
+redis&gt; RPUSHX list3 &quot;item-y&quot;
+(integer) 3    -- 执行推入操作之后，列表包含三个元素
+</pre></div>
+</div>
+<p>图 4-10 展示了列表 <code class="docutils literal notranslate"><span class="pre">list3</span></code> 的整个变化过程：</p>
+<ol class="arabic simple">
+<li><p>在最初的 <code class="docutils literal notranslate"><span class="pre">LPUSHX</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">RPUSHX</span></code> 命令执行之后，
+<code class="docutils literal notranslate"><span class="pre">list3</span></code> 仍然是一个空列表。</p></li>
+<li><p>执行 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令，
+将元素 <code class="docutils literal notranslate"><span class="pre">&quot;item1&quot;</span></code> 推入到列表里面，
+使之变为非空。</p></li>
+<li><p>执行 <code class="docutils literal notranslate"><span class="pre">LPUSHX</span></code> 命令，
+将元素 <code class="docutils literal notranslate"><span class="pre">&quot;item-x&quot;</span></code> 推入列表，
+使得列表包含两个元素。</p></li>
+<li><p>执行 <code class="docutils literal notranslate"><span class="pre">RPUSHX</span></code> 命令，
+将元素 <code class="docutils literal notranslate"><span class="pre">&quot;item-y&quot;</span></code> 推入列表，
+使得列表包含三个元素。</p></li>
+</ol>
+<hr class="docutils" />
+<p>图 4-10 <code class="docutils literal notranslate"><span class="pre">LPUSHX</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">RPUSHX</span></code> 命令的执行过程</p>
+<img alt="_images/IMAGE_LPUSHX_RPUSHX.jpeg" src="_images/IMAGE_LPUSHX_RPUSHX.jpeg" />
+<hr class="docutils" />
+<section id="id5">
+<h3>每次只能推入单个元素<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
+<p>跟 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令不一样，
+<code class="docutils literal notranslate"><span class="pre">LPUSHX</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">RPUSHX</span></code> 命令每次只能推入一个元素，
+尝试向 <code class="docutils literal notranslate"><span class="pre">LPUSHX</span></code> 命令或 <code class="docutils literal notranslate"><span class="pre">RPUSHX</span></code> 命令给定多个元素将引发错误：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LPUSHX</span> <span class="nb">list</span> <span class="s2">&quot;item1&quot;</span> <span class="s2">&quot;item2&quot;</span> <span class="s2">&quot;item3&quot;</span>
+<span class="p">(</span><span class="n">error</span><span class="p">)</span> <span class="n">ERR</span> <span class="n">wrong</span> <span class="n">number</span> <span class="n">of</span> <span class="n">arguments</span> <span class="k">for</span> <span class="s1">&#39;lpushx&#39;</span> <span class="n">command</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPUSHX</span> <span class="nb">list</span> <span class="s2">&quot;item1&quot;</span> <span class="s2">&quot;item2&quot;</span> <span class="s2">&quot;item3&quot;</span>
+<span class="p">(</span><span class="n">error</span><span class="p">)</span> <span class="n">ERR</span> <span class="n">wrong</span> <span class="n">number</span> <span class="n">of</span> <span class="n">arguments</span> <span class="k">for</span> <span class="s1">&#39;rpushx&#39;</span> <span class="n">command</span>
+</pre></div>
+</div>
+</section>
+<section id="id6">
+<h3>其他信息<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">LPUSHX</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">RPUSHX</span></code> 命令从 Redis 2.2.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="lpop">
+<h2>LPOP：弹出列表最左端的元素<a class="headerlink" href="#lpop" title="Link to this heading">¶</a></h2>
+<p>用户可以通过 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令移除位于列表最左端的元素，
+并将被移除的元素返回给用户：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">LPOP</span> <span class="nb">list</span>
+</pre></div>
+</div>
+<p>比如说，
+以下代码就展示了如何使用 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令去弹出 <code class="docutils literal notranslate"><span class="pre">todo</span></code> 列表的最左端元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LPOP</span> <span class="n">todo</span>
+<span class="s2">&quot;finish homework&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LPOP</span> <span class="n">todo</span>
+<span class="s2">&quot;watch tv&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LPOP</span> <span class="n">todo</span>
+<span class="s2">&quot;buy some milk&quot;</span>
+</pre></div>
+</div>
+<p>图 4-11 展示了 <code class="docutils literal notranslate"><span class="pre">todo</span></code> 列表在 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令执行时的整个变化过程：</p>
+<ol class="arabic simple">
+<li><p>在 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令执行之前，
+<code class="docutils literal notranslate"><span class="pre">todo</span></code> 列表包含三个元素；</p></li>
+<li><p>执行第一个 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令，
+从列表中弹出 <code class="docutils literal notranslate"><span class="pre">&quot;finish</span> <span class="pre">homework&quot;</span></code> 元素；</p></li>
+<li><p>执行第二个 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令，
+从列表中弹出 <code class="docutils literal notranslate"><span class="pre">&quot;watch</span> <span class="pre">tv&quot;</span></code> 元素；</p></li>
+<li><p>执行第三个 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令，
+从列表中弹出 <code class="docutils literal notranslate"><span class="pre">&quot;buy</span> <span class="pre">some</span> <span class="pre">milk&quot;</span></code> 元素，
+并使得 <code class="docutils literal notranslate"><span class="pre">todo</span></code> 列表变为空。</p></li>
+</ol>
+<hr class="docutils" />
+<p>图 4-11 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令的执行过程</p>
+<img alt="_images/IMAGE_LPOP_EXAMPLE.jpeg" src="_images/IMAGE_LPOP_EXAMPLE.jpeg" />
+<hr class="docutils" />
+<p>另一方面，
+如果用户给定的列表并不存在，
+那么 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令将返回一个空值，
+表示列表为空，
+没有元素可供弹出：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LPOP</span> <span class="n">empty</span><span class="o">-</span><span class="nb">list</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="id7">
+<h3>其他信息<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令从 Redis 1.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="rpop">
+<h2>RPOP：弹出列表最右端的元素<a class="headerlink" href="#rpop" title="Link to this heading">¶</a></h2>
+<p>用户可以通过 <code class="docutils literal notranslate"><span class="pre">RPOP</span></code> 命令移除位于列表最右端的元素，
+并将被移除的元素返回给用户：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">RPOP</span> <span class="nb">list</span>
+</pre></div>
+</div>
+<p>比如说，
+以下代码就展示了如何使用 <code class="docutils literal notranslate"><span class="pre">RPOP</span></code> 命令去弹出 <code class="docutils literal notranslate"><span class="pre">todo</span></code> 列表最右端的元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPOP</span> <span class="n">todo</span>
+<span class="s2">&quot;finish homework&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPOP</span> <span class="n">todo</span>
+<span class="s2">&quot;watch tv&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPOP</span> <span class="n">todo</span>
+<span class="s2">&quot;buy some milk&quot;</span>
+</pre></div>
+</div>
+<p>图 4-12 展示了 <code class="docutils literal notranslate"><span class="pre">todo</span></code> 列表在 <code class="docutils literal notranslate"><span class="pre">RPOP</span></code> 命令执行时的整个变化过程：</p>
+<ol class="arabic simple">
+<li><p>在 <code class="docutils literal notranslate"><span class="pre">RPOP</span></code> 命令执行之前，
+<code class="docutils literal notranslate"><span class="pre">todo</span></code> 列表包含三个元素；</p></li>
+<li><p>执行第一个 <code class="docutils literal notranslate"><span class="pre">RPOP</span></code> 命令，
+从列表中弹出 <code class="docutils literal notranslate"><span class="pre">&quot;finish</span> <span class="pre">homework&quot;</span></code> 元素；</p></li>
+<li><p>执行第二个 <code class="docutils literal notranslate"><span class="pre">RPOP</span></code> 命令，
+从列表中弹出 <code class="docutils literal notranslate"><span class="pre">&quot;watch</span> <span class="pre">tv&quot;</span></code> 元素；</p></li>
+<li><p>执行第三个 <code class="docutils literal notranslate"><span class="pre">RPOP</span></code> 命令，
+从列表中弹出 <code class="docutils literal notranslate"><span class="pre">&quot;buy</span> <span class="pre">some</span> <span class="pre">milk&quot;</span></code> 元素，
+并使得 <code class="docutils literal notranslate"><span class="pre">todo</span></code> 列表变为空。</p></li>
+</ol>
+<hr class="docutils" />
+<p>图 4-12 <code class="docutils literal notranslate"><span class="pre">RPOP</span></code> 命令的执行过程</p>
+<img alt="_images/IMAGE_RPOP_EXAMPLE.jpeg" src="_images/IMAGE_RPOP_EXAMPLE.jpeg" />
+<hr class="docutils" />
+<p>跟 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令一样，
+如果用户给定的列表并不存在，
+那么 <code class="docutils literal notranslate"><span class="pre">RPOP</span></code> 命令将返回一个空值，
+表示列表为空，
+没有元素可供弹出：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPOP</span> <span class="n">empty</span><span class="o">-</span><span class="nb">list</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="id8">
+<h3>其他信息<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">RPOP</span></code> 命令从 Redis 1.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="rpoplpush">
+<h2>RPOPLPUSH：将右端弹出的元素推入到左端<a class="headerlink" href="#rpoplpush" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令的行为和它的名字一样，
+它首先使用 <code class="docutils literal notranslate"><span class="pre">RPOP</span></code> 命令将源列表最右端的元素弹出，
+然后使用 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令将被弹出的元素推入到目标列表左端，
+使之成为目标列表的最左端元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">RPOPLPUSH</span> <span class="n">source</span> <span class="n">target</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令会返回被弹出的元素作为结果。</p>
+<p>作为例子，
+以下代码展示了如何使用 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令，
+将列表 <code class="docutils literal notranslate"><span class="pre">list1</span></code> 的最右端元素弹出，
+然后将其推入至列表 <code class="docutils literal notranslate"><span class="pre">list2</span></code> 的左端：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPUSH</span> <span class="n">list1</span> <span class="s2">&quot;a&quot;</span> <span class="s2">&quot;b&quot;</span> <span class="s2">&quot;c&quot;</span>    <span class="o">--</span> <span class="n">创建两个示例列表</span> <span class="n">list1</span> <span class="n">和</span> <span class="n">list2</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPUSH</span> <span class="n">list2</span> <span class="s2">&quot;d&quot;</span> <span class="s2">&quot;e&quot;</span> <span class="s2">&quot;f&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPOPLPUSH</span> <span class="n">list1</span> <span class="n">list2</span>
+<span class="s2">&quot;c&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPOPLPUSH</span> <span class="n">list1</span> <span class="n">list2</span>
+<span class="s2">&quot;b&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPOPLPUSH</span> <span class="n">list1</span> <span class="n">list2</span>
+<span class="s2">&quot;a&quot;</span>
+</pre></div>
+</div>
+<p>图 4-13 展示了列表 <code class="docutils literal notranslate"><span class="pre">list1</span></code> 和 <code class="docutils literal notranslate"><span class="pre">list2</span></code> 在执行以上 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令时的变化过程：</p>
+<ol class="arabic simple">
+<li><p>在 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令执行之前，
+<code class="docutils literal notranslate"><span class="pre">list1</span></code> 和 <code class="docutils literal notranslate"><span class="pre">list2</span></code> 都包含三个元素；</p></li>
+<li><p>执行第一个 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令，
+弹出 <code class="docutils literal notranslate"><span class="pre">list1</span></code> 的最右端元素 <code class="docutils literal notranslate"><span class="pre">&quot;c&quot;</span></code> ，
+并将其推入至 <code class="docutils literal notranslate"><span class="pre">list2</span></code> 的左端；</p></li>
+<li><p>执行第二个 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令，
+弹出 <code class="docutils literal notranslate"><span class="pre">list1</span></code> 的最右端元素 <code class="docutils literal notranslate"><span class="pre">&quot;b&quot;</span></code> ，
+并将其推入至 <code class="docutils literal notranslate"><span class="pre">list2</span></code> 的左端；</p></li>
+<li><p>执行第三个 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令，
+弹出 <code class="docutils literal notranslate"><span class="pre">list1</span></code> 的最右端元素 <code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code> ，
+并将其推入至 <code class="docutils literal notranslate"><span class="pre">list2</span></code> 的左端；</p></li>
+<li><p>在以上三个 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令执行完毕之后，
+<code class="docutils literal notranslate"><span class="pre">list1</span></code> 将变为空列表，
+而 <code class="docutils literal notranslate"><span class="pre">list2</span></code> 则会包含六个元素。</p></li>
+</ol>
+<hr class="docutils" />
+<p>图 4-13 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令的执行过程</p>
+<img alt="_images/IMAGE_RL.jpeg" src="_images/IMAGE_RL.jpeg" />
+<hr class="docutils" />
+<section id="id9">
+<h3>源列表和目标列表相同<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令允许用户将源列表和目标列表设置为同一个列表：
+在这种情况下，
+<code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令的效果就相当于将列表最右端的元素变成列表最左端的元素。</p>
+<p>比如以下代码就展示了如何通过 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令，
+将 <code class="docutils literal notranslate"><span class="pre">rotate-list</span></code> 列表的最右端元素变成列表的最左端元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPUSH</span> <span class="n">rotate</span><span class="o">-</span><span class="nb">list</span> <span class="s2">&quot;a&quot;</span> <span class="s2">&quot;b&quot;</span> <span class="s2">&quot;c&quot;</span>    <span class="o">--</span> <span class="n">创建一个示例列表</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPOPLPUSH</span> <span class="n">rotate</span><span class="o">-</span><span class="nb">list</span> <span class="n">rotate</span><span class="o">-</span><span class="nb">list</span>
+<span class="s2">&quot;c&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPOPLPUSH</span> <span class="n">rotate</span><span class="o">-</span><span class="nb">list</span> <span class="n">rotate</span><span class="o">-</span><span class="nb">list</span>
+<span class="s2">&quot;b&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPOPLPUSH</span> <span class="n">rotate</span><span class="o">-</span><span class="nb">list</span> <span class="n">rotate</span><span class="o">-</span><span class="nb">list</span>
+<span class="s2">&quot;a&quot;</span>
+</pre></div>
+</div>
+<p>图 4-14 展示了以上三个 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令在执行时，
+<code class="docutils literal notranslate"><span class="pre">rotate-list</span></code> 列表的整个变化过程：</p>
+<ol class="arabic simple">
+<li><p>在 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令执行之前，列表包含 <code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;b&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;c&quot;</span></code> 三个元素。</p></li>
+<li><p>执行第一个 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令，将最右端元素 <code class="docutils literal notranslate"><span class="pre">&quot;c&quot;</span></code> 变为最左端元素。</p></li>
+<li><p>执行第二个 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令，将最右端元素 <code class="docutils literal notranslate"><span class="pre">&quot;b&quot;</span></code> 变为最左端元素。</p></li>
+<li><p>执行第三个 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令，将最右端元素 <code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code> 变为最左端元素。</p></li>
+<li><p>在以上三个 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令执行完毕之后，列表又重新回到了原样。</p></li>
+</ol>
+<hr class="docutils" />
+<p>图 4-14 使用 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 对列表元素进行轮换</p>
+<img alt="_images/IMAGE_ROTATE.jpeg" src="_images/IMAGE_ROTATE.jpeg" />
+<hr class="docutils" />
+<p>正如上面展示的例子所示，
+通过对同一个列表重复执行 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令，
+我们可以创建出一个对元素进行轮换的列表；
+并且当我们对一个包含了 N 个元素的列表重复执行 N 次 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令之后，
+列表元素的排列顺序将变回原来的样子。</p>
+</section>
+<section id="id10">
+<h3>处理空列表<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h3>
+<p>如果用户传给 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令的源列表并不存在，
+那么 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令将放弃执行弹出和推入操作，
+只返回一个空值表示命令执行失败：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPOPLPUSH</span> <span class="nb">list</span><span class="o">-</span><span class="n">x</span> <span class="nb">list</span><span class="o">-</span><span class="n">y</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>另一方面，
+如果源列表非空，
+但是目标列表为空，
+那么 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令将正常执行弹出操作和推入操作：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPUSH</span> <span class="nb">list</span><span class="o">-</span><span class="n">x</span> <span class="s2">&quot;a&quot;</span> <span class="s2">&quot;b&quot;</span> <span class="s2">&quot;c&quot;</span>    <span class="o">--</span> <span class="n">将</span> <span class="nb">list</span><span class="o">-</span><span class="n">x</span> <span class="n">变为非空列表</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPOPLPUSH</span> <span class="nb">list</span><span class="o">-</span><span class="n">x</span> <span class="nb">list</span><span class="o">-</span><span class="n">y</span>
+<span class="s2">&quot;c&quot;</span>
+</pre></div>
+</div>
+<p>图 4-15 展示了这条 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令执行之前和执行之后，
+<code class="docutils literal notranslate"><span class="pre">list-x</span></code> 和 <code class="docutils literal notranslate"><span class="pre">list-y</span></code> 的变化：</p>
+<ol class="arabic simple">
+<li><p>在执行 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令之前，
+<code class="docutils literal notranslate"><span class="pre">list-x</span></code> 包含三个元素，
+而 <code class="docutils literal notranslate"><span class="pre">list-y</span></code> 为空。</p></li>
+<li><p>执行 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令，
+将 <code class="docutils literal notranslate"><span class="pre">list-x</span></code> 的最右端元素 <code class="docutils literal notranslate"><span class="pre">&quot;c&quot;</span></code> 弹出，
+并将其推入至 <code class="docutils literal notranslate"><span class="pre">list-y</span></code> 的左端。</p></li>
+<li><p>在 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令执行完毕之后，
+<code class="docutils literal notranslate"><span class="pre">list-x</span></code> 将包含两个元素，
+而 <code class="docutils literal notranslate"><span class="pre">list-y</span></code> 则包含一个元素。</p></li>
+</ol>
+<hr class="docutils" />
+<p>图 4-15 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令处理目标列表为空的例子</p>
+<img alt="_images/IMAGE_EMPTY_RL.jpeg" src="_images/IMAGE_EMPTY_RL.jpeg" />
+</section>
+<section id="id11">
+<h3>其他信息<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令从 Redis 1.2.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id12">
+<h2>示例：先进先出队列<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h2>
+<p>先进先出队列（first in first out queue）是一种非常常见的数据结构，
+一般都会包含入队（enqueue）和出队（dequeue）这两个操作，
+其中入队操作会将一个元素放入到队列中，
+而出队操作则会从队列中移除最先被入队的元素。</p>
+<p>先进先出队列的应用非常广泛，
+它见诸于各式各样的应用程序当中。
+举个例子，
+很多电商网站都会在节日时推出一些秒杀活动，
+这些活动会放出数量有限的商品供用户抢购，
+秒杀系统的一个特点就是在短时间内会有大量用户同时进行相同的购买操作，
+如果使用事务或者锁去实现秒杀程序，
+那么就会因为锁和事务的重试特性而导致性能低下，
+并且由于重试的存在，
+成功购买商品的用户可能并不是最早执行购买操作的用户，
+因此这种秒杀系统实际上是不公平的。</p>
+<p>解决上述问题的其中一个方法就是把用户的购买操作都放入到先进先出队列里面，
+然后以队列方式处理用户的购买操作，
+这样程序就可以在不使用锁或者事务的情况下实现秒杀系统，
+并且得益于先进先出队列的特性，
+这种秒杀系统可以按照用户执行购买操作的顺序来判断哪些用户可以成功执行购买操作，
+因此它是公平的。</p>
+<p>代码清单 4-1 展示了一个使用 Redis 列表实现先进先出队列的方法。</p>
+<hr class="docutils" />
+<p>代码清单 4-1 使用列表实现的先进先出队列：<code class="docutils literal notranslate"><span class="pre">/list/fifo_queue.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">FIFOqueue</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">enqueue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        将给定元素放入队列，然后返回队列当前包含的元素数量作为结果。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">rpush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">dequeue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        移除并返回队列目前入队时间最长的元素。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">lpop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>作为例子，
+我们可以通过执行以下代码，
+载入并创建一个先进先出队列：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">fifo_queue</span> <span class="kn">import</span> <span class="n">FIFOqueue</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">FIFOqueue</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;buy-request&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>然后通过执行以下代码，
+将三个用户的购买请求依次放入到队列里面：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="s2">&quot;peter-buy-milk&quot;</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="s2">&quot;john-buy-rice&quot;</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="s2">&quot;david-buy-keyboard&quot;</span><span class="p">)</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+<p>最后，
+按照先进先出顺序，
+依次从队列中弹出相应的购买请求：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">dequeue</span><span class="p">()</span>
+<span class="go">&#39;peter-buy-milk&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">dequeue</span><span class="p">()</span>
+<span class="go">&#39;john-buy-rice&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">dequeue</span><span class="p">()</span>
+<span class="go">&#39;david-buy-keyboard&#39;</span>
+</pre></div>
+</div>
+<p>可以看到，
+队列弹出元素的顺序跟元素入队时的顺序是完全相同的：
+最先是 <code class="docutils literal notranslate"><span class="pre">&quot;peter-buy-milk&quot;</span></code> 元素，
+接着是 <code class="docutils literal notranslate"><span class="pre">&quot;john-buy-rice&quot;</span></code> 元素，
+最后是 <code class="docutils literal notranslate"><span class="pre">&quot;david-buy-keyboard&quot;</span></code> 元素。</p>
+</section>
+<section id="llen">
+<h2>LLEN：获取列表的长度<a class="headerlink" href="#llen" title="Link to this heading">¶</a></h2>
+<p>用户可以通过执行 <code class="docutils literal notranslate"><span class="pre">LLEN</span></code> 命令来获取列表的长度，
+也即是列表包含的元素数量：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">LLEN</span> <span class="nb">list</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>图 4-16 几个不同长度的列表</p>
+<img alt="_images/IMAGE_LLEN.jpeg" src="_images/IMAGE_LLEN.jpeg" />
+<hr class="docutils" />
+<p>比如对于图 4-16 所示的几个列表来说，
+对它们执行 <code class="docutils literal notranslate"><span class="pre">LLEN</span></code> 命令将获得以下结果：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LLEN</span> <span class="n">todo</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LLEN</span> <span class="n">alphabets</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">8</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LLEN</span> <span class="n">msg</span><span class="o">-</span><span class="n">queue</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">4</span>
+</pre></div>
+</div>
+<p>另一方面，
+对于不存在的列表，
+<code class="docutils literal notranslate"><span class="pre">LLEN</span></code> 命令将返回 <code class="docutils literal notranslate"><span class="pre">0</span></code> 作为结果：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LLEN</span> <span class="ow">not</span><span class="o">-</span><span class="n">exists</span><span class="o">-</span><span class="nb">list</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<section id="id13">
+<h3>其他信息<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">LLEN</span></code> 命令从 Redis 1.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="lindex">
+<h2>LINDEX：获取指定索引上的元素<a class="headerlink" href="#lindex" title="Link to this heading">¶</a></h2>
+<p>Redis 列表包含的每个元素都有与之相对应的正数索引和负数索引：</p>
+<ul class="simple">
+<li><p>正数索引从列表的左端开始计算，
+依次向右端递增：
+最左端元素的索引为 <code class="docutils literal notranslate"><span class="pre">0</span></code> ，
+左端排行第二的元素索引为 <code class="docutils literal notranslate"><span class="pre">1</span></code> ，
+左端排行第三的元素索引为 <code class="docutils literal notranslate"><span class="pre">2</span></code> ，
+以此类推。
+最大的正数索引为列表长度减一，
+也即是 <code class="docutils literal notranslate"><span class="pre">N-1</span></code> 。</p></li>
+<li><p>负数索引从列表的右端开始计算，
+依次向左端递减：
+最右端元素的索引为 <code class="docutils literal notranslate"><span class="pre">-1</span></code> ，
+右端排行第二的元素索引为 <code class="docutils literal notranslate"><span class="pre">-2</span></code> ，
+右端排行第三的元素索引为 <code class="docutils literal notranslate"><span class="pre">-3</span></code> ，
+以此类推。
+最大的负数索引为列表长度的负数，
+也即是 <code class="docutils literal notranslate"><span class="pre">-N</span></code> 。</p></li>
+</ul>
+<p>作为例子，
+图 4-17 展示了一个包含多个元素的列表，
+并给出了列表元素对应的正数索引和负数索引。</p>
+<hr class="docutils" />
+<p>图 4-17 列表的索引</p>
+<img alt="_images/IMAGE_LINDEX.jpeg" src="_images/IMAGE_LINDEX.jpeg" />
+<hr class="docutils" />
+<p>为了让用户可以方便地取得索引对应的元素，
+Redis 提供了 <code class="docutils literal notranslate"><span class="pre">LINDEX</span></code> 命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">LINDEX</span> <span class="nb">list</span> <span class="n">index</span>
+</pre></div>
+</div>
+<p>这个命令接受一个列表和一个索引作为参数，
+然后返回列表在给定索引上的元素；
+其中给定索引既可以是正数，
+也可以是负数。</p>
+<p>比如说，
+对于前面展示的图 4-17 ，
+我们可以通过执行以下命令，
+取得 <code class="docutils literal notranslate"><span class="pre">alphabets</span></code> 列表在指定索引上的元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LINDEX</span> <span class="n">alphabets</span> <span class="mi">0</span>
+<span class="s2">&quot;a&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LINDEX</span> <span class="n">alphabets</span> <span class="mi">3</span>
+<span class="s2">&quot;d&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LINDEX</span> <span class="n">alphabets</span> <span class="mi">6</span>
+<span class="s2">&quot;g&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LINDEX</span> <span class="n">alphabets</span> <span class="o">-</span><span class="mi">3</span>
+<span class="s2">&quot;f&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LINDEX</span> <span class="n">alphabets</span> <span class="o">-</span><span class="mi">7</span>
+<span class="s2">&quot;b&quot;</span>
+</pre></div>
+</div>
+<section id="id14">
+<h3>处理超出范围的索引<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h3>
+<p>对于一个长度为 <code class="docutils literal notranslate"><span class="pre">N</span></code> 的非空列表来说：</p>
+<ul class="simple">
+<li><p>它的正数索引必然大于等于 <code class="docutils literal notranslate"><span class="pre">0</span></code> ，
+并且少于等于 <code class="docutils literal notranslate"><span class="pre">N-1</span></code> ；</p></li>
+<li><p>而它的负数索引则必然小于等于 <code class="docutils literal notranslate"><span class="pre">-1</span></code> ，
+并且大于等于 <code class="docutils literal notranslate"><span class="pre">-N</span></code> ；</p></li>
+</ul>
+<p>如果用户给定的索引超出了这一范围，
+那么 <code class="docutils literal notranslate"><span class="pre">LINDEX</span></code> 命令将返回空值，
+以此来表示给定索引上并不存在任何元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LINDEX</span> <span class="n">alphabets</span> <span class="mi">100</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LINDEX</span> <span class="n">alphabets</span> <span class="o">-</span><span class="mi">100</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id15">
+<h3>其他信息<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N) ，其中 N 为给定列表的长度。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">LINDEX</span></code> 命令从 Redis 1.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="lrange">
+<h2>LRANGE：获取指定索引范围上的元素<a class="headerlink" href="#lrange" title="Link to this heading">¶</a></h2>
+<p>用户除了可以使用 <code class="docutils literal notranslate"><span class="pre">LINDEX</span></code> 命令获取给定索引上的单个元素之外，
+还可以使用 <code class="docutils literal notranslate"><span class="pre">LRANGE</span></code> 命令获取给定索引范围上的多个元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">LRANGE</span> <span class="nb">list</span> <span class="n">start</span> <span class="n">end</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">LRANGE</span></code> 命令接受一个列表、一个开始索引和一个结束索引作为参数，
+然后依次返回列表从开始索引到结束索引范围内的所有元素，
+其中开始索引和结束索引对应的元素也会被包含在命令返回的元素当中。</p>
+<p>作为例子，
+以下代码展示了如何使用 <code class="docutils literal notranslate"><span class="pre">LRANGE</span></code> 命令去获取 <code class="docutils literal notranslate"><span class="pre">alphabets</span></code> 列表在不同索引范围内的元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">alphabets</span> <span class="mi">0</span> <span class="mi">3</span>    <span class="o">--</span> <span class="n">获取列表索引</span> <span class="mi">0</span> <span class="n">至索引</span> <span class="mi">3</span> <span class="n">上的所有元素</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;a&quot;</span>    <span class="o">--</span> <span class="n">位于索引</span> <span class="mi">0</span> <span class="n">上的元素</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;b&quot;</span>    <span class="o">--</span> <span class="n">位于索引</span> <span class="mi">1</span> <span class="n">上的元素</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>    <span class="o">--</span> <span class="n">位于索引</span> <span class="mi">2</span> <span class="n">上的元素</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;d&quot;</span>    <span class="o">--</span> <span class="n">位于索引</span> <span class="mi">3</span> <span class="n">上的元素</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">alphabets</span> <span class="mi">2</span> <span class="mi">6</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;d&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;e&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;f&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;g&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">alphabets</span> <span class="o">-</span><span class="mi">5</span> <span class="o">-</span><span class="mi">1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;d&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;e&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;f&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;g&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;h&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">alphabets</span> <span class="o">-</span><span class="mi">7</span> <span class="o">-</span><span class="mi">4</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;b&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;d&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;e&quot;</span>
+</pre></div>
+</div>
+<p>图 4-18 展示了这些 <code class="docutils literal notranslate"><span class="pre">LRANGE</span></code> 命令是如何根据给定的索引范围去获取列表元素的。</p>
+<hr class="docutils" />
+<p>图 4-18 <code class="docutils literal notranslate"><span class="pre">LRANGE</span></code> 命令获取范围内元素的过程</p>
+<img alt="_images/IMAGE_LRANGE_1.jpeg" src="_images/IMAGE_LRANGE_1.jpeg" />
+<img alt="_images/IMAGE_LRANGE_2.jpeg" src="_images/IMAGE_LRANGE_2.jpeg" />
+<hr class="docutils" />
+<section id="id16">
+<h3>获取列表包含的所有元素<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h3>
+<p>一个快捷地获取列表包含的所有元素的方法，
+就是使用 <code class="docutils literal notranslate"><span class="pre">0</span></code> 作为起始索引、 <code class="docutils literal notranslate"><span class="pre">-1</span></code> 作为结束索引去调用 <code class="docutils literal notranslate"><span class="pre">LRANGE</span></code> 命令，
+这种方法非常适用于查看长度较短的列表：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">alphabets</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;a&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;b&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;d&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;e&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;f&quot;</span>
+<span class="mi">7</span><span class="p">)</span> <span class="s2">&quot;g&quot;</span>
+<span class="mi">8</span><span class="p">)</span> <span class="s2">&quot;h&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id17">
+<h3>处理超出范围的索引<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h3>
+<p>跟 <code class="docutils literal notranslate"><span class="pre">LINDEX</span></code> 一样，
+<code class="docutils literal notranslate"><span class="pre">LRANGE</span></code> 命令也需要处理超出范围的索引：</p>
+<ul class="simple">
+<li><p>如果用户给定的起始索引和结束索引都超出了范围，
+那么 <code class="docutils literal notranslate"><span class="pre">LRANGE</span></code> 命令将返回空列表作为结果；</p></li>
+<li><p>如果用户给定的其中一个索引超出了范围，
+那么 <code class="docutils literal notranslate"><span class="pre">LRANGE</span></code> 命令将对超出范围的索引进行修正，
+然后再执行实际的范围获取操作；
+其中超出范围的起始索引会被修正为 <code class="docutils literal notranslate"><span class="pre">0</span></code> ，
+而超出范围的结束索引则会被修正为 <code class="docutils literal notranslate"><span class="pre">-1</span></code> 。</p></li>
+</ul>
+<p>以下代码展示了 <code class="docutils literal notranslate"><span class="pre">LRANGE</span></code> 命令在遇到两个超出范围的索引时，
+返回空列表的例子：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">alphabets</span> <span class="mi">50</span> <span class="mi">100</span>
+<span class="p">(</span><span class="n">empty</span> <span class="nb">list</span> <span class="ow">or</span> <span class="nb">set</span><span class="p">)</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">alphabets</span> <span class="o">-</span><span class="mi">100</span> <span class="o">-</span><span class="mi">50</span>
+<span class="p">(</span><span class="n">empty</span> <span class="nb">list</span> <span class="ow">or</span> <span class="nb">set</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>另一方面，
+以下代码展示了 <code class="docutils literal notranslate"><span class="pre">LRANGE</span></code> 命令在遇到只有一个超出范围的索引时，
+对索引进行修正并返回元素的例子：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">alphabets</span> <span class="o">-</span><span class="mi">100</span> <span class="mi">5</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;a&quot;</span>  <span class="o">--</span> <span class="n">位于索引</span> <span class="mi">0</span> <span class="n">上的元素</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;b&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;d&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;e&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;f&quot;</span>  <span class="o">--</span> <span class="n">位于索引</span> <span class="mi">5</span> <span class="n">上的元素</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">alphabets</span> <span class="mi">5</span> <span class="mi">100</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;f&quot;</span>  <span class="o">--</span> <span class="n">位于索引</span> <span class="mi">5</span> <span class="n">上的元素</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;g&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;h&quot;</span>  <span class="o">--</span> <span class="n">位于索引</span> <span class="o">-</span><span class="mi">1</span> <span class="n">上的元素</span>
+</pre></div>
+</div>
+<p>在执行 <code class="docutils literal notranslate"><span class="pre">LRANGE</span> <span class="pre">alphabets</span> <span class="pre">-100</span> <span class="pre">5</span></code> 调用时，
+<code class="docutils literal notranslate"><span class="pre">LRANGE</span></code> 命令会把超出范围的起始索引 <code class="docutils literal notranslate"><span class="pre">-100</span></code> 修正为 <code class="docutils literal notranslate"><span class="pre">0</span></code> ，
+然后执行 <code class="docutils literal notranslate"><span class="pre">LRANGE</span> <span class="pre">alphabets</span> <span class="pre">0</span> <span class="pre">5</span></code> 调用；
+而在执行 <code class="docutils literal notranslate"><span class="pre">LRANGE</span> <span class="pre">alphabets</span> <span class="pre">5</span> <span class="pre">100</span></code> 调用时，
+<code class="docutils literal notranslate"><span class="pre">LRANGE</span></code> 命令会把超出范围的结束索引 <code class="docutils literal notranslate"><span class="pre">100</span></code> 修正为 <code class="docutils literal notranslate"><span class="pre">-1</span></code> ，
+然后执行 <code class="docutils literal notranslate"><span class="pre">LRANGE</span> <span class="pre">alphabets</span> <span class="pre">5</span> <span class="pre">-1</span></code> 调用。</p>
+</section>
+<section id="id18">
+<h3>其他信息<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N) ，其中 N 为给定列表的长度。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">LRANGE</span></code> 命令从 Redis 1.0.0 开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id19">
+<h2>示例：分页<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h2>
+<p>对于互联网上每一个具有一定规模的网站来说，
+分页程序都是必不可少的：
+新闻站点、博客、论坛、搜索引擎等等，
+都会使用分页程序将数量众多的信息分割为多个页面，
+使得用户可以以页为单位浏览网站提供的信息，
+并以此来控制网站每次取出的信息数量。
+图 4-19 就展示了一个使用分页程序对用户发表的论坛主题进行分割的例子。</p>
+<hr class="docutils" />
+<p>图 4-19 论坛中的分页示例</p>
+<img alt="_images/IMAGE_V2EX_PAGING.png" src="_images/IMAGE_V2EX_PAGING.png" />
+<hr class="docutils" />
+<p>代码清单 4-2 展示了一个使用列表实现分页程序的方法，
+这个程序可以将给定的元素有序地放入到一个列表里面，
+然后使用 <code class="docutils literal notranslate"><span class="pre">LRANGE</span></code> 命令从列表中取出指定数量的元素，
+从而实现分页这一概念。</p>
+<hr class="docutils" />
+<p>代码清单 4-2 使用列表实现的分页程序：<code class="docutils literal notranslate"><span class="pre">/list/paging.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Paging</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        将给定元素添加到分页列表中。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">lpush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_page</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">page_number</span><span class="p">,</span> <span class="n">item_per_page</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        从指定页数中取出指定数量的元素。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 根据给定的 page_number （页数）和 item_per_page （每页包含的元素数量）</span>
+        <span class="c1"># 计算出指定分页元素在列表中所处的索引范围</span>
+        <span class="c1"># 例子：如果 page_number = 1 ， item_per_page = 10</span>
+        <span class="c1"># 那么程序计算得出的起始索引就是 0 ，而结束索引则是 9</span>
+        <span class="n">start_index</span> <span class="o">=</span> <span class="p">(</span><span class="n">page_number</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">item_per_page</span>
+        <span class="n">end_index</span> <span class="o">=</span> <span class="n">page_number</span> <span class="o">*</span> <span class="n">item_per_page</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="c1"># 根据索引范围从列表中获取分页元素</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">lrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">start_index</span><span class="p">,</span> <span class="n">end_index</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回列表目前包含的分页元素数量。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">llen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>作为例子，
+我们可以通过执行以下代码，
+载入并创建出一个针对用户帖子的分页对象：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">paging</span> <span class="kn">import</span> <span class="n">Paging</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">topics</span> <span class="o">=</span> <span class="n">Paging</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;user-topics&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>并使用数字 <code class="docutils literal notranslate"><span class="pre">1</span></code> 至 <code class="docutils literal notranslate"><span class="pre">19</span></code> 作为用户帖子的 ID ，
+将它们添加到分页列表里面：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">20</span><span class="p">):</span>
+<span class="gp">... </span>  <span class="n">topics</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+<p>然后我们就可以使用分页程序，
+对这些帖子进行分页了：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">topics</span><span class="o">.</span><span class="n">get_page</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>   <span class="c1"># 以每页 5 个帖子的方式，取出第 1 页的帖子</span>
+<span class="go">[&#39;19&#39;, &#39;18&#39;, &#39;17&#39;, &#39;16&#39;, &#39;15&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">topics</span><span class="o">.</span><span class="n">get_page</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>   <span class="c1"># 以每页 5 个帖子的方式，取出第 2 页的帖子</span>
+<span class="go">[&#39;14&#39;, &#39;13&#39;, &#39;12&#39;, &#39;11&#39;, &#39;10&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">topics</span><span class="o">.</span><span class="n">get_page</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>  <span class="c1"># 以每页 10 个帖子的方式，取出第 3 页的帖子</span>
+<span class="go">[&#39;19&#39;, &#39;18&#39;, &#39;17&#39;, &#39;16&#39;, &#39;15&#39;, &#39;14&#39;, &#39;13&#39;, &#39;12&#39;, &#39;11&#39;, &#39;10&#39;]</span>
+</pre></div>
+</div>
+<p>最后，
+我们可以通过执行以下代码，
+取得分页列表目前包含的元素数量：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">topics</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+<span class="go">20</span>
+</pre></div>
+</div>
+</section>
+<section id="lset">
+<h2>LSET：为指定索引设置新元素<a class="headerlink" href="#lset" title="Link to this heading">¶</a></h2>
+<p>用户可以通过 <code class="docutils literal notranslate"><span class="pre">LSET</span></code> 命令，
+为列表的指定索引设置新元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">LSET</span> <span class="nb">list</span> <span class="n">index</span> <span class="n">new_element</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">LSET</span></code> 命令在设置成功时将返回 <code class="docutils literal notranslate"><span class="pre">OK</span></code> 。</p>
+<p>比如对于以下这个 <code class="docutils literal notranslate"><span class="pre">todo</span></code> 列表来说：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">todo</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;buy some milk&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;watch tv&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;finish homework&quot;</span>
+</pre></div>
+</div>
+<p>我们可以通过执行以下 <code class="docutils literal notranslate"><span class="pre">LSET</span></code> 命令，
+将 <code class="docutils literal notranslate"><span class="pre">todo</span></code> 列表索引 <code class="docutils literal notranslate"><span class="pre">1</span></code> 上的元素设置为 <code class="docutils literal notranslate"><span class="pre">&quot;have</span> <span class="pre">lunch&quot;</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LSET</span> <span class="n">todo</span> <span class="mi">1</span> <span class="s2">&quot;have lunch&quot;</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">todo</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;buy some milk&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;have lunch&quot;</span>  <span class="o">--</span> <span class="n">新元素</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;finish homework&quot;</span>
+</pre></div>
+</div>
+<p>图 4-20 展示了这个 <code class="docutils literal notranslate"><span class="pre">LSET</span></code> 命令的执行过程。</p>
+<hr class="docutils" />
+<p>图 4-20 <code class="docutils literal notranslate"><span class="pre">LSET</span></code> 命令的执行过程</p>
+<img alt="_images/IMAGE_LSET.jpeg" src="_images/IMAGE_LSET.jpeg" />
+<hr class="docutils" />
+<section id="id20">
+<h3>处理超出范围的索引<a class="headerlink" href="#id20" title="Link to this heading">¶</a></h3>
+<p>因为 <code class="docutils literal notranslate"><span class="pre">LSET</span></code> 命令只能对列表已存在的索引进行设置，
+所以如果用户给定的索引超出了列表的有效索引范围，
+那么 <code class="docutils literal notranslate"><span class="pre">LSET</span></code> 命令将返回一个错误：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LSET</span> <span class="n">todo</span> <span class="mi">100</span> <span class="s2">&quot;go to sleep&quot;</span>
+<span class="p">(</span><span class="n">error</span><span class="p">)</span> <span class="n">ERR</span> <span class="n">index</span> <span class="n">out</span> <span class="n">of</span> <span class="nb">range</span>
+</pre></div>
+</div>
+</section>
+<section id="id21">
+<h3>其他信息<a class="headerlink" href="#id21" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N) ，其中 N 为给定列表的长度。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">LSET</span></code> 命令从 Redis 1.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="linsert">
+<h2>LINSERT：将元素插入到列表<a class="headerlink" href="#linsert" title="Link to this heading">¶</a></h2>
+<p>通过使用 <code class="docutils literal notranslate"><span class="pre">LINSERT</span></code> 命令，
+用户可以将一个新元素插入到列表某个指定元素的前面或者后面：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">LINSERT</span> <span class="nb">list</span> <span class="n">BEFORE</span><span class="o">|</span><span class="n">AFTER</span> <span class="n">target_element</span> <span class="n">new_element</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">LINSERT</span></code> 命令第二个参数的值可以是 <code class="docutils literal notranslate"><span class="pre">BEFORE</span></code> 或者 <code class="docutils literal notranslate"><span class="pre">AFTER</span></code> ，
+它们分别用于指示命令将新元素插入到目标元素的前面或者后面；
+命令在完成插入操作之后会返回列表当前的长度作为返回值。</p>
+<p>比如说，
+对于以下这个 <code class="docutils literal notranslate"><span class="pre">lst</span></code> 列表：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">lst</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;a&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;b&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+</pre></div>
+</div>
+<p>我们可以通过执行以下 <code class="docutils literal notranslate"><span class="pre">LINSERT</span></code> 命令，
+将元素 <code class="docutils literal notranslate"><span class="pre">&quot;10086&quot;</span></code> 插入到元素 <code class="docutils literal notranslate"><span class="pre">&quot;b&quot;</span></code> 的前面：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LINSERT</span> <span class="n">lst</span> <span class="n">BEFORE</span> <span class="s2">&quot;b&quot;</span> <span class="s2">&quot;10086&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">4</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">lst</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;a&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;10086&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;b&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+</pre></div>
+</div>
+<p>还可以通过执行以下 <code class="docutils literal notranslate"><span class="pre">LINSERT</span></code> 命令，
+将元素 <code class="docutils literal notranslate"><span class="pre">&quot;12345&quot;</span></code> 插入到元素 <code class="docutils literal notranslate"><span class="pre">&quot;c&quot;</span></code> 的后面：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LINSERT</span> <span class="n">lst</span> <span class="n">AFTER</span> <span class="s2">&quot;c&quot;</span> <span class="s2">&quot;12345&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">5</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">lst</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;a&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;10086&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;b&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;12345&quot;</span>
+</pre></div>
+</div>
+<p>图 4-21 展示了上述两个 <code class="docutils literal notranslate"><span class="pre">LINSERT</span></code> 命令的执行过程。</p>
+<hr class="docutils" />
+<p>图 4-21 <code class="docutils literal notranslate"><span class="pre">LINSERT</span></code> 命令的执行过程</p>
+<img alt="_images/IMAGE_LINSERT_1.jpeg" src="_images/IMAGE_LINSERT_1.jpeg" />
+<img alt="_images/IMAGE_LINSERT_2.jpeg" src="_images/IMAGE_LINSERT_2.jpeg" />
+<section id="id22">
+<h3>处理不存在的元素<a class="headerlink" href="#id22" title="Link to this heading">¶</a></h3>
+<p>为了执行插入操作，
+<code class="docutils literal notranslate"><span class="pre">LINSERT</span></code> 命令要求用户给定的目标元素必须已经存在于列表当中；
+相反地，
+如果用户给定的目标元素并不存在，
+那么 <code class="docutils literal notranslate"><span class="pre">LINSERT</span></code> 命令将返回 <code class="docutils literal notranslate"><span class="pre">-1</span></code> 表示插入失败：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LINSERT</span> <span class="n">lst</span> <span class="n">BEFORE</span> <span class="s2">&quot;not-exists-element&quot;</span> <span class="s2">&quot;new element&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="o">-</span><span class="mi">1</span>
+</pre></div>
+</div>
+<p>在插入操作执行失败的情况下，
+列表包含的元素将不会发生任何变化。</p>
+</section>
+<section id="id23">
+<h3>其他信息<a class="headerlink" href="#id23" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N) ，其中 N 为给定列表的长度。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">LINSERT</span></code> 命令从 Redis 2.2.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="ltrim">
+<h2>LTRIM：修剪列表<a class="headerlink" href="#ltrim" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">LTRIM</span></code> 命令接受一个列表和一个索引范围作为参数，
+它会移除列表中位于给定索引范围之外的所有元素，
+只保留给定范围之内的元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">LTRIM</span> <span class="nb">list</span> <span class="n">start</span> <span class="n">end</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">LTRIM</span></code> 命令在移除操作执行完毕之后将返回 <code class="docutils literal notranslate"><span class="pre">OK</span></code> 作为结果。</p>
+<p>比如对于以下这个 <code class="docutils literal notranslate"><span class="pre">alphabets</span></code> 列表来说：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPUSH</span> <span class="n">alphabets</span> <span class="s2">&quot;a&quot;</span> <span class="s2">&quot;b&quot;</span> <span class="s2">&quot;c&quot;</span> <span class="s2">&quot;d&quot;</span> <span class="s2">&quot;e&quot;</span> <span class="s2">&quot;f&quot;</span> <span class="s2">&quot;g&quot;</span> <span class="s2">&quot;h&quot;</span> <span class="s2">&quot;i&quot;</span> <span class="s2">&quot;j&quot;</span> <span class="s2">&quot;k&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">11</span>
+</pre></div>
+</div>
+<p>执行以下命令可以让列表只保留索引 <code class="docutils literal notranslate"><span class="pre">0</span></code> 到索引 <code class="docutils literal notranslate"><span class="pre">6</span></code> 范围内的七个元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LTRIM</span> <span class="n">alphabets</span> <span class="mi">0</span> <span class="mi">6</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">alphabets</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;a&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;b&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;d&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;e&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;f&quot;</span>
+<span class="mi">7</span><span class="p">)</span> <span class="s2">&quot;g&quot;</span>
+</pre></div>
+</div>
+<p>在此之后，
+我们可以继续执行以下命令，
+让列表只保留索引 <code class="docutils literal notranslate"><span class="pre">3</span></code> 到索引 <code class="docutils literal notranslate"><span class="pre">5</span></code> 范围内的三个元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LTRIM</span> <span class="n">alphabets</span> <span class="mi">3</span> <span class="mi">5</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">alphabets</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;d&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;e&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;f&quot;</span>
+</pre></div>
+</div>
+<p>图 4-22 展示了以上两个 <code class="docutils literal notranslate"><span class="pre">LTRIM</span></code> 命令对 <code class="docutils literal notranslate"><span class="pre">alphabets</span></code> 列表进行修剪的整个过程。</p>
+<hr class="docutils" />
+<p>图 4-22 <code class="docutils literal notranslate"><span class="pre">LTRIM</span></code> 命令的执行过程</p>
+<img alt="_images/IMAGE_LTRIM.jpeg" src="_images/IMAGE_LTRIM.jpeg" />
+<section id="id24">
+<h3>处理负数索引<a class="headerlink" href="#id24" title="Link to this heading">¶</a></h3>
+<p>跟 <code class="docutils literal notranslate"><span class="pre">LRANGE</span></code> 命令一样，
+<code class="docutils literal notranslate"><span class="pre">LTRIM</span></code> 命令不仅可以接受正数索引，
+还可以接受负数索引。</p>
+<p>以下代码展示了如何通过给定负数索引，
+让 <code class="docutils literal notranslate"><span class="pre">LTRIM</span></code> 命令只保留列表的最后五个元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPUSH</span> <span class="n">numbers</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">2</span> <span class="mi">3</span> <span class="mi">4</span> <span class="mi">5</span> <span class="mi">6</span> <span class="mi">7</span> <span class="mi">8</span> <span class="mi">9</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">10</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LTRIM</span> <span class="n">numbers</span> <span class="o">-</span><span class="mi">5</span> <span class="o">-</span><span class="mi">1</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">numbers</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;5&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;6&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;7&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;8&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;9&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id25">
+<h3>其他信息<a class="headerlink" href="#id25" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N) ，其中 N 为给定列表的长度。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">LTRIM</span></code> 命令从 Redis 1.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="lrem">
+<h2>LREM：从列表中移除指定元素<a class="headerlink" href="#lrem" title="Link to this heading">¶</a></h2>
+<p>用户可以通过 <code class="docutils literal notranslate"><span class="pre">LREM</span></code> 命令移除列表中的指定元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">LREM</span> <span class="nb">list</span> <span class="n">count</span> <span class="n">element</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">count</span></code> 参数的值决定了 <code class="docutils literal notranslate"><span class="pre">LREM</span></code> 命令移除元素的方式：</p>
+<ul class="simple">
+<li><p>如果 <code class="docutils literal notranslate"><span class="pre">count</span></code> 参数的值等于 <code class="docutils literal notranslate"><span class="pre">0</span></code> ，
+那么 <code class="docutils literal notranslate"><span class="pre">LREM</span></code> 命令将移除列表中包含的所有指定元素；</p></li>
+<li><p>如果 <code class="docutils literal notranslate"><span class="pre">count</span></code> 参数的值大于 <code class="docutils literal notranslate"><span class="pre">0</span></code> ，
+那么 <code class="docutils literal notranslate"><span class="pre">LREM</span></code> 命令将从列表的左端开始向右进行检查，
+并移除最先发现的 <code class="docutils literal notranslate"><span class="pre">count</span></code> 个指定元素；</p></li>
+<li><p>如果 <code class="docutils literal notranslate"><span class="pre">count</span></code> 参数的值小于 <code class="docutils literal notranslate"><span class="pre">0</span></code> ，
+那么 <code class="docutils literal notranslate"><span class="pre">LREM</span></code> 命令将从列表的右端开始向左进行检查，
+并移除最先发现的 <code class="docutils literal notranslate"><span class="pre">abs(count)</span></code> 个指定元素
+（<code class="docutils literal notranslate"><span class="pre">abs(count)</span></code> 即是 <code class="docutils literal notranslate"><span class="pre">count</span></code> 的绝对值）；</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">LREM</span></code> 命令在执行完毕之后将返回被移除的元素数量作为返回值。</p>
+<p>举个例子，
+对于以下三个包含相同元素的列表来说：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPUSH</span> <span class="n">sample1</span> <span class="s2">&quot;a&quot;</span> <span class="s2">&quot;b&quot;</span> <span class="s2">&quot;b&quot;</span> <span class="s2">&quot;a&quot;</span> <span class="s2">&quot;c&quot;</span> <span class="s2">&quot;c&quot;</span> <span class="s2">&quot;a&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">7</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPUSH</span> <span class="n">sample2</span> <span class="s2">&quot;a&quot;</span> <span class="s2">&quot;b&quot;</span> <span class="s2">&quot;b&quot;</span> <span class="s2">&quot;a&quot;</span> <span class="s2">&quot;c&quot;</span> <span class="s2">&quot;c&quot;</span> <span class="s2">&quot;a&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">7</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPUSH</span> <span class="n">sample3</span> <span class="s2">&quot;a&quot;</span> <span class="s2">&quot;b&quot;</span> <span class="s2">&quot;b&quot;</span> <span class="s2">&quot;a&quot;</span> <span class="s2">&quot;c&quot;</span> <span class="s2">&quot;c&quot;</span> <span class="s2">&quot;a&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">7</span>
+</pre></div>
+</div>
+<p>执行以下命令将移除 <code class="docutils literal notranslate"><span class="pre">sample1</span></code> 列表包含的所有 <code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code> 元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LREM</span> <span class="n">sample1</span> <span class="mi">0</span> <span class="s2">&quot;a&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>  <span class="o">--</span> <span class="n">移除了三个</span> <span class="s2">&quot;a&quot;</span> <span class="n">元素</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">sample1</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;b&quot;</span>  <span class="o">--</span> <span class="n">列表里面已经不再包含</span> <span class="s2">&quot;a&quot;</span> <span class="n">元素</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;b&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+</pre></div>
+</div>
+<p>而执行以下命令将移除 <code class="docutils literal notranslate"><span class="pre">sample2</span></code> 列表最靠近列表左端的两个 <code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code> 元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LREM</span> <span class="n">sample2</span> <span class="mi">2</span> <span class="s2">&quot;a&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2</span>  <span class="o">--</span> <span class="n">移除了两个</span> <span class="s2">&quot;a&quot;</span> <span class="n">元素</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">sample2</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;b&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;b&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;a&quot;</span>
+</pre></div>
+</div>
+<p>因为上面的 <code class="docutils literal notranslate"><span class="pre">LREM</span></code> 命令只要求移除最先发现的两个 <code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code> 元素，
+所以位于列表最右端的 <code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code> 元素并没有被移除，
+图 4-23 展示了这个 <code class="docutils literal notranslate"><span class="pre">LREM</span></code> 命令的执行过程。</p>
+<hr class="docutils" />
+<p>图 4-23 从 <code class="docutils literal notranslate"><span class="pre">sample2</span></code> 列表中移除最靠近列表左端的两个 <code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code> 元素</p>
+<img alt="_images/IMAGE_REMOVE_LEFT.jpeg" src="_images/IMAGE_REMOVE_LEFT.jpeg" />
+<hr class="docutils" />
+<p>最后，
+执行以下命令将移除 <code class="docutils literal notranslate"><span class="pre">sample3</span></code> 列表最靠近列表右端的两个 <code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code> 元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LREM</span> <span class="n">sample3</span> <span class="o">-</span><span class="mi">2</span> <span class="s2">&quot;a&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2</span>  <span class="o">--</span> <span class="n">移除了两个</span> <span class="s2">&quot;a&quot;</span> <span class="n">元素</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">sample3</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;a&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;b&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;b&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+</pre></div>
+</div>
+<p>因为上面的 <code class="docutils literal notranslate"><span class="pre">LREM</span></code> 调用只要求移除最先发现的两个 <code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code> 元素，
+所以位于列表最左端的 <code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code> 元素并没有被移除，
+图 4-24 展示了这个 <code class="docutils literal notranslate"><span class="pre">LREM</span></code> 调用的执行过程。</p>
+<hr class="docutils" />
+<p>图 4-24 从 <code class="docutils literal notranslate"><span class="pre">sample3</span></code> 列表里面移除最靠近列表右端的两个 <code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code> 元素</p>
+<img alt="_images/IMAGE_REMOVE_RIGHT.jpeg" src="_images/IMAGE_REMOVE_RIGHT.jpeg" />
+<hr class="docutils" />
+<section id="id26">
+<h3>其他信息<a class="headerlink" href="#id26" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N) ，其中 N 为给定列表的长度。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">LREM</span></code> 命令从 Redis 1.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id27">
+<h2>示例：待办事项列表<a class="headerlink" href="#id27" title="Link to this heading">¶</a></h2>
+<p>现在很多人都会使用待办事项软件（也就是通常说的TODO软件）去管理他们的待办事项，
+这些软件通常会提供一些列表，
+用户可以将他们要做的事情记录在待办事项列表里面，
+并将已经完成的事项放入到已完成事项列表里面。
+比如图 4-25 就展示了一个使用待办事项软件记录日常生活事项的例子。</p>
+<hr class="docutils" />
+<p>图 4-25 使用待办事项软件记录日常生活事项</p>
+<img alt="_images/IMAGE_TRELLO.png" src="_images/IMAGE_TRELLO.png" />
+<hr class="docutils" />
+<p>代码清单 4-3 展示了一个使用列表实现的待办事项程序，
+这个程序的核心概念是使用两个列表来分别记录待办事项和已完成事项：</p>
+<ul class="simple">
+<li><p>当用户添加一个新的待办事项时，
+程序就把这个事项放入到待办事项列表中。</p></li>
+<li><p>当用户完成待办事项列表中的某个事项时，
+程序就把这个事项从待办事项列表中移除，
+并将它放入到已完成事项列表中。</p></li>
+</ul>
+<hr class="docutils" />
+<p>代码清单 4-3 代码事项程序：<code class="docutils literal notranslate"><span class="pre">/list/todo_list.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">make_todo_list_key</span><span class="p">(</span><span class="n">user_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    储存待办事项的列表。</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">user_id</span> <span class="o">+</span> <span class="s2">&quot;::todo_list&quot;</span>
+
+<span class="k">def</span> <span class="nf">make_done_list_key</span><span class="p">(</span><span class="n">user_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    储存已完成事项的列表。</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">user_id</span> <span class="o">+</span> <span class="s2">&quot;::done_list&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">TodoList</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">user_id</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user_id</span> <span class="o">=</span> <span class="n">user_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">todo_list</span> <span class="o">=</span> <span class="n">make_todo_list_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">done_list</span> <span class="o">=</span> <span class="n">make_done_list_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user_id</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        将指定事项添加到待办事项列表中。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">lpush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">todo_list</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        从待办事项列表中移除指定的事项。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">lrem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">todo_list</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">done</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        将待办事项列表中的指定事项移动到已完成事项列表，</span>
+<span class="sd">        以此来表示该事项已完成。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 从待办事项列表中移除指定事项</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+        <span class="c1"># 并将它添加到已完成事项列表中</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">lpush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">done_list</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">show_todo_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        列出所有待办事项。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">lrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">todo_list</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">show_done_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        列出所有已完成事项。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">lrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">done_list</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p><code class="docutils literal notranslate"><span class="pre">done()</span></code> 方法是 <code class="docutils literal notranslate"><span class="pre">TodoList</span></code> 程序的核心，
+它首先会使用 <code class="docutils literal notranslate"><span class="pre">LREM</span></code> 命令从代办事项列表中移除指定的事项，
+然后再将该事项添加到已完成事项列表中，
+使得该事项可以在代办事项列表中消失，
+转而出现在已完成列表中。</p>
+<p>作为例子，
+我们可以通过执行以下代码，
+创建出一个 TODO 列表对象：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">todo_list</span> <span class="kn">import</span> <span class="n">TodoList</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">todo</span> <span class="o">=</span> <span class="n">TodoList</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;peter&#39;s todo&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>然后通过执行以下代码，
+往 TODO 列表里面加入待完成事项：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">todo</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;go to sleep&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">todo</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;finish homework&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">todo</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;watch tv&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">todo</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;have lunch&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">todo</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;buy some milk&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">todo</span><span class="o">.</span><span class="n">show_todo_list</span><span class="p">()</span>
+<span class="go">[&#39;buy some milk&#39;, &#39;have lunch&#39;, &#39;watch tv&#39;, &#39;finish homework&#39;, &#39;go to sleep&#39;]</span>
+</pre></div>
+</div>
+<p>当我们完成某件事情之后，
+我们可以把它从待完成事项列表移动到已完成事项列表：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">todo</span><span class="o">.</span><span class="n">done</span><span class="p">(</span><span class="s2">&quot;buy some milk&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">todo</span><span class="o">.</span><span class="n">show_todo_list</span><span class="p">()</span>
+<span class="go">[&#39;have lunch&#39;, &#39;watch tv&#39;, &#39;finish homework&#39;, &#39;go to sleep&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">todo</span><span class="o">.</span><span class="n">show_done_list</span><span class="p">()</span>
+<span class="go">[&#39;buy some milk&#39;]</span>
+</pre></div>
+</div>
+<p>最后，
+如果我们不再需要去做某件事情，
+那么可以把它从待完成列表里面移除：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">todo</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">&quot;watch tv&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">todo</span><span class="o">.</span><span class="n">show_todo_list</span><span class="p">()</span>
+<span class="go">[&#39;have lunch&#39;, &#39;finish homework&#39;, &#39;go to sleep&#39;]</span>
+</pre></div>
+</div>
+</section>
+<section id="blpop">
+<h2>BLPOP：阻塞式左端弹出操作<a class="headerlink" href="#blpop" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 命令是带有阻塞功能的左端弹出操作，
+它接受任意多个列表以及一个秒级精度的超时时限作为参数：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">BLPOP</span> <span class="nb">list</span> <span class="p">[</span><span class="nb">list</span> <span class="o">...</span><span class="p">]</span> <span class="n">timeout</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 命令会按照从左到右的顺序依次检查用户给定的列表，
+并对最先遇到的非空列表执行左端元素弹出操作。
+如果 <code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 命令在检查了用户给定的所有列表之后都没有发现可以执行弹出操作的非空列表，
+那么它将阻塞执行该命令的客户端并开始等待，
+直到某个给定列表变为非空，
+又或者等待时间超出给定时限为止。</p>
+<p>当 <code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 命令成功对某个非空列表执行了弹出操作之后，
+它将向用户返回一个包含两个元素的数组：
+数组的第一个元素记录了执行弹出操作的列表，
+也即是被弹出元素的来源列表；
+而数组的第二个元素则是被弹出元素本身。</p>
+<p>比如在以下这个 <code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 命令执行示例里面，
+被弹出的元素 <code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code> 就来源于列表 <code class="docutils literal notranslate"><span class="pre">alphabets</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>redis&gt; BLPOP alphabets 5  -- 尝试弹出 alphabets 列表的最左端元素，最多阻塞 5 秒
+1) &quot;alphabets&quot;            -- 被弹出元素的来源列表
+2) &quot;a&quot;                    -- 被弹出元素
+</pre></div>
+</div>
+<p>如果用户使用的是 <code class="docutils literal notranslate"><span class="pre">redis-cli</span></code> 客户端，
+并且在执行 <code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 命令的过程中曾经被阻塞过，
+那么客户端还会将被阻塞的时长也打印出来：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">BLPOP</span> <span class="n">message</span><span class="o">-</span><span class="n">queue</span> <span class="mi">5</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;message-queue&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;hello world!&quot;</span>
+<span class="p">(</span><span class="mf">1.60</span><span class="n">s</span><span class="p">)</span>    <span class="o">--</span> <span class="n">客户端执行这个命令时被阻塞了</span> <span class="mf">1.6</span> <span class="n">秒</span>
+</pre></div>
+</div>
+<p>注意，
+这里展示的阻塞时长只是 <code class="docutils literal notranslate"><span class="pre">redis-cli</span></code> 客户端为了方便用户而添加的额外信息，
+<code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 命令返回的结果本身并不包含这一信息。</p>
+<section id="id28">
+<h3>解除阻塞状态<a class="headerlink" href="#id28" title="Link to this heading">¶</a></h3>
+<p>正如前面所说，
+当 <code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 命令发现用户给定的所有列表都为空时，
+它就会让执行命令的客户端进入阻塞状态。
+如果在客户端被阻塞的过程中，
+有另一个客户端向导致阻塞的列表推入了新的元素，
+那么该列表就会变为非空，
+而被阻塞的客户端也会随着 <code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 命令成功弹出列表元素而重新回到非阻塞状态。</p>
+<p>作为例子，
+表 4-1 展示了一个客户端从被阻塞到解除阻塞的整个过程。</p>
+<hr class="docutils" />
+<p>表 4-1 客户端 A 从被阻塞到解除阻塞的整个过程</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>时间</p></th>
+<th class="head"><p>客户端 A</p></th>
+<th class="head"><p>客户端 B</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>T1</p></td>
+<td><p>执行 <code class="docutils literal notranslate"><span class="pre">BLPOP</span> <span class="pre">lst</span> <span class="pre">10</span></code> ，
+因为 <code class="docutils literal notranslate"><span class="pre">lst</span></code> 为空而导致客户端被阻塞。</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>T2</p></td>
+<td></td>
+<td><p>执行 <code class="docutils literal notranslate"><span class="pre">RPUSH</span> <span class="pre">lst</span> <span class="pre">&quot;hello&quot;</span></code> 命令，
+将 <code class="docutils literal notranslate"><span class="pre">&quot;hello&quot;</span></code> 元素推入到列表 <code class="docutils literal notranslate"><span class="pre">lst</span></code> 中。</p></td>
+</tr>
+<tr class="row-even"><td><p>T3</p></td>
+<td><p>服务器检测到导致这个客户端阻塞的
+<code class="docutils literal notranslate"><span class="pre">lst</span></code> 列表已经非空，
+于是从列表中弹出 <code class="docutils literal notranslate"><span class="pre">&quot;hello&quot;</span></code> 元素并将其返回给客户端。</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>T4</p></td>
+<td><p>接收到 <code class="docutils literal notranslate"><span class="pre">&quot;hello&quot;</span></code> 元素的客户端重新回到非阻塞状态。</p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<p>如果在同一时间，
+有多个客户端因为同一个列表而被阻塞，
+那么当导致阻塞的列表变为非空时，
+服务器将按照“先阻塞先服务”的规则，
+依次为被阻塞的各个客户端弹出列表元素。</p>
+<p>比如表 4-2 就展示了一个服务器按照先阻塞先服务规则处理被阻塞客户端的例子：
+在这个例子中，
+A、B、C 三个客户端先后执行了 <code class="docutils literal notranslate"><span class="pre">BLPOP</span> <span class="pre">lst</span> <span class="pre">10</span></code> 命令，
+并且都因为 <code class="docutils literal notranslate"><span class="pre">lst</span></code> 列表为空而被阻塞，
+如果在这些客户端被阻塞期间，
+客户端 D 执行了 <code class="docutils literal notranslate"><span class="pre">RPUSH</span> <span class="pre">lst</span> <span class="pre">&quot;hello&quot;</span> <span class="pre">&quot;world&quot;</span> <span class="pre">&quot;again&quot;</span></code> 命令，
+那么服务器首先会处理客户端 A 的 <code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 命令，
+并将被弹出的 <code class="docutils literal notranslate"><span class="pre">&quot;hello&quot;</span></code> 元素返回给它；
+接着处理客户端 B 的 <code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 命令，
+并将被弹出的 <code class="docutils literal notranslate"><span class="pre">&quot;world&quot;</span></code> 元素返回给它；
+最后处理客户端 C 的 <code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 命令，
+并将被弹出的 <code class="docutils literal notranslate"><span class="pre">&quot;again&quot;</span></code> 元素返回给它。</p>
+<hr class="docutils" />
+<p>表 4-2 先阻塞先服务器处理示例</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>时间</p></th>
+<th class="head"><p>客户端 A</p></th>
+<th class="head"><p>客户端 B</p></th>
+<th class="head"><p>客户端 C</p></th>
+<th class="head"><p>客户端 D</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>T1</p></td>
+<td><p>执行 <code class="docutils literal notranslate"><span class="pre">BLPOP</span> <span class="pre">lst</span> <span class="pre">10</span></code></p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>T2</p></td>
+<td></td>
+<td><p>执行 <code class="docutils literal notranslate"><span class="pre">BLPOP</span> <span class="pre">lst</span> <span class="pre">10</span></code></p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>T3</p></td>
+<td></td>
+<td></td>
+<td><p>执行 <code class="docutils literal notranslate"><span class="pre">BLPOP</span> <span class="pre">lst</span> <span class="pre">10</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>T4</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td><p>执行 <code class="docutils literal notranslate"><span class="pre">RPUSH</span> <span class="pre">lst</span> <span class="pre">&quot;hello&quot;</span> <span class="pre">&quot;world&quot;</span> <span class="pre">&quot;again&quot;</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>T5</p></td>
+<td><p>从 <code class="docutils literal notranslate"><span class="pre">lst</span></code> 列表弹出
+<code class="docutils literal notranslate"><span class="pre">&quot;hello&quot;</span></code>
+元素并解除阻塞状态。</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>T6</p></td>
+<td></td>
+<td><p>从 <code class="docutils literal notranslate"><span class="pre">lst</span></code> 列表弹出
+<code class="docutils literal notranslate"><span class="pre">&quot;world&quot;</span></code>
+元素并解除阻塞状态。</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>T7</p></td>
+<td></td>
+<td></td>
+<td><p>从 <code class="docutils literal notranslate"><span class="pre">lst</span></code> 列表弹出
+<code class="docutils literal notranslate"><span class="pre">&quot;again&quot;</span></code>
+元素并解除阻塞状态。</p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<p>最后，
+如果被推入到列表的元素数量少于被阻塞的客户端数量，
+那么先被阻塞的客户端将会先解除阻塞，
+而未能解除阻塞的客户端则需要继续等待下次推入操作。</p>
+<p>比如说，
+如果有五个客户端因为列表为空而被阻塞，
+但是推入到列表的元素只有三个，
+那么最先被阻塞的三个客户端将会解除阻塞状态，
+而剩下的两个客户端则会继续阻塞。</p>
+</section>
+<section id="id29">
+<h3>处理空列表<a class="headerlink" href="#id29" title="Link to this heading">¶</a></h3>
+<p>如果用户向 <code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 命令传入的所有列表都是空列表，
+并且这些列表在给定的时限之内一直没有变成非空列表，
+那么 <code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 命令将在给定时限到达之后向客户端返回一个空值，
+表示没有任何元素被弹出：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">BLPOP</span> <span class="n">empty</span><span class="o">-</span><span class="nb">list</span> <span class="mi">5</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+<span class="p">(</span><span class="mf">5.04</span><span class="n">s</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id30">
+<h3>列表名的作用<a class="headerlink" href="#id30" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 命令之所以会返回被弹出元素的来源列表，
+是为了让用户在传入多个列表的情况下，
+知道被弹出的元素来源于哪个列表。</p>
+<p>比如在以下这个示例里面，
+通过 <code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 命令的回复，
+我们可以知道被弹出的元素来自于列表 <code class="docutils literal notranslate"><span class="pre">queue2</span></code> ，
+而不是 <code class="docutils literal notranslate"><span class="pre">queue1</span></code> 或者 <code class="docutils literal notranslate"><span class="pre">queue3</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">BLPOP</span> <span class="n">queue1</span> <span class="n">queue2</span> <span class="n">queue3</span> <span class="mi">5</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;queue2&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;hello world!&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id31">
+<h3>阻塞效果的范围<a class="headerlink" href="#id31" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 命令的阻塞效果只对执行这个命令的客户端有效，
+其他客户端以及 Redis 服务器本身并不会因为这个命令而被阻塞。</p>
+</section>
+<section id="id32">
+<h3>其他信息<a class="headerlink" href="#id32" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N) ，其中 N 为用户给定的列表数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 命令从 Redis 2.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="brpop">
+<h2>BRPOP：阻塞式右端弹出操作<a class="headerlink" href="#brpop" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">BRPOP</span></code> 命令是带有阻塞功能的右端弹出操作，
+除了弹出的方向不同之外，
+它的其他方面都和 <code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 命令一样：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">BRPOP</span> <span class="nb">list</span> <span class="p">[</span><span class="nb">list</span> <span class="o">...</span><span class="p">]</span> <span class="n">timeout</span>
+</pre></div>
+</div>
+<p>作为例子，
+以下代码展示了如何使用 <code class="docutils literal notranslate"><span class="pre">BRPOP</span></code> 命令去尝试弹出给定列表的最右端元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">BRPOP</span> <span class="n">queue1</span> <span class="n">queue2</span> <span class="n">queue3</span> <span class="mi">10</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;queue2&quot;</span>    <span class="o">--</span> <span class="n">被弹出元素的来源列表</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;bye bye&quot;</span>   <span class="o">--</span> <span class="n">被弹出元素</span>
+</pre></div>
+</div>
+<section id="id33">
+<h3>其他信息<a class="headerlink" href="#id33" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N) ，其中 N 为用户给定的列表数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">BRPOP</span></code> 命令从 Redis 2.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="brpoplpush">
+<h2>BRPOPLPUSH：阻塞式弹出并推入操作<a class="headerlink" href="#brpoplpush" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">BRPOPLPUSH</span></code> 命令是 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令的阻塞版本，
+它接受一个源列表、一个目标列表以及一个秒级精度的超时时限作为参数：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">BRPOPLPUSH</span> <span class="n">source</span> <span class="n">target</span> <span class="n">timeout</span>
+</pre></div>
+</div>
+<p>根据源列表是否为空，
+<code class="docutils literal notranslate"><span class="pre">BRPOPLPUSH</span></code> 命令会产生以下两种行为：</p>
+<ul class="simple">
+<li><p>如果源列表非空，
+那么 <code class="docutils literal notranslate"><span class="pre">BRPOPLPUSH</span></code> 命令的行为就和 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令的行为一样：
+<code class="docutils literal notranslate"><span class="pre">BRPOPLPUSH</span></code> 命令会弹出位于源列表最右端的元素，
+并将该元素推入到目标列表的左端，
+最后向客户端返回被推入的元素。</p></li>
+<li><p>如果源列表为空，
+那么 <code class="docutils literal notranslate"><span class="pre">BRPOPLPUSH</span></code> 命令将阻塞执行该命令的客户端，
+然后在给定的时限内等待可弹出的元素出现，
+又或者等待时间超过给定时限为止。</p></li>
+</ul>
+<p>举个例子，
+假设现在有 <code class="docutils literal notranslate"><span class="pre">list3</span></code> 、 <code class="docutils literal notranslate"><span class="pre">list4</span></code> 两个列表如下：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">client</span><span class="o">-</span><span class="mi">1</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">list3</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;hello&quot;</span>
+
+<span class="n">client</span><span class="o">-</span><span class="mi">1</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">list4</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;a&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;b&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+</pre></div>
+</div>
+<p>如果我们以这两个列表作为输入执行 <code class="docutils literal notranslate"><span class="pre">BRPOPLPUSH</span></code> 命令，
+由于源列表 <code class="docutils literal notranslate"><span class="pre">list3</span></code> 非空，
+所以 <code class="docutils literal notranslate"><span class="pre">BRPOPLPUSH</span></code> 命令将不阻塞直接执行，
+就像 <code class="docutils literal notranslate"><span class="pre">RPOPLPUSH</span></code> 命令一样：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">client</span><span class="o">-</span><span class="mi">1</span><span class="o">&gt;</span> <span class="n">BRPOPLPUSH</span> <span class="n">list3</span> <span class="n">list4</span> <span class="mi">10</span>
+<span class="s2">&quot;hello&quot;</span>
+
+<span class="n">client</span><span class="o">-</span><span class="mi">1</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">list3</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span>
+<span class="p">(</span><span class="n">empty</span> <span class="nb">list</span> <span class="ow">or</span> <span class="nb">set</span><span class="p">)</span>
+
+<span class="n">client</span><span class="o">-</span><span class="mi">1</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">list4</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;hello&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;a&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;b&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+</pre></div>
+</div>
+<p>现在，
+由于 <code class="docutils literal notranslate"><span class="pre">list3</span></code> 为空，
+如果我们再次执行相同的 <code class="docutils literal notranslate"><span class="pre">BRPOPLPUSH</span></code> 命令，
+那么客户端 <code class="docutils literal notranslate"><span class="pre">client-1</span></code> 将被阻塞，
+直到我们从另一个客户端 <code class="docutils literal notranslate"><span class="pre">client-2</span></code> 向 <code class="docutils literal notranslate"><span class="pre">list3</span></code> 推入新元素为止：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">client</span><span class="o">-</span><span class="mi">1</span><span class="o">&gt;</span> <span class="n">BRPOPLPUSH</span> <span class="n">list3</span> <span class="n">list4</span> <span class="mi">10</span>
+<span class="s2">&quot;world&quot;</span>
+<span class="p">(</span><span class="mf">1.42</span><span class="n">s</span><span class="p">)</span>  <span class="o">--</span> <span class="n">被阻塞了</span> <span class="mf">1.42</span> <span class="n">秒</span>
+
+<span class="n">client</span><span class="o">-</span><span class="mi">1</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">list3</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span>
+<span class="p">(</span><span class="n">empty</span> <span class="nb">list</span> <span class="ow">or</span> <span class="nb">set</span><span class="p">)</span>
+
+<span class="n">client</span><span class="o">-</span><span class="mi">1</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">list4</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;world&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;hello&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;a&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;b&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">client</span><span class="o">-</span><span class="mi">2</span><span class="o">&gt;</span> <span class="n">RPUSH</span> <span class="n">list3</span> <span class="s2">&quot;world&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>表 4-3 展示了客户端从被阻塞到解除阻塞的整个过程。</p>
+<hr class="docutils" />
+<p>表 4-3 阻塞 <code class="docutils literal notranslate"><span class="pre">BRPOPLPUSH</span></code> 命令的执行过程</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>时间</p></th>
+<th class="head"><p>客户端 <code class="docutils literal notranslate"><span class="pre">client-1</span></code></p></th>
+<th class="head"><p>客户端 <code class="docutils literal notranslate"><span class="pre">client-2</span></code></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>T1</p></td>
+<td><p>尝试执行 <code class="docutils literal notranslate"><span class="pre">BRPOPLPUSH</span> <span class="pre">list3</span> <span class="pre">list4</span> <span class="pre">10</span></code> 并被阻塞。</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>T2</p></td>
+<td></td>
+<td><p>执行 <code class="docutils literal notranslate"><span class="pre">RPUSH</span> <span class="pre">list3</span> <span class="pre">&quot;world&quot;</span></code> ，向列表 <code class="docutils literal notranslate"><span class="pre">list3</span></code> 推入新元素。</p></td>
+</tr>
+<tr class="row-even"><td><p>T3</p></td>
+<td><p>服务器执行 <code class="docutils literal notranslate"><span class="pre">BRPOPLPUSH</span></code> 命令，
+并将元素 <code class="docutils literal notranslate"><span class="pre">&quot;world&quot;</span></code> 返回给客户端。</p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<section id="id34">
+<h3>处理源列表为空的情况<a class="headerlink" href="#id34" title="Link to this heading">¶</a></h3>
+<p>如果源列表在用户给定的时限内一直没有元素可供弹出，
+那么 <code class="docutils literal notranslate"><span class="pre">BRPOPLPUSH</span></code> 命令将向客户端返回一个空值，
+以此来表示此次操作没有弹出和推入任何元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">BRPOPLPUSH</span> <span class="n">empty</span><span class="o">-</span><span class="nb">list</span> <span class="n">another</span><span class="o">-</span><span class="nb">list</span> <span class="mi">5</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+<span class="p">(</span><span class="mf">5.05</span><span class="n">s</span><span class="p">)</span>  <span class="o">--</span> <span class="n">客户端被阻塞了</span> <span class="mf">5.05</span> <span class="n">秒</span>
+</pre></div>
+</div>
+<p>跟 <code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">BRPOP</span></code> 命令一样，
+<code class="docutils literal notranslate"><span class="pre">redis-cli</span></code> 客户端也会显示 <code class="docutils literal notranslate"><span class="pre">BRPOPLPUSH</span></code> 命令的阻塞时长。</p>
+</section>
+<section id="id35">
+<h3>其他信息<a class="headerlink" href="#id35" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">BRPOPLPUSH</span></code> 命令从 Redis 2.2.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id36">
+<h2>示例：带有阻塞功能的消息队列<a class="headerlink" href="#id36" title="Link to this heading">¶</a></h2>
+<p>在构建应用程序的时候，
+我们有时候会遇到一些非常耗时的操作，
+比如发送邮件、将一条新微博同步给上百万个用户、对硬盘进行大量读写、执行庞大的计算等等。
+因为这些操作是如此耗时，
+所以如果我们直接在响应用户请求的过程中执行它们的话，
+那么用户就需要等待非常长时间。</p>
+<p>比如说，
+为了验证用户身份的有效性，
+有些网站在注册新用户的时候，
+会向用户给定的邮件地址发送一封激活邮件，
+用户只有在点击了验证邮件里面的激活链接之后，
+新注册的帐号才能够正常使用。</p>
+<p>下面这段伪代码展示了一个带有邮件验证功能的帐号注册函数，
+这个函数不仅会为用户输入的用户名和密码创建新帐号，
+还会向用户给定的邮件地址发送一封激活：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">register</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">email</span><span class="p">):</span>
+    <span class="c1"># 创建新帐号</span>
+    <span class="n">create_new_account</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+    <span class="c1"># 发送激活邮件</span>
+    <span class="n">send_validate_email</span><span class="p">(</span><span class="n">email</span><span class="p">)</span>
+    <span class="c1"># 向用户返回注册结果</span>
+    <span class="n">ui_print</span><span class="p">(</span><span class="s2">&quot;帐号注册成功，请访问你的邮箱并激活帐号。&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>因为邮件发送操作需要进行复杂的网络信息交换，
+所以它并不是一个快速的操作，
+如果我们直接在 <code class="docutils literal notranslate"><span class="pre">send_valid_email()</span></code> 函数里面执行邮件发送操作的话，
+那么用户可能就需要等待一段较长的时间才能看到 <code class="docutils literal notranslate"><span class="pre">ui_print()</span></code> 函数打印出的反馈信息。</p>
+<p>为了解决这个问题，
+在执行 <code class="docutils literal notranslate"><span class="pre">send_validate_email()</span></code> 函数的时候，
+我们可以不立即执行邮件发送操作，
+而是将邮件发送任务放入到一个队列里面，
+然后由后台的线程负责实际执行。
+这样的话，
+程序只需要执行一个入队操作，
+然后就可以直接向用户反馈注册结果了，
+这比实际地发送邮件之后再向用户反馈结果要快得多。</p>
+<p>代码清单 4-4 展示了一个使用 Redis 实现的消息队列，
+它使用 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令将消息推入队列，
+并使用 <code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 命令从队列里面取出待处理的消息。</p>
+<hr class="docutils" />
+<p>代码清单 4-4 使用列表实现的消息队列：<code class="docutils literal notranslate"><span class="pre">/list/message_queue.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MessageQueue</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">queue_name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">queue_name</span> <span class="o">=</span> <span class="n">queue_name</span>
+
+    <span class="k">def</span> <span class="nf">add_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        将一条消息放入到队列里面。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">rpush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queue_name</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        从队列里面获取一条消息，</span>
+<span class="sd">        如果暂时没有消息可用，那么就在 timeout 参数指定的时限内阻塞并等待可用消息出现。</span>
+
+<span class="sd">        timeout 参数的默认值为 0 ，表示一直等待直到消息出现为止。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># blpop 的结果可以是 None ，也可以是一个包含两个元素的元组</span>
+        <span class="c1"># 元组的第一个元素是弹出元素的来源队列，而第二个元素则是被弹出的元素</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">blpop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queue_name</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">source_queue</span><span class="p">,</span> <span class="n">poped_item</span> <span class="o">=</span> <span class="n">result</span>
+            <span class="k">return</span> <span class="n">poped_item</span>
+
+    <span class="k">def</span> <span class="nf">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回队列目前包含的消息数量。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">llen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queue_name</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>为了使用这个消息队列，
+我们通常需要用到两个客户端：</p>
+<ul class="simple">
+<li><p>一个客户端作为消息的发送者（sender），
+它需要将待处理的消息推入到队列里面；</p></li>
+<li><p>而另一个客户端则作为消息的接收者（receiver）和消费者（consumer），
+它负责从队列里面取出消息，
+并根据消息内容进行相应的处理工作。</p></li>
+</ul>
+<p>下面的这段代码展示了一个简单的消息接收者，
+在没有消息的时候，
+这个程序将阻塞在 <code class="docutils literal notranslate"><span class="pre">mq.get_message()</span></code> 调用上面；
+当有消息（邮件地址）出现时，
+程序就会打印出该消息并发送邮件：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">message_queue</span> <span class="kn">import</span> <span class="n">MessageQueue</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mq</span> <span class="o">=</span> <span class="n">MessageQueue</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s1">&#39;validate user email queue&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+<span class="gp">... </span>  <span class="n">email_address</span> <span class="o">=</span> <span class="n">mq</span><span class="o">.</span><span class="n">get_message</span><span class="p">()</span>  <span class="c1"># 阻塞直到消息出现</span>
+<span class="gp">... </span>  <span class="n">send_email</span><span class="p">(</span><span class="n">email_address</span><span class="p">)</span>         <span class="c1"># 打印出邮件地址并发送邮件</span>
+<span class="gp">...</span>
+<span class="go">peter@exampl.com</span>
+<span class="go">jack@spam.com</span>
+<span class="go">tom@blahblah.com</span>
+</pre></div>
+</div>
+<p>而以下代码则展示了消息发送者是如何将消息推入到队列里面的：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">message_queue</span> <span class="kn">import</span> <span class="n">MessageQueue</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mq</span> <span class="o">=</span> <span class="n">MessageQueue</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s1">&#39;validate user email queue&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mq</span><span class="o">.</span><span class="n">add_message</span><span class="p">(</span><span class="s2">&quot;peter@exampl.com&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mq</span><span class="o">.</span><span class="n">add_message</span><span class="p">(</span><span class="s2">&quot;jack@spam.com&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mq</span><span class="o">.</span><span class="n">add_message</span><span class="p">(</span><span class="s2">&quot;tom@blahblah.com&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="id37">
+<h3>阻塞弹出操作的应用<a class="headerlink" href="#id37" title="Link to this heading">¶</a></h3>
+<p>本节展示的消息队列之所以使用 <code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 命令而不是 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令来实现出队操作，
+是因为阻塞弹出操作可以让消息接收者在队列为空的时候自动阻塞，
+而不必手动进行休眠，
+从而使得消息处理程序的编写变得更为简单直接，
+并且还可以有效地节约系统资源。</p>
+<p>作为对比，
+以下代码展示了在使用 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令实现出队操作的情况下，
+如何实现类似上面展示的消息处理程序：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="c1"># 尝试获取消息，如果没有消息，那么返回 None</span>
+    <span class="n">email_address</span> <span class="o">=</span> <span class="n">mq</span><span class="o">.</span><span class="n">get_message</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">email_address</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># 有消息，发送邮件</span>
+        <span class="n">send_email</span><span class="p">(</span><span class="n">email_address</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># 没有消息可用，休眠一百毫秒之后再试</span>
+        <span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>因为缺少自动的阻塞操作，
+所以这个程序在没有取得消息的情况下，
+只能以一百毫秒一次的频率去尝试获取消息，
+如果队列为空的时间比较长，
+那么这个程序就会发送很多多余的 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令，
+并因此浪费很多 CPU 资源和网络资源。</p>
+</section>
+<section id="id38">
+<h3>使用消息队列实现实时提醒<a class="headerlink" href="#id38" title="Link to this heading">¶</a></h3>
+<p>消息队列除了可以在应用程序的内部中使用，
+还可以用于实现面向用户的实时提醒系统。</p>
+<p>比如说，
+如果我们在构建一个社交网站的话，
+那么可以使用 JavaScript 脚本，
+让客户端以异步的方式调用 <code class="docutils literal notranslate"><span class="pre">MessageQueue</span></code> 类的 <code class="docutils literal notranslate"><span class="pre">get_message()</span></code> 方法，
+然后程序就可以在用户被关注的时候、收到了新回复的时候又或者收到新私信的时候，
+通过调用 <code class="docutils literal notranslate"><span class="pre">add_message()</span></code> 方法来向用户发送提醒信息。</p>
+</section>
+</section>
+<section id="id39">
+<h2>重点回顾<a class="headerlink" href="#id39" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Redis 的列表是一种线性的有序结构，
+它可以按照元素推入到列表中的顺序来储存元素，
+并且列表中的元素可以出现重复。</p></li>
+<li><p>用户可以使用 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 、 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 、 <code class="docutils literal notranslate"><span class="pre">RPOP</span></code> 、 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 等多个命令，
+从列表的两端推入或者弹出元素，
+也可以通过 <code class="docutils literal notranslate"><span class="pre">LINSERT</span></code> 命令，
+将新元素插入到列表已有元素的前面或后面。</p></li>
+<li><p>用户可以使用 <code class="docutils literal notranslate"><span class="pre">LREM</span></code> 命令从列表中移除指定的元素，
+又或者直接使用 <code class="docutils literal notranslate"><span class="pre">LTRIM</span></code> 命令对列表进行修剪。</p></li>
+<li><p>当用户传给 <code class="docutils literal notranslate"><span class="pre">LRANGE</span></code> 命令的索引范围超出了列表的有效索引范围时，
+<code class="docutils literal notranslate"><span class="pre">LRANGE</span></code> 命令将对传入的索引范围进行修正，
+并根据修正后的索引范围来获取列表元素。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 、 <code class="docutils literal notranslate"><span class="pre">BRPOP</span></code> 和 <code class="docutils literal notranslate"><span class="pre">BRPOPLPUSH</span></code> 是阻塞版本的弹出和推入命令，
+如果用户给定的所有列表都为空，
+那么执行命令的客户端将被阻塞，
+直到给定的阻塞时限到达又或者某个给定列表非空为止。</p></li>
+</ul>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">列表（List）</a><ul>
+<li><a class="reference internal" href="#lpush">LPUSH：将元素推入到列表左端</a><ul>
+<li><a class="reference internal" href="#id1">一次推入多个元素</a></li>
+<li><a class="reference internal" href="#id2">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#rpush">RPUSH：将元素推入到列表右端</a><ul>
+<li><a class="reference internal" href="#id3">一次推入多个元素</a></li>
+<li><a class="reference internal" href="#id4">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#lpushxrpushx">LPUSHX、RPUSHX：只对已存在的列表执行推入操作</a><ul>
+<li><a class="reference internal" href="#id5">每次只能推入单个元素</a></li>
+<li><a class="reference internal" href="#id6">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#lpop">LPOP：弹出列表最左端的元素</a><ul>
+<li><a class="reference internal" href="#id7">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#rpop">RPOP：弹出列表最右端的元素</a><ul>
+<li><a class="reference internal" href="#id8">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#rpoplpush">RPOPLPUSH：将右端弹出的元素推入到左端</a><ul>
+<li><a class="reference internal" href="#id9">源列表和目标列表相同</a></li>
+<li><a class="reference internal" href="#id10">处理空列表</a></li>
+<li><a class="reference internal" href="#id11">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id12">示例：先进先出队列</a></li>
+<li><a class="reference internal" href="#llen">LLEN：获取列表的长度</a><ul>
+<li><a class="reference internal" href="#id13">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#lindex">LINDEX：获取指定索引上的元素</a><ul>
+<li><a class="reference internal" href="#id14">处理超出范围的索引</a></li>
+<li><a class="reference internal" href="#id15">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#lrange">LRANGE：获取指定索引范围上的元素</a><ul>
+<li><a class="reference internal" href="#id16">获取列表包含的所有元素</a></li>
+<li><a class="reference internal" href="#id17">处理超出范围的索引</a></li>
+<li><a class="reference internal" href="#id18">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id19">示例：分页</a></li>
+<li><a class="reference internal" href="#lset">LSET：为指定索引设置新元素</a><ul>
+<li><a class="reference internal" href="#id20">处理超出范围的索引</a></li>
+<li><a class="reference internal" href="#id21">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#linsert">LINSERT：将元素插入到列表</a><ul>
+<li><a class="reference internal" href="#id22">处理不存在的元素</a></li>
+<li><a class="reference internal" href="#id23">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#ltrim">LTRIM：修剪列表</a><ul>
+<li><a class="reference internal" href="#id24">处理负数索引</a></li>
+<li><a class="reference internal" href="#id25">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#lrem">LREM：从列表中移除指定元素</a><ul>
+<li><a class="reference internal" href="#id26">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id27">示例：待办事项列表</a></li>
+<li><a class="reference internal" href="#blpop">BLPOP：阻塞式左端弹出操作</a><ul>
+<li><a class="reference internal" href="#id28">解除阻塞状态</a></li>
+<li><a class="reference internal" href="#id29">处理空列表</a></li>
+<li><a class="reference internal" href="#id30">列表名的作用</a></li>
+<li><a class="reference internal" href="#id31">阻塞效果的范围</a></li>
+<li><a class="reference internal" href="#id32">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#brpop">BRPOP：阻塞式右端弹出操作</a><ul>
+<li><a class="reference internal" href="#id33">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#brpoplpush">BRPOPLPUSH：阻塞式弹出并推入操作</a><ul>
+<li><a class="reference internal" href="#id34">处理源列表为空的情况</a></li>
+<li><a class="reference internal" href="#id35">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id36">示例：带有阻塞功能的消息队列</a><ul>
+<li><a class="reference internal" href="#id37">阻塞弹出操作的应用</a></li>
+<li><a class="reference internal" href="#id38">使用消息队列实现实时提醒</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id39">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="hash.html"
+                          title="Previous page">&larr; 散列（Hash）</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="set.html"
+                          title="Next page">&rarr; 集合（Set）</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>本页</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/list.rst.txt"
+            rel="nofollow">显示源代码</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">快速搜索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="提交" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="set.html" title="集合（Set）"
+             >下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="hash.html" title="散列（Hash）"
+             >上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">列表（List）</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; 版权所有 2019, 黄健宏.
+      由 <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6创建。
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

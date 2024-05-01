@@ -1,0 +1,206 @@
+
+
+<!DOCTYPE html>
+
+<html lang="zh-CN" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>附录 B ：redis-py 安装方法 &#8212; Redis使用手册</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" href="./" type="text/css" />
+    
+    <script src="_static/documentation_options.js?v=f115507d"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=beaddf03"></script>
+
+    
+    
+     
+        <script src="_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="_static/cloud.js"></script>
+    
+
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+    <link rel="prev" title="附录 A ：Redis 安装方法" href="appendix_a.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="appendix_a.html" title="附录 A ：Redis 安装方法"
+             accesskey="P">上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">附录 B ：redis-py 安装方法</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="b-redis-py">
+<h1>附录 B ：redis-py 安装方法<a class="headerlink" href="#b-redis-py" title="Link to this heading">¶</a></h1>
+<p>本书的绝大部分代码示例都使用 Python 语言编写，
+并且使用了 redis-py 客户端来连接服务器并发送命令请求。</p>
+<p>如果你正在使用的电脑尚未安装 Python ，
+那么请访问 Python 的官方网站并按照文档中介绍的方法下载并安装相应的编程环境：
+<a class="reference external" href="https://www.python.org/downloads/">https://www.python.org/downloads/</a> 。</p>
+<p>因为本书的程序都是使用 Python 3 编写的，
+所以在下载 Python 安装程序的时候，
+请确保你下载的是 Python 3 而不是 Python 2 的安装程序。</p>
+<p>在安装 Python 之后，
+你应该可以通过输入以下命令来运行该语言的解释器：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ python3
+Python 3.7.3 (default, Mar 27 2019, 09:23:15)
+[Clang 10.0.1 (clang-1001.0.46.3)] on darwin
+Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.
+&gt;&gt;&gt;
+</pre></div>
+</div>
+<p>在安装完 Python 语言环境之后，
+我们就可以通过执行以下命令，
+使用其附带的 pip 程序来安装 redis-py 客户端了：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pip install redis
+</pre></div>
+</div>
+<p>在成功安装 redis-py 之后，
+我们就能够在 Python 解释器里面载入这个库了：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>             <span class="c1"># 载入库</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">()</span>                    <span class="c1"># 创建客户端实例</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;msg&quot;</span><span class="p">,</span> <span class="s2">&quot;hello world&quot;</span><span class="p">)</span>    <span class="c1"># 执行 SET 命令</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;msg&quot;</span><span class="p">)</span>                   <span class="c1"># 执行 GET 命令</span>
+<span class="go">b&#39;hello world&#39;                          # 未解码的值</span>
+</pre></div>
+</div>
+<p>注意，
+正如这里展示的 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令执行结果所示，
+redis-py 默认将返回编码后的值作为结果。
+如果我们想让 redis-py 在操作字符串数据的时候自动对其实施解码，
+那么只需要在创建客户端实例的时候将 <code class="docutils literal notranslate"><span class="pre">decode_responses</span></code> 可选项的值设置为 <code class="docutils literal notranslate"><span class="pre">True</span></code> 即可，
+就像这样：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;msg&quot;</span><span class="p">)</span>
+<span class="go">&#39;hello world&#39;           # 字符串已解码</span>
+</pre></div>
+</div>
+<p>最后，
+如果你有兴趣的话，
+还可以通过执行以下命令查看 redis-py 目前支持的 Redis 命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">client</span><span class="p">):</span>
+<span class="gp">... </span>  <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">RESPONSE_CALLBACKS</span>
+<span class="go">__class__</span>
+<span class="go"># ...</span>
+<span class="go">_zaggregate</span>
+<span class="go">append</span>
+<span class="go">bgrewriteaof</span>
+<span class="go">bgsave</span>
+<span class="go">bitcount</span>
+<span class="go">bitfield</span>
+<span class="go">bitop</span>
+<span class="go">bitpos</span>
+<span class="go"># ...</span>
+<span class="go">zscan</span>
+<span class="go">zscan_iter</span>
+<span class="go">zscore</span>
+<span class="go">zunionstore</span>
+</pre></div>
+</div>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="appendix_a.html"
+                          title="Previous page">&larr; 附录 A ：Redis 安装方法</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>本页</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/appendix_b.rst.txt"
+            rel="nofollow">显示源代码</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">快速搜索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="提交" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="appendix_a.html" title="附录 A ：Redis 安装方法"
+             >上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">附录 B ：redis-py 安装方法</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; 版权所有 2019, 黄健宏.
+      由 <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6创建。
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

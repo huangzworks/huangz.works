@@ -1,0 +1,2067 @@
+
+
+<!DOCTYPE html>
+
+<html lang="zh-CN" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>集合（Set） &#8212; Redis使用手册</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" href="./" type="text/css" />
+    
+    <script src="_static/documentation_options.js?v=f115507d"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=beaddf03"></script>
+
+    
+    
+     
+        <script src="_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="_static/cloud.js"></script>
+    
+
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+    <link rel="next" title="数据库" href="database.html" />
+    <link rel="prev" title="列表（List）" href="list.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="database.html" title="数据库"
+             accesskey="N">下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="list.html" title="列表（List）"
+             accesskey="P">上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">集合（Set）</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="set">
+<h1>集合（Set）<a class="headerlink" href="#set" title="Link to this heading">¶</a></h1>
+<p>Redis 的集合键允许用户将任意多个各不相同的元素储存到集合里面，
+这些元素既可以是文本数据，
+也可以是二进制数据。
+虽然上一章介绍的列表键也允许我们储存多个元素，
+但是跟列表相比，
+集合有以下两个明显的区别：</p>
+<ol class="arabic simple">
+<li><p>列表可以储存重复元素，
+而集合只会储存非重复元素，
+尝试将一个已存在的元素添加到集合将被忽略。</p></li>
+<li><p>列表以有序方式储存元素，
+而集合则以无序方式储存元素。</p></li>
+</ol>
+<p>这两个区别带来的差异主要跟命令的复杂度有关：</p>
+<ul class="simple">
+<li><p>在执行像 <code class="docutils literal notranslate"><span class="pre">LINSERT</span></code> 和 <code class="docutils literal notranslate"><span class="pre">LREM</span></code> 这样的列表命令时，
+即使命令只针对单个列表元素，
+程序有时候也不得不遍历整个列表以确定指定的元素是否存在，
+因此这些命令的复杂度都为 O(N) 。</p></li>
+<li><p>另一方面，
+对于集合来说，
+因为所有针对单个元素的集合命令都不需要遍历整个集合，
+所以它们的复杂度都为 O(1) 。</p></li>
+</ul>
+<p>因此当我们需要储存多个元素时，
+就可以考虑这些元素是否可以以无序的方式储存，
+并且是否不会出现重复，
+如果是的话，
+那么就可以使用集合来储存这些元素，
+从而有效地利用集合操作的效率优势。</p>
+<p>作为例子，
+图 5-1 展示了一个名为 <code class="docutils literal notranslate"><span class="pre">databases</span></code> 的集合，
+这个集合里面包含了 <code class="docutils literal notranslate"><span class="pre">&quot;Redis&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;MongoDB&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;MySQL&quot;</span></code> 等八个元素。</p>
+<hr class="docutils" />
+<p>图 5-1 集合示例</p>
+<img alt="_images/IMAGE_SET_EXAMPLE.png" src="_images/IMAGE_SET_EXAMPLE.png" />
+<hr class="docutils" />
+<p>Redis 为集合键提供了一系列操作命令，
+通过使用这些命令，
+用户可以：</p>
+<ul class="simple">
+<li><p>将新元素添加到集合里面，或者从集合里面移除已有的元素。</p></li>
+<li><p>将指定的元素从一个集合移动到另一个集合。</p></li>
+<li><p>获取集合包含的所有元素。</p></li>
+<li><p>获取集合包含的元素数量。</p></li>
+<li><p>检查给定元素是否存在于集合。</p></li>
+<li><p>从集合里面随机地获取指定数量的元素。</p></li>
+<li><p>对多个集合执行交集、并集、差集计算。</p></li>
+</ul>
+<p>本章接下来将对 Redis 集合键的各个命令进行介绍，
+并说明如何使用这些命令去解决各种实际存在的问题。</p>
+<section id="sadd">
+<h2>SADD：将元素添加到集合<a class="headerlink" href="#sadd" title="Link to this heading">¶</a></h2>
+<p>通过使用 <code class="docutils literal notranslate"><span class="pre">SADD</span></code> 命令，
+用户可以将一个或多个元素添加到集合里面：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SADD</span> <span class="nb">set</span> <span class="n">element</span> <span class="p">[</span><span class="n">element</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>这个命令会返回成功添加的新元素数量作为返回值。</p>
+<p>以下代码展示了如何使用 <code class="docutils literal notranslate"><span class="pre">SADD</span></code> 命令去构建一个 <code class="docutils literal notranslate"><span class="pre">databases</span></code> 集合：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SADD</span> <span class="n">databases</span> <span class="s2">&quot;Redis&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>    <span class="o">--</span> <span class="n">集合新添加了一个元素</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SADD</span> <span class="n">databases</span> <span class="s2">&quot;MongoDB&quot;</span> <span class="s2">&quot;CouchDB&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2</span>    <span class="o">--</span> <span class="n">集合新添加了两个元素</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SADD</span> <span class="n">databases</span> <span class="s2">&quot;MySQL&quot;</span> <span class="s2">&quot;PostgreSQL&quot;</span> <span class="s2">&quot;MS SQL&quot;</span> <span class="s2">&quot;Oracle&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">4</span>    <span class="o">--</span> <span class="n">集合新添加了四个元素</span>
+</pre></div>
+</div>
+<p>图 5-2 展示了以上三个 <code class="docutils literal notranslate"><span class="pre">SADD</span></code> 命令构建出 <code class="docutils literal notranslate"><span class="pre">databases</span></code> 集合的整个过程。</p>
+<hr class="docutils" />
+<p>图 5-2 使用 <code class="docutils literal notranslate"><span class="pre">SADD</span></code> 命令构建集合的整个过程</p>
+<p>执行 <code class="docutils literal notranslate"><span class="pre">SADD</span> <span class="pre">databases</span> <span class="pre">&quot;Redis&quot;</span></code></p>
+<img alt="_images/IMAGE_SADD_1.png" src="_images/IMAGE_SADD_1.png" />
+<p>执行 <code class="docutils literal notranslate"><span class="pre">SADD</span> <span class="pre">databases</span> <span class="pre">&quot;MongoDB&quot;</span> <span class="pre">&quot;CouchDB&quot;</span></code></p>
+<img alt="_images/IMAGE_SADD_2.png" src="_images/IMAGE_SADD_2.png" />
+<p>执行 <code class="docutils literal notranslate"><span class="pre">SADD</span> <span class="pre">databases</span> <span class="pre">&quot;MySQL&quot;</span> <span class="pre">&quot;PostgreSQL&quot;</span> <span class="pre">&quot;MS</span> <span class="pre">SQL&quot;</span> <span class="pre">&quot;Oracle&quot;</span></code></p>
+<img alt="_images/IMAGE_SADD_3.png" src="_images/IMAGE_SADD_3.png" />
+<section id="id1">
+<h3>忽略已存在元素<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<p>因为集合不储存相同的元素，
+所以用户在使用 <code class="docutils literal notranslate"><span class="pre">SADD</span></code> 命令向集合里面添加元素的时候，
+<code class="docutils literal notranslate"><span class="pre">SADD</span></code> 命令会自动忽略已存在的元素，
+只将不存在于集合的新元素添加到集合里面。</p>
+<p>在以下展示的代码中，
+我们分别尝试向 <code class="docutils literal notranslate"><span class="pre">databases</span></code> 集合添加元素 <code class="docutils literal notranslate"><span class="pre">&quot;Redis&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;MySQL&quot;</span></code> 以及 <code class="docutils literal notranslate"><span class="pre">&quot;PostgreSQL&quot;</span></code> ，
+但是因为这些元素都已经存在于 <code class="docutils literal notranslate"><span class="pre">databases</span></code> 集合，
+所以 <code class="docutils literal notranslate"><span class="pre">SADD</span></code> 命令将忽略这些元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>redis&gt; SADD databases &quot;Redis&quot;
+(integer) 0    -- 成功添加的新元素数量为 0 ，表示没有任何新元素被添加到集合当中
+
+redis&gt; SADD databases &quot;MySQL&quot; &quot;PostgreSQL&quot;
+(integer) 0    -- 同样，这次也没有任何元素被添加到集合里面
+</pre></div>
+</div>
+<p>而在以下代码中，
+<code class="docutils literal notranslate"><span class="pre">SADD</span></code> 命令会将新元素 <code class="docutils literal notranslate"><span class="pre">&quot;Neo4j&quot;</span></code> 添加到集合里面，
+并忽略 <code class="docutils literal notranslate"><span class="pre">&quot;Redis&quot;</span></code> 和 <code class="docutils literal notranslate"><span class="pre">&quot;MySQL&quot;</span></code> 这两个已存在的元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SADD</span> <span class="n">databases</span> <span class="s2">&quot;Redis&quot;</span> <span class="s2">&quot;MySQL&quot;</span> <span class="s2">&quot;Neo4j&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+</pre></div>
+</div>
+</section>
+<section id="id2">
+<h3>其他信息<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N)，其中 N 为用户给定的元素数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SADD</span></code> 命令从 Redis 1.0.0 版本开始可用，
+但是只有 Redis 2.4 或以上版本的 <code class="docutils literal notranslate"><span class="pre">SADD</span></code> 命令可以一次添加多个元素，
+Redis 2.4 以下版本的 <code class="docutils literal notranslate"><span class="pre">SADD</span></code> 命令每次只能添加一个元素。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="srem">
+<h2>SREM：从集合中移除元素<a class="headerlink" href="#srem" title="Link to this heading">¶</a></h2>
+<p>通过使用 <code class="docutils literal notranslate"><span class="pre">SREM</span></code> 命令，
+用户可以从集合里面移除一个或多个已存在的元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SREM</span> <span class="nb">set</span> <span class="n">element</span> <span class="p">[</span><span class="n">element</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>这个命令会返回被移除的元素数量作为返回值。</p>
+<p>以下代码展示了如何使用 <code class="docutils literal notranslate"><span class="pre">SREM</span></code> 命令去移除 <code class="docutils literal notranslate"><span class="pre">databases</span></code> 集合中的 <code class="docutils literal notranslate"><span class="pre">&quot;Neo4j&quot;</span></code> 等元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SREM</span> <span class="n">databases</span> <span class="n">Neo4j</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>    <span class="o">--</span> <span class="n">有一个元素被移除</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SREM</span> <span class="n">databases</span> <span class="s2">&quot;MS SQL&quot;</span> <span class="s2">&quot;Oracle&quot;</span> <span class="s2">&quot;CouchDB&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>    <span class="o">--</span> <span class="n">有三个元素被移除</span>
+</pre></div>
+</div>
+<p>图 5-3 展示了 <code class="docutils literal notranslate"><span class="pre">databases</span></code> 集合在执行 <code class="docutils literal notranslate"><span class="pre">SREM</span></code> 命令过程中的变化。</p>
+<hr class="docutils" />
+<p>图 5-3 <code class="docutils literal notranslate"><span class="pre">databases</span></code> 集合的整个变化过程</p>
+<p>执行 <code class="docutils literal notranslate"><span class="pre">SREM</span></code> 命令之前</p>
+<img alt="_images/IMAGE_SREM_1.png" src="_images/IMAGE_SREM_1.png" />
+<p>执行 <code class="docutils literal notranslate"><span class="pre">SREM</span> <span class="pre">databases</span> <span class="pre">&quot;Neo4j&quot;</span></code> 之后</p>
+<img alt="_images/IMAGE_SREM_2.png" src="_images/IMAGE_SREM_2.png" />
+<p>执行 <code class="docutils literal notranslate"><span class="pre">SREM</span> <span class="pre">databases</span> <span class="pre">&quot;MS</span> <span class="pre">SQL&quot;</span> <span class="pre">&quot;Oracle&quot;</span> <span class="pre">&quot;CouchDB&quot;</span></code> 之后</p>
+<img alt="_images/IMAGE_SREM_3.png" src="_images/IMAGE_SREM_3.png" />
+<section id="id3">
+<h3>忽略不存在的元素<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<p>如果用户给定的元素并不存在于集合当中，
+那么 <code class="docutils literal notranslate"><span class="pre">SREM</span></code> 命令将忽略不存在的元素，
+只移除那些确实存在的元素。</p>
+<p>在以下代码中，
+因为元素 <code class="docutils literal notranslate"><span class="pre">&quot;Memcached&quot;</span></code> 并不存在于 <code class="docutils literal notranslate"><span class="pre">databases</span></code> 集合，
+所以 <code class="docutils literal notranslate"><span class="pre">SREM</span></code> 命令没有从集合里面移除任何元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SREM</span> <span class="n">databases</span> <span class="s2">&quot;Memcached&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>    <span class="o">--</span> <span class="n">没有元素被移除</span>
+</pre></div>
+</div>
+</section>
+<section id="id4">
+<h3>其他信息<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N)，其中 N 为用户给定的元素数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SREM</span></code> 命令从 Redis 1.0.0 版本开始可用，
+但是只有 Redis 2.4 或以上版本的 <code class="docutils literal notranslate"><span class="pre">SREM</span></code> 命令可以一次删除多个元素，
+Redis 2.4 以下版本的 <code class="docutils literal notranslate"><span class="pre">SREM</span></code> 命令每次只能删除一个元素。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="smove">
+<h2>SMOVE：将元素从一个集合移动到另一个集合<a class="headerlink" href="#smove" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">SMOVE</span></code> 命令允许用户将指定的元素从源集合移动到目标集合：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SMOVE</span> <span class="n">source</span> <span class="n">target</span> <span class="n">element</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">SMOVE</span></code> 命令在移动操作成功执行时返回 <code class="docutils literal notranslate"><span class="pre">1</span></code> ；
+如果指定的元素并不存在于源集合，
+那么 <code class="docutils literal notranslate"><span class="pre">SMOVE</span></code> 命令将返回 <code class="docutils literal notranslate"><span class="pre">0</span></code> ，
+表示移动操作执行失败。</p>
+<p>以下代码展示了如何通过 <code class="docutils literal notranslate"><span class="pre">SMOVE</span></code> 命令，
+将存在于 <code class="docutils literal notranslate"><span class="pre">databases</span></code> 集合的 <code class="docutils literal notranslate"><span class="pre">&quot;Redis&quot;</span></code> 元素以及 <code class="docutils literal notranslate"><span class="pre">&quot;MongoDB&quot;</span></code> 元素移动到 <code class="docutils literal notranslate"><span class="pre">nosql</span></code> 集合里面：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMOVE</span> <span class="n">databases</span> <span class="n">nosql</span> <span class="s2">&quot;Redis&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>    <span class="o">--</span> <span class="n">移动成功</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMOVE</span> <span class="n">databases</span> <span class="n">nosql</span> <span class="s2">&quot;MongoDB&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>    <span class="o">--</span> <span class="n">移动成功</span>
+</pre></div>
+</div>
+<p>图 5-4 展示了这两个 <code class="docutils literal notranslate"><span class="pre">SMOVE</span></code> 命令的执行过程。</p>
+<hr class="docutils" />
+<p>图 5-4 <code class="docutils literal notranslate"><span class="pre">SMOVE</span></code> 命令的执行过程：</p>
+<p>执行 <code class="docutils literal notranslate"><span class="pre">SMOVE</span></code> 命令之前的 <code class="docutils literal notranslate"><span class="pre">databases</span></code> 集合和 <code class="docutils literal notranslate"><span class="pre">nosql</span></code> 集合</p>
+<img alt="_images/IMAGE_SMOVE_1.png" src="_images/IMAGE_SMOVE_1.png" />
+<p>执行 <code class="docutils literal notranslate"><span class="pre">SMOVE</span> <span class="pre">databases</span> <span class="pre">nosql</span> <span class="pre">&quot;Redis&quot;</span></code> 之后</p>
+<img alt="_images/IMAGE_SMOVE_2.png" src="_images/IMAGE_SMOVE_2.png" />
+<p>执行 <code class="docutils literal notranslate"><span class="pre">SMOVE</span> <span class="pre">databases</span> <span class="pre">nosql</span> <span class="pre">&quot;MongoDB&quot;</span></code> 之后</p>
+<img alt="_images/IMAGE_SMOVE_3.png" src="_images/IMAGE_SMOVE_3.png" />
+<section id="id5">
+<h3>忽略不存在的元素<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
+<p>如果用户想要移动的元素并不存在于源集合，
+那么 <code class="docutils literal notranslate"><span class="pre">SMOVE</span></code> 将放弃执行移动操作，
+并返回 <code class="docutils literal notranslate"><span class="pre">0</span></code> 表示移动操作执行失败。</p>
+<p>举个例子，
+对于图 5-5 所示的 <code class="docutils literal notranslate"><span class="pre">fruits</span></code> 集合和 <code class="docutils literal notranslate"><span class="pre">favorite-fruits</span></code> 集合来说，
+尝试把不存在于 <code class="docutils literal notranslate"><span class="pre">fruits</span></code> 集合的 <code class="docutils literal notranslate"><span class="pre">&quot;dragon</span> <span class="pre">fruit&quot;</span></code> 元素移动到 <code class="docutils literal notranslate"><span class="pre">favorite-fruits</span></code> 集合将会导致 <code class="docutils literal notranslate"><span class="pre">SMOVE</span></code> 命令执行失败：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMOVE</span> <span class="n">fruits</span> <span class="n">favorite</span><span class="o">-</span><span class="n">fruits</span> <span class="s2">&quot;dragon fruit&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>    <span class="o">--</span> <span class="n">没有元素被移动</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>图 5-5 <code class="docutils literal notranslate"><span class="pre">fruits</span></code> 集合和 <code class="docutils literal notranslate"><span class="pre">favorite-fruits</span></code> 集合</p>
+<img alt="_images/IMAGE_IGNORE_SMOVE.png" src="_images/IMAGE_IGNORE_SMOVE.png" />
+</section>
+<section id="id6">
+<h3>覆盖已存在的元素<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
+<p>即使用户想要移动的元素已经存在于目标集合，
+<code class="docutils literal notranslate"><span class="pre">SMOVE</span></code> 命令仍然会将指定的元素从源集合移动到目标集合，
+并覆盖目标集合里面的相同元素。
+从结果来看，
+这种移动不会改变目标集合包含的元素，
+只会导致被移动的元素从源集合中消失。</p>
+<p>以图 5-5 中展示的 <code class="docutils literal notranslate"><span class="pre">fruits</span></code> 集合和 <code class="docutils literal notranslate"><span class="pre">favorite-fruits</span></code> 集合为例，
+如果我们执行以下代码：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMOVE</span> <span class="n">fruits</span> <span class="n">favorite</span><span class="o">-</span><span class="n">fruits</span> <span class="s2">&quot;apple&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>那么 <code class="docutils literal notranslate"><span class="pre">fruits</span></code> 集合中的 <code class="docutils literal notranslate"><span class="pre">&quot;apple&quot;</span></code> 元素将被移动到 <code class="docutils literal notranslate"><span class="pre">favorite-fruits</span></code> 集合里面，
+覆盖掉 <code class="docutils literal notranslate"><span class="pre">favorite-fruits</span></code> 集合原有的 <code class="docutils literal notranslate"><span class="pre">&quot;apple&quot;</span></code> 元素。
+从结果来看，
+<code class="docutils literal notranslate"><span class="pre">&quot;apple&quot;</span></code> 元素将从 <code class="docutils literal notranslate"><span class="pre">fruits</span></code> 集合中消失，
+而 <code class="docutils literal notranslate"><span class="pre">favorite-fruits</span></code> 集合包含的元素则不会发生变化。
+图 5-6 展示了上面的 <code class="docutils literal notranslate"><span class="pre">SMOVE</span></code> 命令执行之后，
+<code class="docutils literal notranslate"><span class="pre">fruits</span></code> 集合和 <code class="docutils literal notranslate"><span class="pre">favorite-fruits</span></code> 集合的样子。</p>
+<hr class="docutils" />
+<p>图 5-6 执行 <code class="docutils literal notranslate"><span class="pre">SMOVE</span></code> 命令之后的 <code class="docutils literal notranslate"><span class="pre">fruits</span></code> 集合和 <code class="docutils literal notranslate"><span class="pre">favorite-fruits</span></code> 集合</p>
+<img alt="_images/IMAGE_AFTER_OVERLAP.png" src="_images/IMAGE_AFTER_OVERLAP.png" />
+</section>
+<section id="id7">
+<h3>其他信息<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SMOVE</span></code> 命令从 Redis 1.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="smembers">
+<h2>SMEMBERS：获取集合包含的所有元素<a class="headerlink" href="#smembers" title="Link to this heading">¶</a></h2>
+<p>通过使用 <code class="docutils literal notranslate"><span class="pre">SMEMBERS</span></code> 命令，
+用户可以取得集合包含的所有元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SMEMBERS</span> <span class="nb">set</span>
+</pre></div>
+</div>
+<p>以下代码展示了如何使用 <code class="docutils literal notranslate"><span class="pre">SMEMBERS</span></code> 命令去获取 <code class="docutils literal notranslate"><span class="pre">fruits</span></code> 集合、 <code class="docutils literal notranslate"><span class="pre">favorite-numbers</span></code> 集合以及 <code class="docutils literal notranslate"><span class="pre">databases</span></code> 集合的所有元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">fruits</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;banana&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;cherry&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;apple&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">favorite</span><span class="o">-</span><span class="n">numbers</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;12345&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;999&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;3.14&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;1024&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;10086&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">databases</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;Redis&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;PostgreSQL&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;MongoDB&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;MySQL&quot;</span>
+</pre></div>
+</div>
+<section id="id8">
+<h3>元素的无序排列<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
+<p>因为 Redis 集合以无序的方式储存元素，
+并且 <code class="docutils literal notranslate"><span class="pre">SMEMBERS</span></code> 命令在获取集合元素时也不会对元素进行任何排序动作，
+所以根据元素添加顺序的不同，
+两个包含相同元素的集合在执行 <code class="docutils literal notranslate"><span class="pre">SMEMBERS</span></code> 命令时的结果也可能会有所不同。</p>
+<p>比如在以下代码中，
+我们就以相反的顺序向 <code class="docutils literal notranslate"><span class="pre">fruits-a</span></code> 和 <code class="docutils literal notranslate"><span class="pre">fruits-b</span></code> 两个集合添加了相同的三个元素，
+但是这两个集合在执行 <code class="docutils literal notranslate"><span class="pre">SMEMBERS</span></code> 命令时的结果并不相同：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SADD</span> <span class="n">fruits</span><span class="o">-</span><span class="n">a</span> <span class="s2">&quot;apple&quot;</span> <span class="s2">&quot;banana&quot;</span> <span class="s2">&quot;cherry&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">fruits</span><span class="o">-</span><span class="n">a</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;cherry&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;banana&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;apple&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SADD</span> <span class="n">fruits</span><span class="o">-</span><span class="n">b</span> <span class="s2">&quot;cherry&quot;</span> <span class="s2">&quot;banana&quot;</span> <span class="s2">&quot;apple&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">fruits</span><span class="o">-</span><span class="n">b</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;cherry&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;apple&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;banana&quot;</span>
+</pre></div>
+</div>
+<p>因此我们在使用 <code class="docutils literal notranslate"><span class="pre">SMEMBERS</span></code> 命令以及集合的时候，
+不应该对集合元素的排列顺序做任何假设。
+如果有需要的话，
+我们可以在客户端里面对 <code class="docutils literal notranslate"><span class="pre">SMEMBERS</span></code> 命令返回的元素进行排序，
+又或者直接使用 Redis 提供的有序结构（比如列表和有序集合）。</p>
+</section>
+<section id="id9">
+<h3>其他信息<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N)，其中 N 为集合包含的元素数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SMEMBERS</span></code> 命令从 Redis 1.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="scard">
+<h2>SCARD：获取集合包含的元素数量<a class="headerlink" href="#scard" title="Link to this heading">¶</a></h2>
+<p>通过使用 <code class="docutils literal notranslate"><span class="pre">SCARD</span></code> 命令，
+用户可以取得给定集合的大小，
+也即是集合包含的元素数量：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SCARD</span> <span class="nb">set</span>
+</pre></div>
+</div>
+<p>以下代码展示了如何使用 <code class="docutils literal notranslate"><span class="pre">SCARD</span></code> 命令去获取 <code class="docutils literal notranslate"><span class="pre">databases</span></code> 集合、 <code class="docutils literal notranslate"><span class="pre">fruits</span></code> 集合以及 <code class="docutils literal notranslate"><span class="pre">favorite-numbers</span></code> 集合的大小：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SCARD</span> <span class="n">databases</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">4</span>    <span class="o">--</span> <span class="n">这个集合包含四个元素</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SCARD</span> <span class="n">fruits</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>    <span class="o">--</span> <span class="n">这个集合包含三个元素</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SCARD</span> <span class="n">favorite</span><span class="o">-</span><span class="n">numbers</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">5</span>    <span class="o">--</span> <span class="n">这个集合包含五个元素</span>
+</pre></div>
+</div>
+<section id="id10">
+<h3>其他信息<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SCARD</span></code> 命令从 Redis 1.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="sismember">
+<h2>SISMEMBER：检查给定元素是否存在于集合<a class="headerlink" href="#sismember" title="Link to this heading">¶</a></h2>
+<p>通过使用 <code class="docutils literal notranslate"><span class="pre">SISMEMBER</span></code> 命令，
+用户可以检查给定的元素是否存在于集合当中：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SISMEMBER</span> <span class="nb">set</span> <span class="n">element</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">SISMEMBER</span></code> 命令返回 <code class="docutils literal notranslate"><span class="pre">1</span></code> 表示给定的元素存在于集合当中，
+而返回 <code class="docutils literal notranslate"><span class="pre">0</span></code> 则表示给定元素不存在于集合当中。</p>
+<p>举个例子，
+对于以下这个 <code class="docutils literal notranslate"><span class="pre">databases</span></code> 集合来说：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">databases</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;Redis&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;MySQL&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;MongoDB&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;PostgreSQL&quot;</span>
+</pre></div>
+</div>
+<p>使用 <code class="docutils literal notranslate"><span class="pre">SISMEMBER</span></code> 命令去检测已经存在于集合中的 <code class="docutils literal notranslate"><span class="pre">&quot;Redis&quot;</span></code> 元素、 <code class="docutils literal notranslate"><span class="pre">&quot;MongoDB&quot;</span></code> 元素以及 <code class="docutils literal notranslate"><span class="pre">&quot;MySQL&quot;</span></code> 元素都将得到肯定的回答：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SISMEMBER</span> <span class="n">databases</span> <span class="s2">&quot;Redis&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SISMEMBER</span> <span class="n">databases</span> <span class="s2">&quot;MongoDB&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SISMEMBER</span> <span class="n">databases</span> <span class="s2">&quot;MySQL&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>而使用 <code class="docutils literal notranslate"><span class="pre">SISMEMBER</span></code> 命令去检测不存在于集合当中的 <code class="docutils literal notranslate"><span class="pre">&quot;Oracle&quot;</span></code> 元素、 <code class="docutils literal notranslate"><span class="pre">&quot;Neo4j&quot;</span></code> 元素以及 <code class="docutils literal notranslate"><span class="pre">&quot;Memcached&quot;</span></code> 元素则会得到否定的回答：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SISMEMBER</span> <span class="n">databases</span> <span class="s2">&quot;Oracle&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SISMEMBER</span> <span class="n">databases</span> <span class="s2">&quot;Neo4j&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SISMEMBER</span> <span class="n">databases</span> <span class="s2">&quot;Memcached&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<section id="id11">
+<h3>其他信息<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SISMEMBER</span></code> 命令从 Redis 1.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id12">
+<h2>示例：唯一计数器<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h2>
+<p>本书前面在对字符串键以及散列键进行介绍的时候，
+曾经展示过如何使用这两种键去实现计数器程序。
+我们当时实现的计数器的作用都非常单纯：
+每当某个动作被执行时，
+程序就可以调用计数器的加法操作或者减法操作，
+对动作的执行次数进行记录。</p>
+<p>以上这种简单的计数行为在大部分时候都是有用的，
+但是在某些情况下，
+我们需要一种要求更为严格的计数器，
+这种计数器只会对特定的动作或者对象进行一次计数而不是多次计数。</p>
+<p>举个例子，
+一个网站的受欢迎程度通常可以用浏览量和用户数量这两个指标进行描述：</p>
+<ul class="simple">
+<li><p>浏览量记录的是网站页面被用户访问的总次数，
+网站的每个用户都可以重复地对同一个页面进行多次访问，
+而这些访问会被浏览量计数器一个不漏地被记录起来。</p></li>
+<li><p>至于用户数量记录的则是访问网站的 IP 地址数量，
+即使同一个 IP 地址多次访问相同的页面，
+用户数量计数器也只会对这个 IP 地址进行一次计数。</p></li>
+</ul>
+<p>对于网站的浏览量，
+我们可以继续使用字符串键或者散列键实现的计数器进行计数；
+但如果我们想要记录网站的用户数量，
+那么就需要构建一个新的计数器，
+这个计数器对于每个特定的 IP 地址只会进行一次计数，
+我们把这种对每个对象只进行一次计数的计数器称之为唯一计数器（unique counter）。</p>
+<p>代码清单 5-1 展示了一个使用集合实现的唯一计数器，
+这个计数器通过把被计数的对象添加到集合来保证每个对象只会被计数一次，
+然后通过获取集合的大小来判断计数器目前总共对多少个对象进行了计数。</p>
+<hr class="docutils" />
+<p>代码清单 5-1 使用集合实现唯一计数器：<code class="docutils literal notranslate"><span class="pre">/set/unique_counter.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">UniqueCounter</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">count_in</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        尝试将给定元素计入到计数器当中：</span>
+<span class="sd">        如果给定元素之前没有被计数过，那么方法返回 True 表示此次计数有效；</span>
+<span class="sd">        如果给定元素之前已经被计数过，那么方法返回 False 表示此次计数无效。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">sadd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">get_result</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回计数器的值。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">scard</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>以下代码展示了如何使用唯一计数器去计算网站的用户数量：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">unique_counter</span> <span class="kn">import</span> <span class="n">UniqueCounter</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span> <span class="o">=</span> <span class="n">UniqueCounter</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s1">&#39;ip counter&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">count_in</span><span class="p">(</span><span class="s1">&#39;8.8.8.8&#39;</span><span class="p">)</span>  <span class="c1"># 将一些 IP 地址添加到计数器当中</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">count_in</span><span class="p">(</span><span class="s1">&#39;9.9.9.9&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">count_in</span><span class="p">(</span><span class="s1">&#39;10.10.10.10&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">get_result</span><span class="p">()</span>         <span class="c1"># 获取计数结果</span>
+<span class="go">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">count_in</span><span class="p">(</span><span class="s1">&#39;8.8.8.8&#39;</span><span class="p">)</span>  <span class="c1"># 添加一个已存在的 IP 地址</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">get_result</span><span class="p">()</span>         <span class="c1"># 计数结果没有发生变化</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+</section>
+<section id="id13">
+<h2>示例：打标签<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h2>
+<p>为了对网站上的内容进行分类标识，
+很多网站都提供了打标签（tagging）功能：</p>
+<ul class="simple">
+<li><p>比如论坛可能会允许用户为帖子添加标签，
+这些标签既可以对帖子进行归类，
+又可以让其他用户快速地了解到帖子要讲述的内容；</p></li>
+<li><p>又比如说，
+一个图书分类网站可能会允许用户为自己收藏的每一本书添加标签，
+使得用户可以快速地找到被添加了某个标签的所有图书，
+并且网站还可以根据用户的这些标签进行数据分析，
+从而帮助用户找到他们可能会感兴趣的图书；</p></li>
+<li><p>除此之外，
+购物网站也可以为自己的商品加上标签，
+比如“新上架”、“热销中”、“原装进口”等等，
+方便顾客了解每件商品的不同特点和属性；</p></li>
+</ul>
+<p>类似的例子还有很多很多。</p>
+<p>代码清单 5-2 展示了一个使用集合实现的打标签程序，
+通过这个程序，
+我们可以为不同的对象添加任意多个标签：
+同一个对象的所有标签都会被放到同一个集合里面，
+集合里的每一个元素就是一个标签。</p>
+<hr class="docutils" />
+<p>代码清单 5-2 使用集合实现的打标签程序：<code class="docutils literal notranslate"><span class="pre">/set/tagging.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">make_tag_key</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">item</span> <span class="o">+</span> <span class="s2">&quot;::tags&quot;</span>
+
+<span class="k">class</span> <span class="nc">Tagging</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">make_tag_key</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">tags</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        为对象添加一个或多个标签。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">sadd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="o">*</span><span class="n">tags</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">tags</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        移除对象的一个或多个标签。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">srem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="o">*</span><span class="n">tags</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">is_included</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        检查对象是否带有给定的标签，</span>
+<span class="sd">        是的话返回 True ，不是的话返回 False 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">sismember</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_all_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回对象带有的所有标签。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">smembers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回对象带有的标签数量。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">scard</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>以下代码展示了如何使用这个打标签程序去为《The C Programming Language》这本书添加标签：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">tagging</span> <span class="kn">import</span> <span class="n">Tagging</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">book_tags</span> <span class="o">=</span> <span class="n">Tagging</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;The C Programming Language&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">book_tags</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">)</span>          <span class="c1"># 添加标签</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">book_tags</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;programming&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">book_tags</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;programming language&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">book_tags</span><span class="o">.</span><span class="n">get_all_tags</span><span class="p">()</span>    <span class="c1"># 查看所有标签</span>
+<span class="go">set([&#39;c&#39;, &#39;programming&#39;, &#39;programming language&#39;])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">book_tags</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>           <span class="c1"># 查看标签的数量</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+<p>作为例子，
+图 5-7 展示了一些使用打标签程序创建出的集合数据结构。</p>
+<hr class="docutils" />
+<p>图 5-7 使用打标签程序创建出的集合</p>
+<img alt="_images/IMAGE_TAGS_1.png" src="_images/IMAGE_TAGS_1.png" />
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<img alt="_images/IMAGE_TAGS_2.png" src="_images/IMAGE_TAGS_2.png" />
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<img alt="_images/IMAGE_TAGS_3.png" src="_images/IMAGE_TAGS_3.png" />
+</section>
+<hr class="docutils" />
+<section id="id14">
+<h2>示例：点赞<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h2>
+<p>为了让用户表达自己对某一项内容的喜欢和赞赏之情，
+很多网站都提供了点赞（like）功能：
+通过这一功能，
+用户可以给自己喜欢的内容进行点赞，
+也可以查看给相同内容进行了点赞的其他用户，
+还可以查看给相同内容进行点赞的用户数量，
+诸如此类。</p>
+<p>除了点赞之外，
+很多网站还有诸如“+1”、“顶”、“喜欢”等功能，
+这些功能的名字虽然各有不同，
+但它们在本质上和点赞功能是一样的。</p>
+<p>代码清单 5-3 展示了一个使用集合实现的点赞程序，
+这个程序使用集合来储存对内容进行了点赞的用户，
+从而确保每个用户只能对同一内容点赞一次，
+并通过使用不同的集合命令来实现查看点赞数量、查看所有点赞用户以及取消点赞等功能。</p>
+<hr class="docutils" />
+<p>代码清单 5-3 使用集合实现的点赞程序：<code class="docutils literal notranslate"><span class="pre">/set/like.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Like</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">cast</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        用户尝试进行点赞。</span>
+<span class="sd">        如果此次点赞执行成功，那么返回 True ；</span>
+<span class="sd">        如果用户之前已经点过赞，那么返回 False 表示此次点赞无效。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">sadd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">user</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        取消用户的点赞。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">srem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">user</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">is_liked</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        检查用户是否已经点过赞。</span>
+<span class="sd">        是的话返回 True ，否则的话返回 False 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">sismember</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">user</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_all_liked_users</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回所有已经点过赞的用户。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">smembers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回已点赞用户的人数。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">scard</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>以下代码展示了如何使用点赞程序去记录一篇帖子的点赞信息：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">like</span> <span class="kn">import</span> <span class="n">Like</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">like_topic</span> <span class="o">=</span> <span class="n">Like</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s1">&#39;topic::10086::like&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">like_topic</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="s1">&#39;peter&#39;</span><span class="p">)</span>          <span class="c1"># 用户对帖子进行点赞</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">like_topic</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="s1">&#39;john&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">like_topic</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="s1">&#39;mary&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">like_topic</span><span class="o">.</span><span class="n">get_all_liked_users</span><span class="p">()</span>  <span class="c1"># 获取所有为帖子点过赞的用户</span>
+<span class="go">set([&#39;john&#39;, &#39;peter&#39;, &#39;mary&#39;])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">like_topic</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>                <span class="c1"># 获取为帖子点过赞的用户数量</span>
+<span class="go">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">like_topic</span><span class="o">.</span><span class="n">is_liked</span><span class="p">(</span><span class="s1">&#39;peter&#39;</span><span class="p">)</span>      <span class="c1"># peter 为帖子点过赞了</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">like_topic</span><span class="o">.</span><span class="n">is_liked</span><span class="p">(</span><span class="s1">&#39;dan&#39;</span><span class="p">)</span>        <span class="c1"># dan 还没有为帖子点过赞</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</section>
+<section id="id15">
+<h2>示例：投票<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h2>
+<p>问答网站、文章推荐网站、论坛这类注重内容质量的网站上通常都会提供投票功能，
+用户可以通过投票来支持一项内容或者反对一项内容：</p>
+<ul class="simple">
+<li><p>一项内容获得的支持票数越多，
+它就会被网站安排到越显眼的位置，
+使得网站的用户可以更快速地浏览到高质量的内容。</p></li>
+<li><p>与此相反，
+一项内容获得的反对票数越多，
+它就会被网站安排到越不显眼的位置，
+甚至被当作广告或者无用内容而被隐藏起来，
+使得用户可以忽略这些低质量的内容。</p></li>
+</ul>
+<p>根据网站性质的不同，
+不同的网站可能会为投票功能设置不同的称呼，
+比如有些网站可能会把“支持”和“反对”叫做“推荐”和“不推荐”，
+而有些网站可能会使用“喜欢”和“不喜欢”来表示“支持”和“反对”，
+诸如此类，
+但这些网站的投票功能在本质上都是一样的。</p>
+<p>作为示例，
+图 5-8 展示了 StackOverflow 问答网站的一个截图，
+这个网站允许用户对问题及其答案进行投票，
+从而帮助用户发现高质量的问题和答案。</p>
+<hr class="docutils" />
+<p>图 5-8 StackOverflow 网站的投票示例，图中所示的问题获得了 10 个推荐</p>
+<img alt="_images/stackoverflow.png" src="_images/stackoverflow.png" />
+<hr class="docutils" />
+<p>代码清单 5-4 展示了一个使用集合实现的投票程序：
+对于每一项需要投票的内容，
+这个程序都会使用两个集合来分别储存投支持票的用户以及投反对票的用户，
+然后通过对这两个集合执行命令来实现投票、取消投票、统计投票数量、获取已投票用户名单等功能。</p>
+<hr class="docutils" />
+<p>代码清单 5-4 使用集合实现的投票程序，用户可以选择支持或者反对一项内容：<code class="docutils literal notranslate"><span class="pre">/set/vote.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">vote_up_key</span><span class="p">(</span><span class="n">vote_target</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">vote_target</span> <span class="o">+</span> <span class="s2">&quot;::vote_up&quot;</span>
+
+<span class="k">def</span> <span class="nf">vote_down_key</span><span class="p">(</span><span class="n">vote_target</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">vote_target</span> <span class="o">+</span> <span class="s2">&quot;::vote_down&quot;</span>
+
+<span class="k">class</span> <span class="nc">Vote</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">vote_target</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vote_up_set</span> <span class="o">=</span> <span class="n">vote_up_key</span><span class="p">(</span><span class="n">vote_target</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vote_down_set</span> <span class="o">=</span> <span class="n">vote_down_key</span><span class="p">(</span><span class="n">vote_target</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">is_voted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        检查用户是否已经投过票（可以是赞成票也可以是反对票），</span>
+<span class="sd">        是的话返回 True ，否则返回 False 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">sismember</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vote_up_set</span><span class="p">,</span> <span class="n">user</span><span class="p">)</span> <span class="ow">or</span> \
+               <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">sismember</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vote_down_set</span><span class="p">,</span> <span class="n">user</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">vote_up</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        让用户投赞成票，并在投票成功时返回 True ；</span>
+<span class="sd">        如果用户已经投过票，那么返回 False 表示此次投票无效。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_voted</span><span class="p">(</span><span class="n">user</span><span class="p">):</span> 
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">sadd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vote_up_set</span><span class="p">,</span> <span class="n">user</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">vote_down</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        让用户投反对票，并在投票成功时返回 True ；</span>
+<span class="sd">        如果用户已经投过票，那么返回 False 表示此次投票无效。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_voted</span><span class="p">(</span><span class="n">user</span><span class="p">):</span> 
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">sadd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vote_down_set</span><span class="p">,</span> <span class="n">user</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        取消用户的投票。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">srem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vote_up_set</span><span class="p">,</span> <span class="n">user</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">srem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vote_down_set</span><span class="p">,</span> <span class="n">user</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">vote_up_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回投支持票的用户数量。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">scard</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vote_up_set</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_all_vote_up_users</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回所有投支持票的用户。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">smembers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vote_up_set</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">vote_down_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回投反对票的用户数量。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">scard</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vote_down_set</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_all_vote_down_users</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回所有投反对票的用户。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">smembers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vote_down_set</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>以下代码展示了如何使用这个投票程序去记录一个问题的投票信息：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">vote</span> <span class="kn">import</span> <span class="n">Vote</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">question_vote</span> <span class="o">=</span> <span class="n">Vote</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s1">&#39;question::10086&#39;</span><span class="p">)</span>  <span class="c1"># 记录问题的投票信息</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">question_vote</span><span class="o">.</span><span class="n">vote_up</span><span class="p">(</span><span class="s1">&#39;peter&#39;</span><span class="p">)</span>    <span class="c1"># 投支持票</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">question_vote</span><span class="o">.</span><span class="n">vote_up</span><span class="p">(</span><span class="s1">&#39;jack&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">question_vote</span><span class="o">.</span><span class="n">vote_up</span><span class="p">(</span><span class="s1">&#39;tom&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">question_vote</span><span class="o">.</span><span class="n">vote_down</span><span class="p">(</span><span class="s1">&#39;mary&#39;</span><span class="p">)</span>  <span class="c1"># 投反对票</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">question_vote</span><span class="o">.</span><span class="n">vote_up_count</span><span class="p">()</span>    <span class="c1"># 统计支持票数量</span>
+<span class="go">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">question_vote</span><span class="o">.</span><span class="n">vote_down_count</span><span class="p">()</span>  <span class="c1"># 统计反对票数量</span>
+<span class="go">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">question_vote</span><span class="o">.</span><span class="n">get_all_vote_up_users</span><span class="p">()</span>    <span class="c1"># 获取所有投支持票的用户</span>
+<span class="go">{&#39;jack&#39;, &#39;peter&#39;, &#39;tom&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">question_vote</span><span class="o">.</span><span class="n">get_all_vote_down_users</span><span class="p">()</span>  <span class="c1"># 获取所有投反对票的用户</span>
+<span class="go">{&#39;mary&#39;}</span>
+</pre></div>
+</div>
+<p>图 5-9 展示了这段代码创建出的两个集合，
+以及这两个集合包含的元素。</p>
+<hr class="docutils" />
+<p>图 5-9 投票程序创建出的两个集合</p>
+<img alt="_images/IMAGE_VOTE_EXAMPLE.png" src="_images/IMAGE_VOTE_EXAMPLE.png" />
+</section>
+<hr class="docutils" />
+<section id="id16">
+<h2>示例：社交关系<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h2>
+<p>微博、twitter 以及类似的社交网站都允许用户通过加关注或者加好友的方式，
+构建一种社交关系：
+这些网站上的每个用户都可以关注其他用户，
+也可以被其他用户关注。
+通过正在关注名单（following list），
+用户可以查看自己正在关注的用户及其人数；
+而通过关注者名单（follower llist），
+用户可以查看有哪些人正在关注自己，
+以及有多少人正在关注自己。</p>
+<p>代码清单 5-5 展示了一个使用集合来记录社交关系的方法：</p>
+<ul class="simple">
+<li><p>程序为每个用户维持两个集合，
+一个集合储存用户的正在关注名单，
+而另一个集合则储存用户的关注者名单。</p></li>
+<li><p>当一个用户（关注者）关注另一个用户（被关注者）的时候，
+程序会将被关注者添加到关注者的正在关注名单里面，
+并将关注者添加到被关注者的关注者名单里面。</p></li>
+<li><p>当关注者取消对被关注者的关注时，
+程序会将被关注者从关注者的正在关注名单中移除，
+并将关注者从被关注者的关注者名单中移除。</p></li>
+</ul>
+<hr class="docutils" />
+<p>代码清单 5-5 使用集合实现社交关系：<code class="docutils literal notranslate"><span class="pre">/set/relationship.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">following_key</span><span class="p">(</span><span class="n">user</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">user</span> <span class="o">+</span> <span class="s2">&quot;::following&quot;</span>
+
+<span class="k">def</span> <span class="nf">follower_key</span><span class="p">(</span><span class="n">user</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">user</span> <span class="o">+</span> <span class="s2">&quot;::follower&quot;</span>
+
+<span class="k">class</span> <span class="nc">Relationship</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">user</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="n">user</span>
+
+    <span class="k">def</span> <span class="nf">follow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        关注目标用户。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 把 target 添加到当前用户的正在关注集合里面</span>
+        <span class="n">user_following_set</span> <span class="o">=</span> <span class="n">following_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">sadd</span><span class="p">(</span><span class="n">user_following_set</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+        <span class="c1"># 把当前用户添加到 target 的关注者集合里面</span>
+        <span class="n">target_follower_set</span> <span class="o">=</span> <span class="n">follower_key</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">sadd</span><span class="p">(</span><span class="n">target_follower_set</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">unfollow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        取消对目标用户的关注。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 从当前用户的正在关注集合中移除 target</span>
+        <span class="n">user_following_set</span> <span class="o">=</span> <span class="n">following_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">srem</span><span class="p">(</span><span class="n">user_following_set</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+        <span class="c1"># 从 target 的关注者集合中移除当前用户</span>
+        <span class="n">target_follower_set</span> <span class="o">=</span> <span class="n">follower_key</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">srem</span><span class="p">(</span><span class="n">target_follower_set</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">is_following</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        检查当前用户是否正在关注目标用户，</span>
+<span class="sd">        是的话返回 True ，否则返回 False 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 如果 target 存在于当前用户的正在关注集合中</span>
+        <span class="c1"># 那么说明当前用户正在关注 target</span>
+        <span class="n">user_following_set</span> <span class="o">=</span> <span class="n">following_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">sismember</span><span class="p">(</span><span class="n">user_following_set</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_all_following</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回当前用户正在关注的所有人。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">user_following_set</span> <span class="o">=</span> <span class="n">following_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">smembers</span><span class="p">(</span><span class="n">user_following_set</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_all_follower</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回当前用户的所有关注者。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">user_follower_set</span> <span class="o">=</span> <span class="n">follower_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">smembers</span><span class="p">(</span><span class="n">user_follower_set</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">count_following</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回当前用户正在关注的人数。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">user_following_set</span> <span class="o">=</span> <span class="n">following_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">scard</span><span class="p">(</span><span class="n">user_following_set</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">count_follower</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回当前用户的关注者人数。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">user_follower_set</span> <span class="o">=</span> <span class="n">follower_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">scard</span><span class="p">(</span><span class="n">user_follower_set</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>以下代码展示了社交关系程序的基本使用方法：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">relationship</span> <span class="kn">import</span> <span class="n">Relationship</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">peter</span> <span class="o">=</span> <span class="n">Relationship</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s1">&#39;peter&#39;</span><span class="p">)</span>  <span class="c1"># 这个对象记录的是 peter 的社交关系</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">peter</span><span class="o">.</span><span class="n">follow</span><span class="p">(</span><span class="s1">&#39;jack&#39;</span><span class="p">)</span>  <span class="c1"># 关注一些人</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">peter</span><span class="o">.</span><span class="n">follow</span><span class="p">(</span><span class="s1">&#39;tom&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">peter</span><span class="o">.</span><span class="n">follow</span><span class="p">(</span><span class="s1">&#39;mary&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">peter</span><span class="o">.</span><span class="n">get_all_following</span><span class="p">()</span>  <span class="c1"># 获取目前正在关注的所有人</span>
+<span class="go">set([&#39;mary&#39;, &#39;jack&#39;, &#39;tom&#39;])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">peter</span><span class="o">.</span><span class="n">count_following</span><span class="p">()</span>    <span class="c1"># 统计目前正在关注的人数</span>
+<span class="go">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">jack</span> <span class="o">=</span> <span class="n">Relationship</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s1">&#39;jack&#39;</span><span class="p">)</span>    <span class="c1"># 这个对象记录的是 jack 的社交关系</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">jack</span><span class="o">.</span><span class="n">get_all_follower</span><span class="p">()</span>    <span class="c1"># peter 前面关注了 jack ，所以他是 jack 的关注者</span>
+<span class="go">set([&#39;peter&#39;])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">jack</span><span class="o">.</span><span class="n">count_follower</span><span class="p">()</span>      <span class="c1"># jack 目前只有一个关注者</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>图 5-10 展示了以上代码创建的各个集合。</p>
+<hr class="docutils" />
+<p>图 5-10 社交关系集合示例</p>
+<img alt="_images/IMAGE_RELATIONSHIP_EXAMPLE.png" src="_images/IMAGE_RELATIONSHIP_EXAMPLE.png" />
+</section>
+<section id="srandmember">
+<h2>SRANDMEMBER：随机地获取集合中的元素<a class="headerlink" href="#srandmember" title="Link to this heading">¶</a></h2>
+<p>通过使用 <code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 命令，
+用户可以从集合里面随机地获取指定数量的元素。
+<code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 命令接受一个可选的 <code class="docutils literal notranslate"><span class="pre">count</span></code> 参数，
+用于指定用户想要获取的元素数量，
+如果用户没有给定这个参数，
+那么 <code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 命令默认只获取一个元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SRANDMEMBER</span> <span class="nb">set</span> <span class="p">[</span><span class="n">count</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>需要注意的一点是，
+被 <code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 命令返回的元素仍然会存在于集合当中，
+它们不会被移除。</p>
+<p>举个例子，
+对于包含以下元素的 <code class="docutils literal notranslate"><span class="pre">databases</span></code> 集合来说：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">databases</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;Neo4j&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;Redis&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;PostgreSQL&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;CouchDB&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;Oracle&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;MS SQL&quot;</span>
+<span class="mi">7</span><span class="p">)</span> <span class="s2">&quot;MongoDB&quot;</span>
+<span class="mi">8</span><span class="p">)</span> <span class="s2">&quot;MySQL&quot;</span>
+</pre></div>
+</div>
+<p>我们可以使用 <code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 命令去随机地获取集合包含的元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SRANDMEMBER</span> <span class="n">databases</span>
+<span class="s2">&quot;MySQL&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SRANDMEMBER</span> <span class="n">databases</span>
+<span class="s2">&quot;PostgreSQL&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SRANDMEMBER</span> <span class="n">databases</span>
+<span class="s2">&quot;Neo4j&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SRANDMEMBER</span> <span class="n">databases</span>
+<span class="s2">&quot;CouchDB&quot;</span>
+</pre></div>
+</div>
+<p>再次提醒，
+<code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 命令不会移除被返回的集合元素，
+这一点可以通过查看 <code class="docutils literal notranslate"><span class="pre">databases</span></code> 集合包含的元素来确认：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">databases</span>  <span class="o">--</span> <span class="n">集合包含的元素和执行</span> <span class="n">SRANDMEMBER</span> <span class="n">之前完全一样</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;Neo4j&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;Redis&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;PostgreSQL&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;CouchDB&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;Oracle&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;MS SQL&quot;</span>
+<span class="mi">7</span><span class="p">)</span> <span class="s2">&quot;MongoDB&quot;</span>
+<span class="mi">8</span><span class="p">)</span> <span class="s2">&quot;MySQL&quot;</span>
+</pre></div>
+</div>
+<section id="id17">
+<h3>返回指定数量的元素<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h3>
+<p>通过可选的 <code class="docutils literal notranslate"><span class="pre">count</span></code> 参数，
+用户可以指定 <code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 命令返回的元素数量，
+其中 <code class="docutils literal notranslate"><span class="pre">count</span></code> 参数的值既可以是正数也可以是负数。</p>
+<p>如果 <code class="docutils literal notranslate"><span class="pre">count</span></code> 参数的值为正数，
+那么 <code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 命令将返回 <code class="docutils literal notranslate"><span class="pre">count</span></code> 个不重复的元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SRANDMEMBER</span> <span class="n">databases</span> <span class="mi">2</span>  <span class="o">--</span> <span class="n">随机地返回两个不重复的元素</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;MySQL&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;Oracle&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SRANDMEMBER</span> <span class="n">databases</span> <span class="mi">3</span>  <span class="o">--</span> <span class="n">随机地返回三个不重复的元素</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;PostgreSQL&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;Oracle&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;MS SQL&quot;</span>
+</pre></div>
+</div>
+<p>当 <code class="docutils literal notranslate"><span class="pre">count</span></code> 参数的值大于集合包含的元素数量时，
+<code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 命令将返回集合包含的所有元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SRANDMEMBER</span> <span class="n">databases</span> <span class="mi">10</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;Neo4j&quot;</span>          <span class="o">--</span> <span class="n">因为</span> <span class="n">databases</span> <span class="n">集合的元素数量少于</span> <span class="mi">10</span> <span class="n">个</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;Redis&quot;</span>          <span class="o">--</span> <span class="n">所以命令会返回集合包含的全部</span> <span class="mi">8</span> <span class="n">个元素</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;PostgreSQL&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;CouchDB&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;Oracle&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;MongoDB&quot;</span>
+<span class="mi">7</span><span class="p">)</span> <span class="s2">&quot;MS SQL&quot;</span>
+<span class="mi">8</span><span class="p">)</span> <span class="s2">&quot;MySQL&quot;</span>
+</pre></div>
+</div>
+<p>另一方面，
+如果 <code class="docutils literal notranslate"><span class="pre">count</span></code> 参数的值为负数，
+那么 <code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 命令将随机地返回 <code class="docutils literal notranslate"><span class="pre">abs(count)</span></code> 个元素（<code class="docutils literal notranslate"><span class="pre">abs(count)</span></code> 也即是 <code class="docutils literal notranslate"><span class="pre">count</span></code> 的绝对值），
+并且在这些元素当中允许出现重复的元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SRANDMEMBER</span> <span class="n">databases</span> <span class="o">-</span><span class="mi">3</span>  <span class="o">--</span> <span class="n">随机地返回三个可能会重复的元素</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;Neo4j&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;CouchDB&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;MongoDB&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SRANDMEMBER</span> <span class="n">databases</span> <span class="o">-</span><span class="mi">5</span>  <span class="o">--</span> <span class="n">随机地返回五个可能会重复的元素</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;Neo4j&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;MySQL&quot;</span>  <span class="o">--</span> <span class="n">出现了两个</span> <span class="s2">&quot;MySQL&quot;</span> <span class="n">元素</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;MySQL&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;CouchDB&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;Oracle&quot;</span>
+</pre></div>
+</div>
+<p>因为 <code class="docutils literal notranslate"><span class="pre">count</span></code> 参数为负数的 <code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 命令允许返回重复元素，
+所以即使 <code class="docutils literal notranslate"><span class="pre">abs(count)</span></code> 的值大于集合包含的元素数量，
+<code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 命令也会按照要求返回 <code class="docutils literal notranslate"><span class="pre">abs(count)</span></code> 个元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SRANDMEMBER</span> <span class="n">databases</span> <span class="o">-</span><span class="mi">10</span>  <span class="o">--</span> <span class="n">随机地返回十个可能会相同的元素</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;Redis&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;MySQL&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;CouchDB&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;PostgreSQL&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;Neo4j&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;MS SQL&quot;</span>
+<span class="mi">7</span><span class="p">)</span> <span class="s2">&quot;MS SQL&quot;</span>
+<span class="mi">8</span><span class="p">)</span> <span class="s2">&quot;MySQL&quot;</span>
+<span class="mi">9</span><span class="p">)</span> <span class="s2">&quot;Neo4j&quot;</span>
+<span class="mi">10</span><span class="p">)</span> <span class="s2">&quot;Redis&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id18">
+<h3>其他信息<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N)，其中 N 为被返回的元素数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p>不带 <code class="docutils literal notranslate"><span class="pre">count</span></code> 参数的 <code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 命令从 Redis 1.0.0 版本开始可用；
+带有 <code class="docutils literal notranslate"><span class="pre">count</span></code> 参数的 <code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 命令从 Redis 2.6.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="spop">
+<h2>SPOP：随机地从集合里面移除指定数量的元素<a class="headerlink" href="#spop" title="Link to this heading">¶</a></h2>
+<p>通过使用 <code class="docutils literal notranslate"><span class="pre">SPOP</span></code> 命令，
+用户可以从集合里面随机地移除指定数量的元素。
+<code class="docutils literal notranslate"><span class="pre">SPOP</span></code> 命令接受一个可选的 <code class="docutils literal notranslate"><span class="pre">count</span></code> 参数，
+用于指定需要被移除的元素数量；
+如果用户没有给定这个参数，
+那么 <code class="docutils literal notranslate"><span class="pre">SPOP</span></code> 命令默认只移除一个元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SPOP</span> <span class="n">key</span> <span class="p">[</span><span class="n">count</span><span class="p">]</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">SPOP</span></code> 命令会返回被移除的元素作为命令的返回值。</p>
+<p>举个例子，
+对于包含以下元素的 <code class="docutils literal notranslate"><span class="pre">databases</span></code> 集合来说：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">databases</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;MS SQL&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;MongoDB&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;Redis&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;Neo4j&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;PostgreSQL&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;MySQL&quot;</span>
+<span class="mi">7</span><span class="p">)</span> <span class="s2">&quot;Oracle&quot;</span>
+<span class="mi">8</span><span class="p">)</span> <span class="s2">&quot;CouchDB&quot;</span>
+</pre></div>
+</div>
+<p>我们可以使用 <code class="docutils literal notranslate"><span class="pre">SPOP</span></code> 命令随机地移除 <code class="docutils literal notranslate"><span class="pre">databases</span></code> 集合中的元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>redis&gt; SPOP databases      -- 随机地移除一个元素
+&quot;CouchDB&quot;                  -- 被移除的是 &quot;CouchDB&quot; 元素
+
+redis&gt; SPOP databases      -- 随机地移除一个元素
+&quot;Redis&quot;                    -- 被移除的是 &quot;Redis&quot; 元素
+
+redis&gt; SPOP databases 3    -- 随机地移除三个元素
+1) &quot;Neo4j&quot;                 -- 被移除的元素是 &quot;Neo4j&quot; 、 &quot;PostgreSQL&quot; 和 &quot;MySQL&quot;
+2) &quot;PostgreSQL&quot;
+3) &quot;MySQL&quot;
+</pre></div>
+</div>
+<p>图 5-11 展示了 <code class="docutils literal notranslate"><span class="pre">databases</span></code> 集合在执行各个 <code class="docutils literal notranslate"><span class="pre">SPOP</span></code> 命令时的变化过程。</p>
+<hr class="docutils" />
+<p>图 5-11 <code class="docutils literal notranslate"><span class="pre">databases</span></code> 集合在执行 <code class="docutils literal notranslate"><span class="pre">SPOP</span></code> 命令时的变化过程</p>
+<p>执行 <code class="docutils literal notranslate"><span class="pre">SPOP</span></code> 命令之前的 <code class="docutils literal notranslate"><span class="pre">databases</span></code> 集合</p>
+<img alt="_images/IMAGE_SPOP_1.png" src="_images/IMAGE_SPOP_1.png" />
+<p>执行 <code class="docutils literal notranslate"><span class="pre">SPOP</span> <span class="pre">databases</span></code> ，导致元素 <code class="docutils literal notranslate"><span class="pre">&quot;CouchDB&quot;</span></code> 被移除</p>
+<img alt="_images/IMAGE_SPOP_2.png" src="_images/IMAGE_SPOP_2.png" />
+<p>执行 <code class="docutils literal notranslate"><span class="pre">SPOP</span> <span class="pre">databases</span></code> ，导致元素 <code class="docutils literal notranslate"><span class="pre">&quot;Redis&quot;</span></code> 被移除</p>
+<img alt="_images/IMAGE_SPOP_3.png" src="_images/IMAGE_SPOP_3.png" />
+<p>执行 <code class="docutils literal notranslate"><span class="pre">SPOP</span> <span class="pre">databases</span> <span class="pre">3</span></code> ，导致元素 <code class="docutils literal notranslate"><span class="pre">&quot;Neo4j&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;PostgreSQL&quot;</span></code> 和 <code class="docutils literal notranslate"><span class="pre">&quot;MySQL&quot;</span></code> 被移除</p>
+<img alt="_images/IMAGE_SPOP_4.png" src="_images/IMAGE_SPOP_4.png" />
+<section id="spop-srandmember">
+<h3><code class="docutils literal notranslate"><span class="pre">SPOP</span></code> 与 <code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 的区别<a class="headerlink" href="#spop-srandmember" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">SPOP</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 命令的主要区别在于：
+<code class="docutils literal notranslate"><span class="pre">SPOP</span></code> 命令会移除被随机选中的元素，
+而 <code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 命令则不会移除被随机选中的元素。</p>
+<p>通过查看 <code class="docutils literal notranslate"><span class="pre">databases</span></code> 集合目前包含的元素，
+我们可以证实之前被 <code class="docutils literal notranslate"><span class="pre">SPOP</span></code> 命令选中的元素已经不再存在于集合当中：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">databases</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;MS SQL&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;MongoDB&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;Oracle&quot;</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">SPOP</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 命令之间的另一个不同在于，
+<code class="docutils literal notranslate"><span class="pre">SPOP</span></code> 命令只接受正数 <code class="docutils literal notranslate"><span class="pre">count</span></code> 值，
+尝试向 <code class="docutils literal notranslate"><span class="pre">SPOP</span></code> 命令提供负数 <code class="docutils literal notranslate"><span class="pre">count</span></code> 值将引发错误，
+因为负数 <code class="docutils literal notranslate"><span class="pre">count</span></code> 值对于 <code class="docutils literal notranslate"><span class="pre">SPOP</span></code> 命令是没有意义的：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SPOP</span> <span class="n">databases</span> <span class="o">-</span><span class="mi">3</span>
+<span class="p">(</span><span class="n">error</span><span class="p">)</span> <span class="n">ERR</span> <span class="n">index</span> <span class="n">out</span> <span class="n">of</span> <span class="nb">range</span>
+</pre></div>
+</div>
+</section>
+<section id="id19">
+<h3>其他信息<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N)，其中 N 为被移除的元素数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p>不带 <code class="docutils literal notranslate"><span class="pre">count</span></code> 参数的 <code class="docutils literal notranslate"><span class="pre">SPOP</span></code> 命令从 Redis 1.0.0 版本开始可用；
+带有 <code class="docutils literal notranslate"><span class="pre">count</span></code> 参数的 <code class="docutils literal notranslate"><span class="pre">SPOP</span></code> 命令从 Redis 3.2.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id20">
+<h2>示例：抽奖<a class="headerlink" href="#id20" title="Link to this heading">¶</a></h2>
+<p>为了推销商品并反馈消费者，
+商家经常会举办一些抽奖活动，
+每个符合条件的消费者都可以参加这种抽奖，
+而商家则需要从所有参加抽奖的消费者里面选出指定数量的获奖者，
+并给他们赠送物品、金钱或者购物优惠。</p>
+<p>代码清单 5-6 展示了一个使用集合实现的抽奖程序，
+这个程序会把所有参与抽奖活动的玩家都添加到一个集合里面，
+然后通过 <code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 命令随机地选出获奖者。</p>
+<hr class="docutils" />
+<p>代码清单 5-6 使用集合实现的抽奖程序：<code class="docutils literal notranslate"><span class="pre">/set/lottery.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Lottery</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">add_player</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        将用户添加到抽奖名单当中。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">sadd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">user</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_all_players</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回参加抽奖活动的所有用户。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">smembers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">player_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回参加抽奖活动的用户人数。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">scard</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        抽取指定数量的获奖者。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">srandmember</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>考虑到保留完整的抽奖者名单可能会有用，
+所以这个抽奖程序使用了随机地获取元素的 <code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 命令而不是随机地移除元素的 <code class="docutils literal notranslate"><span class="pre">SPOP</span></code> 命令；
+在不需要保留完整的抽奖者名单的情况下，
+我们也可以使用 <code class="docutils literal notranslate"><span class="pre">SPOP</span></code> 命令去实现抽奖程序。</p>
+<p>以下代码简单地展示了这个抽奖程序的使用方法：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">lottery</span> <span class="kn">import</span> <span class="n">Lottery</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lottery</span> <span class="o">=</span> <span class="n">Lottery</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s1">&#39;birthday party lottery&#39;</span><span class="p">)</span>  <span class="c1"># 这是一次生日派对抽奖活动</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lottery</span><span class="o">.</span><span class="n">add_player</span><span class="p">(</span><span class="s1">&#39;peter&#39;</span><span class="p">)</span>  <span class="c1"># 添加抽奖者</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lottery</span><span class="o">.</span><span class="n">add_player</span><span class="p">(</span><span class="s1">&#39;jack&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lottery</span><span class="o">.</span><span class="n">add_player</span><span class="p">(</span><span class="s1">&#39;tom&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lottery</span><span class="o">.</span><span class="n">add_player</span><span class="p">(</span><span class="s1">&#39;mary&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lottery</span><span class="o">.</span><span class="n">add_player</span><span class="p">(</span><span class="s1">&#39;dan&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lottery</span><span class="o">.</span><span class="n">player_count</span><span class="p">()</span>       <span class="c1"># 查看抽奖者数量</span>
+<span class="go">5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lottery</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># 抽取一名获奖者</span>
+<span class="go">[&#39;dan&#39;]              # dan 中奖了！</span>
+</pre></div>
+</div>
+</section>
+<section id="sintersinterstore">
+<h2>SINTER、SINTERSTORE：对集合执行交集计算<a class="headerlink" href="#sintersinterstore" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">SINTER</span></code> 命令可以计算出用户给定的所有集合的交集，
+然后返回这个交集包含的所有元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SINTER</span> <span class="nb">set</span> <span class="p">[</span><span class="nb">set</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>比如对于以下这两个集合来说：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">s1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;a&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;b&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;d&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">s2</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;d&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;e&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;f&quot;</span>
+</pre></div>
+</div>
+<p>我们可以通过执行以下命令，
+计算出这两个集合的交集：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SINTER</span> <span class="n">s1</span> <span class="n">s2</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;d&quot;</span>
+</pre></div>
+</div>
+<p>从结果可以看出，
+<code class="docutils literal notranslate"><span class="pre">s1</span></code> 和 <code class="docutils literal notranslate"><span class="pre">s2</span></code> 的交集包含了 <code class="docutils literal notranslate"><span class="pre">&quot;c&quot;</span></code> 和 <code class="docutils literal notranslate"><span class="pre">&quot;d&quot;</span></code> 这两个元素。</p>
+<section id="sinterstore">
+<h3><code class="docutils literal notranslate"><span class="pre">SINTERSTORE</span></code> 命令<a class="headerlink" href="#sinterstore" title="Link to this heading">¶</a></h3>
+<p>除了 <code class="docutils literal notranslate"><span class="pre">SINTER</span></code> 命令之外，
+Redis 还提供了 <code class="docutils literal notranslate"><span class="pre">SINTERSTORE</span></code> 命令，
+这个命令可以把给定集合的交集计算结果储存到指定的键里面：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SINTERSTORE</span> <span class="n">destination_key</span> <span class="nb">set</span> <span class="p">[</span><span class="nb">set</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>如果给定的键已经存在，
+那么 <code class="docutils literal notranslate"><span class="pre">SINTERSTORE</span></code> 命令在执行储存操作之前会先删除已有的键。
+<code class="docutils literal notranslate"><span class="pre">SINTERSTORE</span></code> 命令在执行完毕之后会返回被储存的交集元素数量作为返回值。</p>
+<p>比如说，
+通过执行以下命令，
+我们可以把 <code class="docutils literal notranslate"><span class="pre">s1</span></code> 和 <code class="docutils literal notranslate"><span class="pre">s2</span></code> 的交集计算结果储存到集合 <code class="docutils literal notranslate"><span class="pre">s1-inter-s2</span></code> 里面：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SINTERSTORE</span> <span class="n">s1</span><span class="o">-</span><span class="n">inter</span><span class="o">-</span><span class="n">s2</span> <span class="n">s1</span> <span class="n">s2</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2</span>  <span class="o">--</span> <span class="n">交集包含两个元素</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">s1</span><span class="o">-</span><span class="n">inter</span><span class="o">-</span><span class="n">s2</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;d&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id21">
+<h3>其他信息<a class="headerlink" href="#id21" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SINTER</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">SINTERSTORE</span></code> 命令的复杂度都是 O(N*M)，
+其中 N 为给定集合的数量，
+而 M 则是所有给定集合当中，
+包含元素最少的那个集合的大小。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SINTER</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">SINTERSTORE</span></code> 命令从 Redis 1.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="sunionsunionstore">
+<h2>SUNION、SUNIONSTORE：对集合执行并集计算<a class="headerlink" href="#sunionsunionstore" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">SUNION</span></code> 命令可以计算出用户给定的所有集合的并集，
+然后返回这个并集包含的所有元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SUNION</span> <span class="nb">set</span> <span class="p">[</span><span class="nb">set</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>比如对于以下这两个集合来说：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">s1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;a&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;b&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;d&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">s2</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;d&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;e&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;f&quot;</span>
+</pre></div>
+</div>
+<p>我们可以通过执行以下命令，
+计算出这两个集合的并集：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SUNION</span> <span class="n">s1</span> <span class="n">s2</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;a&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;b&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;d&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;e&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;f&quot;</span>
+</pre></div>
+</div>
+<p>从结果可以看出，
+<code class="docutils literal notranslate"><span class="pre">s1</span></code> 和 <code class="docutils literal notranslate"><span class="pre">s2</span></code> 的并集共包含六个元素。</p>
+<section id="sunionstore">
+<h3><code class="docutils literal notranslate"><span class="pre">SUNIONSTORE</span></code> 命令<a class="headerlink" href="#sunionstore" title="Link to this heading">¶</a></h3>
+<p>跟 <code class="docutils literal notranslate"><span class="pre">SINTERSTORE</span></code> 命令类似，
+Redis 也为 <code class="docutils literal notranslate"><span class="pre">SUNION</span></code> 提供了相应的 <code class="docutils literal notranslate"><span class="pre">SUNIONSTORE</span></code> 命令，
+这个命令可以把给定集合的并集计算结果储存到指定的键里面，
+并在键已经存在的情况下，
+自动覆盖已有的键：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SUNIONSTORE</span> <span class="n">destination_key</span> <span class="nb">set</span> <span class="p">[</span><span class="nb">set</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">SUNIONSTORE</span></code> 命令在执行完毕之后，
+将返回并集元素的数量作为返回值。</p>
+<p>比如说，
+通过执行以下命令，
+我们可以把 <code class="docutils literal notranslate"><span class="pre">s1</span></code> 和 <code class="docutils literal notranslate"><span class="pre">s2</span></code> 的并集计算结果储存到集合 <code class="docutils literal notranslate"><span class="pre">s1-union-s2</span></code> 里面：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SUNIONSTORE</span> <span class="n">s1</span><span class="o">-</span><span class="n">union</span><span class="o">-</span><span class="n">s2</span> <span class="n">s1</span> <span class="n">s2</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">6</span>  <span class="o">--</span> <span class="n">并集共包含六个元素</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">s1</span><span class="o">-</span><span class="n">union</span><span class="o">-</span><span class="n">s2</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;a&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;b&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;d&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;e&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;f&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id22">
+<h3>其他信息<a class="headerlink" href="#id22" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SUNION</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">SUNIONSTORE</span></code> 命令的复杂度都是 O(N) ，
+其中 N 为所有给定集合包含的元素数量总和。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SUNION</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">SUNIONSTORE</span></code> 命令从 Redis 1.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="sdiffsdiffstore">
+<h2>SDIFF、SDIFFSTORE：对集合执行差集计算<a class="headerlink" href="#sdiffsdiffstore" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">SDIFF</span></code> 命令可以计算出给定集合之间的差集，
+并返回差集包含的所有元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SDIFF</span> <span class="nb">set</span> <span class="p">[</span><span class="nb">set</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">SDIFF</span></code> 命令会按照用户给定集合的顺序，
+从左到右依次地对给定的集合执行差集计算。</p>
+<p>举个例子，
+对于以下这三个集合来说：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">s1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;a&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;b&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;d&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">s2</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;c&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;d&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;e&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;f&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">s3</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;b&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;f&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;g&quot;</span>
+</pre></div>
+</div>
+<p>如果我们执行以下命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SDIFF</span> <span class="n">s1</span> <span class="n">s2</span> <span class="n">s3</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;a&quot;</span>
+</pre></div>
+</div>
+<p>那么 <code class="docutils literal notranslate"><span class="pre">SDIFF</span></code> 命令首先会对集合 <code class="docutils literal notranslate"><span class="pre">s1</span></code> 和集合 <code class="docutils literal notranslate"><span class="pre">s2</span></code> 执行差集计算，
+得到一个包含元素 <code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code> 和 <code class="docutils literal notranslate"><span class="pre">&quot;b&quot;</span></code> 的临时集合，
+然后再使用这个临时集合与集合 <code class="docutils literal notranslate"><span class="pre">s3</span></code> 执行差集计算。
+换句话说，
+这个 <code class="docutils literal notranslate"><span class="pre">SDIFF</span></code> 命令首先会计算出 <code class="docutils literal notranslate"><span class="pre">s1-s2</span></code> 的结果，
+然后再计算 <code class="docutils literal notranslate"><span class="pre">(s1-s2)-s3</span></code> 的结果。</p>
+<section id="sdiffstore">
+<h3><code class="docutils literal notranslate"><span class="pre">SDIFFSTORE</span></code> 命令<a class="headerlink" href="#sdiffstore" title="Link to this heading">¶</a></h3>
+<p>跟 <code class="docutils literal notranslate"><span class="pre">SINTERSTORE</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">SUNIONSTORE</span></code> 命令一样，
+Redis 也为 <code class="docutils literal notranslate"><span class="pre">SDIFF</span></code> 命令提供了相应的 <code class="docutils literal notranslate"><span class="pre">SDIFFSTORE</span></code> 命令，
+这个命令可以把给定集合之间的差集计算结果储存到指定的键里面，
+并在键已经存在的情况下，
+自动覆盖已有的键：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SDIFFSTORE</span> <span class="n">destination_key</span> <span class="nb">set</span> <span class="p">[</span><span class="nb">set</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">SDIFFSTORE</span></code> 命令会返回被储存的差集元素数量作为返回值。</p>
+<p>作为例子，
+以下代码展示了怎样将集合 <code class="docutils literal notranslate"><span class="pre">s1</span></code> 、 <code class="docutils literal notranslate"><span class="pre">s2</span></code> 、 <code class="docutils literal notranslate"><span class="pre">s3</span></code> 的差集计算结果储存到集合 <code class="docutils literal notranslate"><span class="pre">diff-result</span></code> 里面：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SDIFFSTORE</span> <span class="n">diff</span><span class="o">-</span><span class="n">result</span> <span class="n">s1</span> <span class="n">s2</span> <span class="n">s3</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>  <span class="o">--</span> <span class="n">计算出的差集只包含一个元素</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">diff</span><span class="o">-</span><span class="n">result</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;a&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id23">
+<h3>其他信息<a class="headerlink" href="#id23" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SDIFF</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">SDIFFSTORE</span></code> 命令的复杂度都是 O(N) ，
+其中 N 为所有给定集合包含的元素数量总和。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SDIFF</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">SDIFFSTORE</span></code> 命令从 Redis 1.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p>执行集合计算的注意事项</p>
+<p>因为对集合执行交集、并集、差集等集合计算需要耗费大量的资源，
+所以在有可能的情况下，
+用户都应该尽量使用 <code class="docutils literal notranslate"><span class="pre">SINTERSTORE</span></code> 等命令来储存并重用计算结果，
+而不要每次都重复进行计算。</p>
+<p>此外，
+当集合计算涉及的元素数量非常巨大时，
+Redis 服务器在进行计算时可能会被阻塞。
+这时，
+我们可以考虑使用 Redis 的复制功能，
+通过从服务器来执行集合计算任务，
+从而确保主服务器可以继续处理其他客户端发送的命令请求。</p>
+<p>本书将在之后的《复制》一章中对 Redis 的复制功能进行介绍。</p>
+</div>
+</section>
+</section>
+<section id="id24">
+<h2>示例：共同关注与推荐关注<a class="headerlink" href="#id24" title="Link to this heading">¶</a></h2>
+<p>在前面的内容中，
+我们学习了如何使用集合去储存社交网站的好友关系，
+但是除了基本的关注和被关注之外，
+社交网站通常还会提供一些额外的功能，
+帮助用户去发现一些自己可能会感兴趣的人。</p>
+<p>比如说，
+当我们在微博上访问某个用户的个人页面时，
+页面上就会展示出我们和这个用户都在关注的人，
+就像图 5-12 所示那样。</p>
+<hr class="docutils" />
+<p>图 5-12 微博上的共同关注示例</p>
+<img alt="_images/IMAGE_WEIBO_COMMON_FOLLOWING.png" src="_images/IMAGE_WEIBO_COMMON_FOLLOWING.png" />
+<hr class="docutils" />
+<p>除了共同关注之外，
+一些社交网站还会通过算法和数据分析，
+为用户推荐一些他可能会感兴趣的人，
+比如图 5-13 就展示了 twitter 是如何向用户推荐他可能会感兴趣的关注对象的。</p>
+<hr class="docutils" />
+<p>图 5-13 twitter 的推荐关注功能示例</p>
+<img alt="_images/IMAGE_TWITTER_RECOMMEND_FOLLOW.png" src="_images/IMAGE_TWITTER_RECOMMEND_FOLLOW.png" />
+<hr class="docutils" />
+<p>在接下来的两个小节中，
+我们将分别学习如何使用集合去实现以上展示的共同关注功能和推荐关注功能。</p>
+<section id="id25">
+<h3>共同关注<a class="headerlink" href="#id25" title="Link to this heading">¶</a></h3>
+<p>要实现共同关注功能，
+程序需要做的就是计算出两个用户的正在关注集合之间的交集，
+这一点可以通过前面介绍的 <code class="docutils literal notranslate"><span class="pre">SINTER</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">SINTERSTORE</span></code> 命令来完成，
+代码清单 5-7 展示了使用这一原理实现的共同关注程序。</p>
+<hr class="docutils" />
+<p>代码清单 5-7 共同关注功能的实现：<code class="docutils literal notranslate"><span class="pre">/set/common_following.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">following_key</span><span class="p">(</span><span class="n">user</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">user</span> <span class="o">+</span> <span class="s2">&quot;::following&quot;</span>
+
+<span class="k">class</span> <span class="nc">CommonFollowing</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+
+    <span class="k">def</span> <span class="nf">calculate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        计算并返回当前用户和目标用户共同关注的人。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">user_following_set</span> <span class="o">=</span> <span class="n">following_key</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+        <span class="n">target_following_set</span> <span class="o">=</span> <span class="n">following_key</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">sinter</span><span class="p">(</span><span class="n">user_following_set</span><span class="p">,</span> <span class="n">target_following_set</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">calculate_and_store</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">store_key</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        计算出当前用户和目标用户共同关注的人，</span>
+<span class="sd">        并把结果储存到 store_key 指定的键里面，</span>
+<span class="sd">        最后返回共同关注的人数作为返回值。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">user_following_set</span> <span class="o">=</span> <span class="n">following_key</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+        <span class="n">target_following_set</span> <span class="o">=</span> <span class="n">following_key</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">sinterstore</span><span class="p">(</span><span class="n">store_key</span><span class="p">,</span> <span class="n">user_following_set</span><span class="p">,</span> <span class="n">target_following_set</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>以下代码展示了共同关注程序的具体用法：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">relationship</span> <span class="kn">import</span> <span class="n">Relationship</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">common_following</span> <span class="kn">import</span> <span class="n">CommonFollowing</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">peter</span> <span class="o">=</span> <span class="n">Relationship</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;peter&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">jack</span> <span class="o">=</span> <span class="n">Relationship</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;jack&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">peter</span><span class="o">.</span><span class="n">follow</span><span class="p">(</span><span class="s2">&quot;tom&quot;</span><span class="p">)</span>   <span class="c1"># peter 关注一些用户</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">peter</span><span class="o">.</span><span class="n">follow</span><span class="p">(</span><span class="s2">&quot;david&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">peter</span><span class="o">.</span><span class="n">follow</span><span class="p">(</span><span class="s2">&quot;mary&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">jack</span><span class="o">.</span><span class="n">follow</span><span class="p">(</span><span class="s2">&quot;tom&quot;</span><span class="p">)</span>    <span class="c1"># jack 关注一些用户</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">jack</span><span class="o">.</span><span class="n">follow</span><span class="p">(</span><span class="s2">&quot;david&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">jack</span><span class="o">.</span><span class="n">follow</span><span class="p">(</span><span class="s2">&quot;lily&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">common_following</span> <span class="o">=</span> <span class="n">CommonFollowing</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">common_following</span><span class="o">.</span><span class="n">calculate</span><span class="p">(</span><span class="s2">&quot;peter&quot;</span><span class="p">,</span> <span class="s2">&quot;jack&quot;</span><span class="p">)</span>  <span class="c1"># 计算 peter 和 jack 的共同关注用户</span>
+<span class="go">set([&#39;tom&#39;, &#39;david&#39;])                            # 他们都关注了 tom 和 david</span>
+</pre></div>
+</div>
+</section>
+<section id="id26">
+<h3>推荐关注<a class="headerlink" href="#id26" title="Link to this heading">¶</a></h3>
+<p>代码清单 5-8 展示了一个推荐关注程序的实现代码，
+这个程序会从用户的正在关注集合中随机地选出指定数量的人作为种子用户，
+然后对这些种子用户的正在关注集合执行并集计算，
+最后再从这个并集里面随机地选出一些人作为推荐关注的对象。</p>
+<hr class="docutils" />
+<p>代码清单 5-8 推荐关注功能的实现：<code class="docutils literal notranslate"><span class="pre">/set/recommend_follow.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">following_key</span><span class="p">(</span><span class="n">user</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">user</span> <span class="o">+</span> <span class="s2">&quot;::following&quot;</span>
+
+<span class="k">def</span> <span class="nf">recommend_follow_key</span><span class="p">(</span><span class="n">user</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">user</span> <span class="o">+</span> <span class="s2">&quot;::recommend_follow&quot;</span>
+
+<span class="k">class</span> <span class="nc">RecommendFollow</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">user</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="n">user</span>
+
+    <span class="k">def</span> <span class="nf">calculate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seed_size</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        计算并储存用户的推荐关注数据。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 1)从用户关注的人中随机选一些人作为种子用户</span>
+        <span class="n">user_following_set</span> <span class="o">=</span> <span class="n">following_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+        <span class="n">following_targets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">srandmember</span><span class="p">(</span><span class="n">user_following_set</span><span class="p">,</span> <span class="n">seed_size</span><span class="p">)</span>
+        <span class="c1"># 2)收集种子用户的正在关注集合键名</span>
+        <span class="n">target_sets</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">following_targets</span><span class="p">:</span>
+            <span class="n">target_sets</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">following_key</span><span class="p">(</span><span class="n">target</span><span class="p">))</span>
+        <span class="c1"># 3)对所有种子用户的正在关注集合执行并集计算，并储存结果</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">sunionstore</span><span class="p">(</span><span class="n">recommend_follow_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">),</span> <span class="o">*</span><span class="n">target_sets</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">fetch_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        从已有的推荐关注数据中随机地获取指定数量的推荐关注用户。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">srandmember</span><span class="p">(</span><span class="n">recommend_follow_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">),</span> <span class="n">number</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">delete_result</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        删除已计算出的推荐关注数据。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">recommend_follow_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="p">))</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>以下代码展示了这个推荐关注程序的使用方法：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">recommend_follow</span> <span class="kn">import</span> <span class="n">RecommendFollow</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">recommend_follow</span> <span class="o">=</span> <span class="n">RecommendFollow</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;peter&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">recommend_follow</span><span class="o">.</span><span class="n">calculate</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>       <span class="c1"># 随机选择 3 个正在关注的人作为种子用户</span>
+<span class="go">30</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">recommend_follow</span><span class="o">.</span><span class="n">fetch_result</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>   <span class="c1"># 获取 10 个推荐关注对象</span>
+<span class="go">[&#39;D6&#39;, &#39;M0&#39;, &#39;S4&#39;, &#39;M1&#39;, &#39;S8&#39;, &#39;M3&#39;, &#39;S3&#39;, &#39;M7&#39;, &#39;M4&#39;, &#39;D7&#39;]</span>
+</pre></div>
+</div>
+<p>在执行这段代码之前，
+用户 <code class="docutils literal notranslate"><span class="pre">peter</span></code> 关注了 <code class="docutils literal notranslate"><span class="pre">tom</span></code> 、 <code class="docutils literal notranslate"><span class="pre">david</span></code> 、 <code class="docutils literal notranslate"><span class="pre">jack</span></code> 、 <code class="docutils literal notranslate"><span class="pre">mary</span></code> 和 <code class="docutils literal notranslate"><span class="pre">sam</span></code> 这五个用户，
+而这五个用户又分别关注了如图 5-14 所示的一些用户，
+从结果来看，
+推荐程序随机选中了 <code class="docutils literal notranslate"><span class="pre">david</span></code> 、 <code class="docutils literal notranslate"><span class="pre">sam</span></code> 和 <code class="docutils literal notranslate"><span class="pre">mary</span></code> 作为种子用户，
+然后又从这三个用户的正在关注集合的并集中，
+随机地选出了 10 个人作为 <code class="docutils literal notranslate"><span class="pre">peter</span></code> 的推荐关注对象。</p>
+<hr class="docutils" />
+<p>图 5-14 <code class="docutils literal notranslate"><span class="pre">peter</span></code> 的正在关注关系图</p>
+<img alt="_images/IMAGE_FOLLOW_RELATIONSHIP.png" src="_images/IMAGE_FOLLOW_RELATIONSHIP.png" />
+<hr class="docutils" />
+<p>需要注意的是，
+这里展示的推荐关注程序使用的是非常简单的推荐算法，
+它假设用户会对自己正在关注的人的关注对象感兴趣，
+但实际的情况可能并非如此。
+为了获得更为精准的推荐效果，
+实际的社交网站通常会使用更为复杂的推荐算法，
+有兴趣的读者可以自行查找这方面的资料。</p>
+</section>
+</section>
+<section id="id27">
+<h2>示例：使用反向索引构建商品筛选器<a class="headerlink" href="#id27" title="Link to this heading">¶</a></h2>
+<p>在光顾网店或者购物网站的时候，
+我们经常会看见图 5-15 这样的商品筛选器，
+对于不同的条件，
+这些筛选器会给出不同的选项，
+用户可以通过点击不同的选项来快速找到自己想要的商品。</p>
+<hr class="docutils" />
+<p>图 5-15 笔记本电脑商品筛选器</p>
+<img alt="_images/IMAGE_PRODUCT_FILTER.png" src="_images/IMAGE_PRODUCT_FILTER.png" />
+<hr class="docutils" />
+<p>比如对于图 5-15 展示的笔记本电脑筛选器来说，
+如果我们点击图中“品牌”一栏的“ThinkPad”图标，
+那么筛选器将只在页面里展示 ThinkPad 品牌的笔记本电脑。
+如果我们继续点击“尺寸”一栏中的“13.3英寸”选项，
+那么筛选器将只在页面里展示 ThinkPad 品牌的 13.3 英寸笔记本电脑，
+诸如此类。</p>
+<p>实现商品筛选器的其中一种方法是使用反向索引，
+这种数据结构可以为每个物品添加多个关键字，
+然后根据关键字去反向地获取相应的物品。
+举个例子，
+对于 <code class="docutils literal notranslate"><span class="pre">&quot;X1</span> <span class="pre">Carbon&quot;</span></code> 这台笔记本电脑来说，
+我们可以为它添加 <code class="docutils literal notranslate"><span class="pre">&quot;ThinkPad&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;14inch&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;Windows&quot;</span></code> 等关键字，
+然后通过这些关键字来反向获取 <code class="docutils literal notranslate"><span class="pre">&quot;X1</span> <span class="pre">Carbon&quot;</span></code> 这台电脑。</p>
+<p>实现反向索引的关键是要在物品和关键字之间构建起双向的映射关系，
+比如对于刚刚提到的 <code class="docutils literal notranslate"><span class="pre">&quot;X1</span> <span class="pre">Carbon&quot;</span></code> 电脑来说，
+反向索引程序需要构建出图 5-16 所示的两种映射关系：</p>
+<ul class="simple">
+<li><p>第一种映射关系将 <code class="docutils literal notranslate"><span class="pre">&quot;X1</span> <span class="pre">Carbon&quot;</span></code> 映射至它带有的各个关键字；</p></li>
+<li><p>而第二种映射关系则将 <code class="docutils literal notranslate"><span class="pre">&quot;ThinkPad&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;14inch&quot;</span></code> 、 <code class="docutils literal notranslate"><span class="pre">&quot;Windows&quot;</span></code> 等多个关键字映射至 <code class="docutils literal notranslate"><span class="pre">&quot;X1</span> <span class="pre">Carbon&quot;</span></code> 。</p></li>
+</ul>
+<hr class="docutils" />
+<p>图 5-16 X1 Carbon 电脑及其关键字的映射关系</p>
+<img alt="_images/IMAGE_X1_INDEX_1.png" src="_images/IMAGE_X1_INDEX_1.png" />
+<img alt="_images/IMAGE_X1_INDEX_2.png" src="_images/IMAGE_X1_INDEX_2.png" />
+<hr class="docutils" />
+<p>代码清单 5-9 展示了一个使用集合实现的反向索引程序，
+对于用户给定的每一件物品，
+这个程序都会使用一个集合去储存物品带有的多个关键字；
+与此同时，
+对于这件物品的每一个关键字，
+程序都会使用一个集合去储存关键字与物品之间的映射。
+因为构建反向索引所需的这两种映射都是一对多映射，
+所以使用集合来储存这两种映射关系的做法是可行的。</p>
+<hr class="docutils" />
+<p>代码清单 5-9 反向索引程序：<code class="docutils literal notranslate"><span class="pre">/set/inverted_index.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">make_item_key</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s2">&quot;InvertedIndex::&quot;</span> <span class="o">+</span> <span class="n">item</span> <span class="o">+</span> <span class="s2">&quot;::keywords&quot;</span>
+
+<span class="k">def</span> <span class="nf">make_keyword_key</span><span class="p">(</span><span class="n">keyword</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s2">&quot;InvertedIndex::&quot;</span> <span class="o">+</span> <span class="n">keyword</span> <span class="o">+</span> <span class="s2">&quot;::items&quot;</span>
+
+<span class="k">class</span> <span class="nc">InvertedIndex</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+
+    <span class="k">def</span> <span class="nf">add_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="o">*</span><span class="n">keywords</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        为物品添加关键字。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 将给定关键字添加到物品集合中</span>
+        <span class="n">item_key</span> <span class="o">=</span> <span class="n">make_item_key</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">sadd</span><span class="p">(</span><span class="n">item_key</span><span class="p">,</span> <span class="o">*</span><span class="n">keywords</span><span class="p">)</span>
+        <span class="c1"># 遍历每个关键字集合，把给定物品添加到这些集合当中</span>
+        <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">keywords</span><span class="p">:</span>
+            <span class="n">keyword_key</span> <span class="o">=</span> <span class="n">make_keyword_key</span><span class="p">(</span><span class="n">keyword</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">sadd</span><span class="p">(</span><span class="n">keyword_key</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+        <span class="c1"># 返回新添加关键字的数量作为结果</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span> <span class="nf">remove_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="o">*</span><span class="n">keywords</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        移除物品的关键字。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 将给定关键字从物品集合中移除</span>
+        <span class="n">item_key</span> <span class="o">=</span> <span class="n">make_item_key</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">srem</span><span class="p">(</span><span class="n">item_key</span><span class="p">,</span> <span class="o">*</span><span class="n">keywords</span><span class="p">)</span>
+        <span class="c1"># 遍历每个关键字集合，把给定物品从这些集合中移除</span>
+        <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">keywords</span><span class="p">:</span>
+            <span class="n">keyword_key</span> <span class="o">=</span> <span class="n">make_keyword_key</span><span class="p">(</span><span class="n">keyword</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">srem</span><span class="p">(</span><span class="n">keyword_key</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+        <span class="c1"># 返回被移除关键字的数量作为结果</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span> <span class="nf">get_keywords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        获取物品的所有关键字。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">smembers</span><span class="p">(</span><span class="n">make_item_key</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">get_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">keywords</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        根据给定的关键字获取物品。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 根据给定的关键字，计算出与之对应的集合键名</span>
+        <span class="n">keyword_key_list</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">make_keyword_key</span><span class="p">,</span> <span class="n">keywords</span><span class="p">)</span>
+        <span class="c1"># 然后对这些储存着各式物品的关键字集合执行并集计算</span>
+        <span class="c1"># 从而查找出带有给定关键字的物品</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">sinter</span><span class="p">(</span><span class="o">*</span><span class="n">keyword_key_list</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>为了测试这个反向索引程序，
+我们在以下代码中，
+把一些笔记本电脑产品的名称及其关键字添加到了反向索引里面：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">inverted_index</span> <span class="kn">import</span> <span class="n">InvertedIndex</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">laptops</span> <span class="o">=</span> <span class="n">InvertedIndex</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">laptops</span><span class="o">.</span><span class="n">add_index</span><span class="p">(</span><span class="s2">&quot;MacBook Pro&quot;</span><span class="p">,</span> <span class="s2">&quot;Apple&quot;</span><span class="p">,</span> <span class="s2">&quot;MacOS&quot;</span><span class="p">,</span> <span class="s2">&quot;13inch&quot;</span><span class="p">)</span>  <span class="c1"># 为电脑及其关键字建立索引</span>
+<span class="go">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">laptops</span><span class="o">.</span><span class="n">add_index</span><span class="p">(</span><span class="s2">&quot;MacBook Air&quot;</span><span class="p">,</span> <span class="s2">&quot;Apple&quot;</span><span class="p">,</span> <span class="s2">&quot;MacOS&quot;</span><span class="p">,</span> <span class="s2">&quot;13inch&quot;</span><span class="p">)</span>
+<span class="go">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">laptops</span><span class="o">.</span><span class="n">add_index</span><span class="p">(</span><span class="s2">&quot;X1 Carbon&quot;</span><span class="p">,</span> <span class="s2">&quot;ThinkPad&quot;</span><span class="p">,</span> <span class="s2">&quot;Windows&quot;</span><span class="p">,</span> <span class="s2">&quot;13inch&quot;</span><span class="p">)</span>
+<span class="go">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">laptops</span><span class="o">.</span><span class="n">add_index</span><span class="p">(</span><span class="s2">&quot;T450&quot;</span><span class="p">,</span> <span class="s2">&quot;ThinkPad&quot;</span><span class="p">,</span> <span class="s2">&quot;Windows&quot;</span><span class="p">,</span> <span class="s2">&quot;14inch&quot;</span><span class="p">)</span>
+<span class="go">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">laptops</span><span class="o">.</span><span class="n">add_index</span><span class="p">(</span><span class="s2">&quot;XPS&quot;</span><span class="p">,</span> <span class="s2">&quot;DELL&quot;</span><span class="p">,</span> <span class="s2">&quot;Windows&quot;</span><span class="p">,</span> <span class="s2">&quot;13inch&quot;</span><span class="p">)</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+<p>在此之后，
+我们可以通过以下语句来找出 <code class="docutils literal notranslate"><span class="pre">&quot;T450&quot;</span></code> 电脑带有的所有关键字：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">laptops</span><span class="o">.</span><span class="n">get_keywords</span><span class="p">(</span><span class="s2">&quot;T450&quot;</span><span class="p">)</span>
+<span class="go">set([&#39;Windows&#39;, &#39;14inch&#39;, &#39;ThinkPad&#39;])</span>
+</pre></div>
+</div>
+<p>也可以使用以下语句来找出所有屏幕大小为 13 英寸的笔记本电脑：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">laptops</span><span class="o">.</span><span class="n">get_items</span><span class="p">(</span><span class="s2">&quot;13inch&quot;</span><span class="p">)</span>
+<span class="go">set([&#39;MacBook Pro&#39;, &#39;X1 Carbon&#39;, &#39;MacBook Air&#39;, &#39;XPS&#39;])</span>
+</pre></div>
+</div>
+<p>还可以使用以下语句来找出所有屏幕大小为 13 英寸并且使用 Windows 系统的笔记本电脑：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">laptops</span><span class="o">.</span><span class="n">get_items</span><span class="p">(</span><span class="s2">&quot;13inch&quot;</span><span class="p">,</span> <span class="s2">&quot;Windows&quot;</span><span class="p">)</span>
+<span class="go">set([&#39;XPS&#39;, &#39;X1 Carbon&#39;])</span>
+</pre></div>
+</div>
+<p>或者使用以下语句来找出所有屏幕大小为 13 英寸并且使用 Windows 系统的 ThinkPad 品牌笔记本电脑：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">laptops</span><span class="o">.</span><span class="n">get_items</span><span class="p">(</span><span class="s2">&quot;13inch&quot;</span><span class="p">,</span> <span class="s2">&quot;Windows&quot;</span><span class="p">,</span> <span class="s2">&quot;ThinkPad&quot;</span><span class="p">)</span>
+<span class="go">set([&#39;X1 Carbon&#39;])</span>
+</pre></div>
+</div>
+<p>图 5-17 展示了以上代码在数据库中为物品创建的各个集合，
+而图 5-18 则展示了以上代码在数据库中为关键字创建的各个集合。</p>
+<hr class="docutils" />
+<p>图 5-17 反向索引程序为物品创建的集合</p>
+<img alt="_images/IMAGE_II_ITEM_INDEX.png" src="_images/IMAGE_II_ITEM_INDEX.png" />
+<hr class="docutils" />
+<p>图 5-18 反向索引程序为关键字创建的集合</p>
+<img alt="_images/IMAGE_II_KEYWORD_INDEX.png" src="_images/IMAGE_II_KEYWORD_INDEX.png" />
+</section>
+<section id="id28">
+<h2>重点回顾<a class="headerlink" href="#id28" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>集合允许用户储存任意多个各不相同的元素。</p></li>
+<li><p>所有针对单个元素的集合操作，复杂度都为 O(1) 。</p></li>
+<li><p>在使用 <code class="docutils literal notranslate"><span class="pre">SADD</span></code> 命令向集合中添加元素时，
+已存在于集合中的元素会自动被忽略。</p></li>
+<li><p>因为集合以无序的方式储存元素，
+所以两个包含相同元素的集合在使用 <code class="docutils literal notranslate"><span class="pre">SMEMBERS</span></code> 命令时可能会得到不同的结果。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 命令不会移除被随机选中的元素，
+而 <code class="docutils literal notranslate"><span class="pre">SPOP</span></code> 命令的做法则与此相反。</p></li>
+<li><p>因为集合计算需要使用大量的计算资源，
+所以我们应该尽量储存并重用集合计算的结果，
+在有需要的情况下，
+还可以把集合计算放到从服务器中进行。</p></li>
+</ul>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">集合（Set）</a><ul>
+<li><a class="reference internal" href="#sadd">SADD：将元素添加到集合</a><ul>
+<li><a class="reference internal" href="#id1">忽略已存在元素</a></li>
+<li><a class="reference internal" href="#id2">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#srem">SREM：从集合中移除元素</a><ul>
+<li><a class="reference internal" href="#id3">忽略不存在的元素</a></li>
+<li><a class="reference internal" href="#id4">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#smove">SMOVE：将元素从一个集合移动到另一个集合</a><ul>
+<li><a class="reference internal" href="#id5">忽略不存在的元素</a></li>
+<li><a class="reference internal" href="#id6">覆盖已存在的元素</a></li>
+<li><a class="reference internal" href="#id7">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#smembers">SMEMBERS：获取集合包含的所有元素</a><ul>
+<li><a class="reference internal" href="#id8">元素的无序排列</a></li>
+<li><a class="reference internal" href="#id9">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#scard">SCARD：获取集合包含的元素数量</a><ul>
+<li><a class="reference internal" href="#id10">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#sismember">SISMEMBER：检查给定元素是否存在于集合</a><ul>
+<li><a class="reference internal" href="#id11">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id12">示例：唯一计数器</a></li>
+<li><a class="reference internal" href="#id13">示例：打标签</a></li>
+<li><a class="reference internal" href="#id14">示例：点赞</a></li>
+<li><a class="reference internal" href="#id15">示例：投票</a></li>
+<li><a class="reference internal" href="#id16">示例：社交关系</a></li>
+<li><a class="reference internal" href="#srandmember">SRANDMEMBER：随机地获取集合中的元素</a><ul>
+<li><a class="reference internal" href="#id17">返回指定数量的元素</a></li>
+<li><a class="reference internal" href="#id18">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#spop">SPOP：随机地从集合里面移除指定数量的元素</a><ul>
+<li><a class="reference internal" href="#spop-srandmember"><code class="docutils literal notranslate"><span class="pre">SPOP</span></code> 与 <code class="docutils literal notranslate"><span class="pre">SRANDMEMBER</span></code> 的区别</a></li>
+<li><a class="reference internal" href="#id19">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id20">示例：抽奖</a></li>
+<li><a class="reference internal" href="#sintersinterstore">SINTER、SINTERSTORE：对集合执行交集计算</a><ul>
+<li><a class="reference internal" href="#sinterstore"><code class="docutils literal notranslate"><span class="pre">SINTERSTORE</span></code> 命令</a></li>
+<li><a class="reference internal" href="#id21">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#sunionsunionstore">SUNION、SUNIONSTORE：对集合执行并集计算</a><ul>
+<li><a class="reference internal" href="#sunionstore"><code class="docutils literal notranslate"><span class="pre">SUNIONSTORE</span></code> 命令</a></li>
+<li><a class="reference internal" href="#id22">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#sdiffsdiffstore">SDIFF、SDIFFSTORE：对集合执行差集计算</a><ul>
+<li><a class="reference internal" href="#sdiffstore"><code class="docutils literal notranslate"><span class="pre">SDIFFSTORE</span></code> 命令</a></li>
+<li><a class="reference internal" href="#id23">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id24">示例：共同关注与推荐关注</a><ul>
+<li><a class="reference internal" href="#id25">共同关注</a></li>
+<li><a class="reference internal" href="#id26">推荐关注</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id27">示例：使用反向索引构建商品筛选器</a></li>
+<li><a class="reference internal" href="#id28">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="list.html"
+                          title="Previous page">&larr; 列表（List）</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="database.html"
+                          title="Next page">&rarr; 数据库</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>本页</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/set.rst.txt"
+            rel="nofollow">显示源代码</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">快速搜索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="提交" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="database.html" title="数据库"
+             >下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="list.html" title="列表（List）"
+             >上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">集合（Set）</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; 版权所有 2019, 黄健宏.
+      由 <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6创建。
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

@@ -1,0 +1,606 @@
+
+
+<!DOCTYPE html>
+
+<html lang="zh-CN" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Redis使用手册 &#8212; Redis使用手册</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" href="./" type="text/css" />
+    
+    <script src="_static/documentation_options.js?v=f115507d"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=beaddf03"></script>
+
+    
+    
+     
+        <script src="_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="_static/cloud.js"></script>
+    
+
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+    <link rel="next" title="前言" href="preface.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="preface.html" title="前言"
+             accesskey="N">下一页</a> &nbsp; &nbsp;</li>
+    <li><a href="#">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">Redis使用手册</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="redis">
+<h1>Redis使用手册<a class="headerlink" href="#redis" title="Link to this heading">¶</a></h1>
+<img alt="_images/banner.png" src="_images/banner.png" />
+<p><strong>Redis方面的集大成之作，学习和使用Redis必不可少的一本书</strong></p>
+<ul class="simple">
+<li><p>对一百八十多个 Redis 命令进行了详细且深入的介绍，并提供了相应的执行示例和参考信息，无论是学习新命令还是回顾已知命令的用法，都会非常方便。</p></li>
+<li><p>展示了锁、缓存、计数信号量、队列、分页、好友关系、自动补全、摇一摇、网址缩短器、唯一计数器、排行榜、登录会话等数十个实际可用的 Redis 应用程序的实现方法，帮助读者学习如何将 Redis 应用到实际开发中。（书中展示的所有应用程序代码都会以开源的方式公开。）</p></li>
+<li><p>内容涵盖最新的 Redis 5，帮助读者将 HyperLogLog、位图（bitmap）、地理位置（GEO）、Redis 集群（cluster）、流（Stream）、模块（Module）等新特性知识全部收入囊中。</p></li>
+<li><p>全书所有章节均经过精心设计和编排，既可以在学习 Redis 时用作教程，又可以在使用 Redis 的过程中用作参考书。</p></li>
+<li><p>通过丰富的图示和详细的例子来展示 Redis 的关键技术，让知识不再枯燥难懂。</p></li>
+<li><p>《Redis设计与实现》作者、《Redis实战》译者、《Redis命令参考》译者黄健宏（huangz）最新力作，学习 Redis 的权威之选。</p></li>
+</ul>
+<section id="id1">
+<h2>购买<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>本书在以下网店或应用有售：</p>
+<ul class="simple">
+<li><p>京东（<a class="reference external" href="https://item.jd.com/12716266.html">自营</a>、<a class="reference external" href="https://search.jd.com/Search?keyword=Redis%E4%BD%BF%E7%94%A8%E6%89%8B%E5%86%8C&amp;enc=utf-8&amp;suggest=1.his.0.0&amp;wq=&amp;pvid=00c90db7dc5a473999b2da9407019fb5">非自营</a>、<a class="reference external" href="https://e.jd.com/30530879.html">电子版</a>）</p></li>
+<li><p>当当（<a class="reference external" href="http://product.dangdang.com/27943233.html">纸书</a>、<a class="reference external" href="http://e.dangdang.com/products/1901153748.html">电子书</a>）</p></li>
+<li><p><a class="reference external" href="https://book.douban.com/subject/34836750/">豆瓣读书</a>、<a class="reference external" href="https://read.douban.com/ebook/124156809/">豆瓣阅读电子书</a></p></li>
+<li><p><a class="reference external" href="https://weibo.com/3219474004/IdRGK79yg">微信读书</a></p></li>
+</ul>
+</section>
+<section id="id10">
+<h2>目录&amp;试读<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h2>
+<p><em>以下目录中可点击的部分为试读内容</em>，
+你也可以<a class="reference external" href="https://raw.githubusercontent.com/huangzworks/redis-manual-website/master/RedisGuide_preview.pdf">下载 PDF 格式的试读文档</a> 。</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="preface.html">前言</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">引言</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#redis">Redis 简介</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#id2">内容编排</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#id3">目标读者</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#id4">预备工作</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#id5">执行命令</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#id6">配置服务器</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#id7">示例代码</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#id8">版本说明</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#id9">读者服务器网站</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#id10">启程！</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>第一部分：数据结构与应用</strong></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="string.html">字符串（String）</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="string.html#set">SET：为字符串键设置值</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.html#get">GET：获取字符串键的值</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.html#getset">GETSET：获取旧值并设置新值</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.html#id5">示例：缓存</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.html#id6">示例：锁</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.html#mset">MSET：一次为多个字符串键设置值</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.html#mget">MGET：一次获取多个字符串键的值</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.html#msetnx">MSETNX：只在键不存在的情况下，一次为多个字符串键设置值</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.html#id10">示例：储存文章信息</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.html#strlen">STRLEN：获取字符串值的字节长度</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.html#id12">字符串值的索引</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.html#getrange">GETRANGE：获取字符串值指定索引范围上的内容</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.html#setrange">SETRANGE：对字符串值的指定索引范围进行设置</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.html#id17">示例：给文章储存程序加上文章长度计数功能和文章预览功能</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.html#append">APPEND：追加新内容到值的末尾</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.html#id20">示例：储存日志</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.html#id21">使用字符串键储存数字值</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.html#incrbydecrby">INCRBY、DECRBY：对整数值执行加法操作和减法操作</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.html#incrdecr">INCR、DECR：对整数值执行加一操作和减一操作</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.html#incrbyfloat">INCRBYFLOAT：对数字值执行浮点数加法操作</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.html#id">示例：ID 生成器</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.html#id31">示例：计数器</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.html#id32">示例：限速器</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.html#id33">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hash.html">散列（Hash）</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="hash.html#id1">散列简介</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hash.html#hset">HSET：为字段设置值</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hash.html#hsetnx">HSETNX：只在字段不存在的情况下为它设置值</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hash.html#hget">HGET：获取字段的值</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hash.html#id7">示例：实现短网址生成程序</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hash.html#hincrby">HINCRBY：对字段储存的整数值执行加法或减法操作</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hash.html#hincrbyfloat">HINCRBYFLOAT：对字段储存的数字值执行浮点数加法或减法操作</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hash.html#id14">示例：使用散列键重新实现计数器</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hash.html#hstrlen">HSTRLEN：获取字段值的字节长度</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hash.html#hexists">HEXISTS：检查字段是否存在</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hash.html#hdel">HDEL：删除字段</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hash.html#hlen">HLEN：获取散列包含的字段数量</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hash.html#id19">示例：实现用户登录会话</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hash.html#hmset">HMSET：一次为多个字段设置值</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hash.html#hmget">HMGET：一次获取多个字段的值</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hash.html#hkeyshvalshgetall">HKEYS、HVALS、HGETALL：获取所有字段、所有值或者所有字段和值</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hash.html#id25">示例：储存图数据</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hash.html#id26">示例：使用散列键重新实现文章储存程序</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hash.html#id27">散列与字符串</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hash.html#id31">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="list.html">列表（List）</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="list.html#lpush">LPUSH：将元素推入到列表左端</a></li>
+<li class="toctree-l2"><a class="reference internal" href="list.html#rpush">RPUSH：将元素推入到列表右端</a></li>
+<li class="toctree-l2"><a class="reference internal" href="list.html#lpushxrpushx">LPUSHX、RPUSHX：只对已存在的列表执行推入操作</a></li>
+<li class="toctree-l2"><a class="reference internal" href="list.html#lpop">LPOP：弹出列表最左端的元素</a></li>
+<li class="toctree-l2"><a class="reference internal" href="list.html#rpop">RPOP：弹出列表最右端的元素</a></li>
+<li class="toctree-l2"><a class="reference internal" href="list.html#rpoplpush">RPOPLPUSH：将右端弹出的元素推入到左端</a></li>
+<li class="toctree-l2"><a class="reference internal" href="list.html#id12">示例：先进先出队列</a></li>
+<li class="toctree-l2"><a class="reference internal" href="list.html#llen">LLEN：获取列表的长度</a></li>
+<li class="toctree-l2"><a class="reference internal" href="list.html#lindex">LINDEX：获取指定索引上的元素</a></li>
+<li class="toctree-l2"><a class="reference internal" href="list.html#lrange">LRANGE：获取指定索引范围上的元素</a></li>
+<li class="toctree-l2"><a class="reference internal" href="list.html#id19">示例：分页</a></li>
+<li class="toctree-l2"><a class="reference internal" href="list.html#lset">LSET：为指定索引设置新元素</a></li>
+<li class="toctree-l2"><a class="reference internal" href="list.html#linsert">LINSERT：将元素插入到列表</a></li>
+<li class="toctree-l2"><a class="reference internal" href="list.html#ltrim">LTRIM：修剪列表</a></li>
+<li class="toctree-l2"><a class="reference internal" href="list.html#lrem">LREM：从列表中移除指定元素</a></li>
+<li class="toctree-l2"><a class="reference internal" href="list.html#id27">示例：待办事项列表</a></li>
+<li class="toctree-l2"><a class="reference internal" href="list.html#blpop">BLPOP：阻塞式左端弹出操作</a></li>
+<li class="toctree-l2"><a class="reference internal" href="list.html#brpop">BRPOP：阻塞式右端弹出操作</a></li>
+<li class="toctree-l2"><a class="reference internal" href="list.html#brpoplpush">BRPOPLPUSH：阻塞式弹出并推入操作</a></li>
+<li class="toctree-l2"><a class="reference internal" href="list.html#id36">示例：带有阻塞功能的消息队列</a></li>
+<li class="toctree-l2"><a class="reference internal" href="list.html#id39">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="set.html">集合（Set）</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="set.html#sadd">SADD：将元素添加到集合</a></li>
+<li class="toctree-l2"><a class="reference internal" href="set.html#srem">SREM：从集合中移除元素</a></li>
+<li class="toctree-l2"><a class="reference internal" href="set.html#smove">SMOVE：将元素从一个集合移动到另一个集合</a></li>
+<li class="toctree-l2"><a class="reference internal" href="set.html#smembers">SMEMBERS：获取集合包含的所有元素</a></li>
+<li class="toctree-l2"><a class="reference internal" href="set.html#scard">SCARD：获取集合包含的元素数量</a></li>
+<li class="toctree-l2"><a class="reference internal" href="set.html#sismember">SISMEMBER：检查给定元素是否存在于集合</a></li>
+<li class="toctree-l2"><a class="reference internal" href="set.html#id12">示例：唯一计数器</a></li>
+<li class="toctree-l2"><a class="reference internal" href="set.html#id13">示例：打标签</a></li>
+<li class="toctree-l2"><a class="reference internal" href="set.html#id14">示例：点赞</a></li>
+<li class="toctree-l2"><a class="reference internal" href="set.html#id15">示例：投票</a></li>
+<li class="toctree-l2"><a class="reference internal" href="set.html#id16">示例：社交关系</a></li>
+<li class="toctree-l2"><a class="reference internal" href="set.html#srandmember">SRANDMEMBER：随机地获取集合中的元素</a></li>
+<li class="toctree-l2"><a class="reference internal" href="set.html#spop">SPOP：随机地从集合里面移除指定数量的元素</a></li>
+<li class="toctree-l2"><a class="reference internal" href="set.html#id20">示例：抽奖</a></li>
+<li class="toctree-l2"><a class="reference internal" href="set.html#sintersinterstore">SINTER、SINTERSTORE：对集合执行交集计算</a></li>
+<li class="toctree-l2"><a class="reference internal" href="set.html#sunionsunionstore">SUNION、SUNIONSTORE：对集合执行并集计算</a></li>
+<li class="toctree-l2"><a class="reference internal" href="set.html#sdiffsdiffstore">SDIFF、SDIFFSTORE：对集合执行差集计算</a></li>
+<li class="toctree-l2"><a class="reference internal" href="set.html#id24">示例：共同关注与推荐关注</a></li>
+<li class="toctree-l2"><a class="reference internal" href="set.html#id27">示例：使用反向索引构建商品筛选器</a></li>
+<li class="toctree-l2"><a class="reference internal" href="set.html#id28">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<ul class="simple">
+<li><p>有序集合（Sorted Set）</p>
+<ul>
+<li><p>ZADD：添加或更新成员</p></li>
+<li><p>ZREM：移除指定的成员</p></li>
+<li><p>ZSCORE：获取成员的分值</p></li>
+<li><p>ZINCRBY：对成员的分值执行自增或自减操作</p></li>
+<li><p>ZCARD：获取有序集合的大小</p></li>
+<li><p>ZRANK、ZREVRANK：获取成员在有序集合中的排名</p></li>
+<li><p>ZRANGE、ZREVRANGE：获取指定索引范围内的成员</p></li>
+<li><p>示例：排行榜</p></li>
+<li><p>ZRANGEBYSCORE、ZREVRANGEBYSCORE：获取指定分值范围内的成员</p></li>
+<li><p>ZCOUNT：统计指定分值范围内的成员数量</p></li>
+<li><p>示例：时间线</p></li>
+<li><p>ZREMRANGEBYRANK：移除指定排名范围内的成员</p></li>
+<li><p>ZREMRANGEBYSCORE：移除指定分值范围内的成员</p></li>
+<li><p>ZUNIONSTORE、ZINTERSTORE：有序集合的并集运算和交集运算</p></li>
+<li><p>示例：商品推荐</p></li>
+<li><p>ZRANGEBYLEX、ZREVRANGEBYLEX：返回指定字典序范围内的成员</p></li>
+<li><p>ZLEXCOUNT：统计位于字典序指定范围内的成员数量</p></li>
+<li><p>ZREMRANGEBYLEX：移除位于字典序指定范围内的成员</p></li>
+<li><p>示例：自动补全</p></li>
+<li><p>ZPOPMAX、ZPOPMIN：弹出分值最高和最低的成员</p></li>
+<li><p>BZPOPMAX、BZPOPMIN：阻塞式最大/最小元素弹出操作</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>HyperLogLog</p>
+<ul>
+<li><p>HyperLogLog 简介</p></li>
+<li><p>PFADD：对集合元素进行计数</p></li>
+<li><p>PFCOUNT：返回集合的近似基数</p></li>
+<li><p>示例：优化唯一计数器</p></li>
+<li><p>示例：检测重复信息</p></li>
+<li><p>PFMERGE：计算多个 HyperLogLog 的并集</p></li>
+<li><p>示例：实现每周/月度/年度计数器</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>位图（bitmap）</p>
+<ul>
+<li><p>SETBIT：设置二进制位的值</p></li>
+<li><p>GETBIT：获取二进制位的值</p></li>
+<li><p>BITCOUNT：统计被设置的二进制位数量</p></li>
+<li><p>示例：用户行为记录器</p></li>
+<li><p>BITPOS：查找第一个指定的二进制位值</p></li>
+<li><p>BITOP：执行二进制位运算</p></li>
+<li><p>示例：0-1矩阵</p></li>
+<li><p>BITFIELD：在位图中储存整数值</p></li>
+<li><p>示例：紧凑计数器</p></li>
+<li><p>使用字符串命令对位图进行操作</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>地理坐标（GEO）</p>
+<ul>
+<li><p>GEOADD：储存坐标</p></li>
+<li><p>GEOPOS：获取指定位置的坐标</p></li>
+<li><p>GEODIST：计算两个位置之间的直线距离</p></li>
+<li><p>示例：具有基本功能的用户地理位置程序</p></li>
+<li><p>GEORADIUS：查找指定坐标半径范围内的其他位置</p></li>
+<li><p>GEORADIUSBYMEMBER：查找指定位置半径范围内的其他位置</p></li>
+<li><p>示例：查找附近用户</p></li>
+<li><p>GEOHASH：获取指定位置的 Geohash 值</p></li>
+<li><p>使用有序集合命令操作 GEO 数据</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>流（Stream）</p>
+<ul>
+<li><p>XADD：追加新元素到流的末尾</p></li>
+<li><p>XTRIM：对流进行修剪</p></li>
+<li><p>XDEL：移除指定元素</p></li>
+<li><p>XLEN：获知流包含的元素数量</p></li>
+<li><p>XRANGE、XREVRANGE：访问流中元素</p></li>
+<li><p>XREAD：以阻塞或非阻塞方式获取流元素</p></li>
+<li><p>示例：消息队列</p></li>
+<li><p>消费者组</p></li>
+<li><p>XGROUP：管理消费者组</p></li>
+<li><p>XREADGROUP：读取消费者组中的消息</p></li>
+<li><p>XPENDING：显示待处理消息的相关信息</p></li>
+<li><p>XACK：将消息标记为“已处理”</p></li>
+<li><p>XCLAIM：转移消息的归属权</p></li>
+<li><p>XINFO：查看流和消费者组的相关信息</p></li>
+<li><p>示例：为消息队列提供消费者组功能</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+</ul>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>第二部分：附加功能</strong></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="database.html">数据库</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="database.html#select">SELECT：切换至指定的数据库</a></li>
+<li class="toctree-l2"><a class="reference internal" href="database.html#keys">KEYS：获取所有与给定匹配符相匹配的键</a></li>
+<li class="toctree-l2"><a class="reference internal" href="database.html#scan">SCAN：以渐进方式迭代数据库中的键</a></li>
+<li class="toctree-l2"><a class="reference internal" href="database.html#id16">示例：构建数据库迭代器</a></li>
+<li class="toctree-l2"><a class="reference internal" href="database.html#randomkey">RANDOMKEY：随机返回一个键</a></li>
+<li class="toctree-l2"><a class="reference internal" href="database.html#sort">SORT：对键的值进行排序</a></li>
+<li class="toctree-l2"><a class="reference internal" href="database.html#exists">EXISTS：检查给定键是否存在</a></li>
+<li class="toctree-l2"><a class="reference internal" href="database.html#dbsize">DBSIZE：获取数据库包含的键值对数量</a></li>
+<li class="toctree-l2"><a class="reference internal" href="database.html#type">TYPE：查看键的类型</a></li>
+<li class="toctree-l2"><a class="reference internal" href="database.html#id32">示例：数据库取样程序</a></li>
+<li class="toctree-l2"><a class="reference internal" href="database.html#renamerenamenx">RENAME、RENAMENX：修改键名</a></li>
+<li class="toctree-l2"><a class="reference internal" href="database.html#move">MOVE：将给定的键移动到另一个数据库</a></li>
+<li class="toctree-l2"><a class="reference internal" href="database.html#del">DEL：移除指定的键</a></li>
+<li class="toctree-l2"><a class="reference internal" href="database.html#unlink">UNLINK：以异步方式移除指定的键</a></li>
+<li class="toctree-l2"><a class="reference internal" href="database.html#flushdb">FLUSHDB：清空当前数据库</a></li>
+<li class="toctree-l2"><a class="reference internal" href="database.html#flushall">FLUSHALL：清空所有数据库</a></li>
+<li class="toctree-l2"><a class="reference internal" href="database.html#swapdb">SWAPDB：互换数据库</a></li>
+<li class="toctree-l2"><a class="reference internal" href="database.html#id44">示例：使用 SWAPDB 命令实行在线替换数据库</a></li>
+<li class="toctree-l2"><a class="reference internal" href="database.html#id45">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="expire.html">自动过期</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="expire.html#expirepexpire">EXPIRE、PEXPIRE：设置生存时间</a></li>
+<li class="toctree-l2"><a class="reference internal" href="expire.html#id4">示例：带有自动移除特性的缓存程序</a></li>
+<li class="toctree-l2"><a class="reference internal" href="expire.html#set-ex-px">SET 命令的 EX 选项和 PX 选项</a></li>
+<li class="toctree-l2"><a class="reference internal" href="expire.html#id7">示例：带有自动释放特性的锁</a></li>
+<li class="toctree-l2"><a class="reference internal" href="expire.html#expireatpexpireat">EXPIREAT、PEXPIREAT：设置过期时间</a></li>
+<li class="toctree-l2"><a class="reference internal" href="expire.html#ttlpttl">TTL、PTTL：获取键的剩余生存时间</a></li>
+<li class="toctree-l2"><a class="reference internal" href="expire.html#id13">示例：自动过期的登录会话</a></li>
+<li class="toctree-l2"><a class="reference internal" href="expire.html#id14">示例：自动淘汰冷门数据</a></li>
+<li class="toctree-l2"><a class="reference internal" href="expire.html#id15">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="pipeline-and-transaction.html">流水线与事务</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pipeline-and-transaction.html#id2">流水线</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline-and-transaction.html#id3">示例：使用流水线优化随机键创建程序</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline-and-transaction.html#id4">事务</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline-and-transaction.html#mlpop">示例：实现 <code class="docutils literal notranslate"><span class="pre">MLPOP</span></code> 函数</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline-and-transaction.html#id11">带有乐观锁的事务</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline-and-transaction.html#id14">示例：带有身份验证功能的锁</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline-and-transaction.html#id15">示例：带有身份验证功能的计数信号量</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline-and-transaction.html#id16">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<ul class="simple">
+<li><p>Lua 脚本</p>
+<ul>
+<li><p>EVAL：执行脚本</p></li>
+<li><p>示例：使用脚本重新实现带有身份验证功能的锁</p></li>
+<li><p>示例：实现 LPOPRPUSH 命令</p></li>
+<li><p>SCRIPT LOAD 和 EVALSHA ：缓存并执行脚本</p></li>
+<li><p>脚本管理</p></li>
+<li><p>内置函数库</p></li>
+<li><p>脚本调试</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>持久化</p>
+<ul>
+<li><p>RDB 持久化</p></li>
+<li><p>AOF 持久化</p></li>
+<li><p>RDB-AOF 混合持久化</p></li>
+<li><p>同时使用 RDB 持久化和 AOF 持久化</p></li>
+<li><p>无持久化</p></li>
+<li><p>SHUTDOWN：关闭服务器</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>发布与订阅</p>
+<ul>
+<li><p>PUBLISH：向频道发送消息</p></li>
+<li><p>SUBSCRIBE：订阅频道</p></li>
+<li><p>UNSUBSCRIBE：退订频道</p></li>
+<li><p>PSUBSCRIBE：订阅模式</p></li>
+<li><p>PUNSUBSCRIBE：退订模式</p></li>
+<li><p>PUBSUB：查看发布与订阅的相关信息</p></li>
+<li><p>示例：广播系统</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>模块</p>
+<ul>
+<li><p>模块的管理</p></li>
+<li><p>ReJSON 模块</p></li>
+<li><p>RediSQL 模块</p></li>
+<li><p>RediSearch 模块</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+</ul>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>第三部分：多机功能</strong></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="replication.html">复制</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="replication.html#replicaof">REPLICAOF：将服务器设置为从服务器</a></li>
+<li class="toctree-l2"><a class="reference internal" href="replication.html#role">ROLE：查看服务器的角色</a></li>
+<li class="toctree-l2"><a class="reference internal" href="replication.html#id8">数据同步</a></li>
+<li class="toctree-l2"><a class="reference internal" href="replication.html#id12">无需硬盘的复制</a></li>
+<li class="toctree-l2"><a class="reference internal" href="replication.html#id13">降低数据不一致的出现几率</a></li>
+<li class="toctree-l2"><a class="reference internal" href="replication.html#id14">可写的从服务器</a></li>
+<li class="toctree-l2"><a class="reference internal" href="replication.html#id15">示例：使用从服务器处理复杂计算操作</a></li>
+<li class="toctree-l2"><a class="reference internal" href="replication.html#id16">脚本复制</a></li>
+<li class="toctree-l2"><a class="reference internal" href="replication.html#id21">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<ul class="simple">
+<li><p>Sentinel</p>
+<ul>
+<li><p>启动 Sentinel</p></li>
+<li><p>Sentinel 网络</p></li>
+<li><p>Sentinel 管理命令</p></li>
+<li><p>在线配置 Sentinel</p></li>
+<li><p>实例：使用 redis-py 管理 Sentinel</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>集群</p>
+<ul>
+<li><p>基本特性</p></li>
+<li><p>搭建集群</p></li>
+<li><p>实例：使用客户端连接集群</p></li>
+<li><p>散列标签</p></li>
+<li><p>打开/关闭从节点的读命令执行权限</p></li>
+<li><p>集群管理工具 redis-cli</p></li>
+<li><p>集群管理命令</p></li>
+<li><p>槽管理命令</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+</ul>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>附录</strong></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="appendix_a.html">附录 A ：Redis 安装方法</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="appendix_a.html#id1">免安装试运行</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appendix_a.html#macos">在 macOS 上安装</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appendix_a.html#linux">在 Linux 上安装</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appendix_a.html#windows">在 Windows 上安装</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="appendix_b.html">附录 B ：redis-py 安装方法</a></li>
+</ul>
+</div>
+<ul class="simple">
+<li><p>附录 C ：Redis 命令索引表</p></li>
+</ul>
+</section>
+<section id="id11">
+<h2>代码示例<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h2>
+<p>《Redis使用手册》在书中包含了大量 Redis 应用程序示例，你可以通过访问以下页面来获取这些示例的源码：
+<a class="reference external" href="https://github.com/huangzworks/redis-manual-code">github.com/huangzworks/redis-manual-code</a> 。</p>
+<img alt="_images/github.png" src="_images/github.png" />
+</section>
+<section id="id12">
+<h2>勘误信息<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h2>
+<p>查看《Redis使用手册》已知错误或报告你发现的错误，
+请访问<a class="reference external" href="https://github.com/huangzworks/redis-manual-errata">此页面</a>。</p>
+</section>
+<section id="id14">
+<h2>作者简介<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h2>
+<a class="reference internal image-reference" href="_images/huangz.png"><img alt="_images/huangz.png" class="align-right" src="_images/huangz.png" style="width: 145.25px; height: 200.54999999999998px;" /></a>
+<p>本书作者黄健宏自 2011 年接触 Redis 起就一直在持续地学习和研究 Redis ，
+并通过写书、翻译、讲授课程等方式与大家分享他了解到的 Redis 知识。</p>
+<p>黄健宏分别是<a class="reference external" href="http://huangz.works/redisbook1e">《Redis 设计与实现》</a>和<a class="reference external" href="http://huangz.works/ria">《Redis 实战》</a>这两本畅销 Redis 图书的作者和译者。
+与此同时他还长期翻译并维护着在线的中文 Redis 文档《Redis 命令参考》，
+这个文档每天都为数量众多的 Redis 使用者提供服务。</p>
+<p>作为早期接触 Redis 并且一直深入研究 Redis 的技术人员，
+黄健宏对 Redis 的应用和源码有深入的了解，
+他希望通过这本《Redis使用手册》向读者传授最常用和最核心的 Redis 知识，
+帮助读者了解 Redis 和用好 Redis 。</p>
+<p>关于黄健宏的更多信息以及他的联系方式可以在他的个人网站<a class="reference external" href="http://huangz.works">huangz.works</a>上面找到。</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="#">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Redis使用手册</a><ul>
+<li><a class="reference internal" href="#id1">购买</a></li>
+<li><a class="reference internal" href="#id10">目录&amp;试读</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#id11">代码示例</a></li>
+<li><a class="reference internal" href="#id12">勘误信息</a></li>
+<li><a class="reference internal" href="#id14">作者简介</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="preface.html"
+                          title="Next page">&rarr; 前言</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>本页</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.rst.txt"
+            rel="nofollow">显示源代码</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">快速搜索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="提交" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="preface.html" title="前言"
+             >下一页</a> &nbsp; &nbsp;</li>
+    <li><a href="#">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">Redis使用手册</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; 版权所有 2019, 黄健宏.
+      由 <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6创建。
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

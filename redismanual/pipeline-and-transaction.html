@@ -1,0 +1,1397 @@
+
+
+<!DOCTYPE html>
+
+<html lang="zh-CN" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>流水线与事务 &#8212; Redis使用手册</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" href="./" type="text/css" />
+    
+    <script src="_static/documentation_options.js?v=f115507d"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/translations.js?v=beaddf03"></script>
+
+    
+    
+     
+        <script src="_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="_static/cloud.js"></script>
+    
+
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+    <link rel="next" title="复制" href="replication.html" />
+    <link rel="prev" title="自动过期" href="expire.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             accesskey="I">索引</a></li>
+        <li class="right" >
+          <a href="replication.html" title="复制"
+             accesskey="N">下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="expire.html" title="自动过期"
+             accesskey="P">上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">流水线与事务</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>流水线与事务<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>在前面的内容中，
+我们学习了如何使用不同的命令去操作 Redis 提供的各种数据结构，
+学习了如何使用数据库命令去对数据库中的各个键进行操作，
+以及如何使用自动过期特性的相关命令去为键设置过期时间或者生存时间。</p>
+<p>在执行这些命令的时候，
+我们总是单独地执行每个命令，
+也即是说，
+先将一个命令发送到服务器，
+等服务器执行完这个命令并将结果返回给客户端之后，
+再执行下一个命令，
+以此类推，
+直到所有命令都执行完毕为止。</p>
+<p>这种执行命令的方式虽然可行，
+但在性能方面却不是最优的，
+并且在执行时可能还会出现一些非常隐蔽的错误。
+为了解决这些问题，
+本章将会介绍 Redis 的流水线特性以及事务特性，
+前者可以有效地提升 Redis 程序的性能，
+而后者则可以避免单独执行命令时可能会出现的一些错误。</p>
+<section id="id2">
+<h2>流水线<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>在一般情况下，
+用户每执行一个 Redis 命令，
+Redis 客户端和 Redis 服务器就需要执行以下步骤：</p>
+<ol class="arabic simple">
+<li><p>客户端向服务器发送命令请求。</p></li>
+<li><p>服务器接收命令请求，
+并执行用户指定的命令调用，
+然后产生相应的命令执行结果。</p></li>
+<li><p>服务器向客户端返回命令的执行结果。</p></li>
+<li><p>客户端接收命令的执行结果，
+并向用户进行展示。</p></li>
+</ol>
+<p>跟大多数网络程序一样，
+执行 Redis 命令所消耗的大部分时间都用在了发送命令请求和接收命令结果上面：
+Redis 服务器处理一个命令请求通常只需要很短的时间，
+但客户端将命令请求发送给服务器以及服务器向客户端返回命令结果的过程却需要花费不少时间。
+通常情况下，
+程序需要执行的 Redis 命令越多，
+它需要进行的网络通讯操作也会越多，
+程序的执行速度也会因此而变慢。</p>
+<p>为了解决这个问题，
+我们可以使用 Redis 提供的流水线特性：
+这个特性允许客户端把任意多条 Redis 命令请求打包在一起，
+然后一次性地将它们全部发送给服务器，
+而服务器则会在流水线包含的所有命令请求都处理完毕之后，
+一次性地将它们的执行结果全部返回给客户端。</p>
+<p>通过使用流水线特性，
+我们可以将执行多个命令所需的网络通讯次数从原来的 N 次降低为一次，
+这可以大幅度地减少程序在网络通讯方面耗费的时间，
+使得程序的执行效率得到显著的提升。</p>
+<p>作为例子，
+图 13-1 展示了在没有使用流水线的情况下，
+执行三个 Redis 命令产生的网络通讯示意图，
+而 13-2 则展示了在使用流水线的情况下，
+执行相同 Redis 命令产生的网络通讯示意图。
+可以看到，
+在使用了流水线之后，
+程序进行网络通讯的次数从原来的三次降低成了一次。</p>
+<hr class="docutils" />
+<p>图 13-1 在不使用流水线的情况下执行三个 Redis 命令产生的网络通讯操作</p>
+<img alt="_images/IMAGE_NON_PIPE.png" src="_images/IMAGE_NON_PIPE.png" />
+<hr class="docutils" />
+<p>图 13-2 在使用流水线的情况下执行三个 Redis 命令产生的网络通讯操作</p>
+<img alt="_images/IMAGE_USE_PIPE.png" src="_images/IMAGE_USE_PIPE.png" />
+<hr class="docutils" />
+<p>虽然 Redis 服务器提供了流水线特性，
+但这个特性还需要客户端支持才能使用。
+幸运的是，
+包括 redis-py 在内的绝大部分 Redis 客户端都提供了对流水线特性的支持，
+因此 Redis 用户在绝大部分情况下都能够享受到流水线特性带来的好处。</p>
+<p>为了在 redis-py 客户端中使用流水线特性，
+我们需要用到 <code class="docutils literal notranslate"><span class="pre">pipeline()</span></code> 方法，
+调用这个方法会返回一个流水线对象，
+用户只需要像平时执行 Redis 命令那样，
+使用流水线对象调用相应的命令方法，
+就可以把想要执行的 Redis 命令放入到流水线里面。</p>
+<p>作为例子，
+以下代码展示了如何以流水线方式执行 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 、 <code class="docutils literal notranslate"><span class="pre">INCRBY</span></code> 和 <code class="docutils literal notranslate"><span class="pre">SADD</span></code> 命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span>  <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pipe</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">pipeline</span><span class="p">(</span><span class="n">transaction</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pipe</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;msg&quot;</span><span class="p">,</span> <span class="s2">&quot;hello world&quot;</span><span class="p">)</span>
+<span class="go">Pipeline&lt;ConnectionPool&lt;Connection&lt;host=localhost,port=6379,db=0&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pipe</span><span class="o">.</span><span class="n">incrby</span><span class="p">(</span><span class="s2">&quot;pv_counter::12345&quot;</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="go">Pipeline&lt;ConnectionPool&lt;Connection&lt;host=localhost,port=6379,db=0&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pipe</span><span class="o">.</span><span class="n">sadd</span><span class="p">(</span><span class="s2">&quot;fruits&quot;</span><span class="p">,</span> <span class="s2">&quot;apple&quot;</span><span class="p">,</span> <span class="s2">&quot;banana&quot;</span><span class="p">,</span> <span class="s2">&quot;cherry&quot;</span><span class="p">)</span>
+<span class="go">Pipeline&lt;ConnectionPool&lt;Connection&lt;host=localhost,port=6379,db=0&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pipe</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+<span class="go">[True, 100, 3]</span>
+</pre></div>
+</div>
+<p>这段代码首先使用 <code class="docutils literal notranslate"><span class="pre">pipeline()</span></code> 方法创建了一个流水线对象，
+并将这个对象储存到了 <code class="docutils literal notranslate"><span class="pre">pipe</span></code> 变量里面
+（<code class="docutils literal notranslate"><span class="pre">pipeline()</span></code> 方法中的 <code class="docutils literal notranslate"><span class="pre">transaction=False</span></code> 参数表示不在流水线中使用事务，这个参数的具体意义将在本章后续内容中说明）。
+在此之后，
+程序通过流水线对象分别调用了 <code class="docutils literal notranslate"><span class="pre">set()</span></code> 方法、 <code class="docutils literal notranslate"><span class="pre">incrby()</span></code> 方法和 <code class="docutils literal notranslate"><span class="pre">sadd()</span></code> 方法，
+将这三个方法对应的命令调用放入到了流水线队列里面。
+最后，
+程序调用流水线对象的 <code class="docutils literal notranslate"><span class="pre">execute()</span></code> 方法，
+将队列中的三个命令调用打包发送给服务器，
+而服务器则会在执行完这些命令之后，
+把各个命令的执行结果依次放入到一个列表里面，
+然后将这个列表返回给客户端。</p>
+<p>图 13-3 展示了以上代码在执行期间，
+redis-py 客户端与 Redis 服务器之间的网络通讯情况。</p>
+<hr class="docutils" />
+<p>图 13-3 使用流水线发送 Redis 命令</p>
+<img alt="_images/IMAGE_PIPE_EXAMPLE.png" src="_images/IMAGE_PIPE_EXAMPLE.png" />
+<hr class="docutils" />
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p>流水线使用注意事项</p>
+<p>虽然 Redis 服务器并不会限制客户端在流水线里面包含的命令数量，
+但是却会为客户端的输入缓冲区设置默认值为 1GB 的体积上限：
+当客户端发送的数据量超过这一限制时，
+Redis 服务器将强制关闭该客户端。
+因此用户在使用流水线特性时，
+最好不要一下子把大量命令或者一些体积非常庞大的命令放到同一个流水线里面执行，
+以免触碰到 Redis 的这一限制。</p>
+<p>除此之外，
+很多客户端本身也带有隐含的缓冲区大小限制，
+如果你在使用流水线特性的过程中，
+发现某些流水线命令没有被执行，
+又或者流水线返回的结果不完整，
+那么很可能就是你的程序触碰到了客户端内置的缓冲区大小限制。
+在遇到这种情况时，
+请缩减流水线命令的数量及其体积，
+然后再进行尝试。</p>
+</div>
+</section>
+<section id="id3">
+<h2>示例：使用流水线优化随机键创建程序<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>在《数据库》一章的《示例：数据库取样程序》一节中，
+我们曾经展示过代码清单 13-1 所示的程序，
+它可以根据用户给定的数量创建多个类型随机的数据库键。</p>
+<hr class="docutils" />
+<p>代码清单 13-1 原版的随机键创建程序：<code class="docutils literal notranslate"><span class="pre">/database/create_random_type_keys.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">random</span>
+
+<span class="k">def</span> <span class="nf">create_random_type_keys</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    在数据库中创建指定数量的类型随机键。</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number</span><span class="p">):</span>
+        <span class="c1"># 构建键名</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;key:</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="c1"># 从六个键创建函数中随机选择一个</span>
+        <span class="n">create_key_func</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span>
+            <span class="n">create_string</span><span class="p">,</span> 
+            <span class="n">create_hash</span><span class="p">,</span> 
+            <span class="n">create_list</span><span class="p">,</span> 
+            <span class="n">create_set</span><span class="p">,</span> 
+            <span class="n">create_zset</span><span class="p">,</span> 
+            <span class="n">create_stream</span>
+        <span class="p">])</span>
+        <span class="c1"># 实际地创建键</span>
+        <span class="n">create_key_func</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">create_string</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">create_hash</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">hset</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">create_list</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">rpush</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">create_set</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">sadd</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">create_zset</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">zadd</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">})</span>
+
+<span class="k">def</span> <span class="nf">create_stream</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">xadd</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">})</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>通过分析代码可知，
+这个程序每创建一个键，
+redis-py 客户端就需要与 Redis 服务器进行一次网络通讯：
+考虑到这个程序执行的都是一些非常简单的命令，
+每次网络通讯只执行一个命令的做法无疑是非常低效的。
+为了解决这个问题，
+我们可以使用流水线把程序生成的所有命令都包裹起来，
+这样的话，
+创建多个随机键所需的网络通讯次数就会从原来的 N 次降低为 1 次。
+代码清单 13-2 展示了修改之后的流水线版本随机键创建程序。</p>
+<hr class="docutils" />
+<p>代码清单 13-2 流水线版本的随机键创建程序：<code class="docutils literal notranslate"><span class="pre">/pipeline-and-transaction/create_random_type_keys.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">random</span>
+
+<span class="k">def</span> <span class="nf">create_random_type_keys</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    在数据库中创建指定数量的类型随机键。</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># 创建流水线对象</span>
+    <span class="n">pipe</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">pipeline</span><span class="p">(</span><span class="n">transaction</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number</span><span class="p">):</span>
+        <span class="c1"># 构建键名</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;key:</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="c1"># 从六个键创建函数中随机选择一个</span>
+        <span class="n">create_key_func</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span>
+            <span class="n">create_string</span><span class="p">,</span> 
+            <span class="n">create_hash</span><span class="p">,</span> 
+            <span class="n">create_list</span><span class="p">,</span> 
+            <span class="n">create_set</span><span class="p">,</span> 
+            <span class="n">create_zset</span><span class="p">,</span> 
+            <span class="n">create_stream</span>
+        <span class="p">])</span>
+        <span class="c1"># 把待执行的 Redis 命令放入流水线队列中</span>
+        <span class="n">create_key_func</span><span class="p">(</span><span class="n">pipe</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+    <span class="c1"># 执行流水线包裹的所有命令</span>
+    <span class="n">pipe</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">create_string</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">create_hash</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">hset</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">create_list</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">rpush</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">create_set</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">sadd</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">create_zset</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">zadd</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">})</span>
+
+<span class="k">def</span> <span class="nf">create_stream</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">xadd</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;&quot;</span><span class="p">:</span><span class="s2">&quot;&quot;</span><span class="p">})</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>即使只在本地网络里面进行测试，
+新版的随机键创建程序也有 5 倍的性能提升。
+当客户端与服务器处于不同的网络之中，
+特别是它们之间的连接速度较慢时，
+流水线版本的性能提升还会更大。</p>
+</section>
+<section id="id4">
+<h2>事务<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>虽然 Redis 的 <code class="docutils literal notranslate"><span class="pre">LPUSH</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令允许用户一次向列表推入多个元素，
+但是列表的弹出命令 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 和 <code class="docutils literal notranslate"><span class="pre">RPOP</span></code> 每次却只能弹出一个元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPUSH</span> <span class="n">lst</span> <span class="mi">1</span> <span class="mi">2</span> <span class="mi">3</span> <span class="mi">4</span> <span class="mi">5</span> <span class="mi">6</span>    <span class="o">--</span> <span class="n">一次推入五个元素</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">6</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LPOP</span> <span class="n">lst</span>    <span class="o">--</span> <span class="n">弹出一个元素</span>
+<span class="s2">&quot;1&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LPOP</span> <span class="n">lst</span>
+<span class="s2">&quot;2&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LPOP</span> <span class="n">lst</span>
+<span class="s2">&quot;3&quot;</span>
+</pre></div>
+</div>
+<p>因为 Redis 并没有提供能够一次弹出多个列表元素的命令，
+所以为了方便地执行这一任务，
+用户可能会写出代码清单 13-3 所示的代码。</p>
+<hr class="docutils" />
+<p>代码清单 13-3 不安全的 <code class="docutils literal notranslate"><span class="pre">mlpop()</span></code> 实现：<code class="docutils literal notranslate"><span class="pre">/pipeline-and-transaction/unsafe_mlpop.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">mlpop</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">list_key</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
+    <span class="c1"># 用于储存被弹出元素的结果列表</span>
+    <span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>  
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number</span><span class="p">):</span>
+        <span class="c1"># 执行 LPOP 命令，弹出一个元素</span>
+        <span class="n">poped_item</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">lpop</span><span class="p">(</span><span class="n">list_key</span><span class="p">)</span>
+        <span class="c1"># 将被弹出的元素追加到结果列表末尾</span>
+        <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">poped_item</span><span class="p">)</span>
+    <span class="c1"># 返回结果列表</span>
+    <span class="k">return</span> <span class="n">items</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p><code class="docutils literal notranslate"><span class="pre">mlpop()</span></code> 函数通过将多条 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令发送至服务器来达到弹出多个元素的目的。
+遗憾的是，
+这个函数并不能保证它发送的所有 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令都会被服务器执行：
+如果服务器在执行多个 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令的过程中下线了，
+那么 <code class="docutils literal notranslate"><span class="pre">mlpop()</span></code> 发送的这些 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令将只有一部分会被执行。</p>
+<p>举个例子，
+如果我们执行调用 <code class="docutils literal notranslate"><span class="pre">mlpop(client,</span> <span class="pre">&quot;lst&quot;,</span> <span class="pre">3)</span></code> ，
+尝试从 <code class="docutils literal notranslate"><span class="pre">&quot;lst&quot;</span></code> 列表中弹出三个元素，
+那么 <code class="docutils literal notranslate"><span class="pre">mlpop()</span></code> 将向服务器连续发送三个 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令，
+但如果服务器在顺利执行前两个 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令之后因为故障下线了，
+那么 <code class="docutils literal notranslate"><span class="pre">&quot;lst&quot;</span></code> 列表将只有两个元素会被弹出。</p>
+<p>需要注意的是，
+即使我们使用上一节介绍的流水线特性，
+把多条 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令打包在一起发送，
+也不能保证所有命令都会被服务器执行：
+这是因为流水线只能保证多条命令会一起被发送至服务器，
+但它并不保证这些命令都会被服务器执行。</p>
+<p>为了实现一个正确且安全的 <code class="docutils literal notranslate"><span class="pre">mlpop()</span></code> 函数，
+我们需要一种能够让服务器将多个命令打包起来一并执行的技术，
+而这正是本节将要介绍的事务特性：</p>
+<ul class="simple">
+<li><p>事务可以将多个命令打包成一个命令来执行，
+当事务成功执行时，
+事务中包含的所有命令都会被执行；</p></li>
+<li><p>相反地，
+如果事务没有成功执行，
+那么它包含的所有命令都不会被执行。</p></li>
+</ul>
+<p>通过使用事务，
+用户可以保证自己想要执行的多个命令要么全部都被执行，
+要么就一个都不执行。
+以 <code class="docutils literal notranslate"><span class="pre">mlpop()</span></code> 函数为例，
+通过使用事务，
+我们可以保证被调用的多个 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令要么全部都执行，
+要么就一个都不执行，
+从而杜绝了只有其中一部分 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令被执行的情况出现。</p>
+<p>本节接下来的内容将会介绍 Redis 事务特性的使用方法以及相关事项，
+至于事务版本 <code class="docutils literal notranslate"><span class="pre">mlpop()</span></code> 函数的具体实现则会留到下一节再行介绍。</p>
+<section id="multi">
+<h3>MULTI：开启事务<a class="headerlink" href="#multi" title="Link to this heading">¶</a></h3>
+<p>用户可以通过执行 <code class="docutils literal notranslate"><span class="pre">MULTI</span></code> 命令来开启一个新的事务，
+这个命令在成功执行之后将返回 <code class="docutils literal notranslate"><span class="pre">OK</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">MULTI</span>
+</pre></div>
+</div>
+<p>在一般情况下，
+除了少数阻塞命令之外，
+用户键入到客户端里面的数据操作命令总是会立即执行：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">title</span> <span class="s2">&quot;Hand in Hand&quot;</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SADD</span> <span class="n">fruits</span> <span class="s2">&quot;apple&quot;</span> <span class="s2">&quot;banana&quot;</span> <span class="s2">&quot;cherry&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPUSH</span> <span class="n">numbers</span> <span class="mi">123</span> <span class="mi">456</span> <span class="mi">789</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+</pre></div>
+</div>
+<p>但是当一个客户端执行 <code class="docutils literal notranslate"><span class="pre">MULTI</span></code> 命令之后，
+它就进入了事务模式，
+这时用户键入的所有数据操作命令都不会立即执行，
+而是会按顺序被放入到一个事务队列里面，
+等待事务执行时再统一执行。</p>
+<p>比如说，
+以下代码就展示了在 <code class="docutils literal notranslate"><span class="pre">MULTI</span></code> 命令执行之后，
+将一个 <code class="docutils literal notranslate"><span class="pre">SET</span></code> 命令、一个 <code class="docutils literal notranslate"><span class="pre">SADD</span></code> 命令和一个 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 命令放入到事务队列里面的例子：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">MULTI</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">title</span> <span class="s2">&quot;Hand in Hand&quot;</span>
+<span class="n">QUEUED</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SADD</span> <span class="n">fruits</span> <span class="s2">&quot;apple&quot;</span> <span class="s2">&quot;banana&quot;</span> <span class="s2">&quot;cherry&quot;</span>
+<span class="n">QUEUED</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPUSH</span> <span class="n">numbers</span> <span class="mi">123</span> <span class="mi">456</span> <span class="mi">789</span>
+<span class="n">QUEUED</span>
+</pre></div>
+</div>
+<p>正如代码所示，
+服务器在把客户端发送的命令放入到事务队列之后，
+会向客户端返回一个 <code class="docutils literal notranslate"><span class="pre">QUEUED</span></code> 作为结果。</p>
+<section id="id5">
+<h4>其他信息<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h4>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(1)</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">MULTI</span></code> 命令从 Redis 1.2.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="exec">
+<h3>EXEC：执行事务<a class="headerlink" href="#exec" title="Link to this heading">¶</a></h3>
+<p>在使用 <code class="docutils literal notranslate"><span class="pre">MULTI</span></code> 命令开启事务并将任意多个命令放入到事务队列之后，
+用户就可以通过执行 <code class="docutils literal notranslate"><span class="pre">EXEC</span></code> 命令来执行事务了：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">EXEC</span>
+</pre></div>
+</div>
+<p>当事务成功执行时，
+<code class="docutils literal notranslate"><span class="pre">EXEC</span></code> 命令将返回一个列表作为结果，
+这个列表会按照命令的入队顺序依次包含各个命令的执行结果。</p>
+<p>作为例子，
+以下代码展示了一个事务从开始到执行的整个过程：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">MULTI</span>                       <span class="o">--</span> <span class="mi">1</span><span class="p">)</span> <span class="n">开启事务</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">title</span> <span class="s2">&quot;Hand in Hand&quot;</span>    <span class="o">--</span> <span class="mi">2</span><span class="p">)</span> <span class="n">命令入队</span>
+<span class="n">QUEUED</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SADD</span> <span class="n">fruits</span> <span class="s2">&quot;apple&quot;</span> <span class="s2">&quot;banana&quot;</span> <span class="s2">&quot;cherry&quot;</span>
+<span class="n">QUEUED</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPUSH</span> <span class="n">numbers</span> <span class="mi">123</span> <span class="mi">456</span> <span class="mi">789</span>
+<span class="n">QUEUED</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">EXEC</span>         <span class="o">--</span> <span class="mi">3</span><span class="p">)</span> <span class="n">执行事务</span>
+<span class="mi">1</span><span class="p">)</span> <span class="n">OK</span>               <span class="o">--</span> <span class="n">SET</span> <span class="n">命令的执行结果</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>      <span class="o">--</span> <span class="n">SADD</span> <span class="n">命令的执行结果</span>
+<span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>      <span class="o">--</span> <span class="n">RPUSH</span> <span class="n">命令的执行结果</span>
+</pre></div>
+</div>
+<section id="id6">
+<h4>其他信息<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h4>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>事务包含的所有命令的复杂度之和。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">EXEC</span></code> 命令从 Redis 1.2.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="discard">
+<h3>DISCARD：放弃事务<a class="headerlink" href="#discard" title="Link to this heading">¶</a></h3>
+<p>如果用户在开启事务之后，
+不想要执行事务而是想要放弃事务，
+那么只需要执行以下命令即可：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DISCARD</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">DISCARD</span></code> 命令会清空事务队列中已有的所有命令，
+并让客户端退出事务模式，
+最后返回 <code class="docutils literal notranslate"><span class="pre">OK</span></code> 表示事务已被取消。</p>
+<p>以下代码展示了一个使用 <code class="docutils literal notranslate"><span class="pre">DISCARD</span></code> 命令放弃事务的例子:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">MULTI</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">page_counter</span> <span class="mi">10086</span>
+<span class="n">QUEUED</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">download_counter</span> <span class="mi">12345</span>
+<span class="n">QUEUED</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">DISCARD</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<section id="id7">
+<h4>其他信息<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h4>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N)，其中 N 为事务队列包含的命令数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">DISCARD</span></code> 命令从 Redis 2.0.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id8">
+<h3>事务的安全性<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
+<p>在对数据库的事务特性进行介绍时，
+人们一般都会通过数据库对 ACID 性质的支持程度去判断数据库的事务是否安全。</p>
+<p>具体来说，
+Redis 的事务总是具有 ACID 性质中的 A、C、I 性质：</p>
+<ul class="simple">
+<li><p>原子性（Atomic）：
+如果事务成功执行，
+那么事务中包含的所有命令都会被执行；
+相反，
+如果事务执行失败，
+那么事务中包含的所有命令都不会被执行。</p></li>
+<li><p>一致性（Consistent）：
+Redis 服务器会对事务及其包含的命令进行检查，
+确保无论事务是否执行成功，
+事务本身都不会对数据库造成破坏。</p></li>
+<li><p>隔离性（Isolate）：
+每个 Redis 客户端都拥有自己独立的事务队列，
+并且每个 Redis 事务都是独立执行的，
+不同事务之间不会互相干扰。</p></li>
+</ul>
+<p>除此之外，
+当 Redis 服务器运行在特定的持久化模式之下时，
+Redis 的事务也具有 ACID 性质中的 D 性质：</p>
+<ul class="simple">
+<li><p>耐久性（Durable）：
+当事务执行完毕时，
+它的结果将被储存在硬盘里面，
+即使服务器在此之后停机，
+事务对数据库所做的修改也不会丢失。</p></li>
+</ul>
+<p>稍后的《持久化》一章将对事务的耐久性做补充说明。</p>
+</section>
+<section id="id9">
+<h3>事务对服务器的影响<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h3>
+<p>因为事务在执行时会独占服务器，
+所以用户应该避免在事务里面执行过多命令，
+更不要将一些需要大量计算的命令放入到事务里面，
+以免造成服务器阻塞。</p>
+</section>
+<section id="id10">
+<h3>流水线与事务<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h3>
+<p>正如前面所言，
+流水线与事务虽然在概念上有些相似，
+但是在作用上却并不相同：
+流水线的作用是将多个命令打包然后一并发送至服务器，
+而事务的作用则是将多个命令打包然后让服务器一并执行它们。</p>
+<p>因为 Redis 的事务在 <code class="docutils literal notranslate"><span class="pre">EXEC</span></code> 命令执行之前并不会产生实际效果，
+所以很多 Redis 客户端都会使用流水线去包裹事务命令，
+并将入队的命令缓存在本地，
+等到用户键入 <code class="docutils literal notranslate"><span class="pre">EXEC</span></code> 命令之后，
+再将所有事务命令通过流水线一并发送至服务器，
+这样客户端在执行事务时就可以达到“打包发送，打包执行”的最优效果。</p>
+<p>本书使用的 redis-py 客户端就是这样处理事务命令的客户端之一，
+当我们使用 <code class="docutils literal notranslate"><span class="pre">pipeline()</span></code> 方法开启一个事务时，
+redis-py 默认将使用流水线包裹事务队列中的所有命令。</p>
+<p>举个例子，
+对于以下代码来说：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">transaction</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">pipeline</span><span class="p">()</span>             <span class="c1"># 开启事务</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">transaction</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="s2">&quot;Hand in Hand&quot;</span><span class="p">)</span>    <span class="c1"># 将命令放入事务队列</span>
+<span class="go">Pipeline&lt;ConnectionPool&lt;Connection&lt;host=localhost,port=6379,db=0&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">transaction</span><span class="o">.</span><span class="n">sadd</span><span class="p">(</span><span class="s2">&quot;fruits&quot;</span><span class="p">,</span> <span class="s2">&quot;apple&quot;</span><span class="p">,</span> <span class="s2">&quot;banana&quot;</span><span class="p">,</span> <span class="s2">&quot;cherry&quot;</span><span class="p">)</span>
+<span class="go">Pipeline&lt;ConnectionPool&lt;Connection&lt;host=localhost,port=6379,db=0&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">transaction</span><span class="o">.</span><span class="n">rpush</span><span class="p">(</span><span class="s2">&quot;numbers&quot;</span><span class="p">,</span> <span class="s2">&quot;123&quot;</span><span class="p">,</span> <span class="s2">&quot;456&quot;</span><span class="p">,</span> <span class="s2">&quot;789&quot;</span><span class="p">)</span>
+<span class="go">Pipeline&lt;ConnectionPool&lt;Connection&lt;host=localhost,port=6379,db=0&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">transaction</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>                       <span class="c1"># 执行事务</span>
+<span class="go">[True, 3, 3L]</span>
+</pre></div>
+</div>
+<p>在执行 <code class="docutils literal notranslate"><span class="pre">transaction.execute()</span></code> 调用时，
+redis-py 将通过流水线向服务器发送以下命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">MULTI</span>
+<span class="n">SET</span> <span class="n">title</span> <span class="s2">&quot;Hand in Hand&quot;</span>
+<span class="n">SADD</span> <span class="n">fruits</span> <span class="s2">&quot;apple&quot;</span> <span class="s2">&quot;banana&quot;</span> <span class="s2">&quot;cherry&quot;</span>
+<span class="n">RPUSH</span> <span class="n">numbers</span> <span class="s2">&quot;123&quot;</span> <span class="s2">&quot;456&quot;</span> <span class="s2">&quot;789&quot;</span>
+<span class="n">EXEC</span>
+</pre></div>
+</div>
+<p>这样的话，
+无论事务包含了多少个命令，
+redis-py 也只需要与服务器进行一次网络通讯。</p>
+<p>另一方面，
+如果用户只需要用到流水线特性而不是事务特性，
+那么可以在调用 <code class="docutils literal notranslate"><span class="pre">pipeline()</span></code> 方法时通过 <code class="docutils literal notranslate"><span class="pre">transaction=False</span></code> 参数显式地关闭事务特性，
+就像这样：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pipe</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">pipeline</span><span class="p">(</span><span class="n">transaction</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>   <span class="c1"># 开启流水线</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pipe</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;download_counter&quot;</span><span class="p">,</span> <span class="mi">10086</span><span class="p">)</span>         <span class="c1"># 将命令放入流水线队列</span>
+<span class="go">Pipeline&lt;ConnectionPool&lt;Connection&lt;host=localhost,port=6379,db=0&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pipe</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;download_counter&quot;</span><span class="p">)</span>
+<span class="go">Pipeline&lt;ConnectionPool&lt;Connection&lt;host=localhost,port=6379,db=0&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pipe</span><span class="o">.</span><span class="n">hset</span><span class="p">(</span><span class="s2">&quot;user::123::profile&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;peter&quot;</span><span class="p">)</span>
+<span class="go">Pipeline&lt;ConnectionPool&lt;Connection&lt;host=localhost,port=6379,db=0&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pipe</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>                              <span class="c1"># 将流水线队列中的命令打包发送至服务器</span>
+<span class="go">[True, &#39;10086&#39;, 1L]</span>
+</pre></div>
+</div>
+<p>在执行 <code class="docutils literal notranslate"><span class="pre">pipe.execute()</span></code> 调用时，
+redis-py 将通过流水线向服务器发送以下命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SET</span> <span class="n">download_counter</span> <span class="mi">10086</span>
+<span class="n">GET</span> <span class="n">download_counter</span>
+<span class="n">HSET</span> <span class="n">user</span><span class="p">::</span><span class="mi">123</span><span class="p">::</span><span class="n">profile</span> <span class="s2">&quot;name&quot;</span> <span class="s2">&quot;peter&quot;</span>
+</pre></div>
+</div>
+<p>因为这三个命令并没有被事务包裹，
+所以客户端只保证它们会一并被发送至服务器，
+至于这些命令在何时会以何种方式执行则由服务器本身决定。</p>
+</section>
+</section>
+<section id="mlpop">
+<h2>示例：实现 <code class="docutils literal notranslate"><span class="pre">MLPOP</span></code> 函数<a class="headerlink" href="#mlpop" title="Link to this heading">¶</a></h2>
+<p>在了解了事务的使用方法之后，
+现在是时候用它来重新实现一个安全且正确的 <code class="docutils literal notranslate"><span class="pre">mlpop</span></code> 函数了：
+为此，
+我们需要使用事务包裹被执行的所有 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令，
+就像代码清单 13-4 所示的那样。</p>
+<hr class="docutils" />
+<p>代码清单 13-4 事务版本的 <code class="docutils literal notranslate"><span class="pre">mlpop()</span></code> 函数：<code class="docutils literal notranslate"><span class="pre">/pipeline-and-transaction/mlpop.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">mlpop</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">list_key</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
+    <span class="c1"># 开启事务</span>
+    <span class="n">transaction</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">pipeline</span><span class="p">()</span>
+    <span class="c1"># 将多个 LPOP 命令放入事务队列</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number</span><span class="p">):</span>
+        <span class="n">transaction</span><span class="o">.</span><span class="n">lpop</span><span class="p">(</span><span class="n">list_key</span><span class="p">)</span>
+    <span class="c1"># 执行事务</span>
+    <span class="k">return</span> <span class="n">transaction</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>新版的 <code class="docutils literal notranslate"><span class="pre">mlpop()</span></code> 函数通过事务确保自己发送的多个 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令要么全部都执行，
+要么就全部都不执行，
+以此来避免只有一部分 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令被执行了的情况出现。</p>
+<p>举个例子，
+如果我们执行函数调用：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mlpop</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;lst&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>那么 <code class="docutils literal notranslate"><span class="pre">mlpop()</span></code> 函数将向服务器发送以下命令序列：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">MULTI</span>
+<span class="n">LPOP</span> <span class="s2">&quot;lst&quot;</span>
+<span class="n">LPOP</span> <span class="s2">&quot;lst&quot;</span>
+<span class="n">LPOP</span> <span class="s2">&quot;lst&quot;</span>
+<span class="n">EXEC</span>
+</pre></div>
+</div>
+<p>如果这个事务能够成功执行，
+那么它包含的三个 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令也将成功执行；
+相反，
+如果这个事务执行失败，
+那么它包含的三个 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 命令也不会被执行。</p>
+<p>以下是新版 <code class="docutils literal notranslate"><span class="pre">mlpop()</span></code> 函数的实际运行示例：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">mlpop</span> <span class="kn">import</span> <span class="n">mlpop</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span><span class="o">.</span><span class="n">rpush</span><span class="p">(</span><span class="s2">&quot;lst&quot;</span><span class="p">,</span> <span class="s2">&quot;123&quot;</span><span class="p">,</span> <span class="s2">&quot;456&quot;</span><span class="p">,</span> <span class="s2">&quot;789&quot;</span><span class="p">)</span>    <span class="c1"># 向列表右端推入三个元素</span>
+<span class="go">3L</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mlpop</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;lst&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>                     <span class="c1"># 从列表左端弹出三个元素</span>
+<span class="go">[&#39;123&#39;, &#39;456&#39;, &#39;789&#39;]</span>
+</pre></div>
+</div>
+</section>
+<section id="id11">
+<h2>带有乐观锁的事务<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h2>
+<p>本书在前面的《字符串》一章实现了具有基本获取和释放功能的锁程序，
+并在《自动过期》一章为该程序加上了自动释放功能，
+但是这两个锁程序都有一个问题，
+那就是，
+它们的释放操作都是不安全的：</p>
+<ul class="simple">
+<li><p>无论某个客户端是否是锁的持有者，
+只要它调用 <code class="docutils literal notranslate"><span class="pre">release()</span></code> 方法，
+锁就会被释放。</p></li>
+<li><p>在锁被占用期间，
+如果某个不是持有者的客户端错误地调用了 <code class="docutils literal notranslate"><span class="pre">release()</span></code> 方法，
+那么锁将在持有者不知情的情况下释放，
+并导致系统中同时存在多个锁。</p></li>
+</ul>
+<p>为了解决这个问题，
+我们需要修改锁实现，
+给它加上身份验证功能：</p>
+<ul class="simple">
+<li><p>客户端在尝试获取锁的时候，
+除了需要输入锁的最大使用时限之外，
+还需要输入一个代表身份的标识符，
+当客户端成功取得锁时，
+程序将把这个标识符储存在代表锁的字符串键里面。</p></li>
+<li><p>当客户端调用 <code class="docutils literal notranslate"><span class="pre">release()</span></code> 方法时，
+它需要将自己的标识符传给 <code class="docutils literal notranslate"><span class="pre">release()</span></code> 方法，
+而 <code class="docutils literal notranslate"><span class="pre">release()</span></code> 方法则需要验证客户端传入的标识符与锁键储存的标识符是否相同，
+以此来判断调用 <code class="docutils literal notranslate"><span class="pre">release()</span></code> 方法的客户端是否就是锁的持有者，
+从而决定是否释放锁。</p></li>
+</ul>
+<p>根据以上描述，
+我们可能会写出代码清单 13-5 所示的代码。</p>
+<hr class="docutils" />
+<p>代码清单 13-5 不安全的锁实现：<code class="docutils literal notranslate"><span class="pre">/pipeline-and-transaction/unsafe_identity_lock.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">IdentityLock</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">identity</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        尝试获取一个带有身份标识符和最大使用时限的锁，</span>
+<span class="sd">        成功时返回 True ，失败时返回 False 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">identity</span><span class="p">,</span> <span class="n">ex</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span> <span class="n">nx</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">release</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_identity</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        根据给定的标识符，尝试释放锁。</span>
+<span class="sd">        返回 True 表示释放成功；</span>
+<span class="sd">        返回 False 则表示给定的标识符与锁持有者的标识符并不相同，释放请求被拒绝。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 获取锁键储存的标识符</span>
+        <span class="n">lock_identity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lock_identity</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># 如果锁键的标识符为空，那么说明锁已经被释放</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">input_identity</span> <span class="o">==</span> <span class="n">lock_identity</span><span class="p">:</span>
+            <span class="c1"># 如果给定的标识符与锁键的标识符相同，那么释放这个锁</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># 如果给定的标识符与锁键的标识符并不相同</span>
+            <span class="c1"># 那么说明当前客户端不是锁的持有者</span>
+            <span class="c1"># 拒绝本次释放请求</span>
+            <span class="k">return</span> <span class="kc">False</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>这个锁实现在绝大部分情况下都能够正常运行，
+但它的 <code class="docutils literal notranslate"><span class="pre">release()</span></code> 方法包含了一个非常隐蔽的错误：
+在程序使用 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令获取锁键的值以后，
+直到程序调用 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令删除锁键的这段时间里面，
+锁键的值有可能已经发生了变化，
+因此程序执行的 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令有可能会导致当前持有者的锁被错误地释放。</p>
+<p>举个例子，
+表 13-1 就展示了一个锁被错误释放的例子：
+客户端 A 是锁原来的持有者，
+它调用 <code class="docutils literal notranslate"><span class="pre">release()</span></code> 方法尝试释放自己的锁，
+但是当客户端 A 执行完 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令并确认自己就是锁的持有者之后，
+锁键却因为过期而自动被移除了，
+紧接着客户端 B 又通过执行 <code class="docutils literal notranslate"><span class="pre">acquire()</span></code> 方法成功取得了锁，
+然而客户端 A 并未察觉这一变化，
+它以为自己还是锁的持有者，
+并调用 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令把属于客户端 B 的锁给释放了。</p>
+<hr class="docutils" />
+<p>表 13-1 一个错误地释放锁的例子</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>时间</p></th>
+<th class="head"><p>客户端 A</p></th>
+<th class="head"><p>客户端 B</p></th>
+<th class="head"><p>服务器</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0000</p></td>
+<td><p>调用 <code class="docutils literal notranslate"><span class="pre">release()</span></code> 方法</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>0001</p></td>
+<td><p>执行 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令，获取锁键的值</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>0002</p></td>
+<td><p>检查锁键的值，确认自己就是持有者</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>0003</p></td>
+<td></td>
+<td></td>
+<td><p>移除过期的锁键</p></td>
+</tr>
+<tr class="row-even"><td><p>0004</p></td>
+<td></td>
+<td><p>执行 <code class="docutils literal notranslate"><span class="pre">acquire()</span></code> 方法并取得锁</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>0005</p></td>
+<td><p>执行 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令，删除锁键</p></td>
+<td><p>(在不知情的状况下失去了锁）</p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<p>为了正确地实现 <code class="docutils literal notranslate"><span class="pre">release()</span></code> 方法，
+我们需要一种机制，
+它可以保证如果锁键的值在 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令执行之后发生了变化，
+那么 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令将不会被执行。
+在 Redis 里面，
+这种机制被称为乐观锁。</p>
+<p>本节接下来的内容将对 Redis 的乐观锁机制进行介绍，
+并在之后给出一个使用乐观锁实现的、正确的、具有身份验证功能的锁。</p>
+<section id="watch">
+<h3>WATCH：对键进行监视<a class="headerlink" href="#watch" title="Link to this heading">¶</a></h3>
+<p>客户端可以通过执行 <code class="docutils literal notranslate"><span class="pre">WATCH</span></code> 命令，
+要求服务器对一个或多个数据库键实施监视，
+如果在客户端尝试执行事务之前，
+这些键的值发生了变化，
+那么服务器将拒绝执行客户端发送的事务，
+并向它返回一个空值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">WATCH</span> <span class="n">key</span> <span class="p">[</span><span class="n">key</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>与此相反，
+如果所有被监视的键都没有发生任何变化，
+那么服务器将会如常地执行客户端发送的事务。</p>
+<p>通过同时使用 <code class="docutils literal notranslate"><span class="pre">WATCH</span></code> 命令和 Redis 事务，
+我们可以构建出一种针对被监视键的乐观锁机制，
+确保事务只会在被监视键没有发生任何变化的情况下执行，
+从而保证事务对被监视键的所有修改都是安全、正确和有效的。</p>
+<p>以下代码展示了一个因为乐观锁机制而导致事务执行失败的例子：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>redis&gt; WATCH user_id_counter
+OK
+
+redis&gt; GET user_id_counter                      -- 获取当前最新的用户 ID
+&quot;256&quot;
+
+redis&gt; MULTI
+OK
+
+redis&gt; SET user::256::email &quot;peter@spamer.com&quot;  -- 尝试使用这个 ID 来储存用户信息
+QUEUED
+
+redis&gt; SET user::256::password &quot;topsecret&quot;
+QUEUED
+
+redis&gt; INCR user_id_counter                     -- 创建新的用户 ID
+QUEUED
+
+redis&gt; EXEC
+(nil)                                           -- user_id_counter 键已被修改，事务被拒绝执行
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>表 13-2 展示了这个事务执行失败的具体原因：
+因为客户端 A 监视了 <code class="docutils literal notranslate"><span class="pre">user_id_counter</span></code> 键，
+而客户端 B 却在客户端 A 执行事务之前对该键进行了修改，
+所以服务器最终拒绝了客户端 A 的事务执行请求。</p>
+<hr class="docutils" />
+<p>表 13-2 事务被拒绝执行的完整过程</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>时间</p></th>
+<th class="head"><p>客户端 A</p></th>
+<th class="head"><p>客户端 B</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0000</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">WATCH</span> <span class="pre">user_id_counter</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>0001</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">user_id_counter</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>0002</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">MULTI</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>0003</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SET</span> <span class="pre">user::256::email</span> <span class="pre">&quot;peter&#64;spamer.com&quot;</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>0004</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SET</span> <span class="pre">user::256::password</span> <span class="pre">&quot;topsecret&quot;</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>0005</p></td>
+<td></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SET</span> <span class="pre">user_id_counter</span> <span class="pre">10000</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>0006</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">INCR</span> <span class="pre">user_id_counter</span></code></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>0007</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">EXEC</span></code></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<section id="id12">
+<h4>其他信息<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h4>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>时间复杂度</p></td>
+<td><p>O(N)，其中 N 为被监视键的数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">WATCH</span></code> 命令从 Redis 2.2.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="unwatch">
+<h3>UNWATCH：取消对键的监视<a class="headerlink" href="#unwatch" title="Link to this heading">¶</a></h3>
+<p>客户端可以通过执行 <code class="docutils literal notranslate"><span class="pre">UNWATCH</span></code> 命令，
+取消对所有键的监视：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">UNWATCH</span>
+</pre></div>
+</div>
+<p>服务器在接收到客户端发送的 <code class="docutils literal notranslate"><span class="pre">UNWATCH</span></code> 命令之后，
+将不会再对之前 <code class="docutils literal notranslate"><span class="pre">WATCH</span></code> 命令指定的键实施监视，
+这些键也不会再对客户端发送的事务造成任何影响。</p>
+<p>以下代码展示了一个 <code class="docutils literal notranslate"><span class="pre">UNWATCH</span></code> 命令的执行示例：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">WATCH</span> <span class="s2">&quot;lock_key&quot;</span> <span class="s2">&quot;user_id_counter&quot;</span> <span class="s2">&quot;msg&quot;</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">UNWATCH</span>    <span class="o">--</span> <span class="n">取消对以上三个键的监视</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p>除了显式地执行 <code class="docutils literal notranslate"><span class="pre">UNWATCH</span></code> 命令之外，
+使用 <code class="docutils literal notranslate"><span class="pre">EXEC</span></code> 命令执行事务和使用 <code class="docutils literal notranslate"><span class="pre">DISCARD</span></code> 取消事务，
+同样会导致客户端撤销对所有键的监视，
+这是因为这两个命令在执行之后都会隐式地调用 <code class="docutils literal notranslate"><span class="pre">UNWATCH</span></code> 命令。</p>
+<section id="id13">
+<h4>其他信息<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h4>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>属性</p></th>
+<th class="head"><p>值</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>复杂度</p></td>
+<td><p>O(N)，其中 N 为被取消监视的键数量。</p></td>
+</tr>
+<tr class="row-odd"><td><p>版本要求</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">UNWATCH</span></code> 命令从 Redis 2.2.0 版本开始可用。</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+<section id="id14">
+<h2>示例：带有身份验证功能的锁<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h2>
+<p>在了解了乐观锁机制的使用方法之后，
+现在是时候使用它来实现一个正确的带身份验证功能的锁了。</p>
+<p>之前展示的锁实现的问题在于，
+在 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令执行之后直到 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令执行之前的这段时间里，
+锁键的值有可能会发生变化，
+并出现误删锁键的情况。
+为了解决这个问题，
+我们需要使用乐观锁去保证 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令只会在锁键的值没有发生任何变化的情况下执行，
+代码清单 13-6 展示了修改之后的锁实现。</p>
+<hr class="docutils" />
+<p>代码清单 13-6 带有身份验证功能的锁实现：<code class="docutils literal notranslate"><span class="pre">/pipeline-and-transaction/identity_lock.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">WatchError</span>
+
+<span class="k">class</span> <span class="nc">IdentityLock</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">identity</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        尝试获取一个带有身份标识符和最大使用时限的锁，</span>
+<span class="sd">        成功时返回 True ，失败时返回 False 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">identity</span><span class="p">,</span> <span class="n">ex</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span> <span class="n">nx</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">release</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_identity</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        根据给定的标识符，尝试释放锁。</span>
+<span class="sd">        返回 True 表示释放成功；</span>
+<span class="sd">        返回 False 则表示给定的标识符与锁持有者的标识符并不相同，释放请求被拒绝。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 开启流水线</span>
+        <span class="n">pipe</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">pipeline</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># 监视锁键</span>
+            <span class="n">pipe</span><span class="o">.</span><span class="n">watch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+            <span class="c1"># 获取锁键储存的标识符</span>
+            <span class="n">lock_identity</span> <span class="o">=</span> <span class="n">pipe</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">lock_identity</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># 如果锁键的标识符为空，那么说明锁已经被释放</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">elif</span> <span class="n">input_identity</span> <span class="o">==</span> <span class="n">lock_identity</span><span class="p">:</span>
+                <span class="c1"># 如果给定的标识符与锁键储存的标识符相同，那么释放这个锁</span>
+                <span class="c1"># 为了确保 DEL 命令在执行时的安全性，我们需要使用事务去包裹它</span>
+                <span class="n">pipe</span><span class="o">.</span><span class="n">multi</span><span class="p">()</span>
+                <span class="n">pipe</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+                <span class="n">pipe</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># 如果给定的标识符与锁键储存的标识符并不相同</span>
+                <span class="c1"># 那么说明当前客户端不是锁的持有者</span>
+                <span class="c1"># 拒绝本次释放请求</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">except</span> <span class="n">WatchError</span><span class="p">:</span>
+            <span class="c1"># 抛出异常说明在 DEL 命令执行之前，已经有其他客户端修改了锁键</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="c1"># 取消对键的监视</span>
+            <span class="n">pipe</span><span class="o">.</span><span class="n">unwatch</span><span class="p">()</span>
+            <span class="c1"># 因为 redis-py 在执行 WATCH 命令期间，会将流水线与单个连接进行绑定</span>
+            <span class="c1"># 所以在执行完 WATCH 命令之后，必须调用 reset() 方法将连接归还给连接池</span>
+            <span class="n">pipe</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>注意，
+因为乐观锁的效果只会在同时使用 <code class="docutils literal notranslate"><span class="pre">WATCH</span></code> 命令以及事务的情况下产生，
+所以程序除了需要使用 <code class="docutils literal notranslate"><span class="pre">WATCH</span></code> 命令对锁键实施监视之外，
+还需要将 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令包裹在事务里面，
+这样才能确保 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令只会在锁键的值没有发生任何变化的情况下执行。</p>
+<p>以下代码展示了这个锁实现的使用方法：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">identity_lock</span> <span class="kn">import</span> <span class="n">IdentityLock</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lock</span> <span class="o">=</span> <span class="n">IdentityLock</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;test-lock&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="s2">&quot;peter&quot;</span><span class="p">,</span> <span class="mi">3600</span><span class="p">)</span>  <span class="c1"># 使用 &quot;peter&quot; 作为标识符，获取一个使用时限为 3600 秒的锁</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lock</span><span class="o">.</span><span class="n">release</span><span class="p">(</span><span class="s2">&quot;tom&quot;</span><span class="p">)</span>          <span class="c1"># 尝试使用错误的标识符去释放锁，失败</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lock</span><span class="o">.</span><span class="n">release</span><span class="p">(</span><span class="s2">&quot;peter&quot;</span><span class="p">)</span>        <span class="c1"># 使用正确的标识符去释放锁，成功</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</section>
+<section id="id15">
+<h2>示例：带有身份验证功能的计数信号量<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h2>
+<p>本书前面介绍了如何使用锁去获得一项资源的独占使用权，
+并给出了几个不同的锁实现。
+但是除了独占一项资源之外，
+有时候我们也会想要让多个用户共享一项资源，
+只要共享者的数量不超过我们限制的数量即可。</p>
+<p>举个例子，
+假设我们的系统有一项需要大量计算的操作，
+如果很多用户同时执行这项操作的话，
+那么系统的计算资源将会被耗尽。
+为了保证系统的正常运作，
+我们可以使用计数信号量来限制在同一时间内能够执行该操作的最大用户数量。</p>
+<p>计数信号量（counter semaphore）跟锁非常相似，
+它们都可以限制资源的使用权，
+但是跟锁只允许单个客户端使用资源的做法不同，
+计数信号量允许多个客户端同时使用资源，
+只要这些客户端的数量不超过指定的限制即可。</p>
+<p>代码清单 13-7 展示了一个带有身份验证功能的计数信号量实现：</p>
+<ul class="simple">
+<li><p>这个程序会把所有成功取得信号量的客户端的标识符储存在格式为 <code class="docutils literal notranslate"><span class="pre">semaphore::&lt;name&gt;::holders</span></code> 的集合键里面，
+至于信号量的最大可获取数量则储存在格式为 <code class="docutils literal notranslate"><span class="pre">semaphore::&lt;name&gt;::max_size</span></code> 的字符串键里面。</p></li>
+<li><p>在使用计数信号量之前，
+用户需要先通过 <code class="docutils literal notranslate"><span class="pre">set_max_size()</span></code> 方法设置计数信号量的最大可获取数量。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">get_max_size()</span></code> 方法和 <code class="docutils literal notranslate"><span class="pre">get_current_size()</span></code> 方法可以分别获取计数信号量的最大可获取数量以及当前已获取数量。</p></li>
+<li><p>获取信号量的 <code class="docutils literal notranslate"><span class="pre">acquire()</span></code> 方法是程序的核心：
+在获取信号量之前，
+程序会先使用两个 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令分别获取信号量的当前已获取数量以及最大可获取数量，
+如果信号量的当前已获取数量并未超过最大可获取数量，
+那么程序将执行 <code class="docutils literal notranslate"><span class="pre">SADD</span></code> 命令，
+将客户端给定的标识符添加到 <code class="docutils literal notranslate"><span class="pre">holders</span></code> 集合里面。</p></li>
+<li><p>由于 <code class="docutils literal notranslate"><span class="pre">GET</span></code> 命令执行之后直到 <code class="docutils literal notranslate"><span class="pre">SADD</span></code> 命令执行之前的这段时间里，
+可能会有其他客户端抢先取得了信号量，
+并导致可用信号量数量发生变化。
+因此程序需要使用 <code class="docutils literal notranslate"><span class="pre">WATCH</span></code> 命令监视 <code class="docutils literal notranslate"><span class="pre">holders</span></code> 键，
+并使用事务包裹 <code class="docutils literal notranslate"><span class="pre">SADD</span></code> 命令，
+以此通过乐观锁机制确保信号量获取操作的安全性。</p></li>
+<li><p>因为 <code class="docutils literal notranslate"><span class="pre">max_size</span></code> 键的值也会影响信号量获取操作的执行结果，
+并且这个键的值在 <code class="docutils literal notranslate"><span class="pre">SADD</span></code> 命令执行之前也可能会被其他客户端修改，
+所以程序在监视 <code class="docutils literal notranslate"><span class="pre">holders</span></code> 键的同时，
+也需要监视 <code class="docutils literal notranslate"><span class="pre">max_size</span></code> 键。</p></li>
+<li><p>当客户端想要释放自己持有的信号量时，
+它只需要把自己的标识符传给 <code class="docutils literal notranslate"><span class="pre">release()</span></code> 方法即可：
+<code class="docutils literal notranslate"><span class="pre">release()</span></code> 方法将调用 <code class="docutils literal notranslate"><span class="pre">SREM</span></code> 命令，
+从 <code class="docutils literal notranslate"><span class="pre">holders</span></code> 集合中查找并移除客户端给定的标识符。</p></li>
+</ul>
+<hr class="docutils" />
+<p>代码清单 13-7 计数信号量实现：<code class="docutils literal notranslate"><span class="pre">/pipeline-and-transaction/semaphore.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">WatchError</span>
+
+<span class="k">class</span> <span class="nc">Semaphore</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="c1"># 用于储存信号量持有者标识符的集合</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">holder_key</span> <span class="o">=</span> <span class="s2">&quot;semaphore::</span><span class="si">{0}</span><span class="s2">::holders&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="c1"># 用于记录信号量最大可获取数量的字符串</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size_key</span> <span class="o">=</span> <span class="s2">&quot;semaphore::</span><span class="si">{0}</span><span class="s2">::max_size&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">set_max_size</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        设置信号量的最大可获取数量。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size_key</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_max_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回信号量的最大可获取数量。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size_key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_current_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回目前已被获取的信号量数量。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">scard</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">holder_key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">identity</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        尝试获取一个信号量，成功时返回 True ，失败时返回 False 。</span>
+<span class="sd">        传入的 identity 参数将被用于标识客户端的身份。</span>
+
+<span class="sd">        如果调用该方法时信号量的最大可获取数量尚未被设置，那么引发一个 TypeError 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 开启流水线</span>
+        <span class="n">pipe</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">pipeline</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># 监视与信号量有关的两个键</span>
+            <span class="n">pipe</span><span class="o">.</span><span class="n">watch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size_key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">holder_key</span><span class="p">)</span>
+
+            <span class="c1"># 取得当前已被获取的信号量数量，以及最大可获取的信号量数量</span>
+            <span class="n">current_size</span> <span class="o">=</span> <span class="n">pipe</span><span class="o">.</span><span class="n">scard</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">holder_key</span><span class="p">)</span>
+            <span class="n">max_size_in_str</span> <span class="o">=</span> <span class="n">pipe</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size_key</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">max_size_in_str</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Semaphore max size not set&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">max_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_size_in_str</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">current_size</span> <span class="o">&lt;</span> <span class="n">max_size</span><span class="p">:</span>
+                <span class="c1"># 如果还有剩余的信号量可用</span>
+                <span class="c1"># 那么将给定的标识符放入到持有者集合中</span>
+                <span class="n">pipe</span><span class="o">.</span><span class="n">multi</span><span class="p">()</span>
+                <span class="n">pipe</span><span class="o">.</span><span class="n">sadd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">holder_key</span><span class="p">,</span> <span class="n">identity</span><span class="p">)</span>
+                <span class="n">pipe</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># 没有信号量可用，获取失败</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">except</span> <span class="n">WatchError</span><span class="p">:</span>
+            <span class="c1"># 获取过程中有其他客户端修改了 size_key 或者 holder_key ，获取失败</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="c1"># 取消监视</span>
+            <span class="n">pipe</span><span class="o">.</span><span class="n">unwatch</span><span class="p">()</span>
+            <span class="c1"># 将连接归还给连接池</span>
+            <span class="n">pipe</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">release</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">identity</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        根据给定的标识符，尝试释放当前客户端持有的信号量。</span>
+<span class="sd">        返回 True 表示释放成功，返回 False 表示由于标识符不匹配而导致释放失败。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 尝试从持有者集合中移除给定的标识符</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">srem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">holder_key</span><span class="p">,</span> <span class="n">identity</span><span class="p">)</span>
+        <span class="c1"># 移除成功则说明信号量释放成功</span>
+        <span class="k">return</span> <span class="n">result</span> <span class="o">==</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>以下代码简单地展示了这个计数信号量的使用方法：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">semaphore</span> <span class="kn">import</span> <span class="n">Semaphore</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">semaphore</span> <span class="o">=</span> <span class="n">Semaphore</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;test-semaphore&quot;</span><span class="p">)</span>  <span class="c1"># 创建计数信号量</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">semaphore</span><span class="o">.</span><span class="n">set_max_size</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>   <span class="c1"># 设置信号量的最大可获取数量</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">semaphore</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="s2">&quot;peter&quot;</span><span class="p">)</span>  <span class="c1"># 获取信号量</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">semaphore</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="s2">&quot;jack&quot;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">semaphore</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="s2">&quot;tom&quot;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">semaphore</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="s2">&quot;mary&quot;</span><span class="p">)</span>     <span class="c1"># 可用的三个信号量都已被获取，无法取得更多信号量</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">semaphore</span><span class="o">.</span><span class="n">release</span><span class="p">(</span><span class="s2">&quot;jack&quot;</span><span class="p">)</span>     <span class="c1"># 释放一个信号量</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">semaphore</span><span class="o">.</span><span class="n">get_current_size</span><span class="p">()</span>  <span class="c1"># 目前有两个信号量已被获取</span>
+<span class="go">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">semaphore</span><span class="o">.</span><span class="n">get_max_size</span><span class="p">()</span>      <span class="c1"># 信号量的最大可获取数量为三个</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+</section>
+<section id="id16">
+<h2>重点回顾<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>在通常情况下，
+程序需要执行的 Redis 命令越多，
+它需要进行的网络通讯次数也会越多，
+程序的执行速度也会变得越慢。
+通过使用 Redis 的流水线特性，
+程序可以一次把多个命令发送给 Redis 服务器，
+这可以将执行多个命令所需的网络通讯次数从原来的 N 次降低为 1 次，
+从而使得程序的执行效率得到显著的提升。</p></li>
+<li><p>通过使用 Redis 的事务特性，
+用户可能将多个命令打包成一个命令执行：
+当事务成功执行时，
+事务中包含的所有命令都会被执行；
+相反地，
+如果事务执行失败，
+那么它包含的所有命令都不会被执行。</p></li>
+<li><p>Redis 事务总是具有 ACID 性质中的原子性、一致性和隔离性，
+至于是否具有耐久性则取决于 Redis 使用的持久化模式。</p></li>
+<li><p>流水线与事务虽然在概念上有相似之处，
+但它们并不相等：
+流水线的作用是打包发送多条命令，
+而事务的作用则是打包执行多条命令。</p></li>
+<li><p>为了优化事务的执行效率，
+很多 Redis 客户端都会把待执行的事务命令缓存在本地，
+然后在用户执行 <code class="docutils literal notranslate"><span class="pre">EXEC</span></code> 命令时，
+通过流水线一次把所有事务命令发送至 Redis 服务器。</p></li>
+<li><p>通过同时使用 <code class="docutils literal notranslate"><span class="pre">WATCH</span></code> 命令和事务，
+用户可以构建起一种乐观锁机制，
+这种机制可以确保事务只会在指定键没有发生任何变化的情况下执行。</p></li>
+</ul>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="index.html">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">流水线与事务</a><ul>
+<li><a class="reference internal" href="#id2">流水线</a></li>
+<li><a class="reference internal" href="#id3">示例：使用流水线优化随机键创建程序</a></li>
+<li><a class="reference internal" href="#id4">事务</a><ul>
+<li><a class="reference internal" href="#multi">MULTI：开启事务</a><ul>
+<li><a class="reference internal" href="#id5">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#exec">EXEC：执行事务</a><ul>
+<li><a class="reference internal" href="#id6">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#discard">DISCARD：放弃事务</a><ul>
+<li><a class="reference internal" href="#id7">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id8">事务的安全性</a></li>
+<li><a class="reference internal" href="#id9">事务对服务器的影响</a></li>
+<li><a class="reference internal" href="#id10">流水线与事务</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#mlpop">示例：实现 <code class="docutils literal notranslate"><span class="pre">MLPOP</span></code> 函数</a></li>
+<li><a class="reference internal" href="#id11">带有乐观锁的事务</a><ul>
+<li><a class="reference internal" href="#watch">WATCH：对键进行监视</a><ul>
+<li><a class="reference internal" href="#id12">其他信息</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#unwatch">UNWATCH：取消对键的监视</a><ul>
+<li><a class="reference internal" href="#id13">其他信息</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id14">示例：带有身份验证功能的锁</a></li>
+<li><a class="reference internal" href="#id15">示例：带有身份验证功能的计数信号量</a></li>
+<li><a class="reference internal" href="#id16">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="expire.html"
+                          title="Previous page">&larr; 自动过期</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="replication.html"
+                          title="Next page">&rarr; 复制</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>本页</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/pipeline-and-transaction.rst.txt"
+            rel="nofollow">显示源代码</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">快速搜索</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="提交" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>导航</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="总索引"
+             >索引</a></li>
+        <li class="right" >
+          <a href="replication.html" title="复制"
+             >下一页</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="expire.html" title="自动过期"
+             >上一页</a> &nbsp; &nbsp;</li>
+    <li><a href="index.html">Redis使用手册</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">流水线与事务</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; 版权所有 2019, 黄健宏.
+      由 <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6创建。
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>
