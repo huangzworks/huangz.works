@@ -1,0 +1,430 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Redis实战 &#8212; Redis 实战</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" href="./" type="text/css" />
+    
+    <script src="_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="译者序" href="preview/translator-foreword.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="preview/translator-foreword.html" title="译者序"
+             accesskey="N">next</a> &nbsp; &nbsp;</li>
+    <li><a href="#">Redis 实战</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">Redis实战</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="redis">
+<h1>Redis实战<a class="headerlink" href="#redis" title="Link to this heading">¶</a></h1>
+<img alt="_images/ria-cover.png" class="align-right" src="_images/ria-cover.png" />
+<p>欢迎来到《Redis实战》的支持网站！</p>
+<p>《Redis实战》是《Redis in Action》一书的中文翻译版，
+该书深入浅出地介绍了 Redis 的字符串、列表、散列、集合、有序集合等五种结构，
+并通过文章聚合网站、cookie、购物车、网页缓存、日志、计数器、IP 所属地址查询程序、自动补全、分布式锁、计数信号量、任务队列、消息队列、搜索程序、广告定向程序、社交网站等一系列实用示例展示了 Redis 的用法。</p>
+<p>除此之外，
+《Redis实战》还介绍了使用短结构、分片、事务、流水线、复制、Lua 脚本等手段来扩展和优化 Redis 的方法，
+这些技术可以大幅地扩展系统的性能，
+并尽可能地降低程序所需的内存数量。</p>
+<p>综上所述，
+《Redis实战》将是一本对于学习和使用 Redis 来说不可多得的参考书籍，
+无论是 Redis 新手还是有一定经验的 Redis 使用者，
+应该都能从本书中获益。</p>
+<section id="id1">
+<h2>购买方式<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>购买纸质书请访问以下网店：
+<a class="reference external" href="http://www.epubit.com.cn/book/details/4035">异步社区</a> 、
+<a class="reference external" href="http://item.jd.com/11791607.html">京东</a> 、
+<a class="reference external" href="http://product.dangdang.com/23800641.html">当当</a></p>
+<p>购买电子书请访问以下网店：
+<a class="reference external" href="http://www.epubit.com.cn/book/details/4035">异步社区</a> 、</p>
+</section>
+<section id="id6">
+<h2>查看目录并试读<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<p>《Redis实战》全书共 300 页，分为四个部分，包含 11 个章节和两个附录。</p>
+<p><strong>以下目录中可点击的为试读内容。</strong></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="preview/translator-foreword.html">译者序</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preview/foreword.html">序言</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preview/preface.html">前言</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preview/acknowledgments.html">致谢</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preview/about-this-book.html">关于本书</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preview/about-the-cover.html">关于封面插图</a></li>
+</ul>
+</div>
+<p><strong>第一部分：基础知识</strong></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="preview/chapter1.html">第1章  初识Redis</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="preview/chapter1.html#id1">1.1  Redis简介</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/chapter1.html#id7">1.2  Redis数据结构简介</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/chapter1.html#id13">1.3  Redis，你好！</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/chapter1.html#id17">1.4  寻求帮助</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/chapter1.html#id18">1.5  小结</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="preview/chapter2.html">第2章  使用Redis构建Web应用</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="preview/chapter2.html#cookie">2.1  登录和cookie缓存</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/chapter2.html#redis">2.2  使用Redis实现购物车</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/chapter2.html#id2">2.3  网页缓存</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/chapter2.html#id3">2.4  数据行缓存</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/chapter2.html#id4">2.5  网页分析</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/chapter2.html#id5">2.6  小结</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<p><strong>第二部分：核心概念</strong></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="preview/chapter3.html">第3章  Redis命令</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="preview/chapter3.html#id1">3.1  字符串</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/chapter3.html#id2">3.2  列表</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/chapter3.html#id4">3.3  集合</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/chapter3.html#id5">3.4  散列</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/chapter3.html#id6">3.5  有序集合</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/chapter3.html#id8">3.6  发布与订阅</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/chapter3.html#id10">3.7  其他命令</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/chapter3.html#id15">3.8  小结</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<ul class="simple">
+<li><p>第 4 章 数据安全与性能保障</p>
+<ul>
+<li><p>4.1 持久化选项</p></li>
+<li><p>4.2 复制</p></li>
+<li><p>4.3 处理系统故障</p></li>
+<li><p>4.4 Redis事务</p></li>
+<li><p>4.5 非事务型流水线</p></li>
+<li><p>4.6 关于性能方面的注意事项</p></li>
+<li><p>4.7 小结</p></li>
+</ul>
+</li>
+<li><p>第 5 章 使用Redis构建支持程序</p>
+<ul>
+<li><p>5.1 使用Redis来记录日志</p></li>
+<li><p>5.2 计数器和统计数据</p></li>
+<li><p>5.3 查找IP所属城市以及国家</p></li>
+<li><p>5.4 服务的发现与配置</p></li>
+<li><p>5.5 小结</p></li>
+</ul>
+</li>
+<li><p>第 6 章 使用 Redis 构建应用组件</p>
+<ul>
+<li><p>6.1 自动补完</p></li>
+<li><p>6.2 分布式锁</p></li>
+<li><p>6.3 计数信号量</p></li>
+<li><p>6.4 任务队列</p></li>
+<li><p>6.5 消息拉取</p></li>
+<li><p>6.6 使用 Redis 进行文件分发</p></li>
+<li><p>6.7 小结</p></li>
+</ul>
+</li>
+<li><p>第 7 章 基于搜索的应用程序</p>
+<ul>
+<li><p>7.1 使用 Redis 进行搜索</p></li>
+<li><p>7.2 有序索引</p></li>
+<li><p>7.3 广告定向</p></li>
+<li><p>7.4 职位搜索</p></li>
+<li><p>7.5 小结</p></li>
+</ul>
+</li>
+<li><p>第 8 章 构建简单的社交网站</p>
+<ul>
+<li><p>8.1 用户和状态</p></li>
+<li><p>8.2 定制时间线</p></li>
+<li><p>8.3 关注者列表以及正在关注列表</p></li>
+<li><p>8.4 状态消息的发布与删除</p></li>
+<li><p>8.5 流 API</p></li>
+<li><p>8.6 小结</p></li>
+</ul>
+</li>
+</ul>
+<p><strong>第三部分：进阶内容</strong></p>
+<ul class="simple">
+<li><p>第 9 章 降低内存占用</p>
+<ul>
+<li><p>9.1 短结构</p></li>
+<li><p>9.2 分片结构</p></li>
+<li><p>9.3 打包储存二进制位和字节</p></li>
+<li><p>9.4 小结</p></li>
+</ul>
+</li>
+<li><p>第 10 章 扩展 Redis</p>
+<ul>
+<li><p>10.1 扩展读性能</p></li>
+<li><p>10.2 扩展写性能和内存容量</p></li>
+<li><p>10.3 对复杂的查询进行扩展</p></li>
+<li><p>10.4 小结</p></li>
+</ul>
+</li>
+<li><p>第 11 章 Redis 的 Lua 脚本编程</p>
+<ul>
+<li><p>11.1 在不编写 C 代码的情况下添加新功能</p></li>
+<li><p>11.2 使用 Lua 重写锁和信号量</p></li>
+<li><p>11.3 移除 WATCH/MULTI/EXEC 事务</p></li>
+<li><p>11.4 使用 Lua 对列表进行分片</p></li>
+<li><p>11.5 小结</p></li>
+</ul>
+</li>
+</ul>
+<p><strong>第四部分：附录</strong></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="preview/appendx-a.html">附录A 快速安装指南</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="preview/appendx-a.html#a-1-debian-linuxubuntu-linuxredis">A.1  在Debian Linux或者Ubuntu Linux上面安装Redis的方法</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/appendx-a.html#a-2-os-xredis">A.2  在OS X上面安装Redis的方法</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/appendx-a.html#a-3-windowsredis">A.3  在Windows上安装Redis的方法</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/appendx-a.html#a-4-redis">A.4  你好Redis</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="preview/appendx-b.html">附录B  其他资源和参考资料</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="preview/appendx-b.html#b-1">B.1  提供帮助的论坛</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/appendx-b.html#b-2">B.2  入门议题</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/appendx-b.html#b-3">B.3  队列函数库以及一些其他用途的函数库</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/appendx-b.html#b-4">B.4  数据可视化和数据记录</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/appendx-b.html#b-5">B.5  数据源</a></li>
+<li class="toctree-l2"><a class="reference internal" href="preview/appendx-b.html#b-6-redis">B.6  Redis经验分享和相关文章</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="id7">
+<h2>中文注释源码<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
+<p>为了帮助读者更好地学习《Redis实战》中附带的源代码，
+译者将这些源代码的注释都翻译成了中文，
+你可以在以下页面中在线阅读这些源代码：</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/huangzworks/riacn-code/blob/master/ch01_listing_source.py">第 1 章相关源码</a></p></li>
+<li><p><a class="reference external" href="https://github.com/huangzworks/riacn-code/blob/master/ch02_listing_source.py">第 2 章相关源码</a></p></li>
+<li><p><a class="reference external" href="https://github.com/huangzworks/riacn-code/blob/master/ch03_listing_source.py">第 3 章相关源码</a></p></li>
+<li><p><a class="reference external" href="https://github.com/huangzworks/riacn-code/blob/master/ch04_listing_source.py">第 4 章相关源码</a></p></li>
+<li><p><a class="reference external" href="https://github.com/huangzworks/riacn-code/blob/master/ch05_listing_source.py">第 5 章相关源码</a></p></li>
+<li><p><a class="reference external" href="https://github.com/huangzworks/riacn-code/blob/master/ch06_listing_source.py">第 6 章相关源码</a></p></li>
+<li><p><a class="reference external" href="https://github.com/huangzworks/riacn-code/blob/master/ch07_listing_source.py">第 7 章相关源码</a></p></li>
+<li><p><a class="reference external" href="https://github.com/huangzworks/riacn-code/blob/master/ch08_listing_source.py">第 8 章相关源码</a></p></li>
+<li><p><a class="reference external" href="https://github.com/huangzworks/riacn-code/blob/master/ch09_listing_source.py">第 9 章相关源码</a></p></li>
+<li><p><a class="reference external" href="https://github.com/huangzworks/riacn-code/blob/master/ch10_listing_source.py">第 10 章相关源码</a></p></li>
+<li><p><a class="reference external" href="https://github.com/huangzworks/riacn-code/blob/master/ch11_listing_source.py">第 11 章相关源码</a></p></li>
+<li><p><a class="reference external" href="https://github.com/huangzworks/riacn-code/blob/master/chA_listing_source.py">附录 A 相关源码</a></p></li>
+</ul>
+<p>又或者到 <a class="reference external" href="https://github.com/huangzworks/riacn-code">https://github.com/huangzworks/riacn-code</a> 下载这些源代码。</p>
+</section>
+<section id="id19">
+<h2>作者简介<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h2>
+<img alt="_images/dr_j.jpg" class="align-left" src="_images/dr_j.jpg" />
+<p>在大学毕业之后，
+Josiah Carlson 博士继续在加州大学欧文分校学习理论计算机科学。
+在学习之余，
+Josiah 还断断续续地做过一些助教工作，
+并偶尔承接一些编程方面的工作。
+在 Josiah 即将要研究生毕业的时候，
+他发现教职方面的工作机会并不多，
+于是他加入了 Networks in Motion 公司，
+开始了自己的职业生涯。
+在 Networks in Motion 公司期间，
+Josiah 负责开发实时 GPS 导航软件，
+以及交通事故通知系统。</p>
+<p>在离开 Networks in Motion 公司之后，
+Josiah 加入了 Google 公司，
+之后他又到了 Adly 公司工作，
+并开始学习和使用 Redis 来构建内容定向广告系统（content-targeting advertising）和 Twitter 分析平台。
+几个月之后，
+Josiah 加入了 Redis 邮件列表，
+并在那里回答了数百个关于使用和配置 Redis 的问题。
+在离开 Adly 公司并成为 ChowNow 公司的首席架构师兼联合创始人之后不久，
+Josiah 开始创作这本《Redis 实战》。</p>
+<p>要了解关于《Redis 实战》作者 Josiah Carlson 博士的更多信息，
+请访问他的 <a class="reference external" href="http://www.dr-josiah.com/">博客</a> 或者 <a class="reference external" href="https://github.com/josiahcarlson">github</a> 。</p>
+</section>
+<section id="id21">
+<h2>作序者简介<a class="headerlink" href="#id21" title="Link to this heading">¶</a></h2>
+<img alt="_images/antirez.jpg" class="align-left" src="_images/antirez.jpg" />
+<p>Redis 的作者 Salvatore Sanfilippo 亲自为《Redis实战》撰写了序言。
+他在序言中介绍了创作 Redis 的原因和经过，
+回顾了这几年来 Redis 的发展，
+并在最后向大家推荐了《Redis实战》这本书。</p>
+<p>要了解 Salvatore Sanfilippo 的更多信息，
+请访问他的个人主页： <a class="reference external" href="http://invece.org">invece.org</a> 。</p>
+<div class="line-block">
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="id22">
+<h2>译者简介<a class="headerlink" href="#id22" title="Link to this heading">¶</a></h2>
+<p>黄健宏（huangz）在 2011 年开始接触 Redis 以来就一直在学习和研究 Redis ，
+他从 Redis 2.4 开始阅读并追踪 Redis 的源码，
+对 <a class="reference external" href="https://github.com/huangzworks/annotated_redis_source">Redis 2.6</a> 以及 <a class="reference external" href="https://github.com/huangzworks/redis-3.0-annotated">Redis 3.0</a> 的源码进行了详细的注释，
+并通过分析源码创作了<a class="reference external" href="http://huangz.works/redisbook1e">《Redis 设计与实现》</a>一书。</p>
+<p>除此之外，
+黄健宏还是 Redis 中文文档《Redis 命令参考》的译者。</p>
+<p>要了解关于《Redis 实战》译者黄健宏的更多信息，
+请访问他的个人主页 <a class="reference external" href="http://huangz.works">huangz.works</a> 。</p>
+</section>
+<section id="id24">
+<h2>相关资源<a class="headerlink" href="#id24" title="Link to this heading">¶</a></h2>
+<p>《Redis实战》用例目录，这篇文章逐一罗列了书中给出的各个 Redis 应用示例，以及这些示例的源码，方便读者参考：
+<a class="reference external" href="http://huangz.blog/2015/redis-usages-in-ria.html">http://huangz.blog/2015/redis-usages-in-ria.html</a></p>
+<p>《Redis in Action》在 Manning 出版社的介绍页面：
+<a class="reference external" href="https://www.manning.com/books/redis-in-action">https://www.manning.com/books/redis-in-action</a></p>
+<p>《Redis实战》翻译记事，
+这篇文章记录了《Redis实战》的诞生过程：
+<a class="reference external" href="http://huangz.blog/2015/memories-of-redis-in-action-translation.html">http://huangz.blog/2015/memories-of-redis-in-action-translation.html</a></p>
+<p>《Redis实战》的豆瓣页面：
+<a class="reference external" href="http://book.douban.com/subject/26612779/">http://book.douban.com/subject/26612779/</a></p>
+</section>
+<section id="id25">
+<h2>勘误信息<a class="headerlink" href="#id25" title="Link to this heading">¶</a></h2>
+<p>如果读者在阅读的过程中发现书本存在错误，
+可以在本网站附带的 disque 论坛里面进行反馈，
+又或者通过 <a class="reference external" href="https://huangz.works">huangz.works</a> 页面展示的任意一种联系方式来联系作者。</p>
+</section>
+<section id="id27">
+<h2>参加群讨论<a class="headerlink" href="#id27" title="Link to this heading">¶</a></h2>
+<p>欢迎各位《Redis命令参考》读者加入译者开设的 QQ 群，
+你可以在里面分享你的 Redis 使用心得，
+又或者跟其他群友讨论你在使用 Redis 过程中遇到的问题，
+具体的群号请访问译者的<a class="reference external" href="https://huangz.works">个人主页</a> 查看。</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="sphinx-toc sphinxlocaltoc">
+    <h3><a href="#">Page contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Redis实战</a><ul>
+<li><a class="reference internal" href="#id1">购买方式</a></li>
+<li><a class="reference internal" href="#id6">查看目录并试读</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#id7">中文注释源码</a></li>
+<li><a class="reference internal" href="#id19">作者简介</a></li>
+<li><a class="reference internal" href="#id21">作序者简介</a></li>
+<li><a class="reference internal" href="#id22">译者简介</a></li>
+<li><a class="reference internal" href="#id24">相关资源</a></li>
+<li><a class="reference internal" href="#id25">勘误信息</a></li>
+<li><a class="reference internal" href="#id27">参加群讨论</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="preview/translator-foreword.html"
+                          title="Next page">&rarr; 译者序</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="preview/translator-foreword.html" title="译者序"
+             >next</a> &nbsp; &nbsp;</li>
+    <li><a href="#">Redis 实战</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">Redis实战</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2015, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>

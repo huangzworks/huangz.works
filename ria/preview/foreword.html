@@ -1,0 +1,159 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>序言 &#8212; Redis 实战</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/cloud.css?v=f9ae72be" />
+    <link rel="stylesheet" href="../" type="text/css" />
+    
+    <script src="../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+
+    
+    
+     
+        <script src="../_static/cloud.base.js"></script>
+    
+
+    
+     
+        <script src="../_static/cloud.js"></script>
+    
+
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="前言" href="preface.html" />
+    <link rel="prev" title="译者序" href="translator-foreword.html" /> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head><body>
+    <div class="relbar-top">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="preface.html" title="前言"
+             accesskey="N">next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="translator-foreword.html" title="译者序"
+             accesskey="P">previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">Redis 实战</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">序言</a></li> 
+      </ul>
+    </div>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="id1">
+<h1>序言<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>Redis是我在大约3年前为了解决一个实际问题而创造出来的：简单来说，当时我在尝试做一件使用磁盘存储关系数据库（on-disk SQL database）无法完成的事情——在一台我能够支付得起的小虚拟机上面处理大量写入负载。</p>
+<p>我要解决的问题在概念上并不复杂：多个网站会通过一个小型的JavaScript追踪器（tracker）连续不断地向我的服务器发送页面访问记录（page view），而我的服务器需要为每个网站保存一定数量的最新页面访问记录，并通过网页将这些记录实时地展示给用户观看。</p>
+<p>在最大负载达到每秒数千条页面记录的情况下，无论我使用什么样的数据库模式，无论我如何进行优化，我所使用的关系数据库都没办法在这个小虚拟机上处理如此大的负载。因为囊中羞涩，我没办法对虚拟机进行升级，并且我觉得应该有更简单的方法来处理一个由推入值组成的列表。最终，我决定自己写一个实验性质的内存数据库原型（prototype），这个数据库使用列表作为基本数据类型，并且支持对列表的两端执行常数时间复杂度的弹出（pop）和推入（push）操作。长话短说吧，这个内存数据库的想法的确奏效了，于是我用C语言重写了最初的数据库原型，并给它加上了基于子进程实现的持久化特性，Redis就这样诞生了。</p>
+<p>在数年之后的今天，Redis这个项目已经发生了显著的变化：我们现在拥有了一个更为健壮的系统，并且随着Redis 2.6的发布，开发的重点已经转移到实现集群以及高可用特性上面，Redis正在进入它的成熟期。在我看来，Redis生态系统中进步最为明显的一个地方，就是redis.io网站以及Redis Google Group这些由用户和贡献者组成的社区。数以千计的人通过GitHub的问题反馈系统参与到了这个项目里面，他们为Redis编写客户端库、提交补丁并帮助其他遇到麻烦的用户。</p>
+<p>时至今日，Redis仍然是一个BSD授权的社区项目，它没有那些需要付钱才能使用的闭源插件或者功能增强版。Redis的参考文档非常详细和准确，在遇到问题时也很容易就可以找到Redis开发者或者专家来为你排忧解难。</p>
+<p>Redis始于实用主义——它是一个程序员因为找不到合适的工具来解决手头上的问题而发明的，这是我认为理论性书籍无法很好地介绍Redis的原因，这也是我喜欢《Redis实战》（Redis in Action）的原因：这本书是为那些想要解决问题的人而写的，它没有乏味地介绍API，而是通过一些引人入胜的例子深入地探究了Redis的各项特性以及数据类型。</p>
+<p>值得一提的是，《Redis实战》同样来源于Redis社区：本书的作者Josiah在出版这本书之前，已经在很多不同的方面帮助了数以百计的Redis用户——从模式设计到硬件延迟问题，他的建议和贡献布满了整个Redis Group。</p>
+<p>本书另一个非常好的地方在于它介绍了服务器运维方面的主题：实际上大部分人在开发应用程序的同时也需要自己部署服务器，而理解服务器运维操作、了解正在使用的硬件和服务器软件的基本限制，有助于写出最大限度地利用硬件和服务器软件的应用程序。</p>
+<p>综上所述，《Redis实战》将是一本把读者带入Redis世界、向读者指明正确方向从而避免常见陷阱的书。我认为《Redis实战》对于Redis的生态系统非常有帮助，Redis的用户应该都会喜欢这本书。</p>
+<p>——Redis之父，Salvatore Sanfilippo</p>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div class="sphinxprev">
+    <h4>Previous page</h4>
+    <p class="topless"><a href="translator-foreword.html"
+                          title="Previous page">&larr; 译者序</a></p>
+  </div>
+  <div class="sphinxnext">
+    <h4>Next page</h4>
+    <p class="topless"><a href="preface.html"
+                          title="Next page">&rarr; 前言</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/preview/foreword.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+    
+    
+        <div class="sidebar-toggle-group no-js">
+            
+            <button class="sidebar-toggle" id="sidebar-hide" title="Hide the sidebar menu">
+                 «
+                <span class="show-for-small">hide menu</span>
+                
+            </button>
+            <button class="sidebar-toggle" id="sidebar-show" title="Show the sidebar menu">
+                
+                <span class="show-for-small">menu</span>
+                <span class="hide-for-small">sidebar</span>
+                 »
+            </button>
+        </div>
+    
+      <div class="clearer"></div>
+    </div>
+    <div class="relbar-bottom">
+        
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="preface.html" title="前言"
+             >next</a> &nbsp; &nbsp;</li>
+        <li class="right" >
+          <a href="translator-foreword.html" title="译者序"
+             >previous</a> &nbsp; &nbsp;</li>
+    <li><a href="../index.html">Redis 实战</a> &#187;</li>
+
+        <li class="nav-item nav-item-this"><a href="">序言</a></li> 
+      </ul>
+    </div>
+    </div>
+
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2015, 黄健宏（huangz）.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+    <!-- cloud_sptheme 1.4 -->
+  </body>
+</html>
