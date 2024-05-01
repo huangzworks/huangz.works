@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>前言 &#8212; 《Go Web编程》读者服务网站 1.0 文档</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=1a685b77" />
+    <script src="../_static/documentation_options.js?v=f115507d"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/translations.js?v=beaddf03"></script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          《Go Web编程》读者服务网站</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">导航 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">前言</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="id1">
+<h1>前言<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>自互联网从20世纪90年代中期诞生以来，Web应用就以这样或那样的方式存在了。虽然Web应用在最初只能传输静态网页，但它很快就升级和演变成了一个令人眼花缭乱、能够传输各种数据以及实现各种功能的动态系统。无独有偶，本人也是从20世纪90年代中期开始接触Web应用开发的，在迄今为止的职业生涯当中，我把大部分时间都花费在了大规模Web应用的设计、开发以及团队管理上面，并且在这期间还使用过多种不同的编程语言和框架，其中包括Java、Ruby、Node.js、PHP、Perl、Elixir甚至是Smalltalk。</p>
+<p>几年前，我因为一次偶然的机会接触到了Go语言，并迅速被它的简单和清爽直率所吸引，而当我意识到只使用Go的标准库就可以快速地构建完整、高效并且可扩展的Web应用和服务时，我对Go的喜爱又更进了一步。使用Go语言编写的代码不仅易懂、直截了当，而且还能够快速、简单地编译成一个独立的可部署二进制文件。更关键的是，我不必投入大量服务器就可以让自己的Web应用变得可扩展且具备生产能力。很自然地，所有的这些优点都使Go成为了我在Web应用开发方面最新的心头好语言。</p>
+<p>从当初传输静态内容到现在通过HTTP传输动态数据，从当初使用服务器传输HTML内容，到现在使用客户端单页应用去处理通过HTTP传输的JSON数据，Web应用的开发方式已经发生了翻天覆地的变化。几乎就在Web应用闪亮登场的同时，Web框架也应运而生，并使得程序员可以更为容易地去开发Web应用。这二十多年以来，绝大多数编程语言都会有至少一个Web应用框架，其中很多语言甚至会有一大堆框架可用，而当今出现的绝大多数应用都是Web应用。</p>
+<p>尽管Web应用框架的风靡使开发Web应用变得更加容易了，但这些框架在带来方便的同时也隐藏了大量的细节—Web应用开发者对于万维网的运作方式知之甚少甚至一窍不通，这样的情况正在变得越来越常见。幸运的是，通过Go语言，我发现了一种正确地教授Web应用开发基础知识的绝佳工具，它能够让Web应用开发重新回到简单直接的状态：程序需要考虑的就是如何处理HTTP协议，以及如何通过HTTP协议传输内容和数据，并且满足这两个要求只需要用到Go语言本身提供的工具—不需要用到外部库，也不需要用到外部的依赖。</p>
+<p>在拿定注意之后，我就向Manning出版社提交了一个撰写Go语言编程书籍的构思，这个构思关注的是如何在只使用标准库的情况下，向读者传授从零开始构建Web应用的方法，而Manning出版社也很快就同意了我的构思并开启了这个项目。尽管本书的撰写工作持续了一段时间才得以完成，但是在写作的过程中，抢先预览版带来的反馈总是不断地鼓舞着我。最后，我希望读者能够像我享受创作本书的过程一样，享受阅读本书的过程，并且在这个过程中能够有所收获。</p>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2017, huangz.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

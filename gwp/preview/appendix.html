@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>安装和设置Go &#8212; 《Go Web编程》读者服务网站 1.0 文档</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=1a685b77" />
+    <script src="../_static/documentation_options.js?v=f115507d"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/translations.js?v=beaddf03"></script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          《Go Web编程》读者服务网站</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">导航 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">安装和设置Go</a><ul>
+<li><a class="reference internal" href="#id1">安装Go</a><ul>
+<li><a class="reference internal" href="#linuxfreebsd">Linux和FreeBSD</a></li>
+<li><a class="reference internal" href="#windows">Windows</a></li>
+<li><a class="reference internal" href="#mac-os-x">Mac OS X</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id2">设置Go</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="go">
+<h1>安装和设置Go<a class="headerlink" href="#go" title="Link to this heading">¶</a></h1>
+<section id="id1">
+<h2>安装Go<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>编写Go代码之前，我们需要先设置好相关的环境。首先要做的就是安装Go，这一工作可以通过下载并安装官方提供的二进制发行版来完成，在需要的情况下，我们也可以通过源码来安装Go。在撰写本书的时候，Go的最新版本为1.6。</p>
+<p>Go官方为release 8或以上版本的FreeBSD、2.6.23或以上版本的Linux、SnowLeopard或以上版本的Mac OS X、XP或以上版本的Windows都提供了支持32位（386）和64位（amd64）x86处理器架构的二进制发行版。除此之外，Go还为FreeBSD和Linux提供了支持ARM架构的二进制发行版。</p>
+<p>以上提到的所有发行版的安装包都可以在<a class="reference external" href="https://golang.org/dl/">https://golang.org/dl/</a>下载。请根据所使用的平台选择并下载相应的安装包，然后按照本文接下来介绍的方法进行安装。需要注意的是，尽管Go语言本身并不依赖任何源代码版本控制系统，但是诸如<code class="docutils literal notranslate"><span class="pre">go</span> <span class="pre">get</span></code>等工具却需要用到源代码版本控制系统，因此为了能够更方便地使用Go语言进行开发，我们建议在安装Go的同时也安装相应的源代码版本控制系统。</p>
+<p>关于源代码版本控制系统的下载和安装方法可以在以下这些网站上找到：</p>
+<ul class="simple">
+<li><p>Mercurial——<a class="reference external" href="http://mercurial.selenic.com">http://mercurial.selenic.com</a>；</p></li>
+<li><p>Subversion——<a class="reference external" href="http://subversion.apache.org">http://subversion.apache.org</a>；</p></li>
+<li><p>Git——<a class="reference external" href="http://git-scm.com">http://git-scm.com</a>；</p></li>
+<li><p>Bazaar——<a class="reference external" href="http://bazaar.canonical.com">http://bazaar.canonical.com</a>。</p></li>
+</ul>
+<section id="linuxfreebsd">
+<h3>Linux和FreeBSD<a class="headerlink" href="#linuxfreebsd" title="Link to this heading">¶</a></h3>
+<p>要在Linux或FreeBSD上安装Go，
+首先需要下载<code class="docutils literal notranslate"><span class="pre">go&lt;版本&gt;.&lt;操作系统&gt;-</span> <span class="pre">&lt;架构&gt;.tar.gz</span></code>文件。
+比如，
+当前64位架构的Linux安装包的名字就为<code class="docutils literal notranslate"><span class="pre">go1.6.3.linux-amd64.tar.gz</span></code>。</p>
+<p>压缩包下载好了之后，
+将它解压到<code class="docutils literal notranslate"><span class="pre">/usr/local</span></code>目录中，
+并将目录<code class="docutils literal notranslate"><span class="pre">/usr/local/go/bin</span></code>添加到<code class="docutils literal notranslate"><span class="pre">PATH</span></code>环境变量当中。
+添加环境变量的工作可以通过将以下代码行添加到<code class="docutils literal notranslate"><span class="pre">/etc/profile</span></code>文件或<code class="docutils literal notranslate"><span class="pre">$HOME/.profile</span></code>文件中来完成：</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">export</span><span class="w"> </span><span class="nx">PATH</span><span class="p">=</span><span class="err">$</span><span class="nx">PATH</span><span class="p">:</span><span class="o">/</span><span class="nx">usr</span><span class="o">/</span><span class="nx">local</span><span class="o">/</span><span class="k">go</span><span class="o">/</span><span class="nx">bin</span>
+</pre></div>
+</div>
+</section>
+<section id="windows">
+<h3>Windows<a class="headerlink" href="#windows" title="Link to this heading">¶</a></h3>
+<p>使用Windows操作系统的读者可以通过下载MSI安装包或者zip压缩包来安装Go。
+使用MSI安装包进行安装相对来说更容易一些，
+只需要运行MSI安装包然后按照指示进行安装就可以了。
+在默认情况下，
+安装包会将Go安装到<code class="docutils literal notranslate"><span class="pre">c:\Go</span></code>文件夹里面，
+并将<code class="docutils literal notranslate"><span class="pre">c:\Go\bin</span></code>文件夹添加到<code class="docutils literal notranslate"><span class="pre">PATH</span></code>环境变量当中。</p>
+<p>使用zip压缩包进行安装也是非常容易的，
+只需要将压缩包解压到一个文件夹里面（如<code class="docutils literal notranslate"><span class="pre">c:\Go</span></code>），
+然后将这个文件夹中的<code class="docutils literal notranslate"><span class="pre">bin</span></code>子文件夹添加到<code class="docutils literal notranslate"><span class="pre">PATH</span></code>环境变量里面就可以了。</p>
+</section>
+<section id="mac-os-x">
+<h3>Mac OS X<a class="headerlink" href="#mac-os-x" title="Link to this heading">¶</a></h3>
+<p>使用Mac OS X操作系统的读者可以通过下载相应的PKG安装包来安装Go。
+安装包会将相应的Go发行版安装到<code class="docutils literal notranslate"><span class="pre">/usr/loca/go</span></code>目录里面，
+并将目录<code class="docutils literal notranslate"><span class="pre">/usr/local/go/bin</span></code>添加到<code class="docutils literal notranslate"><span class="pre">PATH</span></code>环境变量里面。
+在安装完成之后，
+需要重启终端，
+或者在终端里面执行以下命令：</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="err">$</span><span class="w"> </span><span class="nx">source</span><span class="w"> </span><span class="o">~/</span><span class="p">.</span><span class="nx">profile</span>
+</pre></div>
+</div>
+<p>除了使用PKG安装包进行安装之外，我们还可以通过执行以下命令来使用Homebrew安装Go：</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="err">$</span><span class="w"> </span><span class="nx">brew</span><span class="w"> </span><span class="nx">install</span><span class="w"> </span><span class="k">go</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="id2">
+<h2>设置Go<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>在安装Go之后，
+我们还需要对它进行一些设置。
+Go语言的开发工具能够基于公开托管的代码项目进行协作，
+它们既适用于开源项目，
+也适用于其他项目。</p>
+<p>Go代码一般都是在工作空间（workspace）里面进行开发的，工作空间指的是包含以下3个子目录的目录：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">src</span></code>目录，用于包含Go源码文件，这些源码文件会被组织成一个个包（package），<code class="docutils literal notranslate"><span class="pre">src</span></code>目录中的每个子目录都表示一个包；</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pkg</span></code>目录，用于包含包对象（package object）；</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bin</span></code>目录，用于包含可执行的二进制文件。</p></li>
+</ul>
+<p>图A-1展示了一个工作空间的例子。</p>
+<figure class="align-default" id="id3">
+<img alt="../_images/a1.png" src="../_images/a1.png" />
+<figcaption>
+<p><span class="caption-text">图A-1  Go工作空间的目录结构</span><a class="headerlink" href="#id3" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>工作空间的工作方式非常简单。当编译Go代码的时候，编译器会创建相应的包（库）以及二进制可执行文件，并将这些包和可执行文件放到相应的目录里面。如上图A-1所示，我们在<code class="docutils literal notranslate"><span class="pre">src</span></code>目录中创建了一个<code class="docutils literal notranslate"><span class="pre">first_webapp</span></code>目录，并在这个目录里面放置了一个<code class="docutils literal notranslate"><span class="pre">webapp.go</span></code>文件，以此来构建一个简单的Web应用。当我们编译这个Web应用的源码时，编译器会将生成的二进制可执行文件放置到这个工作空间的<code class="docutils literal notranslate"><span class="pre">bin</span></code>目录里面。</p>
+<p>设置工作空间的任务可以通过设置<code class="docutils literal notranslate"><span class="pre">GOPATH</span></code>环境变量来完成。你可以使用除Go安装位置之外的其他任何目录来作为自己的工作空间。举个例子，假如你想要将Linux、FreeBSD或者Mac OS X中的<code class="docutils literal notranslate"><span class="pre">$HOME/go</span></code>目录设置为工作空间，那么你只需要在终端中执行以下命令即可：</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="err">$</span><span class="w"> </span><span class="nx">mkdir</span><span class="w"> </span><span class="err">$</span><span class="nx">HOME</span><span class="o">/</span><span class="k">go</span>
+<span class="err">$</span><span class="w"> </span><span class="nx">export</span><span class="w"> </span><span class="nx">GOPATH</span><span class="p">=</span><span class="err">$</span><span class="nx">HOME</span><span class="o">/</span><span class="k">go</span>
+</pre></div>
+</div>
+<p>你也可以通过将以下代码行添加到自己的<code class="docutils literal notranslate"><span class="pre">~/.profile</span></code>文件或者<code class="docutils literal notranslate"><span class="pre">~/.bashrc</span></code>文件里面来让设置一直有效：</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">export</span><span class="w"> </span><span class="nx">GOPATH</span><span class="p">=</span><span class="err">$</span><span class="nx">HOME</span><span class="o">/</span><span class="k">go</span>
+</pre></div>
+</div>
+<p>为了方便，我们可以在设置工作空间的同时，通过执行以下命令来将工作空间中的<code class="docutils literal notranslate"><span class="pre">bin</span></code>目录添加到<code class="docutils literal notranslate"><span class="pre">PATH</span></code>环境变量当中：</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="err">$</span><span class="w"> </span><span class="nx">export</span><span class="w"> </span><span class="nx">PATH</span><span class="p">=</span><span class="err">$</span><span class="nx">PATH</span><span class="p">:</span><span class="err">$</span><span class="nx">GOPATH</span><span class="o">/</span><span class="nx">bin</span>
+</pre></div>
+</div>
+<p>这样一来，我们就可以直接执行编译后的Go程序了。</p>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2017, huangz.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

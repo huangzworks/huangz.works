@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>关于本书 &#8212; 《Go Web编程》读者服务网站 1.0 文档</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=1a685b77" />
+    <script src="../_static/documentation_options.js?v=f115507d"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/translations.js?v=beaddf03"></script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          《Go Web编程》读者服务网站</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">导航 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">关于本书</a><ul>
+<li><a class="reference internal" href="#id2">内容编排</a></li>
+<li><a class="reference internal" href="#id3">代码的约定以及下载</a></li>
+<li><a class="reference internal" href="#id4">作者简介</a></li>
+<li><a class="reference internal" href="#id5">作者在线论坛</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="id1">
+<h1>关于本书<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>本书将完整地介绍使用Go语言开发Web应用所需的全部基本概念，
+并且在这个过程中只使用Go语言自带的标准库。
+尽管本书的部分章节会对其他库以及其他主题进行讨论，
+比如如何测试Web应用以及如何部署Web应用，
+但本书的主要目的还是教读者如何在只使用Go标准库的情况下进行Web开发。</p>
+<p>本书要求读者具备基本的Go编程技能并掌握Go语言的语法。
+如果读者不具备这些知识，
+可以去阅读由William Kennedy、Brian Ketelsen以及Erik St. Martin创作的《Go in Action》一书，
+该书也是由Manning出版社出版的。
+由Addison-Wesley 出版社出版、Alan Donovan和Brian Kernighan 创作的《The Go Programming Language》也是一本值得一读的好书。
+除了以上提到的两本书之外，
+网上也有非常多免费的Go教程可供浏览，
+比如，
+Go官方网站的《Go入门教程》（A Tour of Go）（<a class="reference external" href="http://tour.golang.org/">http://tour.golang.org/</a>）就是一个很棒的例子。</p>
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p><strong>译者注</strong></p>
+<p>《Go in Action》的中文版已由人民邮电出版社出版，中文版书名为《Go语言实战》。</p>
+<p>《The Go Programming Language》的中文版已由机械工业出版社出版，中文版书名为《Go程序设计语言》。</p>
+</div>
+<section id="id2">
+<h2>内容编排<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>本书由10章和一个附录组成。</p>
+<p>第1章将会介绍使用Go开发Web应用的方法，并阐述这种做法的优点所在。除此之外，本章还会对HTTP协议等构成Web应用的关键概念做深入浅出的介绍。</p>
+<p>第2章会以一步一个脚印的方式，带领读者去构建一个简单的网上论坛，以此来向读者展示如何使用Go构建一个典型的Web应用。</p>
+<p>第3章会更加详细地展示使用<code class="docutils literal notranslate"><span class="pre">net/http</span></code>包接收HTTP请求的方法。读者将学会如何编写Go Web服务器监听HTTP请求，以及如何使用处理器和处理器函数处理这些请求。</p>
+<p>第4章会继续介绍处理HTTP请求的相关细节，重点讲述Go是如何处理请求并返回响应的。除此之外，读者还将学会如何从HTML表单中获取数据以及如何使用cookie。</p>
+<p>第5章将会介绍由<code class="docutils literal notranslate"><span class="pre">text/template</span></code>库和<code class="docutils literal notranslate"><span class="pre">html/template</span></code>库组成的Go模板引擎。读者将会看到Go提供的各种模板机制，并学会如何使用Go的布局（layout）。</p>
+<p>第6章将会对Go的存储策略进行讨论。读者将学会如何通过结构将数据存储到内存里面，如何通过CSV格式以及gob二进制格式将数据存储到文件系统里面，以及如何通过SQL和SQL映射器去访问关系数据库。</p>
+<p>第7章将展示使用Go语言构建Web服务的方法。读者不仅会学到如何使用Go语言构建一个简单的Web服务，还会学到如何使用Go语言创建并分析XML数据和JSON数据。</p>
+<p>第8章将向读者传授在不同层级中测试Go Web应用的不同方法，其中包括单元测试、基准测试以及HTTP测试；除此之外，这一章还会简单地介了几个第三方测试库。</p>
+<p>第9章会介绍在Web应用中使用Go的并发特性的方法。读者将会了解到Go的各个并发特性，并学会如何使用这些特性去提高一个图像生成Web应用的性能。</p>
+<p>第10章是本书的最后一章，它将展示Go Web应用的部署方法。读者将会学到如何把应用部署到独立的服务器上，如何把应用部署到Heroku、Google App Engine之类的云平台上，以及如何把应用部署到Docker容器里面。</p>
+<p>最后，本书的附录会展示在不同平台上安装和设置Go环境的方法。</p>
+</section>
+<section id="id3">
+<h2>代码的约定以及下载<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>本书通过代码清单以及正文内嵌的方式展示了大量源代码。为了跟一般的正文区别开来，书中的源代码都会使用类似这样的等宽字体进行格式化。为了凸显某些代码在不同章节之间的区别，又或者为了强调正文中讨论的某些代码，本书有时候也会以加粗的方式显示代码。
+除此之外，本书的电子书还会使用彩色字体来凸显代码命令以及代码输出：</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="nx">curl</span><span class="w"> </span><span class="o">-</span><span class="nx">i</span><span class="w"> </span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">8080</span><span class="o">/</span><span class="nx">write</span>
+<span class="nx">HTTP</span><span class="o">/</span><span class="mf">1.1</span><span class="w"> </span><span class="mi">200</span><span class="w"> </span><span class="nx">OK</span>
+<span class="nx">Date</span><span class="p">:</span><span class="w"> </span><span class="nx">Tue</span><span class="p">,</span><span class="w"> </span><span class="mi">13</span><span class="w"> </span><span class="nx">Jan</span><span class="w"> </span><span class="mi">2015</span><span class="w"> </span><span class="mi">16</span><span class="p">:</span><span class="mi">16</span><span class="p">:</span><span class="mi">13</span><span class="w"> </span><span class="nx">GMT</span><span class="w"> </span><span class="nx">Content</span><span class="o">-</span><span class="nx">Length</span><span class="p">:</span><span class="w"> </span><span class="mi">95</span>
+<span class="nx">Content</span><span class="o">-</span><span class="nx">Type</span><span class="p">:</span><span class="w"> </span><span class="nx">text</span><span class="o">/</span><span class="nx">html</span><span class="p">;</span><span class="w"> </span><span class="nx">charset</span><span class="p">=</span><span class="nx">utf</span><span class="o">-</span><span class="mi">8</span>
+
+<span class="p">&lt;</span><span class="nx">html</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nx">head</span><span class="p">&gt;&lt;</span><span class="nx">title</span><span class="p">&gt;</span><span class="nx">Go</span><span class="w"> </span><span class="nx">Web</span><span class="w"> </span><span class="nx">Programming</span><span class="p">&lt;</span><span class="o">/</span><span class="nx">title</span><span class="p">&gt;&lt;</span><span class="o">/</span><span class="nx">head</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nx">body</span><span class="p">&gt;&lt;</span><span class="nx">h1</span><span class="p">&gt;</span><span class="nx">Hello</span><span class="w"> </span><span class="nx">World</span><span class="p">&lt;</span><span class="o">/</span><span class="nx">h1</span><span class="p">&gt;&lt;</span><span class="o">/</span><span class="nx">body</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="o">/</span><span class="nx">html</span><span class="p">&gt;</span>
+</pre></div>
+</div>
+<p>本书展示的所有代码都可以在
+<a class="reference external" href="https://www.manning.com/books/go-web-programming">www.manning.com/books/go-web-programming</a>
+和
+<a class="reference external" href="https://github.com/sausheong/gwp">github.com/sausheong/gwp</a>
+找到。</p>
+</section>
+<section id="id4">
+<h2>作者简介<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>Sau Sheong Chang，
+现任新加坡能源有限公司数字技术总裁，
+在此之前他曾经担任过PayPal的消费者工程经理。
+Sau是Ruby社区和Go社区一位活跃的贡献者，
+除了创作书籍之外，
+他还为开源项目提交代码，
+并在各种技术研讨会和技术会议上发言。</p>
+</section>
+<section id="id5">
+<h2>作者在线论坛<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>购买本书英文版的读者可以免费地访问由Manning出版社开设的私有Web论坛，
+可以在论坛里面撰写书评、提出技术问题并接受来自作者和其他读者的帮助。
+为了访问并订阅论坛，
+首先需要使用浏览器访问
+<a class="reference external" href="https://www.manning.com/books/go-web-programming">www.manning.com/books/go-web-programming</a> ，
+这个页面会告诉读者注册账号和访问论坛的方法，
+除此之外，
+该页面还列举了论坛提供的各种帮助以及论坛的各项规章制度。</p>
+<p>Manning出版社承诺为读者提供论坛作为场所，
+以便读者之间以及读者和作者之间可以进行有意义的对话，
+但Manning并不保证作者的参与程度——作者对论坛的任何贡献都是自愿并且无偿的，
+因此读者应该尽可能地提出一些具有挑战性的问题以便引起作者的兴趣。</p>
+<p>只要本书仍在正常销售，
+本书的作者在线论坛以及论坛上已有的帖子就会一直可供访问。</p>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2017, huangz.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>译者记事 &#8212; 《Go Web编程》读者服务网站 1.0 文档</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=1a685b77" />
+    <script src="../_static/documentation_options.js?v=f115507d"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/translations.js?v=beaddf03"></script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          《Go Web编程》读者服务网站</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">导航 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">译者记事</a><ul>
+<li><a class="reference internal" href="#id2">关于本书的翻译</a></li>
+<li><a class="reference internal" href="#id3">读者服务网站</a></li>
+<li><a class="reference internal" href="#id4">致谢</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="id1">
+<h1>译者记事<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>随着近年来Web开发的盛行，
+很多相关书籍也随之如雨后春笋般出现，
+然而在这些书籍当中，
+绝大多数书籍都只关注表面的实现代码，
+但是对于代码背后的技术原理却少有提及。
+读者在看这类书籍时，
+虽然可以学习到某个框架或者某个库的API，
+并根据书中给出的代码搭建出一个个演示程序（demo），
+但是却对隐藏在这些代码之下的原理一无所知。
+这种停留在表面的理解一旦离开了书本的指导，
+就会感到寸步难行，
+不知所措。</p>
+<p>本书的独特之处在于，
+它抛开了现存的所有Go Web框架，
+仅仅通过Go语言内置的标准库来展示如何去构建一个Web应用或Web服务器。
+这样做的好处是，
+无论将来读者是使用这些标准库来构建Web应用，
+还是使用现成的框架去构建Web应用，
+又或者使用自己建造的框架去构建Web应用，
+本书介绍的知识都是非常有用的：
+如果使用的是现成的框架，
+那么这些框架的内部实现通常就是由本书介绍的Go标准库构建的；
+同样地，
+如果选择自建框架，
+那么将有很大几率会用到本书介绍的Go标准库。
+因此，
+不论在何种情况下，
+本书对于构建Go Web应用都是非常有帮助的。</p>
+<p>本书的另一个优点是，
+它在介绍Web应用开发技术的同时，
+也介绍了隐藏在这些技术背后的基础知识，
+比如，
+在介绍Web处理器（handler）的创建方法之前，
+本书就先深入浅出地介绍了HTTP协议，
+然后才说明具体的请求处理方法以及响应返回方法；
+又比如说，
+在介绍会话（session）技术时，
+本书就先说明了HTTP协议的无状态性质，
+然后才说明如何使用会话去解决这一问题；
+类似的例子在书里面还有很多，
+不一而足。
+对于刚开始接触Web开发的读者来说，
+本书这种“知其然，
+也知其所以然”的教授方式能够让读者打好Web开发的基础，
+从而达到事半功倍的效果；
+另一方面，
+对于那些已经有一定Web开发经验的读者来说，
+本书将在介绍Go Web开发方法的同时，
+帮助读者回顾和巩固Web开发的相关基础知识，
+并藉此成为更好的Web开发者。</p>
+<p>终上所述，
+我认为这本书对于所有关心Web开发的人来说，
+都是非常值得一读的一本书——无论读者使用的是Go语言还是其他语言、X框架还是Y框架，
+无论读者是Web开发的入门初学者还是入行已久的开发者，
+应该都会在阅读本书的过程中有所收获。</p>
+<section id="id2">
+<h2>关于本书的翻译<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>这本《Go Web编程》是我的第二部译作，
+在翻译第一部译作《Redis实战》的时候，
+因为受经验、知识以及时间等条件限制，
+我只能把时间尽量花在保证译文的准确性上面，
+但是对于译文本身的可读性却未能有太多的关注。
+这次在翻译这本《Go Web编程》的过程中，
+我给自己订立了更高的目标，
+那就是，
+在保证译文正确性的前提下，
+通过合理的用词遣句，
+让译文更符合中文的表达方式，
+并且更具表现力。</p>
+<p>以本书的前言原文为例，
+其中就有一句“My own journey in developing applications for the web started around the same time, in the mid-1990s”，
+这句话的原意是说作者的Web开发生涯跟万维网的发展轨迹正好重合，
+因此把它单纯地译为“本人的Web应用开发生涯也是从20世纪90年代中期开始……”是完全没有问题的，
+但是通过在句子前面添加“无独有偶”一词来与“around the same time”的翻译“也是”相互呼应，
+就会一下子给译文带来画龙点睛的效果：
+“无独有偶，本人的Web应用开发生涯也是从20世纪90年代中期开始……”。</p>
+<p>继续以前言为例，
+在这篇文章的原文当中，
+出现了不少常见的英文短语和词汇，
+这些短语和词汇通常都有一个正确、常见并且平庸的翻译，
+但是本书却抛弃了这些翻译，
+转而选择了更准确也更有表现力的译法。
+比如说，
+“Writing web applications has changed dramatically over the years”中的“changed dramatically”没有直译为“发生了戏剧性的变化”，
+而是翻译为“发生了翻天覆地的变化”；
+“Almost as soon as the first web applications were written, web application frameworks appeared, ”中的“were written”和“appeared”没有直译为“被编写出来之后”以及“出现”，
+而是分别翻译为“闪亮登场”和“应运而生”，
+前者突出了Web应用的出现对于互联网的巨大改变，
+而后者则突出了Web应用和Web框架之间相辅相成的关系。
+类似的例子还有很多很多，
+并且它们不仅出现在了前言里，
+还出现在了本书的正文当中。</p>
+<p>当然，
+提高译文的可读性并不是一件一蹴而就的事：
+为了让译文更有“中文味”，
+本书的大多数译文都已三易其稿，
+有时候仅仅为了挑选出一个更恰当的词语或成语，
+就不得不对着词典推敲半天。
+这本书的翻译从2016年8月开始，
+到2017年8月交稿，
+整整跨越了一年时间，
+其中翻译原文和润色译文两项工作花费的时间可谓各占一半。
+如果读者能够从译文的字里行间感受到这种润物细无声的优化，
+那将是对本人翻译工作最好的肯定。</p>
+<p>另外，
+因为这是一本使用Go语言标准库进行Web开发的书籍，
+所以对Go Web开发相关标准库的理解程度将是能否准确地翻译本书技术内容的关键。
+为了进一步熟悉本书用到的标准库，
+本人通读了书中用到的各个标准库的文档，
+阅读了其中部分标准库的源码，
+并且因为有时候“好记性比不上烂笔头”，
+所以本人还翻译了其中一部分标准库文档，
+力求在尽可能掌握标准库细节的情况下，
+再进行翻译，
+尽量做到知其然也知其所以然，
+而不是单纯地根据纸面上的文字和代码进行翻译。</p>
+<p>最后，
+在翻译本书的过程中，
+本人也发现了原著中大大小小数十个bug，
+并在译文中一一进行了修正。
+综上所述，
+读者看到的这个译本从某个角度来说将比原著更准确也更易读。
+这也是我一直以来在实践翻译工作时的信念——译作不应该是原著的“劣化版”，
+而是应该以“青出于蓝而胜于蓝”的方式超越原著。
+当然，
+要做到这一点并不是一件容易的事，
+但每一个合格的译者都应该以此为目标，
+不断奋斗。</p>
+</section>
+<section id="id3">
+<h2>读者服务网站<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>为了更好地服务本书读者，
+本人专门为本书搭建了读者服务网站 <a class="reference external" href="http://gwpcn.com">http://gwpcn.com</a> 。
+读者只要访问这个网站，
+就可以查看到与本书有关的各项信息，
+如本书的简介、目录、试读内容、作译者介绍、勘误信息、购买地址以及源代码下载地址等。</p>
+<p>除此之外，
+正如之前所说，
+本人在翻译本书的过程中也翻译了一部分Go标准库的文档，
+这些文档可以通过地址 <a class="reference external" href="http://cngolib.com">http://cngolib.com</a> 查看。</p>
+</section>
+<section id="id4">
+<h2>致谢<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>感谢人民邮电出版社以及杨海玲编辑对我的信任，
+将这样一本有趣而且重要的书交给我翻译，
+我衷心希望这本译作能够取得好成绩，
+从而不辜负他们对我的信任与期待。</p>
+<p>感谢网络上一直关心这个译本出版进度的读者朋友们，
+他们的支持和鼓励让我不敢有所怠慢，
+争取竭尽自己所能，
+贡献出一个能够为大家所喜爱的译本。</p>
+<p>最后也是最重要的，
+我要感谢本书翻译过程中一如既往地全力支持我的家人和朋友，
+多亏了他们的帮助，
+本书的翻译工作才得以顺利完成。</p>
+<div class="line-block">
+<div class="line">黄健宏</div>
+</div>
+<div class="line-block">
+<div class="line">2017年秋</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2017, huangz.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>
