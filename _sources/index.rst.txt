@@ -24,6 +24,7 @@ huangzworks@gmail.com、
 相关链接：
 `GitHub <https://github.com/huangzworks>`_\ 、
 `博客 <https://huangz.blog/>`_\ 、
+`脑图 <./mindmap/>`_ 、
 `bilibili <https://space.bilibili.com/240200009>`_\ 、
 `豆瓣 <https://www.douban.com/people/273300993>`_\
 
