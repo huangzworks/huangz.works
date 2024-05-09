@@ -51,9 +51,9 @@ huangzworks@gmail.com、
 -------------
 
 .. image:: images/psql.png
-   :target: https://weibo.com/3219474004/O4tHlwb41
+   :target: ./sql/
 
-《SQL实战（第2版）》
+`《SQL实战（第2版）》 <./sql/>`_
 
 .. image:: images/gpwg.jpg
    :target: https://huangz.works/gpwg/
