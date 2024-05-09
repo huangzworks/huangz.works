@@ -1,0 +1,197 @@
+.. psqlcn documentation master file, created by
+   sphinx-quickstart on Sun Jul 30 18:00:17 2023.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+《SQL实战（第2版）》读者服务网站
+====================================
+
+|
+
+.. image:: images/cover.png
+   :align: right
+   :scale: 45%
+
+**原书销量逾3万册，曾登顶Amazon SQL分类图书畅销榜榜首，是一本持续热销的高评价SQL及数据分析书！**
+
+《SQL实战（第2版）》是一本平易近人、节奏明快的SQL（结构化查询语言）指南，它将教授你如何使用SQL在关系数据库中定义、组织和探索数据。
+
+..
+        作者安东尼·德巴罗斯是一名记者和数据分析师，他关注如何通过SQL寻找数据中的故事。
+
+在本书中，你将学习数据库和SQL语言的基础知识，并通过分析真实世界的数据来提高技能：其中包括美国人口普查数据集、纽约市出租车乘车数据集和美国地质调查局的地震数据等。
+
+本书的每一章都包含练习和示例，即使是从未接触过编程的人，也能够通过这些练习和示例，掌握建立强大数据库和快速高效地访问信息所需的所有工具。
+
+本书使用开源数据库PostgreSQL及其配套的pgAdmin界面来展示示例和代码，但书中展示的概念同样适用于大多数数据库管理系统，包括MySQL、Oracle、SQLite等。
+
+
+..
+        学习SQL既不枯燥也不复杂。
+        《SQL实战（第2版）》将以简明易懂的方式提供清晰的示例，教导你构建和管理数据所需的工具。
+
+
+购买方式
+------------
+
+.. note::
+
+        本书目前已经翻译完毕，
+        出版社正在排版处理中，
+        请关注本网站或译者的社交网站以便第一时间了解发售信息。
+
+
+内容提要
+----------
+
+通过阅读本书，你将学会：
+
+- 为你的数据创建数据库和表
+- 聚合、排序和过滤数据以寻找其中的模式
+- 使用函数进行基本数学运算以及高级统计运算
+- 识别数据中的错误并清理它们
+- 使用地理信息系统（PostGIS）分析空间数据
+- 创建高级查询和自动任务
+
+这本第2版经过全面修订，反映了最新的SQL功能，包括更多用于处理数据的高级查询技术。
+本版还增加了两个章节：一个关于系统设置的扩展说明，另一个关于将PostgreSQL和流行的数据交换格式JSON结合使用的章节。
+
+
+目录
+------------
+
+- 译者序
+- 第二版序
+- 致谢
+- 引言
+
+**基础**
+
+- 第1章：设置编码环境
+- 第2章：创建首个数据库和表
+- 第3章：通过SELECT开始探索数据
+- 第4章：了解数据类型
+- 第5章：数据的导入与导出
+- 第6章：使用SQL实现基本的算术和统计
+- 第7章：在关系数据库中连接表
+- 第8章：按需设计表
+- 第9章：通过分组和汇总提取信息
+- 第10章：检查并修改数据
+- 第11章：SQL中的统计函数
+- 第12章：处理日期与时间
+
+**进阶**
+
+- 第13章：高级查询技术
+- 第14章：挖掘文本以查找有意义的数据
+- 第15章：使用PostGIS分析空间数据
+- 第16章：处理JSON数据
+- 第17章：使用视图、函数和触发器以提高效率
+- 第18章：通过命令行使用PostgreSQL
+- 第19章：维护数据库
+- 第20章：讲述你的数据故事
+
+**其他** 
+
+- 附录：更多PostgreSQL资源
+
+| \* `查看更详细的二级目录 <./detailed_index.html>`_\
+| \* `查看二级目录脑图 <./_static/mindmap.png>`_\ （图片可点击放大）。
+
+
+对本书的赞誉
+-----------------
+
+**“本书内容全面、条理清晰，几乎包含了新手开发者使用Postgres学习SQL所需的一切。”**
+*—— Hadi Fadlallah，SQLShack*
+
+**“《SQL实战》能够将你从绝对的数据库初学者带领成为数据库和SQL的大师。”**
+*—— Sara A. Metwalli，Towards Data Science公司*
+
+**“对于任何想要学习PostgreSQL以及通过数据讲故事的人，我强烈推荐这本《SQL实战》”**
+*—— Joshua Allen Holm，Opensource.com*
+
+**“这是我读过的SQL著作中最有趣的一本。”**
+*—— Jakub Romanowski，LearnSQL.com*
+
+**“这本书比O'Reilly的《SQL学习指南》更有趣并且更具吸引力。”**
+*—— Giles McMullen-Klein，Python程序员，YouTuber*
+
+**“在我见过的进入SQL领域的著作里面，这是其中组织得最好的一本。”**
+*—— Newstips Bulletin*
+
+**“我推荐阅读安东尼·德巴罗斯的《SQL实战》，以便更深入地了解如何使用SQL实现回归分析以及其他分析工具。”**
+*—— Michael Grogan，Towards Data Science公司*
+
+
+作者简介
+----------------
+
+.. image:: images/author.jpg
+   :align: right
+   :scale: 40%
+
+安东尼·德巴罗斯（Anthony DeBarros）是一名长期从事新闻工作的记者，在其职业生涯的大部分时间里，他将自己对数据分析、编码、软件产品开发和讲故事的兴趣结合在一起。
+
+安东尼现在是《华尔街日报》的数据新闻编辑，主要关注经济、贸易、政治以及美国人口普查等主题。
+他曾在《今日美国》、《波基普西日报》以及调查记者和编辑公司（IRE）的DocumentCloud项目中任职。
+他的作品获得过多项荣誉，其中包括大名鼎鼎的阿尔弗雷德·杜邦-哥伦比亚大学奖银棒。
+
+你可以通过\ `anthonydebarros.com <https://anthonydebarros.com/>`_\ 访问安东尼的个人主页，又或者通过在推特\ `@anthonydb <https://twitter.com/anthonydb>`_\ 来联系他。
+
+
+译者简介
+-------------------------
+
+.. image:: images/translator.jpg
+   :align: right
+   :scale: 36%
+
+黄健宏（huangz）是一位计算机技术图书作者和译者，他关注的领域包括数据库、编程语言、操作系统以及算法/数据结构等。
+
+除了这本《SQL实战（第2版）》之外，
+黄健宏还翻译了《Go语言趣学指南》、《Go Web编程》和《Redis实战》三本译作，
+撰写了《Redis使用手册》和《Redis设计与实现》两本著作。
+
+你可以通过\ `huangz.works <https://huangz.works/>`_\ 访问黄健宏的个人主页，又或者通过在微博\ `@黄健宏huangz <https://weibo.com/u/3219474004>`_\ 或推特\ `@huangzworks <https://twitter.com/huangzworks>`_\ 来联系他。
+
+
+加入读者群
+-------------------
+
+你可以通过\ `添加译者微信好友 <https://huangz.works/wechat.html>`_\ 并发送消息“SQL实战入群”来加入本书的读者群，从而第一时间获取本书的最新消息。
+
+
+获取示例代码
+---------------------
+
+你可以通过执行以下命令来克隆本书的示例代码：
+
+::
+
+    git clone https://github.com/anthonydb/practical-sql-2.git
+
+又或者在以下资源库中浏览或者下载它们：
+https://github.com/anthonydb/practical-sql-2/
+。
+
+
+相关资源
+------------------------
+
+- 原书官方网站： https://www.practicalsql.com/
+
+- 原书出版社网站： https://nostarch.com/practical-sql-2nd-edition
+
+
+推广图片
+-------------------------
+
+.. image:: images/banner.png
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+
+

@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>《SQL实战（第2版）》详细目录 &#8212; huangz.works/sql 1.0 文档</title>
+    
+  <link href="_static/css/theme.css" rel="stylesheet">
+  <link href="_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/css/blank.css?v=c4c5097c" />
+    
+  <link rel="preload" as="script" href="_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script src="_static/documentation_options.js?v=bfa25948"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="zh-cn">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+<a class="navbar-brand" href="index.html">
+<p class="title">huangz.works/sql</p>
+</a>
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+      </ul>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar"><form class="bd-search d-flex align-items-center" action="search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+              
+              <div class="toc-item">
+                
+<div class="tocsection onthispage pt-5 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id1">
+   译者序
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id2">
+   第二版序
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id3">
+   致谢
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id4">
+   引言
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id5">
+   第1章：设置编码环境
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id6">
+   第2章：创建首个数据库和表
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#select">
+   第3章：通过SELECT开始探索数据
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id9">
+   第4章：了解数据类型
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id11">
+   第5章：数据的导入与导出
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#sql">
+   第6章：使用SQL实现基本的算术和统计
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id14">
+   第7章：在关系数据库中连接表
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id16">
+   第8章：按需设计表
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id18">
+   第9章：通过分组和汇总提取信息
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id20">
+   第10章：检查并修改数据
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id22">
+   第11章：SQL中的统计函数
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id24">
+   第12章：处理日期与时间
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id26">
+   第13章：高级查询技术
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id28">
+   第14章：挖掘文本以查找有意义的数据
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#postgis">
+   第15章：使用PostGIS分析空间数据
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#json">
+   第16章：处理JSON数据
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id32">
+   第17章：使用视图、函数和触发器以提高效率
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#postgresql">
+   第18章：通过命令行使用PostgreSQL
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id35">
+   第19章：维护数据库
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id37">
+   第20章：讲述你的故事
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id39">
+   附录：更多PostgreSQL资源
+  </a>
+ </li>
+</ul>
+
+</nav>
+              </div>
+              
+              <div class="toc-item">
+                
+              </div>
+              
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <section id="sql-2">
+<h1>《SQL实战（第2版）》详细目录<a class="headerlink" href="#sql-2" title="Link to this heading">¶</a></h1>
+<section id="id1">
+<h2>译者序<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+</section>
+<section id="id2">
+<h2>第二版序<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+</section>
+<section id="id3">
+<h2>致谢<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+</section>
+<section id="id4">
+<h2>引言<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>什么是SQL？</p>
+<p>为什么是SQL？</p>
+<p>本书是为谁而写的？</p>
+<p>你将学到什么？</p>
+</section>
+<section id="id5">
+<h2>第1章：设置编码环境<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>安装文本编辑器</p>
+<p>从GitHub下载代码和数据</p>
+<p>安装PostgreSQL和pgAdmin</p>
+<p>使用pgAdmin</p>
+<p>pgAdmin之外的选择</p>
+<p>小结</p>
+</section>
+<section id="id6">
+<h2>第2章：创建首个数据库和表<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<p>什么是表</p>
+<p>创建数据库</p>
+<p>创建表</p>
+<p>将行插入表</p>
+<p>在代码出现问题时获得帮助</p>
+<p>格式化SQL以提高可读性</p>
+<p id="id7">小结</p>
+</section>
+<section id="select">
+<h2>第3章：通过SELECT开始探索数据<a class="headerlink" href="#select" title="Link to this heading">¶</a></h2>
+<p>基本的SELECT语法</p>
+<p>查询一部分列</p>
+<p>通过ORDER BY排序数据</p>
+<p>使用DISINCT查找唯一值</p>
+<p>使用WHERE过滤行</p>
+<p>同时使用WHERE和LIKE/ILIKE</p>
+<p>合而为一</p>
+<p id="id8">小结</p>
+</section>
+<section id="id9">
+<h2>第4章：了解数据类型<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h2>
+<p>了解字符</p>
+<p>了解数字</p>
+<p>使用小数</p>
+<p>了解日期和时间</p>
+<p>在计算中使用interval数据类型</p>
+<p>了解JSON和JSONB</p>
+<p>使用各式各样的类型</p>
+<p>使用CAST将值从一种类型转换为另一种类型</p>
+<p>使用CAST速记法</p>
+<p id="id10">小结</p>
+</section>
+<section id="id11">
+<h2>第5章：数据的导入与导出<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h2>
+<p>处理带有分隔符的文本文件</p>
+<p>使用COPY导入数据</p>
+<p>导入县的人口普查数据</p>
+<p>使用COPY导入部分列</p>
+<p>使用COPY导入部分行</p>
+<p>在导入过程中向列添加值</p>
+<p>使用COPY导出数据</p>
+<p>使用pgAdmin进行导入和导出</p>
+<p id="id12">小结</p>
+</section>
+<section id="sql">
+<h2>第6章：使用SQL实现基本的算术和统计<a class="headerlink" href="#sql" title="Link to this heading">¶</a></h2>
+<p>了解数学运算符和函数</p>
+<p>对人口普查表中的列进行数学运算</p>
+<p>使用聚合函数计算平均数以及总和</p>
+<p>查找中位数</p>
+<p>发现模式</p>
+<p id="id13">小结</p>
+</section>
+<section id="id14">
+<h2>第7章：在关系数据库中连接表<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h2>
+<p>使用JOIN连接表</p>
+<p>使用键列关联表</p>
+<p>使用JOIN查询多个表</p>
+<p>了解JOIN的类型</p>
+<p>使用NULL查找包含缺失值的行</p>
+<p>了解表的三种关系</p>
+<p>在连接中选择特定列</p>
+<p>通过表别名简化JOIN语法</p>
+<p>连接多个表</p>
+<p>通过集合操作符合并查询结果</p>
+<p>在连接表的列中执行数学运算</p>
+<p id="id15">小结</p>
+</section>
+<section id="id16">
+<h2>第8章：按需设计表<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h2>
+<p>遵循命名惯例</p>
+<p>通过约束控制列值</p>
+<p>通过索引加快查询速度</p>
+<p id="id17">小结</p>
+</section>
+<section id="id18">
+<h2>第9章：通过分组和汇总提取信息<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h2>
+<p>创建图书馆调查表</p>
+<p>使用聚合函数探索图书馆数据</p>
+<p id="id19">小结</p>
+</section>
+<section id="id20">
+<h2>第10章：检查并修改数据<a class="headerlink" href="#id20" title="Link to this heading">¶</a></h2>
+<p>导入肉类、家禽和蛋类生产商数据</p>
+<p>访问数据集</p>
+<p>修改表、列和数据</p>
+<p>删除不需要的数据</p>
+<p>使用事务保存或撤销修改</p>
+<p>提高更新大表时的性能</p>
+<p id="id21">小结</p>
+</section>
+<section id="id22">
+<h2>第11章：SQL中的统计函数<a class="headerlink" href="#id22" title="Link to this heading">¶</a></h2>
+<p>创建人口普查统计表</p>
+<p>使用SQL创建排行榜</p>
+<p>为有意义的比较计算比率</p>
+<p>平滑不均匀的数据</p>
+<p id="id23">小结</p>
+</section>
+<section id="id24">
+<h2>第12章：处理日期与时间<a class="headerlink" href="#id24" title="Link to this heading">¶</a></h2>
+<p>了解日期和时间的数据类型及函数</p>
+<p>操作日期和时间</p>
+<p>处理时区</p>
+<p>使用日期和时间进行计算</p>
+<p id="id25">小结</p>
+</section>
+<section id="id26">
+<h2>第13章：高级查询技术<a class="headerlink" href="#id26" title="Link to this heading">¶</a></h2>
+<p>使用子查询</p>
+<p>使用公共表表达式</p>
+<p>制作交叉表</p>
+<p>使用CASE对值重新进行分类</p>
+<p>在公共表表达式中使用CASE</p>
+<p id="id27">小结</p>
+</section>
+<section id="id28">
+<h2>第14章：挖掘文本以查找有意义的数据<a class="headerlink" href="#id28" title="Link to this heading">¶</a></h2>
+<p>使用字符串函数格式化文本</p>
+<p>使用正则表达式匹配文本模式</p>
+<p>PostgreSQL中的全文搜索</p>
+<p id="id29">小结</p>
+</section>
+<section id="postgis">
+<h2>第15章：使用PostGIS分析空间数据<a class="headerlink" href="#postgis" title="Link to this heading">¶</a></h2>
+<p>启用PostGIS并创建空间数据库</p>
+<p>了解空间数据的构建块</p>
+<p>了解二维几何图形</p>
+<p>了解PostGIS的数据类型</p>
+<p>使用PostGIS函数创建空间对象</p>
+<p>分析农贸市场数据</p>
+<p>处理人口普查Shapefile文件</p>
+<p>执行空间连接</p>
+<p id="id30">小结</p>
+</section>
+<section id="json">
+<h2>第16章：处理JSON数据<a class="headerlink" href="#json" title="Link to this heading">¶</a></h2>
+<p>了解JSON结构</p>
+<p>考虑何时在SQL中使用JSON</p>
+<p>使用json和jsonb数据类型</p>
+<p>导入并索引JSON数据</p>
+<p>使用json和jsonb提取运算符</p>
+<p>分析地震数据</p>
+<p>将地震JSON转换为空间数据</p>
+<p>生成并处理JSON</p>
+<p>使用JSON处理函数</p>
+<p id="id31">小结</p>
+</section>
+<section id="id32">
+<h2>第17章：使用视图、函数和触发器以提高效率<a class="headerlink" href="#id32" title="Link to this heading">¶</a></h2>
+<p>使用视图简化查询</p>
+<p>创建你的函数和过程</p>
+<p>使用触发器自动执行数据库操作</p>
+<p id="id33">小结</p>
+</section>
+<section id="postgresql">
+<h2>第18章：通过命令行使用PostgreSQL<a class="headerlink" href="#postgresql" title="Link to this heading">¶</a></h2>
+<p>为psql设置命令行</p>
+<p>使用psql</p>
+<p>加速任务的附加命令行实用程序</p>
+<p id="id34">小结</p>
+</section>
+<section id="id35">
+<h2>第19章：维护数据库<a class="headerlink" href="#id35" title="Link to this heading">¶</a></h2>
+<p>通过VACUUM移除未使用空间</p>
+<p>改变服务器设置</p>
+<p>备份和还原数据库</p>
+<p id="id36">小结</p>
+</section>
+<section id="id37">
+<h2>第20章：讲述你的故事<a class="headerlink" href="#id37" title="Link to this heading">¶</a></h2>
+<p>从问题开始</p>
+<p>记录流程</p>
+<p>收集数据</p>
+<p>在缺少数据时构建自己的数据库</p>
+<p>评估数据来源</p>
+<p>使用查询访问数据</p>
+<p>咨询数据的所有者</p>
+<p>识别关键指标和长期趋势</p>
+<p>询问原因</p>
+<p>传达你的分析结果</p>
+<p id="id38">小结</p>
+</section>
+<section id="id39">
+<h2>附录：更多PostgreSQL资源<a class="headerlink" href="#id39" title="Link to this heading">¶</a></h2>
+<p>PostgreSQL开发环境</p>
+<p>PostgreSQL实用程序、工具和扩展</p>
+<p>PostgreSQL新闻和社区</p>
+<p>文档</p>
+</section>
+</section>
+
+
+              </div>
+              
+              
+              <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+</div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <script src="_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+<footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2024, 黄健宏.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>
