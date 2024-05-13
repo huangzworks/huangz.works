@@ -1,0 +1,102 @@
+.. psqlcn documentation master file, created by
+   sphinx-quickstart on Sun Jul 30 18:00:17 2023.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+《Redis经典应用实例》读者服务网站
+====================================
+
+.. warning::
+
+   本网站目前展示的内容仅作参考之用，具体信息以最终发布的书本和课程为准。
+
+**《Redis经典应用实例》一书将从内部应用、外部应用和数据结构三个方面向大家介绍Redis最常用、最经典的用法与用例，并且所有示例均附有完整的Python代码，方便大家学习和参考。**
+
+
+购买方式
+-------------
+
+.. note::
+
+   本书目前仍在创作中，预计2024年5月交稿，请关注作者的社交网络或定期浏览本网站以便获取本书的最新消息。
+
+目录
+------------
+
+第1部分：内部应用
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+第2部分：外部应用
+^^^^^^^^^^^^^^^^^^^^^^^
+
+第3部分：数据结构
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+配套课程
+-------------
+
+《Redis经典应用实例》一书将附带随书课程，预计共10节课，每节课长度约为10分钟。
+
+.. image:: images/course.png
+
+
+版本信息
+------------------
+
+本书所有示例代码均基于Redis 7.2和Python 3.12编写。
+
+
+作者简介
+----------------
+
+.. image:: images/author.jpg
+   :align: right
+   :scale: 36%
+
+黄健宏（huangz）是一位计算机技术图书作者和译者，他关注的领域包括数据库、编程语言、操作系统以及算法/数据结构等。
+
+除了这本《Redis经典应用实例》之外，
+黄健宏还是《Redis设计与实现》和《Redis使用手册》的作者，
+此外他还翻译了《SQL实战（第2版）》、《Go语言趣学指南》、《Go Web编程》和《Redis实战》四本译作。
+
+你可以通过\ `huangz.works <https://huangz.works/>`_\ 访问黄健宏的个人主页，又或者通过在微博\ `@黄健宏huangz <https://weibo.com/u/3219474004>`_\ 或推特\ `@huangzworks <https://twitter.com/huangzworks>`_\ 来联系他。
+
+
+加入读者群
+-------------------
+
+你可以通过\ `添加作者微信好友 <https://huangz.works/wechat.html>`_\ 并发送消息“Redis实例入群”来加入本书的读者群，从而第一时间获取本书的最新消息。
+
+
+..
+        获取示例代码
+        ---------------------
+
+        你可以通过执行以下命令来克隆本书的示例代码：
+
+        ::
+
+            git clone https://github.com/anthonydb/practical-sql-2.git
+
+        又或者在以下资源库中浏览或者下载它们：
+        https://github.com/anthonydb/practical-sql-2/
+        。
+
+
+        对本书的赞誉
+        -----------------
+
+
+        相关资源
+        ------------------------
+
+
+        推广图片
+        -------------------------
+
+        .. toctree::
+           :maxdepth: 2
+           :caption: Contents:
+
+
+
