@@ -36,6 +36,12 @@ huangzworks@gmail.com、
 著作
 ------------
 
+.. image:: images/redisusage.png
+   :scale: 50
+   :target: https://huangz.works/redisusage/
+
+`《Redis经典应用实例》 <https://huangz.works/redisusage/>`_
+
 .. image:: images/redisguide.png
    :target: https://huangz.works/redismanual/
 
@@ -50,10 +56,11 @@ huangzworks@gmail.com、
 译作
 -------------
 
-.. image:: images/psql.png
-   :target: ./sql/
 
-`《SQL实战（第2版）》 <./sql/>`_
+.. image:: images/psql.png
+   :target: https://huangz.works/sql/
+
+`《SQL实战（第2版）》 <https://huangz.works/sql/>`_
 
 .. image:: images/gpwg.jpg
    :target: https://huangz.works/gpwg/
