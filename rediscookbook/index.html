@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>《Redis应用实例》读者服务网站 &#8212; huangz.works/rediscookbook  文档</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=1a685b77" />
+    <script src="_static/documentation_options.js?v=ab3e9284"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="#">
+          huangz.works/rediscookbook</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+	  <!--
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">导航 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">《Redis应用实例》读者服务网站</a><ul>
+<li><a class="reference internal" href="#id1">购买方式</a></li>
+<li><a class="reference internal" href="#id2">目录</a></li>
+<li><a class="reference internal" href="#id3">配套课程</a></li>
+<li><a class="reference internal" href="#id4">版本信息</a></li>
+<li><a class="reference internal" href="#id5">作者简介</a></li>
+<li><a class="reference internal" href="#id6">加入读者群</a></li>
+<li><a class="reference internal" href="#id8">推广图片</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+          </ul>
+	  -->
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="redis">
+<h1>《Redis应用实例》读者服务网站<a class="headerlink" href="#redis" title="Link to this heading">¶</a></h1>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>《Redis应用实例》一书将从内部组件、外部应用和数据结构三个方面向读者介绍Redis最常见、最经典的用法与用例，并且所有示例均附有完整的Python代码，方便读者学习和参考。</strong></p>
+<p>整书共包含32个大章，分为三个部分：</p>
+<a class="reference internal image-reference" href="_images/cover.jpg"><img alt="_images/cover.jpg" class="align-right" src="_images/cover.jpg" style="width: 235.52px; height: 341.78000000000003px;" /></a>
+<ol class="arabic simple">
+<li><p><strong>内部组件</strong>：这个部分介绍的实例通常用于系统内部，比如<strong>缓存、锁、计数器、迭代器、速率限制器等</strong>，它们都是很多系统中不可或缺的部分。通过学习如何使用Redis构建这些组件，并使用它们代替系统原有的低效组件，你将能够大幅地提升系统的整体性能。</p></li>
+<li><p><strong>外部应用</strong>：这个部分介绍的实例都是一些日常常见的、用户可以直接接触到的应用，比如<strong>直播弹幕、社交关系、排行榜、分页、地理位置等</strong>。通过学习如何使用Redis构建这些应用，你将进一步地了解到Redis各个数据结构和命令的强大之处，并且还可以在实例应用已有功能的基础上，按需扩展出你想要的其他功能。</p></li>
+<li><p><strong>数据结构</strong>：这个部分介绍的实例是一些使用Redis实现的常见数据结构，比如<strong>先进先出队列、栈、优先队列和矩阵等</strong>。当你需要快速、可靠的内存存储数据结构时，它们可以作为其他程序的底层数据结构或是基本构件使用。</p></li>
+</ol>
+<p>本书希望通过展示这些组件和应用，帮助你了解使用Redis解决各类问题的方法，并加深你对Redis各项命令及数据结构的认识，使你确实地成为能够使用Redis解决各类问题的Redis使用者。</p>
+<section id="id1">
+<h2>购买方式<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>本书预计将于2024年10月末或11月初正式发售，敬请期待。</p>
+</section>
+<section id="id2">
+<h2>目录<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>前言</p></li>
+</ul>
+<p><strong>第1部分：内部组件</strong></p>
+<ol class="arabic simple">
+<li><p>缓存文本数据</p></li>
+<li><p>缓存二进制数据</p></li>
+<li><p>锁</p></li>
+<li><p>带密码保护功能的锁</p></li>
+<li><p>自增数字ID</p></li>
+<li><p>计数器</p></li>
+<li><p>唯一计数器</p></li>
+<li><p>速率限制器</p></li>
+<li><p>二元操作记录器</p></li>
+<li><p>资源池</p></li>
+<li><p>紧凑字符串</p></li>
+<li><p>数据库迭代器</p></li>
+<li><p>流迭代器</p></li>
+</ol>
+<p><strong>第2部分：外部应用</strong></p>
+<ol class="arabic simple" start="14">
+<li><p>消息队列</p></li>
+<li><p>标签系统</p></li>
+<li><p>自动补全</p></li>
+<li><p>抽奖</p></li>
+<li><p>社交关系</p></li>
+<li><p>登录会话</p></li>
+<li><p>短网址生成器</p></li>
+<li><p>投票</p></li>
+<li><p>排行榜</p></li>
+<li><p>分页</p></li>
+<li><p>时间线</p></li>
+<li><p>地理位置</p></li>
+</ol>
+<p><strong>第3部分：数据结构</strong></p>
+<ol class="arabic simple" start="26">
+<li><p>先进先出队列</p></li>
+<li><p>定长队列和淘汰队列</p></li>
+<li><p>栈/后进先出队列</p></li>
+<li><p>优先队列</p></li>
+<li><p>循环队列</p></li>
+<li><p>矩阵</p></li>
+<li><p>逻辑矩阵</p></li>
+</ol>
+</section>
+<section id="id3">
+<h2>配套课程<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>《Redis应用实例》一书将附带随书课程《Redis应用十讲》，整个课程共包含10节课，每节课长度约为10分钟。</p>
+<p>课程的具体目录如下：</p>
+<ol class="arabic simple">
+<li><p>使用缓存提高访问数据的速度</p></li>
+<li><p>使用锁保证重要资源的独占使用权</p></li>
+<li><p>使用先进先出队列解决抢购和秒杀问题</p></li>
+<li><p>使用简单计数器和唯一计数器进行计数</p></li>
+<li><p>使用排行榜对元素进行有序排列</p></li>
+<li><p>使用自动补全为用户提供输入建议</p></li>
+<li><p>构建类似StackOverflow等网站的投票系统</p></li>
+<li><p>使用分页和时间线排列并管理大量元素</p></li>
+<li><p>使用社交关系程序存储用户间的社交关系</p></li>
+<li><p>使用地理位置程序记录用户的位置信息</p></li>
+</ol>
+<p>随书课程将在书本发售时一并发布，敬请期待！</p>
+<a class="reference internal image-reference" href="_images/course.png"><img alt="_images/course.png" src="_images/course.png" style="width: 480.0px; height: 270.0px;" /></a>
+</section>
+<section id="id4">
+<h2>版本信息<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>本书所有示例代码均基于Redis 7.4和Python 3.12编写，使用的redis-py客户端版本为5.1.0b7。</p>
+</section>
+<section id="id5">
+<h2>作者简介<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<a class="reference internal image-reference" href="_images/author.jpg"><img alt="_images/author.jpg" class="align-right" src="_images/author.jpg" style="width: 174.64999999999998px; height: 161.0px;" /></a>
+<p>黄健宏（huangz）是一位计算机技术图书作者和译者，他关注的领域包括数据库、编程语言、操作系统以及算法/数据结构等。</p>
+<p>除了这本《Redis应用实例》之外，
+黄健宏还是《Redis设计与实现》和《Redis使用手册》的作者，
+此外他还翻译了《SQL实战（第2版）》、《Go语言趣学指南》、《Go Web编程》和《Redis实战》四本译作。</p>
+<p>你可以通过<a class="reference external" href="https://huangz.works/">huangz.works</a>访问黄健宏的个人主页，又或者通过在微博<a class="reference external" href="https://weibo.com/u/3219474004">&#64;黄健宏huangz</a>或推特<a class="reference external" href="https://twitter.com/huangzworks">&#64;huangzworks</a>来联系他。</p>
+</section>
+<section id="id6">
+<h2>加入读者群<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<p>你可以通过<a class="reference external" href="https://huangz.works/wechat.html">添加作者微信好友</a>并发送消息“Redis实例入群”来加入本书的读者群，从而第一时间获取本书的最新消息。</p>
+</section>
+<section id="id8">
+<h2>推广图片<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<img alt="_images/banner.png" src="_images/banner.png" />
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2024, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>
