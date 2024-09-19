@@ -36,11 +36,10 @@ huangzworks@gmail.com、
 著作
 ------------
 
-.. image:: images/redisusage.png
-   :scale: 50
-   :target: https://huangz.works/redisusage/
+.. image:: images/rediscookbook.jpg
+   :target: https://huangz.works/rediscookbook/
 
-`《Redis经典应用实例》 <https://huangz.works/redisusage/>`_
+`《Redis应用实例》 <https://huangz.works/rediscookbook/>`_
 
 .. image:: images/redisguide.png
    :target: https://huangz.works/redismanual/
