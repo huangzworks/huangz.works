@@ -112,7 +112,7 @@
 
 .. image:: images/author.jpg
    :align: right
-   :scale: 35%
+   :scale: 50%
 
 黄健宏（huangz）是一位计算机技术图书作者和译者，他关注的领域包括数据库、编程语言、操作系统以及算法/数据结构等。
 
