@@ -77,6 +77,15 @@ huangzworks@gmail.com、
 `《Redis实战》 <https://huangz.works/ria/>`_
 
 
+课程
+----------------
+
+.. image:: images/redisusages.jpeg
+   :target: https://huangz.works/course/redisusages/
+
+`《Redis应用十讲》 <https://huangz.works/course/redisusages/>`_
+
+
 荣誉/奖项
 ----------------
 
