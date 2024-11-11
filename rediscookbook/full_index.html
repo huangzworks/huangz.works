@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>《Redis应用实例》详细目录 &#8212; huangz.works/rediscookbook  文档</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=1a685b77" />
+    <script src="_static/documentation_options.js?v=ab3e9284"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html">
+          huangz.works/rediscookbook</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+	  <!--
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">导航 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">《Redis应用实例》详细目录</a><ul>
+<li><a class="reference internal" href="#id1">第一部分：内部组件</a></li>
+<li><a class="reference internal" href="#id2">第二部分：外部应用</a></li>
+<li><a class="reference internal" href="#id3">第三部分：数据结构</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+          </ul>
+	  -->
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="redis">
+<h1>《Redis应用实例》详细目录<a class="headerlink" href="#redis" title="Link to this heading">¶</a></h1>
+<ul class="simple">
+<li><p>前言</p>
+<ul>
+<li><p>内容编排</p></li>
+<li><p>目标读者</p></li>
+<li><p>代码风格说明</p></li>
+<li><p>代码注释</p></li>
+<li><p>关注核心原理而非细枝末节</p></li>
+<li><p>软件版本信息</p></li>
+<li><p>获取程序源码</p></li>
+<li><p>致谢</p></li>
+</ul>
+</li>
+</ul>
+<section id="id1">
+<h2>第一部分：内部组件<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>缓存文本数据</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案：使用字符串键缓存单项数据</p></li>
+<li><p>解决方案：使用JSON/哈希键缓存多项数据</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>缓存二进制数据</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>实现代码</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>锁</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案：使用字符串键实现基本的锁功能</p></li>
+<li><p>扩展方案：带自动释放功能的锁</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>带密码保护功能的锁</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>自增数字ID</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案：使用字符串键</p></li>
+<li><p>解决方案：使用哈希键</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>计数器</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案：使用字符串键</p></li>
+<li><p>解决方案：使用哈希键</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>唯一计数器</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案：使用集合键</p></li>
+<li><p>解决方案：使用HyperLogLog键</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>速率限制器</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>实现代码</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>二元操作记录器</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>实现代码</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>资源池</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>实现代码</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>紧凑字符串</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>实现代码</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>数据库迭代器</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>实现代码</p></li>
+<li><p>扩展实现：数据库采样程序</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>流迭代器</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案：使用XRANGE进行迭代</p></li>
+<li><p>实现代码：使用XRANGE实现流迭代器</p></li>
+<li><p>解决方案：使用XREAD进行迭代</p></li>
+<li><p>实现代码：使用XREAD实现流迭代器</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="id2">
+<h2>第二部分：外部应用<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>消息队列</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>实现代码</p></li>
+<li><p>扩展实现：直播间弹幕系统</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>标签系统</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>实现代码</p></li>
+<li><p>扩展实现：为标签查找功能加上缓存</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>自动补全</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>实现代码</p></li>
+<li><p>扩展实现：自动移除冷门建议表</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>抽奖</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>实现代码</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>社交关系</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>实现代码</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>登录会话</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>实现代码</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>短网址生成器</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>实现代码</p></li>
+<li><p>扩展实现：为短网址生成器加上缓存</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>投票</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>实现代码</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>排行榜</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>实现代码</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>分页</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>实现代码</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>时间线</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>实现代码</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>地理位置</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>实现代码</p></li>
+<li><p>扩展实现：实现“摇一摇”功能</p></li>
+<li><p>扩展实现：为“摇一摇”功能设置缓存</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="id3">
+<h2>第三部分：数据结构<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>先进先出队列</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>实现代码</p></li>
+<li><p>扩展实现：反方向的队列</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>定长队列和淘汰队列</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>实现代码</p></li>
+<li><p>扩展实现：淘汰队列</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>栈/后进先出队列</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>扩展实现：为栈添加更多方法</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>优先队列</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>代码实现</p></li>
+<li><p>扩展实现：为优先队列加上阻塞操作</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>循环队列</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>实现代码</p></li>
+<li><p>扩展实现：无重复元素的循环队列</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>矩阵</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案：使用列表</p></li>
+<li><p>解决方案：使用位图</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+<li><p>逻辑矩阵</p>
+<ul>
+<li><p>需求描述</p></li>
+<li><p>解决方案</p></li>
+<li><p>实现代码</p></li>
+<li><p>扩展实现：优化内存占用</p></li>
+<li><p>重点回顾</p></li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2024, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

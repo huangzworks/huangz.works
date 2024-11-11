@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>唯一计数器 &#8212; huangz.works/rediscookbook  文档</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=1a685b77" />
+    <script src="_static/documentation_options.js?v=ab3e9284"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html">
+          huangz.works/rediscookbook</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+	  <!--
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">导航 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">唯一计数器</a><ul>
+<li><a class="reference internal" href="#id2">需求描述</a></li>
+<li><a class="reference internal" href="#id3">解决方案：使用集合键</a></li>
+<li><a class="reference internal" href="#hyperloglog">解决方案：使用HyperLogLog键</a></li>
+<li><a class="reference internal" href="#id4">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+          </ul>
+	  -->
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="id1">
+<h1>唯一计数器<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>上一章《计数器》介绍了简单计数器的实现方式，它可以在用户每次执行特定动作之后更新计数值。对于记录下载次数、浏览次数这类场景，这种计数器已经可以满足需求。但由于这种计数器即使对于重复出现的对象或动作也会多次进行计数，所以它并不适用于某些场景。</p>
+<p>举个例子，假如我们现在想要统计的是访问网站的用户数量而不是网站被浏览的次数，那么上一章介绍的计数器将无法满足要求：因为它无法判断访问网站的用户是否都是不同的用户，又或者是同一个用户重复访问了网站多次。</p>
+<p>这时我们需要的就是唯一计数器，这种计数器对于每个特定的对象或动作只会计数一次。具体到统计用户数量的场景，这种计数器只会对每个不同的用户进行计数，而重复出现的同一个用户则不会被重复计数。</p>
+<section id="id2">
+<h2>需求描述<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>你想要使用Redis构建唯一计数器，这种计数器对于每个特定对象或动作只会计数一次。</p>
+</section>
+<section id="id3">
+<h2>解决方案：使用集合键<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>实现唯一计数器的其中一种方法也是最直接的方法，就是使用Redis集合：通过将每个被计数的对象加入到集合中，程序可以轻而易举地获取集合包含的成员数量，并在有需要的时候快速地增删被计数的对象。</p>
+<p>举个例子，如果我们现在想要使用Redis集合来统计访问网站的用户数量，那么只需要一直使用<code class="docutils literal notranslate"><span class="pre">SADD</span></code>命令将用户添加到某个集合当中即可。由于集合不会保留重复元素，所以只有未被计数过的用户会被添加到集合当中。之后，程序只需要使用<code class="docutils literal notranslate"><span class="pre">SCARD</span></code>命令就可以获取目前访问网站的用户数量，还可以在有需要的时候使用<code class="docutils literal notranslate"><span class="pre">SREM</span></code>命令从集合中移除指定的用户。</p>
+<p>作为例子，以下命令序列展示了如何使用集合键<code class="docutils literal notranslate"><span class="pre">VisitCounter</span></code>记录访问网站的用户：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SADD</span> <span class="n">VisitCounter</span> <span class="s2">&quot;Peter&quot;</span>    <span class="o">--</span> <span class="n">将用户添加至集合</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SADD</span> <span class="n">VisitCounter</span> <span class="s2">&quot;Jack&quot;</span> <span class="s2">&quot;Tom&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2</span>
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SADD</span> <span class="n">VisitCounter</span> <span class="s2">&quot;Tom&quot;</span>    <span class="o">--</span> <span class="n">重复对象不会被计数</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<p>然后我们就可以通过<code class="docutils literal notranslate"><span class="pre">SCARD</span></code>命令获取当前访客数量的统计数字，又或者从集合中移除特定的某个用户了：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SCARD</span> <span class="n">VisitCounter</span>    <span class="o">--</span> <span class="n">当前访客数量</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SREM</span> <span class="n">VisitCounter</span> <span class="s2">&quot;Peter&quot;</span>    <span class="o">--</span> <span class="n">从访客集合中移除指定用户</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SCARD</span> <span class="n">VisitCounter</span>    <span class="o">--</span> <span class="n">再次获取当前访客数量</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2</span>
+</pre></div>
+</div>
+<p>代码清单 CODE_UNIQUE_COUNTER 展示了基于上述原理实现的唯一计数器程序。</p>
+<hr class="docutils" />
+<p>代码清单 CODE_UNIQUE_COUNTER 使用集合实现的唯一计数器 <code class="docutils literal notranslate"><span class="pre">unique_counter.py</span></code></p>
+<hr class="docutils" />
+<p>作为例子，以下代码展示了这个唯一计数器程序的使用方式：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">unique_counter</span> <span class="kn">import</span> <span class="n">UniqueCounter</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span> <span class="o">=</span> <span class="n">UniqueCounter</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;VisitCounter&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">include</span><span class="p">(</span><span class="s2">&quot;Peter&quot;</span><span class="p">)</span>  <span class="c1"># 对元素进行计数</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">include</span><span class="p">(</span><span class="s2">&quot;Jack&quot;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">include</span><span class="p">(</span><span class="s2">&quot;Tom&quot;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">include</span><span class="p">(</span><span class="s2">&quot;Tom&quot;</span><span class="p">)</span>  <span class="c1"># 重复元素不会被计数</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>  <span class="c1"># 查看当前计数结果</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+</section>
+<section id="hyperloglog">
+<h2>解决方案：使用HyperLogLog键<a class="headerlink" href="#hyperloglog" title="Link to this heading">¶</a></h2>
+<p>使用集合实现的唯一计数器虽然能够满足需求，但它并非完美无缺：这个实现需要将被计数的所有元素都添加到集合里面，当需要计数的元素数量非常多，又或者需要进行大量计数的时候，使用集合实现的唯一计数器将消耗大量内存。</p>
+<p>为了解决这个问题，我们可以修改唯一计数器的程序实现，改用HyperLogLog而不是集合作为底层结构：</p>
+<ul class="simple">
+<li><p>HyperLogLog跟集合一样，都可以对元素进行计数。</p></li>
+<li><p>HyperLogLog跟集合的不同之处在于，它返回的计数结果并不是准确的集合基数，而是跟基数八九不离十的一个估算基数。</p></li>
+<li><p>HyperLogLog的好处是它的内存占用量不会随着被计数元素的增多而增多，无论对多少元素进行计数，HyperLogLog的内存消耗都是固定的，并且是非常少的。</p></li>
+</ul>
+<p>如果你的应用并不追求完全正确的计数结果，并且不需要准确知道某个元素是否已经被计数，那么完全可以使用HyperLogLog代替集合来实现唯一计数器。举个例子，如果你只想知道网站大概的访问人数，并且只关心这个计数结果，而不是想要知道某个具体的用户是否一定访问过网站，那么就可以使用HyperLogLog实现的计数器。</p>
+<p>举个例子，通过使用以下命令序列，程序可以将给定的用户添加到由HyperLogLog键实现的计数器中，然后再获取当前的计数结果：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">PFADD</span> <span class="n">HllVisitCounter</span> <span class="s2">&quot;Peter&quot;</span> <span class="s2">&quot;Jack&quot;</span> <span class="s2">&quot;Tom&quot;</span>  <span class="o">--</span> <span class="n">进行计数</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">PFADD</span> <span class="n">HllVisitCounter</span> <span class="s2">&quot;Peter&quot;</span>  <span class="o">--</span> <span class="n">已计数的对象通常不会重复计数</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">PFCOUNT</span> <span class="n">HllVisitCounter</span>  <span class="o">--</span> <span class="n">获取当前计数结果</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+</pre></div>
+</div>
+<p>代码清单 CODE_HLL_UNIQUE_COUNTER 展示了基于上述原理实现的唯一计数器。</p>
+<hr class="docutils" />
+<p>代码清单 CODE_HLL_UNIQUE_COUNTER 使用HyperLogLog实现的唯一计数器 <code class="docutils literal notranslate"><span class="pre">hll_unique_counter.py</span></code></p>
+<hr class="docutils" />
+<p>因为HyperLogLog无法撤销对给定元素的计数，所以这个计数器也没有实现相应的<code class="docutils literal notranslate"><span class="pre">exclude()</span></code>方法。</p>
+<p>作为例子，以下代码展示了这个计数器程序的使用方法：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">hll_unique_counter</span> <span class="kn">import</span> <span class="n">HllUniqueCounter</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span> <span class="o">=</span> <span class="n">HllUniqueCounter</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;HllVisitCounter&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">include</span><span class="p">(</span><span class="s2">&quot;Peter&quot;</span><span class="p">)</span>    <span class="c1"># 计数元素</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">include</span><span class="p">(</span><span class="s2">&quot;Jack&quot;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">include</span><span class="p">(</span><span class="s2">&quot;Tom&quot;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">include</span><span class="p">(</span><span class="s2">&quot;Tom&quot;</span><span class="p">)</span>    <span class="c1"># 已计数的元素没有被计数</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">counter</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>    <span class="c1"># 获取当前计数结果</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+<p>可以看到，这个新的计数器实现使用起来就跟之前集合实现的计数器一样，并且返回的结果也完全一致。如果继续向这个新的计数器输入更多元素，那么它可能会多计数或少计数其中一些元素，但无论如何，这个计数器的计数结果仍然会处于合理范围之内。</p>
+</section>
+<section id="id4">
+<h2>重点回顾<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>唯一计数器跟简单计数器不一样，它对于每个特定对象或动作只会计数一次而不是多次。</p></li>
+<li><p>实现唯一计数器的其中一种方法也是最直接的方法，就是使用Redis集合：通过将每个被计数的对象加入到集合中，程序可以轻而易举地获取集合包含的成员数量，并在有需要的时候快速地增删被计数的对象。</p></li>
+<li><p>使用集合实现的唯一计数器虽然能够满足需求，但它并非完美无缺：集合实现的计数器需要将被计数的所有元素都添加到集合里面，当需要计数的元素数量非常多，又或者需要进行大量计数的时候，这种计数器将消耗大量内存。</p></li>
+<li><p>一种更高效地实现唯一计数器的方法就是使用HyperLogLog：这种数据结构既可以对对象进行计数，又只需要少量内存。虽然HyperLogLog记录的计数并不是完全精确的，但这对于很多不需要精确计数结果的应用来说并不是一个问题。</p></li>
+</ul>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2024, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>自动补全 &#8212; huangz.works/rediscookbook  文档</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=1a685b77" />
+    <script src="_static/documentation_options.js?v=ab3e9284"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html">
+          huangz.works/rediscookbook</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+	  <!--
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">导航 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">自动补全</a><ul>
+<li><a class="reference internal" href="#id2">需求描述</a></li>
+<li><a class="reference internal" href="#id3">解决方案</a></li>
+<li><a class="reference internal" href="#id4">实现代码</a></li>
+<li><a class="reference internal" href="#id5">扩展实现：自动移除冷门建议表</a></li>
+<li><a class="reference internal" href="#id6">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+          </ul>
+	  -->
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="id1">
+<h1>自动补全<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>自动补全经常出现在搜索引擎或者应用的搜索框中，比如当我们在搜索引擎的搜索框中输入字母“re”的时候，搜索引擎就会通过自动补全提示我们是否要选择“reddit”、“redis”、“react”或者“reuters”等建议的其中一个，而在输入“redis”的时候，搜索引擎则会提示“redis命令”、“redisson”、“redisinsight”或者“redis desktop manager”等建议以供选择。</p>
+<section id="id2">
+<h2>需求描述<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>你想要使用Redis实现自动补全程序，这种程序能够根据用户的输入提供可选的建议，从而帮助用户更快、更准确地完成输入过程。</p>
+</section>
+<section id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>实现自动补全的关键是针对用户输入构建出一系列建议表：表中包含建议项及其权重值，各个建议项按权重从高到低排序，其中权重基于建议项的使用频率或者特定算法计算得出。</p>
+<p>以前面的自动补全描述结果为例，对于输入<code class="docutils literal notranslate"><span class="pre">&quot;re&quot;</span></code>，系统应该构建出一个表 TABLE_RECOMMEND 所示的建议表。</p>
+<hr class="docutils" />
+<p>表 TABLE_RECOMMEND 输入<code class="docutils literal notranslate"><span class="pre">&quot;re&quot;</span></code>对应的建议表</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>建议项</p></th>
+<th class="head"><p>权重</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;reddit&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">100.0</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;redis&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">90.0</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;react&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">75.0</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;reuters&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">62.0</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">...</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">...</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<p>要在Redis存储建议表形式的数据，使用有序集合可谓再合适不过了：只要将建议项设置为有序集合成员并将权重设置为成员的分值即可。</p>
+<p>此外，为了让自动补全程序能够对输入的每个片段都进行响应，程序必需为输入的每个片段都创建相应的建议表。
+比方说，对于输入<code class="docutils literal notranslate"><span class="pre">&quot;redis&quot;</span></code>，程序必须为<code class="docutils literal notranslate"><span class="pre">&quot;r&quot;</span></code>、<code class="docutils literal notranslate"><span class="pre">&quot;re&quot;</span></code>、<code class="docutils literal notranslate"><span class="pre">&quot;red&quot;</span></code>、<code class="docutils literal notranslate"><span class="pre">&quot;redi&quot;</span></code>和<code class="docutils literal notranslate"><span class="pre">&quot;redis&quot;</span></code>分别创建建议表。</p>
+<p>最后要考虑的就是如何决定建议项的权重了。一般来说，建议项的权重既可以定期基于算法进行更新，也可以根据用户的输入动态进行调整。其中一种特别简单的动态调整权重的方法，就是直接统计用户输入每个单词的次数并将其用作权重。</p>
+<p>以上面的表 TABLE_RECOMMEND 为例，在采用输入次数统计方法的情况下，单词<code class="docutils literal notranslate"><span class="pre">&quot;reddit&quot;</span></code>的权重<code class="docutils literal notranslate"><span class="pre">100</span></code>就是用户输入该单词100次的结果，而单词<code class="docutils literal notranslate"><span class="pre">&quot;redis&quot;</span></code>的权重<code class="docutils literal notranslate"><span class="pre">90</span></code>则是用户输入该单词90次的结果，以此类推。</p>
+<p>为了在建议表中实现统计用户输入次数的效果，程序需要在用户每次输入一个单词的时候，在该单词对应的每个建议表中执行以下命令，将单词的统计次数加上一：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ZINCRBY</span> <span class="o">&lt;</span><span class="n">key</span><span class="o">&gt;</span> <span class="mf">1.0</span> <span class="o">&lt;</span><span class="n">word</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>举个例子，如果用户输入的是<code class="docutils literal notranslate"><span class="pre">&quot;redis&quot;</span></code>，那么程序就需要对<code class="docutils literal notranslate"><span class="pre">&quot;r&quot;</span></code>、<code class="docutils literal notranslate"><span class="pre">&quot;re&quot;</span></code>、<code class="docutils literal notranslate"><span class="pre">&quot;red&quot;</span></code>、<code class="docutils literal notranslate"><span class="pre">&quot;redi&quot;</span></code>和<code class="docutils literal notranslate"><span class="pre">&quot;redis&quot;</span></code>对应的建议表分别执行一次针对单词<code class="docutils literal notranslate"><span class="pre">&quot;redis&quot;</span></code>的权重加一操作，就像这样：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ZINCRBY</span> <span class="n">AutoComplete</span><span class="p">:</span><span class="n">r</span> <span class="mf">1.0</span> <span class="s2">&quot;redis&quot;</span>
+<span class="n">ZINCRBY</span> <span class="n">AutoComplete</span><span class="p">:</span><span class="n">re</span> <span class="mf">1.0</span> <span class="s2">&quot;redis&quot;</span>
+<span class="n">ZINCRBY</span> <span class="n">AutoComplete</span><span class="p">:</span><span class="n">red</span> <span class="mf">1.0</span> <span class="s2">&quot;redis&quot;</span>
+<span class="n">ZINCRBY</span> <span class="n">AutoComplete</span><span class="p">:</span><span class="n">redi</span> <span class="mf">1.0</span> <span class="s2">&quot;redis&quot;</span>
+<span class="n">ZINCRBY</span> <span class="n">AutoComplete</span><span class="p">:</span><span class="n">redis</span> <span class="mf">1.0</span> <span class="s2">&quot;redis&quot;</span>
+</pre></div>
+</div>
+<p>与此对应，当程序想要根据用户的输入为其提供建议时，只需要执行<code class="docutils literal notranslate"><span class="pre">ZRANGE</span></code>命令返回相应建议表中的建议项即可。
+比如说，当用户输入<code class="docutils literal notranslate"><span class="pre">&quot;re&quot;</span></code>的时候，程序只需要执行以下命令就可以为用户提供最多10个建议项：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ZRANGE</span> <span class="n">AutoComplete</span><span class="p">:</span><span class="n">re</span> <span class="mi">0</span> <span class="mi">9</span> <span class="n">REV</span>
+</pre></div>
+</div>
+<p>注意，为了返回建议表中权重最高的10个建议项，<code class="docutils literal notranslate"><span class="pre">ZRANGE</span></code>命令需要用到<code class="docutils literal notranslate"><span class="pre">REV</span></code>选项，这是不可或缺的。</p>
+</section>
+<section id="id4">
+<h2>实现代码<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>基于上一节介绍的原理，代码清单 CODE_AUTO_COMPLETE 展示了自动补全程序的具体实现代码。</p>
+<hr class="docutils" />
+<p>代码清单 CODE_AUTO_COMPLETE 自动补全程序 <code class="docutils literal notranslate"><span class="pre">auto_complete.py</span></code></p>
+<hr class="docutils" />
+<p>考虑到一个应用里面可能会有多个地方需要用到自动补全功能，所以这个程序使用了<code class="docutils literal notranslate"><span class="pre">subject</span></code>参数用来区分各种不同主题的自动补全建议表。在使用这个程序的时候，用户需要给定一个<code class="docutils literal notranslate"><span class="pre">subject</span></code>参数，然后程序就会根据该参数构建相应的键名，并将其用于创建自动补全建议表。</p>
+<p>此外，这个程序还提供了<code class="docutils literal notranslate"><span class="pre">set()</span></code>方法以便用户在有需要的时候可以修改指定内容的权重，又或者根据给定的权重创建建议表。</p>
+<p>作为示例，以下代码演示了如何使用这个自动补全程序：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">auto_complete</span> <span class="kn">import</span> <span class="n">AutoComplete</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ac</span> <span class="o">=</span> <span class="n">AutoComplete</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;search&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>  <span class="c1"># 模拟用户输入</span>
+<span class="gp">... </span>  <span class="n">ac</span><span class="o">.</span><span class="n">feed</span><span class="p">(</span><span class="s2">&quot;banana&quot;</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+<span class="gp">... </span>  <span class="n">ac</span><span class="o">.</span><span class="n">feed</span><span class="p">(</span><span class="s2">&quot;banquet&quot;</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+<span class="gp">... </span>  <span class="n">ac</span><span class="o">.</span><span class="n">feed</span><span class="p">(</span><span class="s2">&quot;band&quot;</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ac</span><span class="o">.</span><span class="n">hint</span><span class="p">(</span><span class="s2">&quot;ban&quot;</span><span class="p">)</span>  <span class="c1"># 模拟用户获取建议</span>
+<span class="go">[&#39;banana&#39;, &#39;band&#39;, &#39;banquet&#39;]</span>
+</pre></div>
+</div>
+<p>这段代码通过多次调用<code class="docutils literal notranslate"><span class="pre">feed()</span></code>来模拟用户输入多个单词：其中<code class="docutils literal notranslate"><span class="pre">&quot;banana&quot;</span></code>输入了五次，<code class="docutils literal notranslate"><span class="pre">&quot;band&quot;</span></code>输入了三次，而<code class="docutils literal notranslate"><span class="pre">&quot;banquet&quot;</span></code>只输入了两次，所以在针对输入<code class="docutils literal notranslate"><span class="pre">&quot;ban&quot;</span></code>获取建议的时候，自动补完程序将按照输入次数从多到少分别获取上述三个单词作为建议项。</p>
+<p>正如之前所说，除了根据用户输入生成建议表之外，还可以直接使用<code class="docutils literal notranslate"><span class="pre">set()</span></code>方法，基于给定的权重值直接创建建议表：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ac</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;reddit&quot;</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>  <span class="c1"># 为各个建议项分别设置权重</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ac</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;redis&quot;</span><span class="p">,</span> <span class="mi">90</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ac</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;react&quot;</span><span class="p">,</span> <span class="mi">75</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ac</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;reuters&quot;</span><span class="p">,</span> <span class="mi">62</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ac</span><span class="o">.</span><span class="n">hint</span><span class="p">(</span><span class="s2">&quot;re&quot;</span><span class="p">)</span>  <span class="c1"># 获取建议</span>
+<span class="go">[&#39;reddit&#39;, &#39;redis&#39;, &#39;react&#39;, &#39;reuters&#39;]</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">set()</span></code>方法适用于基于算法定期更新建议表的场景，用户只需要根据算法计算出各个建议项的权重，然后定期更新相应的各个建议表即可。</p>
+</section>
+<section id="id5">
+<h2>扩展实现：自动移除冷门建议表<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>正如之前所说，我们的自动补全程序可以根据用户输入动态创建对应的建议表。
+但随着用户输入数量的增加，程序创建的大量建议表可能会产生非常大的内存消耗。
+为了解决这个问题，可以考虑增加一个排行榜，统计每个输入出现的次数，然后保留热门输入的建议表，删除冷门输入的建议表。</p>
+<p>不过有一个更好的方法可以达到类似的效果，而且不需要另外使用排行榜进行记录：</p>
+<ul class="simple">
+<li><p>通过在<code class="docutils literal notranslate"><span class="pre">feed()</span></code>方法的<code class="docutils literal notranslate"><span class="pre">ZINCRBY</span></code>调用之后增加一个<code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code>调用，程序可以为每个输入对应的每个建议表设置过期时间。</p></li>
+<li><p>随着输入不断出现，热门输入对应的建议表将被反复设置过期时间，而基于<code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code>命令的默认行为，已经存在的过期时间会被新的过期时间覆盖，从而产生一种“续期”效果，使得被设置的键可以一直存在。</p></li>
+<li><p>这样做最终导致的结果是，热门输入所产生的建议表将一直存在，而少有人问津的冷门输入所产生的建议表将随着时间流逝自动被移除，这是非常巧妙的一种优化内存占用的方法。</p></li>
+</ul>
+<p>举个例子，在采取上述措施时，对于输入<code class="docutils literal notranslate"><span class="pre">&quot;redis&quot;</span></code>，程序应该产生以下命令序列：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ZINCRBY</span> <span class="n">AutoComplete</span><span class="p">:</span><span class="n">r</span> <span class="mf">1.0</span> <span class="s2">&quot;redis&quot;</span>
+<span class="n">EXPIRE</span>  <span class="n">AutoComplete</span><span class="p">:</span><span class="n">r</span> <span class="mi">300</span>
+<span class="n">ZINCRBY</span> <span class="n">AutoComplete</span><span class="p">:</span><span class="n">re</span> <span class="mf">1.0</span> <span class="s2">&quot;redis&quot;</span>
+<span class="n">EXPIRE</span>  <span class="n">AutoComplete</span><span class="p">:</span><span class="n">re</span> <span class="mi">300</span>
+<span class="n">ZINCRBY</span> <span class="n">AutoComplete</span><span class="p">:</span><span class="n">red</span> <span class="mf">1.0</span> <span class="s2">&quot;redis&quot;</span>
+<span class="n">EXPIRE</span>  <span class="n">AutoComplete</span><span class="p">:</span><span class="n">red</span> <span class="mi">300</span>
+<span class="n">ZINCRBY</span> <span class="n">AutoComplete</span><span class="p">:</span><span class="n">redi</span> <span class="mf">1.0</span> <span class="s2">&quot;redis&quot;</span>
+<span class="n">EXPIRE</span>  <span class="n">AutoComplete</span><span class="p">:</span><span class="n">redi</span> <span class="mi">300</span>
+<span class="n">ZINCRBY</span> <span class="n">AutoComplete</span><span class="p">:</span><span class="n">redis</span> <span class="mf">1.0</span> <span class="s2">&quot;redis&quot;</span>
+<span class="n">EXPIRE</span>  <span class="n">AutoComplete</span><span class="p">:</span><span class="n">redis</span> <span class="mi">300</span>
+</pre></div>
+</div>
+<p>在此之后，只要在接下来的5分钟也即是300秒之内，有至少一个用户输入了同样的单词<code class="docutils literal notranslate"><span class="pre">&quot;redis&quot;</span></code>，那么上述命令序列就会再执行一次，并将相关建议表的过期时间重新设置为300秒；
+相反地，如果在300秒之内没有任何人输入<code class="docutils literal notranslate"><span class="pre">&quot;redis&quot;</span></code>，那么上述命令相关的建议表就会自动被移除。</p>
+<p>基于上述原理，代码清单 CODE_FEEDEX 展示了带有自动移除冷门建议表特性的<code class="docutils literal notranslate"><span class="pre">feedex()</span></code>方法的具体定义。</p>
+<hr class="docutils" />
+<p>代码清单 CODE_FEEDEX <code class="docutils literal notranslate"><span class="pre">feedex()</span></code>方法 <code class="docutils literal notranslate"><span class="pre">auto_complete.py</span></code></p>
+<hr class="docutils" />
+<p>正如以下代码所示，<code class="docutils literal notranslate"><span class="pre">feedex()</span></code>的使用方式跟<code class="docutils literal notranslate"><span class="pre">feed()</span></code>基本相同，它们之间的主要区别在于<code class="docutils literal notranslate"><span class="pre">feedex()</span></code>创建的建议表必须持续地“续期”才会一直存在，否则它们就会随着键到期而消失，从而导致建议结果也消失：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">auto_complete</span> <span class="kn">import</span> <span class="n">AutoComplete</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ac</span> <span class="o">=</span> <span class="n">AutoComplete</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;search&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ac</span><span class="o">.</span><span class="n">feedex</span><span class="p">(</span><span class="s2">&quot;redis&quot;</span><span class="p">,</span> <span class="n">ttl</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>  <span class="c1"># 建议表的有效期为10秒钟</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ac</span><span class="o">.</span><span class="n">hint</span><span class="p">(</span><span class="s2">&quot;re&quot;</span><span class="p">)</span>  <span class="c1"># 10秒内执行</span>
+<span class="go">[&#39;redis&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ac</span><span class="o">.</span><span class="n">hint</span><span class="p">(</span><span class="s2">&quot;re&quot;</span><span class="p">)</span>  <span class="c1"># 超过10秒之后执行</span>
+<span class="go">[]</span>
+</pre></div>
+</div>
+</section>
+<section id="id6">
+<h2>重点回顾<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>自动补全能够根据用户的输入提供可选的建议，帮助他们更快、更准确地完成输入过程。</p></li>
+<li><p>实现自动补全的关键是针对用户输入构建出一系列建议表，而要在Redis存储建议表形式的数据，使用有序集合可谓再合适不过了：只要将建议项设置为有序集合成员并将权重设置为成员的分值即可。：表中包含建议项及其权重值，各个建议项按权重从高到低排序，其中权重基于建议项的使用频率或者特定算法计算得出。</p></li>
+<li><p>一般来说，建议项的权重既可以定期基于算法进行更新，也可以根据用户的输入动态进行调整。其中一种特别简单的动态调整权重的方法，就是直接统计用户输入每个单词的次数并将其用作权重。</p></li>
+<li><p>根据用户输入自动创建建议表的做法将产生大量建议表，通过为这些建议表设置过期时间并利用Redis的过期时间更新机制，可以让热门的建议表一直存在，并让冷门的建议表自动被移除。</p></li>
+</ul>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2024, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

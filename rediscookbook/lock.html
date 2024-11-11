@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>锁 &#8212; huangz.works/rediscookbook  文档</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=1a685b77" />
+    <script src="_static/documentation_options.js?v=ab3e9284"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html">
+          huangz.works/rediscookbook</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+	  <!--
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">导航 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">锁</a><ul>
+<li><a class="reference internal" href="#id2">需求描述</a></li>
+<li><a class="reference internal" href="#id3">解决方案：使用字符串键实现基本的锁功能</a></li>
+<li><a class="reference internal" href="#id4">扩展方案：带自动释放功能的锁</a></li>
+<li><a class="reference internal" href="#id5">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+          </ul>
+	  -->
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="id1">
+<h1>锁<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>锁是计算机系统中经常会用到的一种重要的机制，它可以用来保证特定资源在任何时候最多只能有一个使用者。</p>
+<p>Redis可以通过多种方法实现锁，其中包括带有基本功能的锁、带有自动释放功能的锁以及带有密码保护功能的锁等等。
+本章接下来的两节将先介绍前两种锁，而带有密码保护功能的锁则会在下一章进行介绍。</p>
+<section id="id2">
+<h2>需求描述<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>你想要在Redis中构建锁，并使用它来保护特定的资源。</p>
+</section>
+<section id="id3">
+<h2>解决方案：使用字符串键实现基本的锁功能<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>每个锁程序至少需要实现两个方法：</p>
+<ul class="simple">
+<li><p>上锁——尝试获得锁的独占权，在任何时候只能有最多一个客户端成功上锁，而除此以外的其他客户端则会失败。</p></li>
+<li><p>解锁——成功上锁的客户端可以通过解锁释放对锁的独占权，使得包括它自身在内的所有客户端能够重新获得上锁的机会。</p></li>
+</ul>
+<p>在Redis中实现上述两个操作最基本的方法就是使用字符串数据结构，其中上锁操作可以通过<code class="docutils literal notranslate"><span class="pre">SET</span></code>命令及其<code class="docutils literal notranslate"><span class="pre">NX</span></code>选项来实现：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SET</span> <span class="n">key</span> <span class="n">value</span> <span class="n">NX</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">NX</span></code>选项的效果保证了给定键只会在没有值（也即是键不存在）的情况下被设置。通过将一个键指定为锁键，并使用客户端尝试对它执行带<code class="docutils literal notranslate"><span class="pre">NX</span></code>选项的<code class="docutils literal notranslate"><span class="pre">SET</span></code>命令，程序就可以根据命令返回的结果判断上锁是否成功：</p>
+<ul class="simple">
+<li><p>如果命令成功设置了指定的锁键，那么代表当前客户端成功上锁。</p></li>
+<li><p>反之，如果命令未能成功设置锁键，那么说明锁已被其他客户端占用。</p></li>
+</ul>
+<p>因为带<code class="docutils literal notranslate"><span class="pre">NX</span></code>选项的<code class="docutils literal notranslate"><span class="pre">SET</span></code>命令是原子命令，所以即使有多个客户端同时对同一个锁键执行相同的命令，也只会有一个客户端能够成功执行设置操作，因此上述的上锁操作实现是安全的。</p>
+<p>另一方面，当客户端需要释放锁的时候，程序只需要使用<code class="docutils literal notranslate"><span class="pre">DEL</span></code>命令将锁键删除即可：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DEL</span> <span class="n">key</span>
+</pre></div>
+</div>
+<p>在锁键被删除之后，它所代表的锁也会重新回到解锁状态。</p>
+<p>代码清单 CODE_BASIC_LOCK 展示了根据上述原理实现的锁程序。</p>
+<hr class="docutils" />
+<p>代码清单 CODE_BASIC_LOCK 基本锁实现 <code class="docutils literal notranslate"><span class="pre">lock.py</span></code></p>
+<hr class="docutils" />
+<p>在<code class="docutils literal notranslate"><span class="pre">acquire()</span></code>方法中，程序通过检查<code class="docutils literal notranslate"><span class="pre">SET</span></code>命令的返回值是否为<code class="docutils literal notranslate"><span class="pre">True</span></code>来判断设置是否成功执行；而在<code class="docutils literal notranslate"><span class="pre">release()</span></code>方法中，程序则通过检查<code class="docutils literal notranslate"><span class="pre">DEL</span></code>命令返回的成功删除键数量是否为<code class="docutils literal notranslate"><span class="pre">1</span></code>来判断锁键是否已被成功删除。</p>
+<p>这个锁程序的具体使用方法如下：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">lock</span> <span class="kn">import</span> <span class="n">Lock</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">locker1</span> <span class="o">=</span> <span class="n">Lock</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;Lock:10086&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">locker1</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>  <span class="c1"># 上锁</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">locker1</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>  <span class="c1"># 解锁</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>在<code class="docutils literal notranslate"><span class="pre">locker1</span></code>持有锁期间，如果有其他客户端尝试获取锁，那么<code class="docutils literal notranslate"><span class="pre">acquire()</span></code>方法将返回<code class="docutils literal notranslate"><span class="pre">False</span></code>表示上锁失败：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">locker1</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>  <span class="c1"># locker1尝试上锁并成功</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">locker2</span> <span class="o">=</span> <span class="n">Lock</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;Lock:10086&quot;</span><span class="p">)</span>  <span class="c1"># 模拟另一客户端</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">locker2</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>  <span class="c1"># locker2也尝试上锁，但失败</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</section>
+<section id="id4">
+<h2>扩展方案：带自动释放功能的锁<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>上一节展示的基本锁实现有一个问题，就是它的解锁操作必须由持有锁的客户端手动执行：如果持有锁的客户端在完成任务之后忘记释放锁，又或者客户端在执行过程中非正常退出，那么锁可能永远也不会被释放，而其他等待的客户端也永远无法获得锁。</p>
+<p>为了解决这个问题，可以给锁实现加上自动释放功能，使得客户端即使没有手动释放锁，Redis也可以在超过指定时长之后自动删除锁键并释放锁。</p>
+<p>这一功能可以通过Redis的键自动过期特性来实现，为了做到这一点，程序需要在执行带<code class="docutils literal notranslate"><span class="pre">NX</span></code>选项的<code class="docutils literal notranslate"><span class="pre">SET</span></code>命令时，通过<code class="docutils literal notranslate"><span class="pre">EX</span></code>选项或<code class="docutils literal notranslate"><span class="pre">PX</span></code>选项为锁键设置最大生存时间：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SET</span> <span class="n">key</span> <span class="n">value</span> <span class="n">NX</span> <span class="n">EX</span> <span class="n">sec</span>
+<span class="n">SET</span> <span class="n">key</span> <span class="n">value</span> <span class="n">NX</span> <span class="n">PX</span> <span class="n">ms</span>
+</pre></div>
+</div>
+<p>在此之后，即使锁键没有被解锁操作手动删除，带有生存时间的锁键也会在指定的时限到达之后自动被Redis移除，从而导致锁被自动释放。</p>
+<p>代码清单 CODE_AUTORELEASE_LOCK 展示了基于上述原理实现的锁程序。</p>
+<hr class="docutils" />
+<p>代码清单 CODE_AUTORELEASE_LOCK 带自动释放功能的锁实现 <code class="docutils literal notranslate"><span class="pre">auto_release_lock.py</span></code></p>
+<hr class="docutils" />
+<p>这个锁实现的<code class="docutils literal notranslate"><span class="pre">acquire()</span></code>方法接受<code class="docutils literal notranslate"><span class="pre">timeout</span></code>和<code class="docutils literal notranslate"><span class="pre">unit</span></code>两个参数，分别用于设置锁的最大上锁时长及其单位，而程序之后会根据<code class="docutils literal notranslate"><span class="pre">unit</span></code>参数的值决定是使用<code class="docutils literal notranslate"><span class="pre">SET</span></code>命令的<code class="docutils literal notranslate"><span class="pre">EX</span></code>选项还是<code class="docutils literal notranslate"><span class="pre">PX</span></code>选项来设置键的生存时间。
+除此之外，这个锁实现的解锁方法没有发生任何变化，跟之前一样，它只需要执行<code class="docutils literal notranslate"><span class="pre">DEL</span></code>命令将锁键删除即可。</p>
+<p>这个锁实现的使用方法如下：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">auto_release_lock</span> <span class="kn">import</span> <span class="n">AutoReleaseLock</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lock</span> <span class="o">=</span> <span class="n">AutoReleaseLock</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;Lock:10086&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>  <span class="c1"># 最多上锁五秒钟</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># 等待五秒钟，让锁自动释放……</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>  <span class="c1"># 再次上锁成功</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>  <span class="c1"># 在5秒钟之内手动释放锁</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<blockquote>
+<div><p><strong>注意</strong></p>
+<p>在使用带有自动释放功能的锁实现时，锁的最大上锁时长必须超过程序在正常情况下完成任务操作所需的最大时长。</p>
+<p>举个例子，如果客户端在成功上锁之后需要消耗1秒钟来完成指定的任务操作，那么你应该将最大上锁时长设置为30秒甚至更长，以便让Redis在上锁客户端出现真正的意外时自动释放锁。</p>
+<p>但如果你只是把最大上锁时长设置为1秒钟或者2秒钟，那么当程序运行出现延误的时候，可能就会出现“客户端持有的锁已经被自动释放，但它仍然在使用锁所保护的资源”这类情况，从而导致锁的安全性在实质上被破坏。</p>
+<p>换句话说，锁的自动释放功能就跟程序的异常一样，应该被用作保护措施而不是一般特性。成功上锁的客户端在程序正常运行的情况下还是应该手动释放锁，而不是依靠自动释放。</p>
+</div></blockquote>
+</section>
+<section id="id5">
+<h2>重点回顾<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>锁是计算机系统中经常会用到的一种重要的机制，它可以用来保证特定资源在任何时候最多只能有一个使用者。</p></li>
+<li><p>每个锁程序至少会包含上锁和解锁两种操作，在Redis中，实现上锁操作最基本的方法就是使用带有<code class="docutils literal notranslate"><span class="pre">NX</span></code>选项的<code class="docutils literal notranslate"><span class="pre">SET</span></code>命令，该命令的性质保证了即使有多个客户端同时执行相同的命令，最多也只会有一个客户端成功进行设置，而其他客户端的设置则会失败，这保证了锁实现的安全性。</p></li>
+<li><p>释放锁可以通过删除锁对应的锁键来实现，而通过使用Redis的键自动过期特性，锁程序还可以让锁在指定的时长之后自动被释放。</p></li>
+<li><p>锁的自动释放功能就跟程序的异常一样，应该被用作保护措施而不是一般特性。成功上锁的客户端在程序正常运行的情况下还是应该手动释放锁，而不是依靠自动释放。</p></li>
+</ul>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2024, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

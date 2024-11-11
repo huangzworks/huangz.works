@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>标签系统 &#8212; huangz.works/rediscookbook  文档</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=1a685b77" />
+    <script src="_static/documentation_options.js?v=ab3e9284"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html">
+          huangz.works/rediscookbook</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+	  <!--
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">导航 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">标签系统</a><ul>
+<li><a class="reference internal" href="#id2">需求描述</a></li>
+<li><a class="reference internal" href="#id3">解决方案</a></li>
+<li><a class="reference internal" href="#id4">实现代码</a></li>
+<li><a class="reference internal" href="#id5">扩展实现：为标签查找功能加上缓存</a></li>
+<li><a class="reference internal" href="#id6">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+          </ul>
+	  -->
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="id1">
+<h1>标签系统<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>很多用户生成内容（UGC）的网站和应用都允许用户为他们提供的内容打标签。
+举个例子，如果你在视频网站上传了一个Redis相关的视频，那么你可能会给这个视频加上“Redis”、“数据库”、“NoSQL”等标签，以便搜索这些标签的用户可以发现这个视频，而系统也可以基于标签将视频推荐给对这些标签感兴趣的用户。</p>
+<p>网店、商城同样会大量使用标签，通过给不同的产品打上不同的标签，以此来让用户基于特定标签快速筛选自己的目标产品：比方说，一个热爱手机游戏的买家可能会更青睐带有“游戏手机”、“性能强劲”、“高清屏幕”等标签的手机，而一个打算给自己购买备用手机的买家则可能会更关注那些带有“性价比”、“耐用”、“超长待机”等标签的手机。</p>
+<p>网络社区也会经常用到标签系统，很多社区都允许用户对他们自己或者别人发表的主题打标签，并基于标签对主题分门别类：比如在一个讨论Redis的主题里面，人们可能会为该主题打上“Redis”标签，而用户通过点击该标签就能够找到更多跟Redis相关的主题，诸如此类。</p>
+<section id="id2">
+<h2>需求描述<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>你想要使用Redis创建一个标签系统，以便为系统中的内容打标签并进行分类。</p>
+</section>
+<section id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>为了使用Redis构建标签系统，需要用到Redis的集合数据结构。</p>
+<p>首先，对于每一个被打标签的目标对象（后简称“目标”），程序需要用一个集合来存储该目标的所有标签：跟列表相比，使用集合存储元素不仅不会出现重复，还带有支持快速增删元素、可以对元素执行集合运算等优点，因此集合毫无疑问地成为存储目标标签的最佳选择。</p>
+<p>举个例子，如果想要给Redis数据库打上<code class="docutils literal notranslate"><span class="pre">&quot;Redis&quot;</span></code>、<code class="docutils literal notranslate"><span class="pre">&quot;NoSQL&quot;</span></code>和<code class="docutils literal notranslate"><span class="pre">&quot;Database&quot;</span></code>三个标签，那么只需要执行以下命令即可：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SADD</span> <span class="n">Tag</span><span class="p">:</span><span class="n">target</span><span class="p">:</span><span class="n">Redis</span> <span class="s2">&quot;Redis&quot;</span> <span class="s2">&quot;NoSQL&quot;</span> <span class="s2">&quot;Database&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+</pre></div>
+</div>
+<p>之后只需执行以下命令，就可以随时获取Redis数据库这一目标的所有标签：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">Tag</span><span class="p">:</span><span class="n">target</span><span class="p">:</span><span class="n">Redis</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;Redis&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;NoSQL&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;Database&quot;</span>
+</pre></div>
+</div>
+<p>另一方面，由于我们有时候不仅想要通过目标获取与之对应的所有标签，还想要通过标签获取与之对应的所有目标。因此，除了需要用集合存储目标的所有标签之外，程序还需要用集合存储与特定标签关联的所有目标。</p>
+<p>比如说，在执行上面展示的<code class="docutils literal notranslate"><span class="pre">SADD</span></code>命令给Redis数据库打上三个标签之后，程序还需要执行以下命令序列，将Redis添加到这三个标签对应的目标集合中：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SADD</span> <span class="n">Tag</span><span class="p">:</span><span class="n">tag</span><span class="p">:</span><span class="n">Redis</span> <span class="s2">&quot;Redis&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SADD</span> <span class="n">Tag</span><span class="p">:</span><span class="n">tag</span><span class="p">:</span><span class="n">NoSQL</span> <span class="s2">&quot;Redis&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SADD</span> <span class="n">Tag</span><span class="p">:</span><span class="n">tag</span><span class="p">:</span><span class="n">Database</span> <span class="s2">&quot;Redis&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>这样一来，程序不仅记录了目标与标签之间的关系，还记录了标签与目标之间的关系。有了后者，程序就可以随时根据标签找出与之对应的目标：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SMEMBERS</span> <span class="n">Tag</span><span class="p">:</span><span class="n">tag</span><span class="p">:</span><span class="n">Database</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;Redis&quot;</span>
+</pre></div>
+</div>
+<p>在此之上，程序还可以进一步扩展，基于集合运算找出同时带有多个标签的目标。比如在给多个数据库都打上标签之后，就可以基于集合运算找出同时带有多个指定标签的数据库。</p>
+</section>
+<section id="id4">
+<h2>实现代码<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>代码清单 CODE_TAG 展示了基于上述原理实现的标签系统程序。</p>
+<hr class="docutils" />
+<p>代码清单 CODE_TAG 标签系统程序 <code class="docutils literal notranslate"><span class="pre">tag.py</span></code></p>
+<hr class="docutils" />
+<p>作为例子，以下代码演示了如何使用这个程序对Redis、MongoDB和MySQL这三个数据库添加标签，然后基于标签搜索对应的数据库：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">tag</span> <span class="kn">import</span> <span class="n">Tag</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tag</span> <span class="o">=</span> <span class="n">Tag</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tag</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;Redis&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;Redis&quot;</span><span class="p">,</span> <span class="s2">&quot;NoSQL&quot;</span><span class="p">,</span> <span class="s2">&quot;Database&quot;</span><span class="p">})</span>  <span class="c1"># 为数据库添加标签</span>
+<span class="go">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tag</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;MongoDB&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;MongoDB&quot;</span><span class="p">,</span> <span class="s2">&quot;NoSQL&quot;</span><span class="p">,</span> <span class="s2">&quot;Database&quot;</span><span class="p">})</span>
+<span class="go">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tag</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;MySQL&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;MySQL&quot;</span><span class="p">,</span> <span class="s2">&quot;SQL&quot;</span><span class="p">,</span> <span class="s2">&quot;Database&quot;</span><span class="p">})</span>
+<span class="go">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tag</span><span class="o">.</span><span class="n">get_tags_by_target</span><span class="p">(</span><span class="s2">&quot;Redis&quot;</span><span class="p">)</span>  <span class="c1"># 根据数据库查找标签</span>
+<span class="go">{&#39;Redis&#39;, &#39;Database&#39;, &#39;NoSQL&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tag</span><span class="o">.</span><span class="n">get_target_by_tags</span><span class="p">({</span><span class="s2">&quot;NoSQL&quot;</span><span class="p">})</span>  <span class="c1"># 根据标签查找数据库</span>
+<span class="go">{&#39;Redis&#39;, &#39;MongoDB&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tag</span><span class="o">.</span><span class="n">get_target_by_tags</span><span class="p">({</span><span class="s2">&quot;Database&quot;</span><span class="p">})</span>
+<span class="go">{&#39;Redis&#39;, &#39;MongoDB&#39;, &#39;MySQL&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tag</span><span class="o">.</span><span class="n">get_target_by_tags</span><span class="p">({</span><span class="s2">&quot;Database&quot;</span><span class="p">,</span> <span class="s2">&quot;SQL&quot;</span><span class="p">})</span>  <span class="c1"># 根据多个标签查找数据库</span>
+<span class="go">{&#39;MySQL&#39;}</span>
+</pre></div>
+</div>
+<p>可以看到，程序不仅可以基于数据库查找与之对应的标签，还可以基于标签查找与之对应的数据库：比如基于数据库<code class="docutils literal notranslate"><span class="pre">&quot;Redis&quot;</span></code>找出它对应的三个标签<code class="docutils literal notranslate"><span class="pre">&quot;Redis&quot;</span></code>、<code class="docutils literal notranslate"><span class="pre">&quot;Database&quot;</span></code>和<code class="docutils literal notranslate"><span class="pre">&quot;NoSQL&quot;</span></code>，又或者基于标签<code class="docutils literal notranslate"><span class="pre">&quot;Database&quot;</span></code>和<code class="docutils literal notranslate"><span class="pre">&quot;SQL&quot;</span></code>，找出同时带有这两个标签的数据库<code class="docutils literal notranslate"><span class="pre">&quot;MySQL&quot;</span></code>。</p>
+</section>
+<section id="id5">
+<h2>扩展实现：为标签查找功能加上缓存<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>尽管<code class="docutils literal notranslate"><span class="pre">get_tags_by_target()</span></code>方法使用起来非常简单，但它实际上执行的却是非常复杂的交集运算：计算涉及的集合数量越多，集合包含的元素数量越多，这个操作执行所需的时间也会越多。</p>
+<p>为了改善这个问题，可以修改<code class="docutils literal notranslate"><span class="pre">get_tags_by_target()</span></code>方法为其加上缓存特性，具体方法如下：</p>
+<ol class="arabic simple">
+<li><p>在计算给定标签集合的交集时，使用<code class="docutils literal notranslate"><span class="pre">SINTERSTORE</span></code>命令而不是<code class="docutils literal notranslate"><span class="pre">SINTER</span></code>命令，将计算结果保存到指定的键里面用作缓存，而不是直接返回结果元素。</p></li>
+<li><p>使用<code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code>命令为缓存键设置过期时间，让缓存可以在指定的时限内持续生效，并在超过指定时限之后自动过期，从而强制更新缓存。</p></li>
+<li><p>方法在每次执行的时候，都会先尝试从缓存里面寻找结果，如果找到则直接使用缓存中的结果，只有在未找到的时候才会实际地执行交集计算。</p></li>
+</ol>
+<p>代码清单 CODE_CACHED 展示了带缓存特性的<code class="docutils literal notranslate"><span class="pre">get_cached_target_by_tags()</span></code>方法的具体实现。</p>
+<hr class="docutils" />
+<p>代码清单 CODE_CACHED 带缓存的标签查找方法 <code class="docutils literal notranslate"><span class="pre">tag.py</span></code></p>
+<hr class="docutils" />
+<p>带缓存的<code class="docutils literal notranslate"><span class="pre">get_cached_target_by_tags()</span></code>方法的用法跟无缓存版本完全一样，唯一的区别在于，在缓存更新之前，即使输入集合的元素发生变化，该方法返回的结果也不会变化：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">tag</span> <span class="kn">import</span> <span class="n">Tag</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tag</span> <span class="o">=</span> <span class="n">Tag</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tag</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;Redis&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;DB&quot;</span><span class="p">})</span>  <span class="c1"># 有三个数据库带有DB标签</span>
+<span class="go">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tag</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;MySQL&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;DB&quot;</span><span class="p">})</span>
+<span class="go">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tag</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;PostgreSQL&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;DB&quot;</span><span class="p">})</span>
+<span class="go">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tag</span><span class="o">.</span><span class="n">get_cached_target_by_tags</span><span class="p">({</span><span class="s2">&quot;DB&quot;</span><span class="p">})</span>  <span class="c1"># 生成并返回缓存</span>
+<span class="go">{&#39;PostgreSQL&#39;, &#39;Redis&#39;, &#39;MySQL&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tag</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;MongoDB&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;DB&quot;</span><span class="p">})</span>  <span class="c1"># 加入第四个带有DB标签的数据库</span>
+<span class="go">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tag</span><span class="o">.</span><span class="n">get_cached_target_by_tags</span><span class="p">({</span><span class="s2">&quot;DB&quot;</span><span class="p">})</span>  <span class="c1"># 复用已缓存结果</span>
+<span class="go">{&#39;PostgreSQL&#39;, &#39;Redis&#39;, &#39;MySQL&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tag</span><span class="o">.</span><span class="n">get_cached_target_by_tags</span><span class="p">({</span><span class="s2">&quot;DB&quot;</span><span class="p">})</span>  <span class="c1"># 缓存更新</span>
+<span class="go">{&#39;PostgreSQL&#39;, &#39;Redis&#39;, &#39;MongoDB&#39;, &#39;MySQL&#39;}</span>
+</pre></div>
+</div>
+</section>
+<section id="id6">
+<h2>重点回顾<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>标签系统可以为系统中的内容打标签并进行分类，无论是用户生成内容网站，还是网店、商城和网络社区，都会大量地使用这一系统。</p></li>
+<li><p>为了实现标签系统，程序需要为带标签的每个目标创建一个集合，用于记录目标带有的所有标签；与此同时，还需要为每个标签都创建一个集合，用于记录所有带有该标签的目标。</p></li>
+<li><p>标签系统中根据多个标签查找目标的操作看上去简单，但实际上却涉及复杂的交集运算，因此可以为其设置缓存以复用运算结果并缩短操作的响应时间。</p></li>
+</ul>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2024, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

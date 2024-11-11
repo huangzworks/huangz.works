@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>前言 &#8212; huangz.works/rediscookbook  文档</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=1a685b77" />
+    <script src="_static/documentation_options.js?v=ab3e9284"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html">
+          huangz.works/rediscookbook</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+	  <!--
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">导航 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">前言</a><ul>
+<li><a class="reference internal" href="#id2">内容编排</a></li>
+<li><a class="reference internal" href="#id3">目标读者</a></li>
+<li><a class="reference internal" href="#id4">代码风格说明</a></li>
+<li><a class="reference internal" href="#id5">代码注释</a></li>
+<li><a class="reference internal" href="#id6">关注核心原理而非细枝末节</a></li>
+<li><a class="reference internal" href="#id7">软件版本信息</a></li>
+<li><a class="reference internal" href="#id8">获取程序源码</a></li>
+<li><a class="reference internal" href="#id9">致谢</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+          </ul>
+	  -->
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="id1">
+<h1>前言<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>近年来，随着Redis大热并成为内存数据库的事实标准，大量关于Redis的图书也开始随之涌现。</p>
+<p>去年，在决定创作并推出全新的Redis图书之际，本人对市面上现有的Redis图书进行了一番调研，发现大多数Redis图书关注的都是命令、运维、架构、源码分析等方面，而应用方面多数只是一笔带过，或者在介绍命令时做锦上添花之用，很少有图书愿意详细地介绍如何使用Redis构建应用。</p>
+<p>然而另一方面，对Redis的大量使用却导致网上关于各种Redis使用方法的问题越来越频繁地出现：如何使用Redis实现锁？如何使用Redis实现消息队列？如何使用Redis表示好友关系？如何使用Redis存储地理位置数据？随便去哪一个Redis社区，你都会看到大量类似的问题。</p>
+<p>考虑到这一点，本人决定推出这本《Redis应用实例》，并在书中包含32个精挑细选的经典Redis应用实例，比如缓存、锁、计数器、消息队列、自动补全、社交关系、排行榜、先进先出队列等。这些实例无一不是我们日常开发中经常会遇到的，而且往往也是网上最多人咨询该如何使用Redis构建的。</p>
+<p>本书希望通过展示这些常见的Redis应用实例来帮助你了解使用Redis解决各类问题的方法，并加深你对Redis各项命令及数据结构的认识，使你确实地成为能够使用Redis解决各类问题的Redis专家。</p>
+<section id="id2">
+<h2>内容编排<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>本书通过大量Redis应用实例来展示Redis的经典用法与用例，整书共包含32个大章，分为三个部分：</p>
+<ol class="arabic simple">
+<li><p><strong>内部组件</strong>：这个部分介绍的实例通常用于系统内部，比如缓存、锁、计数器、迭代器、速率限制器等，它们都是很多系统中不可或缺的部分。通过学习如何使用Redis构建这些组件，并使用它们代替系统原有的低效组件，你将能够大幅地提升系统的整体性能。</p></li>
+<li><p><strong>外部应用</strong>：这个部分介绍的实例都是一些日常常见的、用户可以直接接触到的应用，比如直播弹幕、社交关系、排行榜、分页、地理位置等。通过学习如何使用Redis构建这些应用，你将进一步地了解到Redis各个数据结构和命令的强大之处，并且还可以在实例应用已有功能的基础上，按需扩展出你想要的其他功能。</p></li>
+<li><p><strong>数据结构</strong>：这个部分介绍的实例是一些使用Redis实现的常见数据结构，比如先进先出队列、栈、优先队列和矩阵等。当你需要快速、可靠的内存存储数据结构时，它们可以作为其他程序的底层数据结构或是基本构件使用。</p></li>
+</ol>
+<p>除了少数大章引用了其他大章的代码或内容之外，本书的大部分大章都自成一体、可以独立地阅读，你可以按需阅读自己感兴趣的任意大章。</p>
+<p>当然，如果你只是想要学习Redis的多种使用方法，对各个大章并无特别喜好，那么也可以像阅读普通的教程一样，按顺序阅读本书的每一个大章。本书基于各章的难度和内容详略等因素对各章的排列顺序做了编排和优化，力求为你带来流畅的阅读体验。</p>
+</section>
+<section id="id3">
+<h2>目标读者<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>本书希望你对Redis有一定的了解，并且熟悉Redis各个命令的基本语法。</p>
+<p>由于本书关注的是如何使用Redis命令实现各种应用程序，而不是详细介绍某个或某些Redis命令的具体语法，所以如果你是刚开始学习Redis，又或者对Redis命令的语法并不熟悉，那么请在阅读本书的过程中积极查找并学习书中提到的命令。这种边做边学、学以致用的方式将帮助你快速、有效地掌握Redis命令及其用法，从而成为熟练的Redis使用者。</p>
+<p>书中所有实例程序均使用Python编程语言编写，程序的风格以简单易懂为第一要务，基本上没有用到Python的高级特性。任何学习过Python语言的读者应该都能很好地理解书中的代码，而没有学习过Python语言的读者应该也能够把这些朴素的代码看成是伪代码，以此来理解程序想要完成的工作。</p>
+<p>本书适合任何想要学习Redis应用方法以及使用Redis解决实际问题的人，也可以作为Redis学习者在具备一定基础知识之后的进阶应用教程。</p>
+</section>
+<section id="id4">
+<h2>代码风格说明<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>正如上一节所言，本书展示的程序以简单易懂为第一要务，为了达到这个目的，本书有时候可能会故意把代码写得详细一些。</p>
+<p>比如说，为了清晰地展现判断语句的判断条件，本书将采用：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">bool_value</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>这样的具体写法而不是以下简写法：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">bool_value</span><span class="p">:</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>又比如说，为了让没学过Python语言的人都能看懂程序的文件打开操作，本书将采用以下语句：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+<span class="c1"># do something</span>
+<span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>而不是Python程序员更常用的<code class="docutils literal notranslate"><span class="pre">with</span></code>语句：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="c1"># do something</span>
+</pre></div>
+</div>
+<p>基于上述原因，本书的部分代码对于熟练的Pyhton使用者来说可能会稍显啰嗦，但这是事出有因的，希望大家可以理解。</p>
+</section>
+<section id="id5">
+<h2>代码注释<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>本书在展示Python示例代码的时候，将使用标准的<code class="docutils literal notranslate"><span class="pre">#</span></code>符号来标识Python代码中的注释：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">random</span>  <span class="c1"># 载入随机数生成函数</span>
+<span class="gp">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>另一方面，由于本书在展示Redis操作时需要用到Redis官方客户端<code class="docutils literal notranslate"><span class="pre">redis-cli</span></code>，但该客户端并不支持注释语法，所以本书将采用自选的<code class="docutils literal notranslate"><span class="pre">--</span></code>符号作为注释：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">PING</span>  <span class="o">--</span> <span class="n">向服务器发送一个请求</span>
+<span class="n">PONG</span>
+</pre></div>
+</div>
+<p>因为<code class="docutils literal notranslate"><span class="pre">redis-cli</span></code>实际上并不支持这种注释语法，所以当你把本书展示的Redis操作代码复制至<code class="docutils literal notranslate"><span class="pre">redis-cli</span></code>中运行时，请不要复制代码中的注释内容，以免导致代码在运行时出错。</p>
+</section>
+<section id="id6">
+<h2>关注核心原理而非细枝末节<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<p>本书聚焦实战，书中展示的各种实例无一不来源于实际的编程问题，但考虑到现实中的程序往往包含大量无关的逻辑和细节，在书中事无巨细地展示它们除了模糊焦点和浪费篇幅之外，不会有其他任何好处。</p>
+<p>举个例子，一个现实中的消息队列程序可能会由数千行代码和数十个API组成，但如果仅在本书的《消息队列》一章就要包含如此数量的代码和API，那么本书的篇幅将膨胀至无法让人接受的程度。</p>
+<p>为了解决这个问题，本书采取了算法书介绍算法时的策略：不罗列和介绍每种应用可能包含的全部API，而是精挑细选出一组最关键、最核心的API，然后用简洁精炼的代码在书中实现它们，配上合理的描述和解释，力求让你尽可能地理解这些核心API的实现原理。一旦你弄懂了这些核心API，你就可以根据自己的需求移植这些应用，并在此基础上举一反三，为应用扩展出你想要的任何API。</p>
+</section>
+<section id="id7">
+<h2>软件版本信息<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
+<p>本书展示的所有Redis代码均在Redis 7.4版本中测试，Python代码均在Python 3.12版本中测试，使用的redis-py客户端版本为5.1.0b7，这是本书截稿时这几个软件的最新版本。</p>
+<p>为了运行本书展示的代码和程序，你需要在电脑上安装以上三个软件，并确保它们的版本不低于上面提到的版本。具体的软件安装方法请参考它们各自的官方网站。</p>
+</section>
+<section id="id8">
+<h2>获取程序源码<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<p>本书展示的所有程序源码都可以在异步社区（epubit.com）通过搜索本书书名找到下载链接，你也可以通过执行以下命令来克隆程序源码：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">git</span><span class="nd">@github</span><span class="o">.</span><span class="n">com</span><span class="p">:</span><span class="n">huangzworks</span><span class="o">/</span><span class="n">rediscookbook</span><span class="o">.</span><span class="n">git</span>
+</pre></div>
+</div>
+</section>
+<section id="id9">
+<h2>致谢<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h2>
+<p>感谢人民邮电出版社杨海玲编辑在本书创作过程中的专业指导，感谢我的家人的悉心关怀，还要感谢关注本书的读者对本书的期待，本书是在众多人的关心和支持下才得以完成的。</p>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2024年7月22日于广东清远</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2024, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

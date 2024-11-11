@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>缓存文本数据 &#8212; huangz.works/rediscookbook  文档</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=1a685b77" />
+    <script src="_static/documentation_options.js?v=ab3e9284"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html">
+          huangz.works/rediscookbook</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+	  <!--
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">导航 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">缓存文本数据</a><ul>
+<li><a class="reference internal" href="#id2">需求描述</a></li>
+<li><a class="reference internal" href="#id3">解决方案：使用字符串键缓存单项数据</a></li>
+<li><a class="reference internal" href="#json">解决方案：使用JSON/哈希键缓存多项数据</a><ul>
+<li><a class="reference internal" href="#id4">使用JSON缓存多项数据</a></li>
+<li><a class="reference internal" href="#id5">使用哈希缓存多项数据</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id6">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+          </ul>
+	  -->
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="id1">
+<h1>缓存文本数据<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>因为Redis把数据储存在内存里面，并且提供了方便的键值对索引方式以及多样化的数据类型，所以使用Redis作为缓存是Redis最常见的用法之一：</p>
+<ul class="simple">
+<li><p>很多国内外的社交平台都会把核心的时间线/信息流和好友关系/社交关系储存在Redis里面，这种做法不仅能够加快用户的访问速度，并且系统访问数据的方式也会变得更加简单、直接；</p></li>
+<li><p>还有不少追求访问速度的视频网站，也会把最常访问的静态文件放到Redis里面，又或者把短时间内最火爆的视频文件储存在Redis里面，从而尽可能地减少用户观看视频时需要等待的载入时间。</p></li>
+</ul>
+<p>本书将介绍多种使用Redis缓存数据和文件的方法，其中：</p>
+<ul class="simple">
+<li><p>本章将介绍如何使用字符串键缓存单项数据（比如HTML页面），还有如何使用JSON和哈希键缓存多项数据（比如SQL表中的行）。</p></li>
+<li><p>下一章《缓存二进制数据》将会介绍缓存图片、视频文件等二进制数据的方法。</p></li>
+<li><p>至于缓存更复杂结构数据的方法（比如社交网站的时间线、好友关系等），则会在之后的章节中陆续介绍。</p></li>
+</ul>
+<section id="id2">
+<h2>需求描述<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>你想要使用Redis缓存系统中的文本数据，这些数据可能只有单独一项，也可能会有多个项组成。</p>
+</section>
+<section id="id3">
+<h2>解决方案：使用字符串键缓存单项数据<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>有些时候，需要缓存的数据可能非常单纯，只有单独一项。比如说，在缓存Web服务器生成的HTML页面时，整个页面就是一个以<code class="docutils literal notranslate"><span class="pre">&lt;HTML&gt;...&lt;/HTML&gt;</span></code>标签包围的字符串。在这种情况下，缓存程序只需要使用单个Redis字符串键就足以缓存整个页面。</p>
+<p>具体来说，我们可以通过使用<code class="docutils literal notranslate"><span class="pre">SET</span></code>命令，将指定的名字和被缓存的内容关联起来：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SET</span> <span class="n">name</span> <span class="n">content</span>
+</pre></div>
+</div>
+<p>如果有需要的话，还可以在设置缓存的同时，为其设置过期时间以便让缓存实现自动更新：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SET</span> <span class="n">name</span> <span class="n">content</span> <span class="n">EX</span> <span class="n">ttl</span>
+</pre></div>
+</div>
+<p>至于获取缓存的工作则通过<code class="docutils literal notranslate"><span class="pre">GET</span></code>命令来完成：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">GET</span> <span class="n">name</span>
+</pre></div>
+</div>
+<p>代码清单 CODE_BASIC_CACHE 展示了基于这一原理实现的缓存程序。</p>
+<hr class="docutils" />
+<p>代码清单 CODE_BASIC_CACHE 基本的缓存程序 <code class="docutils literal notranslate"><span class="pre">cache.py</span></code></p>
+<hr class="docutils" />
+<blockquote>
+<div><p><strong>提示</strong>：提高过期时间精度</p>
+<p>如果你需要更精确的过期时间，那么可以把缓存程序中过期时间的精度参数从代表秒的<code class="docutils literal notranslate"><span class="pre">ex</span></code>修改为代表毫秒的<code class="docutils literal notranslate"><span class="pre">px</span></code>。</p>
+</div></blockquote>
+<p>作为例子，代码清单 CODE_USAGE_BASIC_CACHE 展示了这个缓存程序的基本用法。</p>
+<hr class="docutils" />
+<p>代码清单 CODE_USAGE_BASIC_CACHE 缓存程序的基本用例 <code class="docutils literal notranslate"><span class="pre">cache_usage.py</span></code></p>
+<hr class="docutils" />
+<p>根据这段程序的执行结果可知，程序只会在第一次请求时访问数据库并根据模板生成HTML页面，而后续一分钟内发生的其他请求都是通过访问Redis保存的缓存来完成的：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ python3 cache_usage.py
+Fetch post from database&amp;template.
+Fetch post from cache.
+Fetch post from cache.
+Fetch post from cache.
+Fetch post from cache.
+</pre></div>
+</div>
+</section>
+<section id="json">
+<h2>解决方案：使用JSON/哈希键缓存多项数据<a class="headerlink" href="#json" title="Link to this heading">¶</a></h2>
+<p>在复杂的系统中，单项数据往往只占少数，更多的是由多个项组成的复杂数据。比如表 TABLE_USERS 列出的这组用户信息，就来自SQL数据库<code class="docutils literal notranslate"><span class="pre">Users</span></code>表中的三个行，其中每个行由<code class="docutils literal notranslate"><span class="pre">id</span></code>、<code class="docutils literal notranslate"><span class="pre">name</span></code>等四个属性值组成。</p>
+<hr class="docutils" />
+<p>表 TABLE_USERS SQL数据库中的用户信息</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>id</p></th>
+<th class="head"><p>name</p></th>
+<th class="head"><p>gender</p></th>
+<th class="head"><p>age</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">10086</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;Peter&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;male&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">56</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">10087</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;Jack&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;male&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">37</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">10088</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;Mary&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;female&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">24</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<p>可以通过两种不同的方法来缓存这类多项数据：</p>
+<ol class="arabic simple">
+<li><p>使用JSON等序列化手段将多项数据打包成单项数据，然后复用之前缓存单项数据的方法来缓存序列化数据。</p></li>
+<li><p>使用Redis的哈希、列表等存储多项数据的数据结构来缓存数据。</p></li>
+</ol>
+<p>接下来的两个小节将分别介绍这两种方法。</p>
+<section id="id4">
+<h3>使用JSON缓存多项数据<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<p>代码清单 CODE_JSON_CACHE 展示了使用JSON缓存多项数据的方法。这个程序复用了之前代码清单 CODE_CACHE 的<code class="docutils literal notranslate"><span class="pre">Cache</span></code>类，它要做的就是在设置缓存之前把Python数据编码为JSON数据，并在获取缓存之后将JSON数据解码为Python数据。</p>
+<hr class="docutils" />
+<p>代码清单 CODE_JSON_CACHE JSON版本的多项数据缓存程序 <code class="docutils literal notranslate"><span class="pre">json_cache.py</span></code></p>
+<hr class="docutils" />
+<p>作为例子，以下这段代码展示了如何使用这个程序来缓存前面展示的用户信息：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">json_cache</span> <span class="kn">import</span> <span class="n">JsonCache</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cache</span> <span class="o">=</span> <span class="n">JsonCache</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>  <span class="c1"># 创建缓存对象</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span><span class="mi">10086</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Peter&quot;</span><span class="p">,</span> <span class="s2">&quot;gender&quot;</span><span class="p">:</span> <span class="s2">&quot;male&quot;</span><span class="p">,</span> <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="mi">56</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;User:10086&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>  <span class="c1"># 缓存数据</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;User:10086&quot;</span><span class="p">)</span>  <span class="c1"># 获取缓存</span>
+<span class="go">{&#39;id&#39;: 10086, &#39;name&#39;: &#39;Peter&#39;, &#39;gender&#39;: &#39;male&#39;, &#39;age&#39;: 56}</span>
+</pre></div>
+</div>
+</section>
+<section id="id5">
+<h3>使用哈希缓存多项数据<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
+<p>除了将多项数据编码为JSON然后将其存储在字符串键里面，我们还可以直接将多项数据存储在Redis的哈希键中。为此，程序在设置缓存时需要用到<code class="docutils literal notranslate"><span class="pre">HSET</span></code>命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HSET</span> <span class="n">name</span> <span class="n">field</span> <span class="n">value</span> <span class="p">[</span><span class="n">field</span> <span class="n">value</span><span class="p">]</span> <span class="p">[</span><span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>如果用户在设置缓存的同时还指定了缓存的生存时间，那么程序还需要使用<code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code>命令为缓存哈希设置过期时间，并使用事务或者其他类似措施保证多个命令在执行时的安全性：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">MULTI</span>
+<span class="n">HSET</span> <span class="n">name</span> <span class="n">field</span> <span class="n">value</span> <span class="p">[</span><span class="n">field</span> <span class="n">value</span><span class="p">]</span> <span class="p">[</span><span class="o">...</span><span class="p">]</span>
+<span class="n">EXPIRE</span> <span class="n">name</span> <span class="n">ttl</span>
+<span class="n">EXEC</span>
+</pre></div>
+</div>
+<p>与此相对，当程序需要获取被缓存的多项数据时，它只需要使用<code class="docutils literal notranslate"><span class="pre">HGETALL</span></code>命令获取所有数据即可：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HGETALL</span> <span class="n">name</span>
+</pre></div>
+</div>
+<p>代码清单 CODE_HASH_CACHE 展示了基于上述原理实现的缓存程序。</p>
+<hr class="docutils" />
+<p>代码清单 CODE_HASH_CACHE 使用哈希键实现的多项数据缓存程序 <code class="docutils literal notranslate"><span class="pre">hash_cache.py</span></code></p>
+<hr class="docutils" />
+<p>作为例子，以下这段代码展示了如何使用这个缓存程序来缓存前面展示的用户信息：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">hash_cache</span> <span class="kn">import</span> <span class="n">HashCache</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cache</span> <span class="o">=</span> <span class="n">HashCache</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span><span class="mi">10086</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Peter&quot;</span><span class="p">,</span> <span class="s2">&quot;gender&quot;</span><span class="p">:</span> <span class="s2">&quot;male&quot;</span><span class="p">,</span> <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="mi">56</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;User:10086&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>  <span class="c1"># 缓存数据</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;User:10086&quot;</span><span class="p">)</span>  <span class="c1"># 获取缓存</span>
+<span class="go">{&#39;id&#39;: &#39;10086&#39;, &#39;name&#39;: &#39;Peter&#39;, &#39;gender&#39;: &#39;male&#39;, &#39;age&#39;: &#39;56&#39;}</span>
+</pre></div>
+</div>
+<p>可以看到，这个程序的效果跟之前使用JSON实现的缓存程序的效果完全一致。</p>
+<blockquote>
+<div><p><strong>提示</strong>：缩短键名以节约内存</p>
+<p>在使用Redis缓存多项数据的时候，不仅需要缓存数据本身（值），还需要缓存数据的属性/字段（键）。当数据的数量非常巨大时，存储属性带来的内存消耗也会相当巨大，甚至不遑多让。</p>
+<p>为此，缓存程序可以通过适当缩短属性名来尽可能地减少内存消耗。比如把上面用户信息中的<code class="docutils literal notranslate"><span class="pre">name</span></code>属性缩短为<code class="docutils literal notranslate"><span class="pre">n</span></code>属性，<code class="docutils literal notranslate"><span class="pre">age</span></code>属性缩短为<code class="docutils literal notranslate"><span class="pre">a</span></code>属性，诸如此类。</p>
+<p>还有一种更彻底的方法，就是移除数据的所有属性，将数据本身存储为数组，然后根据各个值在数组中的索引来判断它们对应的属性。比如说，我们可以修改缓存程序，让它把数据<code class="docutils literal notranslate"><span class="pre">{&quot;id&quot;:10086,</span> <span class="pre">&quot;name&quot;:</span> <span class="pre">&quot;Peter&quot;,</span> <span class="pre">&quot;gender&quot;:</span> <span class="pre">&quot;male&quot;,</span> <span class="pre">&quot;age&quot;:</span> <span class="pre">56}</span></code>简化为<code class="docutils literal notranslate"><span class="pre">[10086,</span> <span class="pre">&quot;Peter&quot;,</span> <span class="pre">&quot;male&quot;,</span> <span class="pre">56]</span></code>，然后使用JSON数组或是Redis列表来存储简化后的数据。</p>
+</div></blockquote>
+</section>
+</section>
+<section id="id6">
+<h2>重点回顾<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>因为Redis把数据储存在内存里面，并且提供了方便的键值对索引方式以及多样化的数据类型，所以使用Redis作为缓存是Redis最常见的用法之一。</p></li>
+<li><p>有些时候，需要缓存的数据可能非常单纯，只有单独一项。在这种情况下，缓存程序只需要使用单个Redis字符串键就足以缓存它们。</p></li>
+<li><p>在复杂的系统中，单项数据往往只占少数，更多的是由多个项组成的复杂数据。这时缓存程序可以考虑使用JSON等序列化手段，将多项数据打包为单项数据进行缓存，又或者直接使用Redis的哈希、列表等数据结构进行缓存。</p></li>
+</ul>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2024, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>消息队列 &#8212; huangz.works/rediscookbook  文档</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=1a685b77" />
+    <script src="_static/documentation_options.js?v=ab3e9284"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html">
+          huangz.works/rediscookbook</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+	  <!--
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">导航 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">消息队列</a><ul>
+<li><a class="reference internal" href="#id2">需求描述</a></li>
+<li><a class="reference internal" href="#id3">解决方案</a></li>
+<li><a class="reference internal" href="#id4">实现代码</a></li>
+<li><a class="reference internal" href="#id5">扩展实现：直播间弹幕系统</a></li>
+<li><a class="reference internal" href="#id6">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+          </ul>
+	  -->
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="id1">
+<h1>消息队列<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>消息队列是一种非常重要的数据结构，它既可以用于内部组件，也可以用于外部应用：</p>
+<ul class="simple">
+<li><p>内部组件在使用消息队列时，通常将其用于各个内部组件之间的信息交换，比如在系统的不同子系统中进行通信交流。</p></li>
+<li><p>外部应用在使用消息队列时，通常将其用作通信手段，比如直播弹幕、即时聊天软件和即时在线聊天室，这些应用的核心数据结构实际上就是消息队列。</p></li>
+</ul>
+<p>总的来说，消息队列不仅可以用于计算机系统的信息交换，它还可以用于人类用户的信息交换，其用途非常广泛。</p>
+<p>在消息队列中，消息的格式往往会随着应用的不同而变化，因此它们通常会以键值对或是JSON等方式存储，然后通过唯一的ID对每条消息进行标识和引用。</p>
+<section id="id2">
+<h2>需求描述<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>你想要用Redis实现消息队列，并通过其提供发送消息、接收消息等服务。</p>
+</section>
+<section id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>过去在较旧版本的Redis中，人们往往使用订阅与发布、列表或有序集合等方式实现消息队列，但这些实现基本上都有它们各自的缺点，比如消息安全性无法保证、性能不佳或者功能不足等。对于版本较新的Redis来说，使用流来实现消息队列才是最佳选择。</p>
+<p>具体来说，对于每一个消息队列，可以使用一个流作为其底层实现，其中向队列中添加新消息的工作可以通过调用<code class="docutils literal notranslate"><span class="pre">XADD</span></code>命令来完成，从队列中获取消息的工作可以通过<code class="docutils literal notranslate"><span class="pre">XRANGE</span></code>命令或<code class="docutils literal notranslate"><span class="pre">XREAD</span></code>命令来完成，而获取队列长度的工作则可以通过<code class="docutils literal notranslate"><span class="pre">XLEN</span></code>命令来完成。</p>
+<p>比方说，通过执行以下<code class="docutils literal notranslate"><span class="pre">XADD</span></code>命令，可以向键名为<code class="docutils literal notranslate"><span class="pre">MessageQueue:10086</span></code>的消息队列推入两条新消息：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">XADD</span> <span class="n">MessageQueue</span><span class="p">:</span><span class="mi">10086</span> <span class="o">*</span> <span class="n">uid</span> <span class="s2">&quot;Jack&quot;</span> <span class="n">msg</span> <span class="s2">&quot;Hello!&quot;</span>
+<span class="s2">&quot;1720785174751-0&quot;</span>
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">XADD</span> <span class="n">MessageQueue</span><span class="p">:</span><span class="mi">10086</span> <span class="o">*</span> <span class="n">uid</span> <span class="s2">&quot;Tom&quot;</span> <span class="n">msg</span> <span class="s2">&quot;Hi!&quot;</span>
+<span class="s2">&quot;1720785196452-0&quot;</span>
+</pre></div>
+</div>
+<p>接着可以使用以下<code class="docutils literal notranslate"><span class="pre">XREAD</span></code>命令来读取这两条新消息：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">XREAD</span> <span class="n">STREAMS</span> <span class="n">MessageQueue</span><span class="p">:</span><span class="mi">10086</span> <span class="mi">0</span>
+<span class="mi">1</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;MessageQueue:10086&quot;</span>
+   <span class="mi">2</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;1720785174751-0&quot;</span>
+         <span class="mi">2</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;uid&quot;</span>
+            <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;Jack&quot;</span>
+            <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;msg&quot;</span>
+            <span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;Hello!&quot;</span>
+      <span class="mi">2</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;1720785196452-0&quot;</span>
+         <span class="mi">2</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;uid&quot;</span>
+            <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;Tom&quot;</span>
+            <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;msg&quot;</span>
+            <span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;Hi!&quot;</span>
+</pre></div>
+</div>
+<p>又或者使用以下<code class="docutils literal notranslate"><span class="pre">XRANGE</span></code>命令来读取带有指定ID的消息：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">XRANGE</span> <span class="n">MessageQueue</span><span class="p">:</span><span class="mi">10086</span> <span class="mi">1720785174751</span><span class="o">-</span><span class="mi">0</span> <span class="mi">1720785174751</span><span class="o">-</span><span class="mi">0</span>
+<span class="mi">1</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;1720785174751-0&quot;</span>
+   <span class="mi">2</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;uid&quot;</span>
+      <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;Jack&quot;</span>
+      <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;msg&quot;</span>
+      <span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;Hello!&quot;</span>
+</pre></div>
+</div>
+<p>最后，还使用以下<code class="docutils literal notranslate"><span class="pre">XLEN</span></code>命令可以获取整个消息队列包含的消息总数量：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">XLEN</span> <span class="n">MessageQueue</span><span class="p">:</span><span class="mi">10086</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2</span>
+</pre></div>
+</div>
+<p>如果有需要的话，还可以在上述命令的基础上进一步扩展，给消息队列加上基于流消费者组实现的各种增强功能。</p>
+</section>
+<section id="id4">
+<h2>实现代码<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>代码清单 CODE_MESSAGE_QUEUE 展示了基于上述原理实现的消息队列程序。</p>
+<hr class="docutils" />
+<p>代码清单 CODE_MESSAGE_QUEUE 消息队列程序 <code class="docutils literal notranslate"><span class="pre">message_queue.py</span></code></p>
+<hr class="docutils" />
+<p>这个程序复用了《流迭代器》一章中使用<code class="docutils literal notranslate"><span class="pre">XREAD</span></code>命令实现的流迭代器。通过这个迭代器，程序成功地将原本非常复杂的消息接收操作简化为一次针对<code class="docutils literal notranslate"><span class="pre">StreamIterator.next()</span></code>方法的调用，这也是这个消息队列程序能够保持简练的关键。</p>
+<p>作为例子，以下代码展示了这个消息队列程序的具体使用方式：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">message_queue</span> <span class="kn">import</span> <span class="n">MessageQueue</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mq</span> <span class="o">=</span> <span class="n">MessageQueue</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;MessageQueue:10086&quot;</span><span class="p">)</span>  <span class="c1"># 创建消息队列对象</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mq</span><span class="o">.</span><span class="n">send</span><span class="p">({</span><span class="s2">&quot;uid&quot;</span><span class="p">:</span> <span class="s2">&quot;Jack&quot;</span><span class="p">,</span> <span class="s2">&quot;msg&quot;</span><span class="p">:</span> <span class="s2">&quot;Hello!&quot;</span><span class="p">})</span>  <span class="c1"># 发送消息</span>
+<span class="go">&#39;1720847899374-0&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mq</span><span class="o">.</span><span class="n">send</span><span class="p">({</span><span class="s2">&quot;uid&quot;</span><span class="p">:</span> <span class="s2">&quot;Tom&quot;</span><span class="p">,</span> <span class="s2">&quot;msg&quot;</span><span class="p">:</span> <span class="s2">&quot;Hi!&quot;</span><span class="p">})</span>
+<span class="go">&#39;1720847912318-0&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mq</span><span class="o">.</span><span class="n">receive</span><span class="p">()</span>  <span class="c1"># 接收消息</span>
+<span class="go">[{&#39;id&#39;: &#39;1720847899374-0&#39;, &#39;msg&#39;: {&#39;uid&#39;: &#39;Jack&#39;, &#39;msg&#39;: &#39;Hello!&#39;}},</span>
+<span class="go"> {&#39;id&#39;: &#39;1720847912318-0&#39;, &#39;msg&#39;: {&#39;uid&#39;: &#39;Tom&#39;, &#39;msg&#39;: &#39;Hi!&#39;}}]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mq</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;1720847899374-0&quot;</span><span class="p">)</span>  <span class="c1"># 获取特定消息</span>
+<span class="go">{&#39;uid&#39;: &#39;Jack&#39;, &#39;msg&#39;: &#39;Hello!&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mq</span><span class="o">.</span><span class="n">length</span><span class="p">()</span>  <span class="c1"># 获取消息总数量</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+</section>
+<section id="id5">
+<h2>扩展实现：直播间弹幕系统<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>为了更好地展示消息队列的功能，代码清单 CODE_CHAT 展示了一个使用消息队列实现的直播弹幕程序。这个程序可以让客户端通过执行<code class="docutils literal notranslate"><span class="pre">send()</span></code>方法发送普通弹幕或是付费弹幕，还可以通过执行<code class="docutils literal notranslate"><span class="pre">receive()</span></code>方法接收弹幕，或是直接通过执行<code class="docutils literal notranslate"><span class="pre">show()</span></code>方法不断地接收并打印弹幕。</p>
+<hr class="docutils" />
+<p>代码清单 CODE_CHAT 直播弹幕程序 <code class="docutils literal notranslate"><span class="pre">chat.py</span></code></p>
+<hr class="docutils" />
+<p>实现这个弹幕程序的关键是要做到以下两点：</p>
+<ol class="arabic simple">
+<li><p>在调用<code class="docutils literal notranslate"><span class="pre">Chat.__init__()</span></code>方法创建<code class="docutils literal notranslate"><span class="pre">Chat</span></code>对象的时候，向底层的消息队列传入特殊ID <code class="docutils literal notranslate"><span class="pre">$</span></code>，从而表示只接收最新出现的消息/弹幕。</p></li>
+<li><p>在调用<code class="docutils literal notranslate"><span class="pre">Chat.receive()</span></code>方法接收弹幕的时候，将底层消息队列的接收模式设置为<code class="docutils literal notranslate"><span class="pre">BLOCK_FOREVER</span></code>。</p></li>
+</ol>
+<p>这样一来，<code class="docutils literal notranslate"><span class="pre">Chat.receive()</span></code>方法在被调用的时候，就会一直阻塞直到有可供接收的新弹幕出现为止。这确保了用户只会看到最新发送的弹幕，而之前已经存在于消息队列的旧弹幕则会自动被忽略。</p>
+<p>作为例子，以下代码展示了使用弹幕程序接收并打印弹幕的具体方法：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">chat</span> <span class="kn">import</span> <span class="n">Chat</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">chat</span> <span class="o">=</span> <span class="n">Chat</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;Peter&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">chat</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="go">Jack: Hello, Peter!</span>
+<span class="go">Tom: Hello, Peter and Jack!</span>
+<span class="go">++++++++++SUPER CHAT++++++++++</span>
+<span class="go">Mary: Peter, thanks for your help yesterday!</span>
+<span class="go">Donate: 50</span>
+<span class="go">----------SUPER CHAT----------</span>
+</pre></div>
+</div>
+<p>可以看到，在这个属于Peter的直播间里面，整个过程共出现了三条弹幕：其中两条是分别来自Jack和Tom的普通弹幕，而最后一条则是来自Mary的价值50元的付费弹幕。</p>
+<p>以下是与上述代码对应的，负责发送弹幕的代码：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">chat</span> <span class="kn">import</span> <span class="n">Chat</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">chat</span> <span class="o">=</span> <span class="n">Chat</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;Peter&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">chat</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">&quot;Jack&quot;</span><span class="p">,</span> <span class="s2">&quot;Hello, Peter!&quot;</span><span class="p">)</span>
+<span class="go">&#39;1720532188953-0&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">chat</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">&quot;Tom&quot;</span><span class="p">,</span> <span class="s2">&quot;Hello, Peter and Jack!&quot;</span><span class="p">)</span>
+<span class="go">&#39;1720532204379-0&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">chat</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">&quot;Mary&quot;</span><span class="p">,</span> <span class="s2">&quot;Peter, thanks for your help yesterday!&quot;</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+<span class="go">&#39;1720532284213-0&#39;</span>
+</pre></div>
+</div>
+<p>为了让这个弹幕程序保持简单，<code class="docutils literal notranslate"><span class="pre">send()</span></code>方法只接收用户ID、消息正文和付费量三个参数。在实现真实的弹幕程序时，你可以根据自己的需求随时扩展这个方法的参数数量，又或者直接将所有相关参数都放进一个字典里，这样就可以在一条弹幕里面包含更多信息了。</p>
+<p>最后，除了可以用于实现直播间弹幕系统之外，这个程序同样可以用于实现在线即时聊天室，两者的原理是完全一样的。</p>
+</section>
+<section id="id6">
+<h2>重点回顾<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>消息队列不仅可以用于计算机系统的信息交换，它还可以用于人类用户的信息交换，其用途非常广泛。</p></li>
+<li><p>过去在较旧版本的Redis中，人们往往使用订阅与发布、列表或有序集合等方式实现消息队列，但这些实现基本上都有它们各自的缺点，比如消息安全性无法保证、性能不佳或者功能不足等。对于版本较新的Redis来说，使用流来实现消息队列才是最佳选择。</p></li>
+<li><p>对于每一个消息队列，可以使用一个流作为其底层实现，其中向队列中添加新消息的工作可以通过调用<code class="docutils literal notranslate"><span class="pre">XADD</span></code>命令来完成，从队列中获取消息的工作可以通过<code class="docutils literal notranslate"><span class="pre">XRANGE</span></code>命令或<code class="docutils literal notranslate"><span class="pre">XREAD</span></code>命令来完成，而获取队列长度的工作则可以通过<code class="docutils literal notranslate"><span class="pre">XLEN</span></code>命令来完成。</p></li>
+<li><p>消息队列除了可以用于实现直播间弹幕系统之外，同样可以用于实现在线聊天室，两者的原理是完全一样的。</p></li>
+</ul>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2024, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

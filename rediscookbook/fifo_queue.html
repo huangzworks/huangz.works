@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>先进先出队列 &#8212; huangz.works/rediscookbook  文档</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=1a685b77" />
+    <script src="_static/documentation_options.js?v=ab3e9284"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html">
+          huangz.works/rediscookbook</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+	  <!--
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">导航 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">先进先出队列</a><ul>
+<li><a class="reference internal" href="#id2">需求描述</a></li>
+<li><a class="reference internal" href="#id3">解决方案</a></li>
+<li><a class="reference internal" href="#id4">实现代码</a></li>
+<li><a class="reference internal" href="#id5">扩展实现：反方向的队列</a></li>
+<li><a class="reference internal" href="#id6">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+          </ul>
+	  -->
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="id1">
+<h1>先进先出队列<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>先进先出队列是一种非常常见的数据结构，它允许用户有序地将多个元素推入至队列，然后在有需要的时候再以相反的顺序依次从队列中弹出相应的元素。</p>
+<p>先进先出队列经常用于实现排队系统或是抢购/秒杀系统，这些系统的一个特点是它们在短时间内接收到的请求数量远远超过它们能够正常处理的请求数量。
+因此系统就需要将短时间内接收到的大量请求按顺序存放在队列里面，然后以“先到先处理，先到先服务”的方式有序地处理它们。</p>
+<p>举个例子，对于网店应用来说，一件热门的限量打折商品可能会引来大量用户抢购，其购买订单的数量可能会远远超过该网店瞬间能够处理的数量，并且被抢购的商品也随时会售罄。
+这时系统就可以考虑不立即执行购买操作，这是先将用户发送的购买请求全部放入先进先出队列里面，然后再按照这些请求入队的先后顺序依次处理它们。
+这样既能保证订单系统不会被阻塞，也保证了系统对每个抢购用户都是公平的。</p>
+<section id="id2">
+<h2>需求描述<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>你想要使用Redis实现先进先出队列，这个队列应该能够提供基本的推入和弹出等操作。</p>
+</section>
+<section id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>在Redis中实现先进先出队列最简单的方法就是使用列表：程序只需要向列表的一端推入元素，并从列表的另一端弹出元素，那么列表自然就会形成一个先进先出队列。</p>
+<p>举个例子，如果我们使用以下<code class="docutils literal notranslate"><span class="pre">RPUSH</span></code>命令，依次向列表<code class="docutils literal notranslate"><span class="pre">FifoQueue</span></code>的右端推入<code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code>、<code class="docutils literal notranslate"><span class="pre">&quot;b&quot;</span></code>、<code class="docutils literal notranslate"><span class="pre">&quot;c&quot;</span></code>三个元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPUSH</span> <span class="n">FifoQueue</span> <span class="s2">&quot;a&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPUSH</span> <span class="n">FifoQueue</span> <span class="s2">&quot;b&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2</span>
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">RPUSH</span> <span class="n">FifoQueue</span> <span class="s2">&quot;c&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+</pre></div>
+</div>
+<p>那么之后只需要使用<code class="docutils literal notranslate"><span class="pre">RPUSH</span></code>命令的反操作<code class="docutils literal notranslate"><span class="pre">LPOP</span></code>，就可以以先进先出的方式依次从列表的左端弹出<code class="docutils literal notranslate"><span class="pre">&quot;a&quot;</span></code>、<code class="docutils literal notranslate"><span class="pre">&quot;b&quot;</span></code>、<code class="docutils literal notranslate"><span class="pre">&quot;c&quot;</span></code>三个元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LPOP</span> <span class="n">FifoQueue</span>
+<span class="s2">&quot;a&quot;</span>
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LPOP</span> <span class="n">FifoQueue</span>
+<span class="s2">&quot;b&quot;</span>
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LPOP</span> <span class="n">FifoQueue</span>
+<span class="s2">&quot;c&quot;</span>
+</pre></div>
+</div>
+<p>在有需要的时候，还可以使用<code class="docutils literal notranslate"><span class="pre">LLEN</span></code>命令来获知队列目前包含的元素数量：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LLEN</span> <span class="n">FifoQueue</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+</pre></div>
+</div>
+</section>
+<section id="id4">
+<h2>实现代码<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>代码清单 CODE_FIFO 展示了使用上述原理实现的先进先出队列。</p>
+<hr class="docutils" />
+<p>代码清单 CODE_FIFO 先进先出队列 <code class="docutils literal notranslate"><span class="pre">fifo_queue.py</span></code></p>
+<hr class="docutils" />
+<p>这个程序通过<code class="docutils literal notranslate"><span class="pre">RPUSH</span></code>命令将元素推入到列表的右端，并通过<code class="docutils literal notranslate"><span class="pre">LPOP</span></code>或<code class="docutils literal notranslate"><span class="pre">BLPOP</span></code>命令将元素从列表的左端弹出，从而形成先进先出队列。</p>
+<p>为了能够灵活地执行弹出操作，<code class="docutils literal notranslate"><span class="pre">dequeue()</span></code>方法同时支持阻塞和不阻塞两种形式。对于简单的程序和较短的队列，可以通过多次执行该方法来弹出元素：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">item</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">dequeue</span><span class="p">()</span>  <span class="c1"># 弹出一个元素</span>
+<span class="n">do_something</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>  <span class="c1"># 处理元素</span>
+<span class="n">item</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">dequeue</span><span class="p">()</span>  <span class="c1"># 弹出另一个元素</span>
+<span class="n">do_something</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>  <span class="c1"># 处理元素</span>
+</pre></div>
+</div>
+<p>但是对于持续运行的程序或是包含大量元素的队列，则可以通过阻塞模式让程序避免空转、保持高效：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="n">item</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">dequeue</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># 阻塞直到有元素出现</span>
+    <span class="n">do_something</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>  <span class="c1"># 处理元素</span>
+</pre></div>
+</div>
+<p>作为例子，以下代码展示了上述先进先出队列程序的具体用法：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">fifo_queue</span> <span class="kn">import</span> <span class="n">FifoQueue</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span> <span class="o">=</span> <span class="n">FifoQueue</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;FifoQueue&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">)</span>  <span class="c1"># 元素入队</span>
+<span class="go">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">)</span>
+<span class="go">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span><span class="o">.</span><span class="n">dequeue</span><span class="p">()</span>  <span class="c1"># 元素出队</span>
+<span class="go">&#39;a&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span><span class="o">.</span><span class="n">dequeue</span><span class="p">()</span>
+<span class="go">&#39;b&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span><span class="o">.</span><span class="n">dequeue</span><span class="p">()</span>
+<span class="go">&#39;c&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span><span class="o">.</span><span class="n">dequeue</span><span class="p">()</span>  <span class="c1"># 队列已空</span>
+<span class="gp">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</section>
+<section id="id5">
+<h2>扩展实现：反方向的队列<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>正如代码清单 CODE_REVERSED_FIFO 所示，除了“右端入队、左端出队”的方式之外，先进先出队列还可以通过“左端入队、右端出队”的方式实现。
+跟之前<code class="docutils literal notranslate"><span class="pre">FifoQueue</span></code>类的定义相比，这个新实现的<code class="docutils literal notranslate"><span class="pre">FifoQueueR</span></code>类将原来的<code class="docutils literal notranslate"><span class="pre">RPUSH</span></code>替换成了<code class="docutils literal notranslate"><span class="pre">LPUSH</span></code>，而<code class="docutils literal notranslate"><span class="pre">LPOP</span></code>和<code class="docutils literal notranslate"><span class="pre">BLPOP</span></code>则分别替换成了<code class="docutils literal notranslate"><span class="pre">RPOP</span></code>和<code class="docutils literal notranslate"><span class="pre">BRPOP</span></code>。</p>
+<hr class="docutils" />
+<p>代码清单 CODE_REVERSED_FIFO 先进先出队列的另一种实现 <code class="docutils literal notranslate"><span class="pre">fifo_queue_r.py</span></code></p>
+<hr class="docutils" />
+<p>除了底层实现入队和出队的方向不一样之外，<code class="docutils literal notranslate"><span class="pre">FifoQueueR</span></code>和<code class="docutils literal notranslate"><span class="pre">FifoQueue</span></code>的行为应该是完全一致的，它们对于相同的输入应该产生相同的输出：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">fifo_queue_r</span> <span class="kn">import</span> <span class="n">FifoQueueR</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span> <span class="o">=</span> <span class="n">FifoQueueR</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;FifoQueueR&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">)</span>
+<span class="go">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span><span class="o">.</span><span class="n">dequeue</span><span class="p">()</span>
+<span class="go">&#39;a&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span><span class="o">.</span><span class="n">dequeue</span><span class="p">()</span>
+<span class="go">&#39;b&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span><span class="o">.</span><span class="n">dequeue</span><span class="p">()</span>
+<span class="go">&#39;c&#39;</span>
+</pre></div>
+</div>
+</section>
+<section id="id6">
+<h2>重点回顾<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>先进先出队列能够有序地将多个元素推入至队列，并在有需要的时候以相反的顺序弹出元素。</p></li>
+<li><p>先进先出队列通常用于实现排队系统或是抢购/秒杀系统，它们能够将多个请求按顺序存放在队列里面，然后以“先到先处理，先到先服务”的方式有序地处理它们。</p></li>
+<li><p>在Redis中实现先进先出队列最简单的方式就是使用列表，程序只需要向列表的一端推入元素，并从列表的另一端弹出元素，那么列表自然就会形成一个先进先出队列。</p></li>
+<li><p>列表在实现先进先出队列时既可以选择“右端入队、左端出队”的方式，也可以选择“左端入队、右端出队”的方式：前者需要用到<code class="docutils literal notranslate"><span class="pre">RPUSH</span></code>、<code class="docutils literal notranslate"><span class="pre">LPOP</span></code>和<code class="docutils literal notranslate"><span class="pre">BLPOP</span></code>三个命令，而后者则会用到<code class="docutils literal notranslate"><span class="pre">LPUSH</span></code>、<code class="docutils literal notranslate"><span class="pre">RPOP</span></code>和<code class="docutils literal notranslate"><span class="pre">BRPOP</span></code>三个命令。</p></li>
+</ul>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2024, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

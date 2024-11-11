@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>分页 &#8212; huangz.works/rediscookbook  文档</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=1a685b77" />
+    <script src="_static/documentation_options.js?v=ab3e9284"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html">
+          huangz.works/rediscookbook</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+	  <!--
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">导航 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">分页</a><ul>
+<li><a class="reference internal" href="#id2">需求描述</a></li>
+<li><a class="reference internal" href="#id3">解决方案</a></li>
+<li><a class="reference internal" href="#id4">实现代码</a></li>
+<li><a class="reference internal" href="#id5">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+          </ul>
+	  -->
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="id1">
+<h1>分页<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>分页程序对于每个包含大量资料的应用来说都是必不可少的，比方说：</p>
+<ul class="simple">
+<li><p>新闻应用通常会按照事件发生的先后顺序，使用分页程序分割最近出现的所有新闻。这样一来，用户只需要打开应用就能够看到最新发生的事件，并通过不断地向后翻页或滚动来查看之前发生的事件。</p></li>
+<li><p>短视频应用会通过分页程序，每次向用户推荐一批他可能会感兴趣的视频，用户可以从被推荐的视频中进行选择，又或者通过滚动屏幕获取上一批/下一批推荐视频。</p></li>
+<li><p>无论是博客还是微博客，通常都会根据博文的分布时间，按照从新到旧的顺序分割博客中的多篇博文，这样读者就可以通过不断地翻页来阅读更多文章。</p></li>
+</ul>
+<p>除了上述场景之外，分页程序在网络论坛、社交应用、CMS系统和网购应用中也会频繁用到。</p>
+<section id="id2">
+<h2>需求描述<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>你想要使用Redis实现分页程序，以此来为应用提供翻页浏览功能。</p>
+</section>
+<section id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>实现分页功能的关键是要维持一个按位置排列元素的列表，这个列表需要保存多个元素，并记录每个元素的相对位置（也即是它们的索引）。在执行分页操作的时候，程序需要先根据指定的页数以及每页包含的元素数量计算出目标元素在列表中的索引范围，然后通过命令返回位于列表指定索引范围内的元素。</p>
+<p>以表 TABLE_TOPICES 为例，假设现在有一个列表，它保存了20篇文章的ID，分别储存在列表索引<code class="docutils literal notranslate"><span class="pre">0</span></code>到<code class="docutils literal notranslate"><span class="pre">19</span></code>对应的元素中。这时如果我们需要以每页5篇文章的方式对这个列表进行分页，那么程序应该在第一页返回位于索引<code class="docutils literal notranslate"><span class="pre">0</span></code>至<code class="docutils literal notranslate"><span class="pre">4</span></code>上的文章ID，在第二页返回位于索引<code class="docutils literal notranslate"><span class="pre">5</span></code>至<code class="docutils literal notranslate"><span class="pre">9</span></code>上的文章ID，在第三页返回位于索引<code class="docutils literal notranslate"><span class="pre">10</span></code>至<code class="docutils literal notranslate"><span class="pre">14</span></code>上的文章ID，并在第四页返回位于索引<code class="docutils literal notranslate"><span class="pre">15</span></code>至<code class="docutils literal notranslate"><span class="pre">19</span></code>上的文章ID。</p>
+<hr class="docutils" />
+<p>表 TABLE_TOPICES 储存文章ID的列表</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>索引</p></th>
+<th class="head"><p>文章ID</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">topic:10086</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">1</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">topic:10001</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">2</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">topic:10000</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">3</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">topic:9500</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">4</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">topic:9321</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">5</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">topic:9005</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">6</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">topic:9004</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">....</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">...</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">18</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">topic:8123</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">19</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">topic:8007</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<p>为了实现具有上述特性的列表，程序可以使用Redis列表作为分页程序的底层数据结构，而各个列表命令则分别用于实现不同的分页操作：</p>
+<ul class="simple">
+<li><p>添加被分页元素的工作可以通过执行<code class="docutils literal notranslate"><span class="pre">LPUSH</span></code>命令来完成，在持续向列表推入多个元素之后，越接近列表左端的元素就越新，也越早会被程序返回，而越接近列表右端的元素就越旧，也越晚会被程序返回。</p></li>
+<li><p>获取被分页元素的工作可以通过执行<code class="docutils literal notranslate"><span class="pre">LRANGE</span></code>命令来完成，其中被返回元素的索引区间需要根据两个参数计算得出：1）想要获取第几页；2）每页需要返回的多少个元素。</p></li>
+<li><p>获取被分页元素总数量的工作可以通过执行<code class="docutils literal notranslate"><span class="pre">LLEN</span></code>命令来完成，至于分页程序需要处理的总页数则可以通过计算元素总数量除以每页返回元素数量的商得出。</p></li>
+</ul>
+<p>比如说，通过执行以下命令序列，程序可以向列表<code class="docutils literal notranslate"><span class="pre">TopicList</span></code>推入20个代表文章ID的元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LPUSH</span> <span class="n">TopicList</span> <span class="n">topic</span><span class="p">:</span><span class="mi">8007</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LPUSH</span> <span class="n">TopicList</span> <span class="n">topic</span><span class="p">:</span><span class="mi">8123</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2</span>
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LPUSH</span> <span class="n">TopicList</span> <span class="n">topic</span><span class="p">:</span><span class="mi">8141</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+<span class="o">--</span> <span class="n">省略部分LPUSH命令</span>
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LPUSH</span> <span class="n">TopicList</span> <span class="n">topic</span><span class="p">:</span><span class="mi">10001</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">19</span>
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LPUSH</span> <span class="n">TopicList</span> <span class="n">topic</span><span class="p">:</span><span class="mi">10086</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">20</span>
+</pre></div>
+</div>
+<p>在此之后，程序可以通过以下命令序列，以每5个元素为一页的方式，分别获取这个列表第1至第4页的元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">TopicList</span> <span class="mi">0</span> <span class="mi">4</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;topic:10086&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;topic:10001&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;topic:10000&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;topic:9500&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;topic:9321&quot;</span>
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">TopicList</span> <span class="mi">5</span> <span class="mi">9</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;topic:9005&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;topic:9004&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;topic:8856&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;topic:8696&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;topic:8482&quot;</span>
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">TopicList</span> <span class="mi">10</span> <span class="mi">14</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;topic:8323&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;topic:8293&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;topic:8269&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;topic:8205&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;topic:8188&quot;</span>
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">LRANGE</span> <span class="n">TopicList</span> <span class="mi">15</span> <span class="mi">19</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;topic:8175&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;topic:8151&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;topic:8141&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;topic:8123&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;topic:8007&quot;</span>
+</pre></div>
+</div>
+<p>还可以通过<code class="docutils literal notranslate"><span class="pre">LLEN</span></code>命令获取列表的总长度：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">LLEN</span> <span class="n">TopicList</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">20</span>
+</pre></div>
+</div>
+<p>考虑到列表里共有20个元素，如果分页程序以每5个元素为一页，那么整个列表共可以分为4页；而如果以每10个元素一页，那么整个列表共可以分为2页。</p>
+</section>
+<section id="id4">
+<h2>实现代码<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>代码清单 CODE_PAGGING 展示了基于上述原理实现的分页程序。</p>
+<hr class="docutils" />
+<p>代码清单 CODE_PAGGING 分页程序 <code class="docutils literal notranslate"><span class="pre">pagging.py</span></code></p>
+<hr class="docutils" />
+<p>作为例子，以下代码展示了如何使用这个分页程序构建一个包含九个元素的分页列表，然后以每页三个元素的方式返回第一、第二和第三页的各个元素：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pagging</span> <span class="kn">import</span> <span class="n">Pagging</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">page</span> <span class="o">=</span> <span class="n">Pagging</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;TopicList&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span>  <span class="c1"># 添加被分页元素</span>
+<span class="gp">... </span>  <span class="n">page</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;topic:</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+<span class="gp">...</span>
+<span class="go">1</span>
+<span class="go">2</span>
+<span class="go"># ...</span>
+<span class="go">9</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">page</span><span class="o">.</span><span class="n">length</span><span class="p">()</span>  <span class="c1"># 获取元素总数量</span>
+<span class="go">9</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">page</span><span class="o">.</span><span class="n">number</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>  <span class="c1"># 获取总页数</span>
+<span class="go">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">page</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>  <span class="c1"># 获取分页元素</span>
+<span class="go">[&#39;topic:9&#39;, &#39;topic:8&#39;, &#39;topic:7&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">page</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">[&#39;topic:6&#39;, &#39;topic:5&#39;, &#39;topic:4&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">page</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">[&#39;topic:3&#39;, &#39;topic:2&#39;, &#39;topic:1&#39;]</span>
+</pre></div>
+</div>
+</section>
+<section id="id5">
+<h2>重点回顾<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>分页程序对于每个包含大量资料的应用来说都是必不可少的，无论是新闻应用、短视频应用还是博客、网络论坛和CMS系统，分页都随处可见。</p></li>
+<li><p>实现分页功能的关键是要维持一个按位置排列元素的列表，这个列表需要保存多个元素，并记录每个元素的相对位置（也即是它们的索引）。</p></li>
+<li><p>在执行分页操作的时候，程序需要先根据指定的页数以及每页包含的元素数量计算出目标元素在列表中的索引范围，然后通过命令返回位于列表指定索引范围内的元素。</p></li>
+<li><p>为了在Redis中实现分页程序，程序可以把Redis列表用作底层数据结构，而各个列表命令则分别用于实现不同的分页操作：其中<code class="docutils literal notranslate"><span class="pre">LPUSH</span></code>命令用于添加被分页元素，<code class="docutils literal notranslate"><span class="pre">LRANGE</span></code>命令用于获取被分页元素，而<code class="docutils literal notranslate"><span class="pre">LLEN</span></code>命令则用于获取列表包含的元素数量。</p></li>
+</ul>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2024, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

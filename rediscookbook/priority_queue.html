@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>优先队列 &#8212; huangz.works/rediscookbook  文档</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=1a685b77" />
+    <script src="_static/documentation_options.js?v=ab3e9284"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html">
+          huangz.works/rediscookbook</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+	  <!--
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">导航 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">优先队列</a><ul>
+<li><a class="reference internal" href="#id2">需求描述</a></li>
+<li><a class="reference internal" href="#id3">解决方案</a></li>
+<li><a class="reference internal" href="#id4">代码实现</a></li>
+<li><a class="reference internal" href="#id5">扩展实现：为优先队列加上阻塞操作</a></li>
+<li><a class="reference internal" href="#id6">重点回顾</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+          </ul>
+	  -->
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="id1">
+<h1>优先队列<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>优先队列是一种常见的数据结构，这种队列中的每个元素都有一个优先级，而优先级则决定了元素在队列中的出队顺序。</p>
+<p>优先队列又可以分为最小优先队列和最大优先队列，前者最先弹出优先级最低的元素，而后者则最先弹出优先级最高的元素。</p>
+<p>优先队列经常被用作基础数据结构，又或者用于实现调度系统和事件模拟器：比如调度系统通常就使用优先队列来优先处理高优先级的任务，而事件模拟器则使用优先队列来优先处理最近到达的事件。</p>
+<section id="id2">
+<h2>需求描述<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>你想要使用Redis实现优先队列，并通过它提供推入元素、弹出最高优先级元素和弹出最低优先级元素等操作。</p>
+</section>
+<section id="id3">
+<h2>解决方案<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>在Redis中实现优先队列最直接的方法就是使用有序集合——通过将优先队列元素映射为有序集合成员，并将元素的优先级映射为有序集合成员的分值，程序就可以通过操纵有序集合来操纵优先队列：</p>
+<ul class="simple">
+<li><p>通过使用<code class="docutils literal notranslate"><span class="pre">ZADD</span></code>命令，程序可以把指定的优先队列元素储存在有序集合里面，让它成为一个有序集合成员。</p></li>
+<li><p>当用户想要移除指定的优先队列元素时，程序只需要使用<code class="docutils literal notranslate"><span class="pre">ZREM</span></code>命令移除其对应的有序集合成员即可。</p></li>
+<li><p>在把优先队列元素有序地储存在有序集合里面之后，程序可以使用相应的<code class="docutils literal notranslate"><span class="pre">ZPOPMIN</span></code>命令弹出优先级最低的元素，又或者使用<code class="docutils literal notranslate"><span class="pre">ZPOPMAX</span></code>命令弹出优先级最高的元素。</p></li>
+<li><p>此外，程序还可以使用<code class="docutils literal notranslate"><span class="pre">ZRANGE</span></code>命令获取具有指定优先级排名的元素，比如优先级最低的元素和优先级最高的元素，它们分别位于有序集合排名的第一位和最后一位。</p></li>
+</ul>
+<hr class="docutils" />
+<p>表 TABLE_JOB_PRIORITY 一系列任务以及它们的优先级</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>排名</p></th>
+<th class="head"><p>任务</p></th>
+<th class="head"><p>优先级</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;Job</span> <span class="pre">A&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">100</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>2</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;Job</span> <span class="pre">C&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">200</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>3</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;Job</span> <span class="pre">B&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">250</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>4</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;Job</span> <span class="pre">E&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">280</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>5</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;Job</span> <span class="pre">D&quot;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">330</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<p>以表 TABLE_JOB_PRIORITY 所示的任务为例，可以通过执行以下<code class="docutils literal notranslate"><span class="pre">ZADD</span></code>命令来构建与之对应的优先队列：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">ZADD</span> <span class="n">Jobs</span> <span class="mi">100</span> <span class="s2">&quot;Job A&quot;</span> <span class="mi">200</span> <span class="s2">&quot;Job C&quot;</span> <span class="mi">250</span> <span class="s2">&quot;Job B&quot;</span> <span class="mi">280</span> <span class="s2">&quot;Job E&quot;</span> <span class="mi">330</span> <span class="s2">&quot;Job D&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">5</span>
+</pre></div>
+</div>
+<p>然后通过<code class="docutils literal notranslate"><span class="pre">ZRANGE</span></code>命令获取这个优先队列（或者它的某个元素、某个部分等）：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">ZRANGE</span> <span class="n">Jobs</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span> <span class="n">WITHSCORES</span>
+ <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;Job A&quot;</span>
+ <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;100&quot;</span>
+ <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;Job C&quot;</span>
+ <span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;200&quot;</span>
+ <span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;Job B&quot;</span>
+ <span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;250&quot;</span>
+ <span class="mi">7</span><span class="p">)</span> <span class="s2">&quot;Job E&quot;</span>
+ <span class="mi">8</span><span class="p">)</span> <span class="s2">&quot;280&quot;</span>
+ <span class="mi">9</span><span class="p">)</span> <span class="s2">&quot;Job D&quot;</span>
+<span class="mi">10</span><span class="p">)</span> <span class="s2">&quot;330&quot;</span>
+</pre></div>
+</div>
+<p>又或者通过<code class="docutils literal notranslate"><span class="pre">ZPOPMIN</span></code>命令弹出队列中优先级最低的元素<code class="docutils literal notranslate"><span class="pre">&quot;Job</span> <span class="pre">A&quot;</span></code>，或是通过<code class="docutils literal notranslate"><span class="pre">ZPOPMAX</span></code>命令弹出队列中优先级最高的元素<code class="docutils literal notranslate"><span class="pre">&quot;Job</span> <span class="pre">D&quot;</span></code>：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">ZPOPMIN</span> <span class="n">Jobs</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;Job A&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;100&quot;</span>
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">ZPOPMAX</span> <span class="n">Jobs</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;Job D&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;330&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id4">
+<h2>代码实现<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>代码清单 CODE_PRIORITY_QUEUE 展示了基于上一节所述原理实现的优先队列程序。</p>
+<hr class="docutils" />
+<p>代码清单 CODE_PRIORITY_QUEUE 优先队列 <code class="docutils literal notranslate"><span class="pre">priority_queue.py</span></code></p>
+<hr class="docutils" />
+<p>这个优先队列程序提供了实现最大优先队列和最小优先队列所需的操作：</p>
+<ul class="simple">
+<li><p>用户既可以使用<code class="docutils literal notranslate"><span class="pre">min()</span></code>方法和<code class="docutils literal notranslate"><span class="pre">max()</span></code>方法查看优先级最低和最高的元素，也可以在有需要时使用<code class="docutils literal notranslate"><span class="pre">pop_min()</span></code>方法和<code class="docutils literal notranslate"><span class="pre">pop_max()</span></code>方法弹出它们。</p></li>
+<li><p>一个程序如果只使用<code class="docutils literal notranslate"><span class="pre">max()</span></code>和<code class="docutils literal notranslate"><span class="pre">pop_max()</span></code>，那么它就是一个最大优先队列；反之，程序如果只使用<code class="docutils literal notranslate"><span class="pre">min()</span></code>和<code class="docutils literal notranslate"><span class="pre">pop_min()</span></code>，那么它就是一个最小优先队列。</p></li>
+</ul>
+<p>另外需要说明的一点是，因为用户在使用优先队列的时候通常只关心位于队列两端具有最高和最低优先级的两个元素，所以这个程序只实现了访问队列两端元素的方法，而不是能够访问队列中任意元素的方法，但如果有需要的话，也可以随时通过<code class="docutils literal notranslate"><span class="pre">ZRANGE</span></code>命令来实现它。</p>
+<p>作为例子，以下代码展示了上述优先队列程序的具体使用方式：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">priority_queue</span> <span class="kn">import</span> <span class="n">PriorityQueue</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span> <span class="o">=</span> <span class="n">PriorityQueue</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;PriorityQueue&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="s2">&quot;Job A&quot;</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>  <span class="c1"># 元素入队</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="s2">&quot;Job C&quot;</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="s2">&quot;Job B&quot;</span><span class="p">,</span> <span class="mi">250</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="s2">&quot;Job E&quot;</span><span class="p">,</span> <span class="mi">280</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="s2">&quot;Job D&quot;</span><span class="p">,</span> <span class="mi">330</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span><span class="o">.</span><span class="n">length</span><span class="p">()</span>  <span class="c1"># 查看队列长度</span>
+<span class="go">5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>  <span class="c1"># 查看优先级最高的元素</span>
+<span class="go">{&#39;Job D&#39;: 330.0}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>  <span class="c1"># 查看优先级最低的元素</span>
+<span class="go">{&#39;Job A&#39;: 100.0}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span><span class="o">.</span><span class="n">pop_max</span><span class="p">()</span>  <span class="c1"># 弹出优先级最高的元素</span>
+<span class="go">{&#39;Job D&#39;: 330.0}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue</span><span class="o">.</span><span class="n">pop_min</span><span class="p">()</span>  <span class="c1"># 弹出优先级最低的元素</span>
+<span class="go">{&#39;Job A&#39;: 100.0}</span>
+</pre></div>
+</div>
+</section>
+<section id="id5">
+<h2>扩展实现：为优先队列加上阻塞操作<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>代码清单 CODE_PRIORITY_QUEUE 展示的优先队列实现作为底层数据结构使用已经足够，但如果要实际地将其应用到调度系统或事件模拟器中，那么为了避免程序重复调用<code class="docutils literal notranslate"><span class="pre">pop_max()</span></code>或<code class="docutils literal notranslate"><span class="pre">pop_min()</span></code>造成系统空转，我们还必须实现相应的阻塞弹出操作——这样程序就可以在循环里面高效地通过阻塞操作来等待元素出现，然后只在有元素需要处理的情况下进行响应：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="n">job</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">blocking_pop_max</span><span class="p">()</span>  <span class="c1"># 阻塞直到元素出现</span>
+    <span class="n">do_something</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>而不是写出以下这种蹩脚又低效的代码：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="n">job</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">pop_max</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">job</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">sleep</span><span class="p">(</span><span class="n">SOMETIME</span><span class="p">)</span>  <span class="c1"># 队列为空，休眠一段时间</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">do_something</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>代码清单 CODE_BLOCKING_PRIORITY_QUEUE 展示了优先队列程序的阻塞操作实现，它在之前实现的基础上添加了使用<code class="docutils literal notranslate"><span class="pre">BZPOPMIN</span></code>命令实现的<code class="docutils literal notranslate"><span class="pre">blocking_pop_min()</span></code>方法以及使用<code class="docutils literal notranslate"><span class="pre">BZPOPMAX</span></code>命令实现的<code class="docutils literal notranslate"><span class="pre">blocking_pop_max()</span></code>方法。</p>
+<hr class="docutils" />
+<p>代码清单 CODE_BLOCKING_PRIORITY_QUEUE 优先队列的阻塞操作实现 <code class="docutils literal notranslate"><span class="pre">priority_queue.py</span></code></p>
+<hr class="docutils" />
+<p>作为例子，以下代码展示了上述阻塞操作的具体使用方法：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">priority_queue</span> <span class="kn">import</span> <span class="n">PriorityQueue</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue2</span> <span class="o">=</span> <span class="n">PriorityQueue</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;PriorityQueue2&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue2</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="s2">&quot;Job F&quot;</span><span class="p">,</span> <span class="mi">400</span><span class="p">)</span>  <span class="c1"># 入队一个元素</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue2</span><span class="o">.</span><span class="n">blocking_pop_max</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>  <span class="c1"># 队列非空，立即返回队中元素</span>
+<span class="go">{&#39;Job F&#39;: 400.0}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">queue2</span><span class="o">.</span><span class="n">blocking_pop_max</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>  <span class="c1"># 队列为空，阻塞5秒钟后返回None</span>
+<span class="gp">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</section>
+<section id="id6">
+<h2>重点回顾<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>优先队列中的每个元素都有一个优先级，优先级决定了元素在队列中的出队顺序。</p></li>
+<li><p>优先队列又可以分为最小优先队列和最大优先队列，前者最先弹出优先级最低的元素，而后者则最先弹出优先级最高的元素。</p></li>
+<li><p>在Redis中实现优先队列最直接的方法就是使用有序集合——通过将优先队列元素映射为有序集合成员，并将元素的优先级映射为有序集合成员的分值，程序就可以通过操纵有序集合来操纵优先队列。</p></li>
+<li><p>使用有序集合的阻塞弹出命令可以实现相应的阻塞式优先队列弹出操作，这些操作可以让程序只在有元素可供处理的情况下进行响应，从而保证程序尽可能高效地运行。</p></li>
+</ul>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2024, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

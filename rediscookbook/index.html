@@ -64,12 +64,13 @@
       aria-labelledby="dLabelLocalToc"><ul>
 <li><a class="reference internal" href="#">《Redis应用实例》读者服务网站</a><ul>
 <li><a class="reference internal" href="#id1">购买方式</a></li>
-<li><a class="reference internal" href="#id2">目录</a></li>
-<li><a class="reference internal" href="#id3">配套课程</a></li>
-<li><a class="reference internal" href="#id4">版本信息</a></li>
-<li><a class="reference internal" href="#id5">作者简介</a></li>
-<li><a class="reference internal" href="#id6">加入读者群</a></li>
-<li><a class="reference internal" href="#id8">推广图片</a></li>
+<li><a class="reference internal" href="#id3">目录&amp;试读</a></li>
+<li><a class="reference internal" href="#id16">配套课程</a></li>
+<li><a class="reference internal" href="#id17">版本信息</a></li>
+<li><a class="reference internal" href="#id18">读者评论</a></li>
+<li><a class="reference internal" href="#id19">作者简介</a></li>
+<li><a class="reference internal" href="#id20">加入读者群</a></li>
+<li><a class="reference internal" href="#id22">推广图片</a></li>
 </ul>
 </li>
 </ul>
@@ -121,22 +122,26 @@
 <p>本书希望通过展示这些组件和应用，帮助你了解使用Redis解决各类问题的方法，并加深你对Redis各项命令及数据结构的认识，使你确实地成为能够使用Redis解决各类问题的Redis使用者。</p>
 <section id="id1">
 <h2>购买方式<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
-<p>本书预计将于2024年10月末或11月初正式发售，敬请期待。</p>
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p>本书即将发售，具体购买方式等待添加中……</p>
+</div>
+<p><a class="reference external" href="https://book.douban.com/subject/37044995">豆瓣</a></p>
 </section>
-<section id="id2">
-<h2>目录<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<section id="id3">
+<h2>目录&amp;试读<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p>前言</p></li>
+<li><p><a class="reference external" href="./preface.html">前言</a></p></li>
 </ul>
 <p><strong>第1部分：内部组件</strong></p>
 <ol class="arabic simple">
-<li><p>缓存文本数据</p></li>
+<li><p><a class="reference external" href="./cache.html">缓存文本数据</a></p></li>
 <li><p>缓存二进制数据</p></li>
-<li><p>锁</p></li>
+<li><p><a class="reference external" href="./lock.html">锁</a></p></li>
 <li><p>带密码保护功能的锁</p></li>
 <li><p>自增数字ID</p></li>
 <li><p>计数器</p></li>
-<li><p>唯一计数器</p></li>
+<li><p><a class="reference external" href="./unique_counter.html">唯一计数器</a></p></li>
 <li><p>速率限制器</p></li>
 <li><p>二元操作记录器</p></li>
 <li><p>资源池</p></li>
@@ -146,42 +151,58 @@
 </ol>
 <p><strong>第2部分：外部应用</strong></p>
 <ol class="arabic simple" start="14">
-<li><p>消息队列</p></li>
-<li><p>标签系统</p></li>
-<li><p>自动补全</p></li>
+<li><p><a class="reference external" href="./message_queue.html">消息队列</a></p></li>
+<li><p><a class="reference external" href="./tag.html">标签系统</a></p></li>
+<li><p><a class="reference external" href="./auto_complete.html">自动补全</a></p></li>
 <li><p>抽奖</p></li>
 <li><p>社交关系</p></li>
 <li><p>登录会话</p></li>
 <li><p>短网址生成器</p></li>
 <li><p>投票</p></li>
 <li><p>排行榜</p></li>
-<li><p>分页</p></li>
+<li><p><a class="reference external" href="./pagging.html">分页</a></p></li>
 <li><p>时间线</p></li>
 <li><p>地理位置</p></li>
 </ol>
 <p><strong>第3部分：数据结构</strong></p>
 <ol class="arabic simple" start="26">
-<li><p>先进先出队列</p></li>
+<li><p><a class="reference external" href="./fifo_queue.html">先进先出队列</a></p></li>
 <li><p>定长队列和淘汰队列</p></li>
 <li><p>栈/后进先出队列</p></li>
-<li><p>优先队列</p></li>
+<li><p><a class="reference external" href="./priority_queue.html">优先队列</a></p></li>
 <li><p>循环队列</p></li>
-<li><p>矩阵</p></li>
+<li><p><a class="reference external" href="./matrix.html">矩阵</a></p></li>
 <li><p>逻辑矩阵</p></li>
 </ol>
+<div class="line-block">
+<div class="line">*<a class="reference external" href="./full_index.html">查看详细二级目录</a></div>
+<div class="line">**试读内容为未经编辑的作者原稿，与正式出版的图书内容存在一定差异。</div>
+</div>
 </section>
-<section id="id3">
-<h2>配套课程<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<section id="id16">
+<h2>配套课程<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h2>
 <p>《Redis应用十讲》是《Redis应用实例》的随书配套课程，整个课程共由10节课组成。</p>
 <p>关于该课程的具体信息请见其主页：<a class="reference external" href="https://huangz.works/course/redisusages/">huangz.works/course/redisusages/</a>。</p>
 <a class="reference internal image-reference" href="_images/course.png"><img alt="_images/course.png" src="_images/course.png" style="width: 480.0px; height: 270.0px;" /></a>
 </section>
-<section id="id4">
-<h2>版本信息<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<section id="id17">
+<h2>版本信息<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h2>
 <p>本书所有示例代码均基于Redis 7.4和Python 3.12编写，使用的redis-py客户端版本为5.1.0b7。</p>
 </section>
-<section id="id5">
-<h2>作者简介<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<section id="id18">
+<h2>读者评论<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h2>
+<blockquote>
+<div><p>“本书深入浅出地介绍了多个Redis应用实例，非常适合Redis新手进阶。”</p>
+</div></blockquote>
+<blockquote>
+<div><p>“如何基于Redis提供的KeyValue接口以及丰富的内建数据结构，建模现实世界当中实际的应用场景并解决问题，读完这一本书，读者必然能够熟练上手。强烈推荐一读！”</p>
+</div></blockquote>
+<blockquote>
+<div><p>“挑选的案例非常有代表性，对业务开发相当有帮助和启发，相信大家读完之后不用再到处找参考资料了，有这本官方解读+实战宝典，可以提高开发的效率和准确性。”</p>
+</div></blockquote>
+</section>
+<section id="id19">
+<h2>作者简介<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h2>
 <a class="reference internal image-reference" href="_images/author.jpg"><img alt="_images/author.jpg" class="align-right" src="_images/author.jpg" style="width: 216.0px; height: 234.0px;" /></a>
 <p>黄健宏（huangz）是一位计算机技术图书作者和译者，他关注的领域包括数据库、编程语言、操作系统以及算法/数据结构等。</p>
 <p>除了这本《Redis应用实例》之外，
@@ -189,12 +210,12 @@
 此外他还翻译了《SQL实战（第2版）》、《Go语言趣学指南》、《Go Web编程》和《Redis实战》四本译作。</p>
 <p>你可以通过<a class="reference external" href="https://huangz.works/">huangz.works</a>访问黄健宏的个人主页，又或者通过在微博<a class="reference external" href="https://weibo.com/u/3219474004">&#64;黄健宏huangz</a>或推特<a class="reference external" href="https://twitter.com/huangzworks">&#64;huangzworks</a>来联系他。</p>
 </section>
-<section id="id6">
-<h2>加入读者群<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<section id="id20">
+<h2>加入读者群<a class="headerlink" href="#id20" title="Link to this heading">¶</a></h2>
 <p>你可以通过<a class="reference external" href="https://huangz.works/wechat.html">添加作者微信好友</a>并发送消息“Redis实例入群”来加入本书的读者群，从而第一时间获取本书的最新消息。</p>
 </section>
-<section id="id8">
-<h2>推广图片<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<section id="id22">
+<h2>推广图片<a class="headerlink" href="#id22" title="Link to this heading">¶</a></h2>
 <img alt="_images/banner.png" src="_images/banner.png" />
 </section>
 </section>
