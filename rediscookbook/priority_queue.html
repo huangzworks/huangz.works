@@ -188,6 +188,71 @@
 <p>代码清单 CODE_PRIORITY_QUEUE 展示了基于上一节所述原理实现的优先队列程序。</p>
 <hr class="docutils" />
 <p>代码清单 CODE_PRIORITY_QUEUE 优先队列 <code class="docutils literal notranslate"><span class="pre">priority_queue.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">none_or_single_queue_item</span><span class="p">(</span><span class="n">result</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    以{item: priority}形式返回result列表中包含的单个优先队列元素。</span>
+<span class="sd">    若result为空列表则直接返回None。</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">result</span> <span class="o">==</span> <span class="p">[]:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">item</span><span class="p">,</span> <span class="n">priority</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">item</span><span class="p">:</span> <span class="n">priority</span><span class="p">}</span>
+
+<span class="k">class</span> <span class="nc">PriorityQueue</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">insert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">priority</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        将带有指定优先级的元素添加至队列，如果元素已存在那么更新它的优先级。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">zadd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="p">{</span><span class="n">item</span><span class="p">:</span> <span class="n">priority</span><span class="p">})</span>
+
+    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        尝试从队列中移除指定的元素。</span>
+<span class="sd">        移除成功时返回True，返回False则表示由于元素不存在而导致移除失败。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">zrem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">min</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        获取队列中优先级最低的元素及其优先级，如果队列为空则返回None。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">zrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">withscores</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">none_or_single_queue_item</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">max</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        获取队列中优先级最高的元素及其优先级，如果队列为空则返回None。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">zrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">withscores</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">none_or_single_queue_item</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">pop_min</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        弹出并返回队列中优先级最低的元素及其优先级，如果队列为空则返回None。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">zpopmin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">none_or_single_queue_item</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">pop_max</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        弹出并返回队列中优先级最高的元素及其优先级，如果队列为空则返回None。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">zpopmax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">none_or_single_queue_item</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回队列的长度，也即是队列包含的元素数量。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">zcard</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+</pre></div>
+</div>
 <hr class="docutils" />
 <p>这个优先队列程序提供了实现最大优先队列和最小优先队列所需的操作：</p>
 <ul class="simple">
@@ -238,6 +303,31 @@
 <p>代码清单 CODE_BLOCKING_PRIORITY_QUEUE 展示了优先队列程序的阻塞操作实现，它在之前实现的基础上添加了使用<code class="docutils literal notranslate"><span class="pre">BZPOPMIN</span></code>命令实现的<code class="docutils literal notranslate"><span class="pre">blocking_pop_min()</span></code>方法以及使用<code class="docutils literal notranslate"><span class="pre">BZPOPMAX</span></code>命令实现的<code class="docutils literal notranslate"><span class="pre">blocking_pop_max()</span></code>方法。</p>
 <hr class="docutils" />
 <p>代码清单 CODE_BLOCKING_PRIORITY_QUEUE 优先队列的阻塞操作实现 <code class="docutils literal notranslate"><span class="pre">priority_queue.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">BLOCK_FOREVER</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="k">class</span> <span class="nc">PriorityQueue</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="nf">blocking_pop_min</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">BLOCK_FOREVER</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        尝试从队列中弹出优先级最低的元素及其优先级，若队列为空则阻塞。</span>
+<span class="sd">        可选参数timeout用于指定最大阻塞秒数，默认将一直阻塞到有元素可弹出为止。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">bzpopmin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">zset_name</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">priority</span> <span class="o">=</span> <span class="n">result</span>
+            <span class="k">return</span> <span class="p">{</span><span class="n">item</span><span class="p">:</span> <span class="n">priority</span><span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">blocking_pop_max</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">BLOCK_FOREVER</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        尝试从队列中弹出优先级最高的元素及其优先级，若队列为空则阻塞。</span>
+<span class="sd">        可选参数timeout用于指定最大阻塞秒数，默认将一直阻塞到有元素可弹出为止。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">bzpopmax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">zset_name</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">priority</span> <span class="o">=</span> <span class="n">result</span>
+            <span class="k">return</span> <span class="p">{</span><span class="n">item</span><span class="p">:</span> <span class="n">priority</span><span class="p">}</span>
+</pre></div>
+</div>
 <hr class="docutils" />
 <p>作为例子，以下代码展示了上述阻塞操作的具体使用方法：</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>

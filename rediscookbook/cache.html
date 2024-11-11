@@ -141,6 +141,28 @@
 <p>代码清单 CODE_BASIC_CACHE 展示了基于这一原理实现的缓存程序。</p>
 <hr class="docutils" />
 <p>代码清单 CODE_BASIC_CACHE 基本的缓存程序 <code class="docutils literal notranslate"><span class="pre">cache.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Cache</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+
+    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">ttl</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        为指定名字的缓存设置内容。</span>
+<span class="sd">        可选的ttl参数用于设置缓存的生存时间。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ttl</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">ex</span><span class="o">=</span><span class="n">ttl</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        尝试获取指定名字的缓存内容，若缓存不存在则返回None。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</pre></div>
+</div>
 <hr class="docutils" />
 <blockquote>
 <div><p><strong>提示</strong>：提高过期时间精度</p>
@@ -149,6 +171,39 @@
 <p>作为例子，代码清单 CODE_USAGE_BASIC_CACHE 展示了这个缓存程序的基本用法。</p>
 <hr class="docutils" />
 <p>代码清单 CODE_USAGE_BASIC_CACHE 缓存程序的基本用例 <code class="docutils literal notranslate"><span class="pre">cache_usage.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="kn">from</span> <span class="nn">cache</span> <span class="kn">import</span> <span class="n">Cache</span>
+
+<span class="n">ID</span> <span class="o">=</span> <span class="mi">10086</span>
+<span class="n">TTL</span> <span class="o">=</span> <span class="mi">60</span>
+<span class="n">REQUEST_TIMES</span> <span class="o">=</span> <span class="mi">5</span>
+
+<span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">cache</span> <span class="o">=</span> <span class="n">Cache</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">get_content_from_db</span><span class="p">(</span><span class="nb">id</span><span class="p">):</span>
+    <span class="c1"># 模拟从数据库中取出数据</span>
+    <span class="k">return</span> <span class="s2">&quot;Hello World!&quot;</span>
+
+<span class="k">def</span> <span class="nf">get_post_from_template</span><span class="p">(</span><span class="nb">id</span><span class="p">):</span>
+    <span class="c1"># 模拟使用数据和模板生成HTML页面</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">get_content_from_db</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">&quot;&lt;html&gt;&lt;p&gt;</span><span class="si">{}</span><span class="s2">&lt;/p&gt;&lt;/html&gt;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">REQUEST_TIMES</span><span class="p">):</span>
+    <span class="c1"># 尝试直接从缓存中取出HTML页面</span>
+    <span class="n">post</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ID</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">post</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># 缓存不存在，访问数据库并生成HTML页面</span>
+        <span class="c1"># 然后把它放入缓存以便之后访问</span>
+        <span class="n">post</span> <span class="o">=</span> <span class="n">get_post_from_template</span><span class="p">(</span><span class="n">ID</span><span class="p">)</span>
+        <span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">ID</span><span class="p">,</span> <span class="n">post</span><span class="p">,</span> <span class="n">TTL</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Fetch post from database&amp;template.&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># 缓存存在，无需访问数据库也无需生成HTML页面</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Fetch post from cache.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 <hr class="docutils" />
 <p>根据这段程序的执行结果可知，程序只会在第一次请求时访问数据库并根据模板生成HTML页面，而后续一分钟内发生的其他请求都是通过访问Redis保存的缓存来完成的：</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ python3 cache_usage.py
@@ -203,6 +258,31 @@ Fetch post from cache.
 <p>代码清单 CODE_JSON_CACHE 展示了使用JSON缓存多项数据的方法。这个程序复用了之前代码清单 CODE_CACHE 的<code class="docutils literal notranslate"><span class="pre">Cache</span></code>类，它要做的就是在设置缓存之前把Python数据编码为JSON数据，并在获取缓存之后将JSON数据解码为Python数据。</p>
 <hr class="docutils" />
 <p>代码清单 CODE_JSON_CACHE JSON版本的多项数据缓存程序 <code class="docutils literal notranslate"><span class="pre">json_cache.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">cache</span> <span class="kn">import</span> <span class="n">Cache</span>
+
+<span class="k">class</span> <span class="nc">JsonCache</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">Cache</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">ttl</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        为指定名字的缓存设置内容。</span>
+<span class="sd">        可选的ttl参数用于设置缓存的生存时间。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">json_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">json_data</span><span class="p">,</span> <span class="n">ttl</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        尝试获取指定名字的缓存内容，若缓存不存在则返回None。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">json_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">json_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json_data</span><span class="p">)</span>
+</pre></div>
+</div>
 <hr class="docutils" />
 <p>作为例子，以下这段代码展示了如何使用这个程序来缓存前面展示的用户信息：</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
@@ -236,6 +316,33 @@ Fetch post from cache.
 <p>代码清单 CODE_HASH_CACHE 展示了基于上述原理实现的缓存程序。</p>
 <hr class="docutils" />
 <p>代码清单 CODE_HASH_CACHE 使用哈希键实现的多项数据缓存程序 <code class="docutils literal notranslate"><span class="pre">hash_cache.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">HashCache</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+
+    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">ttl</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        为指定名字的缓存设置内容。</span>
+<span class="sd">        可选的ttl参数用于设置缓存的生存时间。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ttl</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hset</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">mapping</span><span class="o">=</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">pipeline</span><span class="p">()</span>
+            <span class="n">tx</span><span class="o">.</span><span class="n">hset</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">mapping</span><span class="o">=</span><span class="n">content</span><span class="p">)</span>
+            <span class="n">tx</span><span class="o">.</span><span class="n">expire</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">ttl</span><span class="p">)</span>
+            <span class="n">tx</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        尝试获取指定名字的缓存内容，若缓存不存在则返回None。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hgetall</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span> <span class="o">!=</span> <span class="p">{}:</span>
+            <span class="k">return</span> <span class="n">result</span>
+</pre></div>
+</div>
 <hr class="docutils" />
 <p>作为例子，以下这段代码展示了如何使用这个缓存程序来缓存前面展示的用户信息：</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>

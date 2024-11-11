@@ -136,6 +136,27 @@
 <p>代码清单 CODE_BASIC_LOCK 展示了根据上述原理实现的锁程序。</p>
 <hr class="docutils" />
 <p>代码清单 CODE_BASIC_LOCK 基本锁实现 <code class="docutils literal notranslate"><span class="pre">lock.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">VALUE_OF_LOCK</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+<span class="k">class</span> <span class="nc">Lock</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        尝试获取锁，成功时返回True，失败时则返回False。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">VALUE_OF_LOCK</span><span class="p">,</span> <span class="n">nx</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">release</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        尝试释放锁，成功时返回True，失败时则返回False。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+</pre></div>
+</div>
 <hr class="docutils" />
 <p>在<code class="docutils literal notranslate"><span class="pre">acquire()</span></code>方法中，程序通过检查<code class="docutils literal notranslate"><span class="pre">SET</span></code>命令的返回值是否为<code class="docutils literal notranslate"><span class="pre">True</span></code>来判断设置是否成功执行；而在<code class="docutils literal notranslate"><span class="pre">release()</span></code>方法中，程序则通过检查<code class="docutils literal notranslate"><span class="pre">DEL</span></code>命令返回的成功删除键数量是否为<code class="docutils literal notranslate"><span class="pre">1</span></code>来判断锁键是否已被成功删除。</p>
 <p>这个锁程序的具体使用方法如下：</p>
@@ -171,6 +192,35 @@
 <p>代码清单 CODE_AUTORELEASE_LOCK 展示了基于上述原理实现的锁程序。</p>
 <hr class="docutils" />
 <p>代码清单 CODE_AUTORELEASE_LOCK 带自动释放功能的锁实现 <code class="docutils literal notranslate"><span class="pre">auto_release_lock.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">VALUE_OF_LOCK</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+<span class="k">class</span> <span class="nc">AutoReleaseLock</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;sec&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        尝试获取一个能够在指定时长之后自动释放的锁。</span>
+<span class="sd">        timeout参数用于设置锁的最大加锁时长。</span>
+<span class="sd">        可选的unit参数则用于设置时长的单位，</span>
+<span class="sd">        它的值可以是代表秒的&#39;sec&#39;或是代表毫秒的&#39;ms&#39;，默认为&#39;sec&#39;。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">unit</span> <span class="o">==</span> <span class="s2">&quot;sec&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">VALUE_OF_LOCK</span><span class="p">,</span> <span class="n">nx</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ex</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">unit</span> <span class="o">==</span> <span class="s2">&quot;ms&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">VALUE_OF_LOCK</span><span class="p">,</span> <span class="n">nx</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">px</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unit must be &#39;sec&#39; or &#39;ms&#39;!&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">release</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        尝试释放锁，成功时返回True，失败时则返回False。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+</pre></div>
+</div>
 <hr class="docutils" />
 <p>这个锁实现的<code class="docutils literal notranslate"><span class="pre">acquire()</span></code>方法接受<code class="docutils literal notranslate"><span class="pre">timeout</span></code>和<code class="docutils literal notranslate"><span class="pre">unit</span></code>两个参数，分别用于设置锁的最大上锁时长及其单位，而程序之后会根据<code class="docutils literal notranslate"><span class="pre">unit</span></code>参数的值决定是使用<code class="docutils literal notranslate"><span class="pre">SET</span></code>命令的<code class="docutils literal notranslate"><span class="pre">EX</span></code>选项还是<code class="docutils literal notranslate"><span class="pre">PX</span></code>选项来设置键的生存时间。
 除此之外，这个锁实现的解锁方法没有发生任何变化，跟之前一样，它只需要执行<code class="docutils literal notranslate"><span class="pre">DEL</span></code>命令将锁键删除即可。</p>

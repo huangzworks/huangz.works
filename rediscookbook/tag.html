@@ -151,6 +151,65 @@
 <p>代码清单 CODE_TAG 展示了基于上述原理实现的标签系统程序。</p>
 <hr class="docutils" />
 <p>代码清单 CODE_TAG 标签系统程序 <code class="docutils literal notranslate"><span class="pre">tag.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">make_target_key</span><span class="p">(</span><span class="n">target</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    目标的标签集合，用于记录目标关联的所有标签。</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;Tag:target:</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">make_tag_key</span><span class="p">(</span><span class="n">tag</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    标签的目标集合，用于记录带有该标签的所有目标。</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;Tag:tag:</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tag</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Tag</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        尝试为目标添加任意多个标签，并返回成功添加的标签数量作为结果。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">pipeline</span><span class="p">()</span>
+        <span class="c1"># 将target添加至每个给定tag对应的集合中</span>
+        <span class="k">for</span> <span class="n">tag_key</span> <span class="ow">in</span> <span class="nb">map</span><span class="p">(</span><span class="n">make_tag_key</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+            <span class="n">tx</span><span class="o">.</span><span class="n">sadd</span><span class="p">(</span><span class="n">tag_key</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+        <span class="c1"># 将所有给定tag添加至target对应的集合中</span>
+        <span class="n">target_key</span> <span class="o">=</span> <span class="n">make_target_key</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+        <span class="n">tx</span><span class="o">.</span><span class="n">sadd</span><span class="p">(</span><span class="n">target_key</span><span class="p">,</span> <span class="o">*</span><span class="n">tags</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tx</span><span class="o">.</span><span class="n">execute</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># 返回成功添加的标签数量</span>
+
+    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        尝试移除目标带有的任意多个标签，并返回成功移除的标签数量作为结果。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">pipeline</span><span class="p">()</span>
+        <span class="c1"># 从每个给定tag对应的集合中移除target</span>
+        <span class="k">for</span> <span class="n">tag_key</span> <span class="ow">in</span> <span class="nb">map</span><span class="p">(</span><span class="n">make_tag_key</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+            <span class="n">tx</span><span class="o">.</span><span class="n">srem</span><span class="p">(</span><span class="n">tag_key</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+        <span class="c1"># 从target对应的集合中移除所有给定tag</span>
+        <span class="n">target_key</span> <span class="o">=</span> <span class="n">make_target_key</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+        <span class="n">tx</span><span class="o">.</span><span class="n">srem</span><span class="p">(</span><span class="n">target_key</span><span class="p">,</span> <span class="o">*</span><span class="n">tags</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tx</span><span class="o">.</span><span class="n">execute</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># 返回成功移除的标签数量</span>
+
+    <span class="k">def</span> <span class="nf">get_tags_by_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        获取目标的所有标签。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">target_key</span> <span class="o">=</span> <span class="n">make_target_key</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">smembers</span><span class="p">(</span><span class="n">target_key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_target_by_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        根据给定的任意多个标签找出同时带有这些标签的目标。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 找出所有给定tag对应的集合，然后对它们执行交集运算</span>
+        <span class="n">tag_keys</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">make_tag_key</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">sinter</span><span class="p">(</span><span class="o">*</span><span class="n">tag_keys</span><span class="p">)</span>
+</pre></div>
+</div>
 <hr class="docutils" />
 <p>作为例子，以下代码演示了如何使用这个程序对Redis、MongoDB和MySQL这三个数据库添加标签，然后基于标签搜索对应的数据库：</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
@@ -187,6 +246,36 @@
 <p>代码清单 CODE_CACHED 展示了带缓存特性的<code class="docutils literal notranslate"><span class="pre">get_cached_target_by_tags()</span></code>方法的具体实现。</p>
 <hr class="docutils" />
 <p>代码清单 CODE_CACHED 带缓存的标签查找方法 <code class="docutils literal notranslate"><span class="pre">tag.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">CACHE_TTL</span> <span class="o">=</span> <span class="mi">60</span>
+
+<span class="k">def</span> <span class="nf">make_cached_targets_key</span><span class="p">(</span><span class="n">tags</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    缓存多标签交集运算结果的集合。</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># 使用sorted确保多个集合输入无论如何排列都会产生相同的缓存键</span>
+    <span class="k">return</span> <span class="s2">&quot;Tag:cached_targets:</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">tags</span><span class="p">))</span>
+
+<span class="k">class</span> <span class="nc">Tag</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="nf">get_cached_target_by_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        缓存版本的get_target_by_tags()方法，结果最多每分钟刷新一次。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 尝试直接从缓存中获取给定标签的交集结果……</span>
+        <span class="n">cache_key</span> <span class="o">=</span> <span class="n">make_cached_targets_key</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span>
+        <span class="n">cached_targets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">smembers</span><span class="p">(</span><span class="n">cache_key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cached_targets</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">cached_targets</span>  <span class="c1"># 返回缓存结果</span>
+
+        <span class="c1"># 缓存不存在……</span>
+        <span class="c1"># 那么先计算并储存交集，然后再设置过期时间，最后再返回交集元素</span>
+        <span class="n">tx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">pipeline</span><span class="p">()</span>
+        <span class="n">tx</span><span class="o">.</span><span class="n">sinterstore</span><span class="p">(</span><span class="n">cache_key</span><span class="p">,</span> <span class="nb">map</span><span class="p">(</span><span class="n">make_tag_key</span><span class="p">,</span> <span class="n">tags</span><span class="p">))</span>
+        <span class="n">tx</span><span class="o">.</span><span class="n">expire</span><span class="p">(</span><span class="n">cache_key</span><span class="p">,</span> <span class="n">CACHE_TTL</span><span class="p">)</span>
+        <span class="n">tx</span><span class="o">.</span><span class="n">smembers</span><span class="p">(</span><span class="n">cache_key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tx</span><span class="o">.</span><span class="n">execute</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># 执行事务并返回交集元素</span>
+</pre></div>
+</div>
 <hr class="docutils" />
 <p>带缓存的<code class="docutils literal notranslate"><span class="pre">get_cached_target_by_tags()</span></code>方法的用法跟无缓存版本完全一样，唯一的区别在于，在缓存更新之前，即使输入集合的元素发生变化，该方法返回的结果也不会变化：</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>

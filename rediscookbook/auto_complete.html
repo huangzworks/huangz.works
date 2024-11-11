@@ -170,6 +170,63 @@
 <p>基于上一节介绍的原理，代码清单 CODE_AUTO_COMPLETE 展示了自动补全程序的具体实现代码。</p>
 <hr class="docutils" />
 <p>代码清单 CODE_AUTO_COMPLETE 自动补全程序 <code class="docutils literal notranslate"><span class="pre">auto_complete.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DEFAULT_WEIGHT</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="n">DEFAULT_NUM</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="k">def</span> <span class="nf">make_ac_key</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">segment</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    基于给定的主题和输入片段，构建保存建议项的建议表。</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;AutoComplete:</span><span class="si">{0}</span><span class="s2">:</span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">segment</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">create_segments</span><span class="p">(</span><span class="n">content</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    根据输入的字符串为其创建片段。</span>
+<span class="sd">    例子：对于输入&quot;abc&quot;，将创建输出[&quot;a&quot;, &quot;ab&quot;, &quot;abc&quot;]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">content</span><span class="p">[:</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">content</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
+
+<span class="k">class</span> <span class="nc">AutoComplete</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">subject</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subject</span> <span class="o">=</span> <span class="n">subject</span>
+
+    <span class="k">def</span> <span class="nf">feed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">DEFAULT_WEIGHT</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        根据输入内容构建自动补全建议表。</span>
+<span class="sd">        可选的weight参数用于指定需要增加的输入权重。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">pipeline</span><span class="p">()</span>
+        <span class="c1"># 将输入分解为片段，然后对其相应的建议表执行操作</span>
+        <span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">create_segments</span><span class="p">(</span><span class="n">content</span><span class="p">):</span>
+            <span class="c1"># 构建建议表键名</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">make_ac_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subject</span><span class="p">,</span> <span class="n">seg</span><span class="p">)</span>
+            <span class="c1"># 更新输入在该表中的权重</span>
+            <span class="n">tx</span><span class="o">.</span><span class="n">zincrby</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
+        <span class="n">tx</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">hint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">segment</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">DEFAULT_NUM</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        根据给定的片段返回指定数量的补全建议，各个建议项之间按权重从高到低排列。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 构建建议表键名</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">make_ac_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subject</span><span class="p">,</span> <span class="n">segment</span><span class="p">)</span>
+        <span class="c1"># 获取补全建议</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">zrange</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">num</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">weight</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        为输入内容设置指定的权重。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">pipeline</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">create_segments</span><span class="p">(</span><span class="n">content</span><span class="p">):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">make_ac_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subject</span><span class="p">,</span> <span class="n">seg</span><span class="p">)</span>
+            <span class="c1"># 直接设置权重</span>
+            <span class="n">tx</span><span class="o">.</span><span class="n">zadd</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">{</span><span class="n">content</span><span class="p">:</span> <span class="n">weight</span><span class="p">})</span>
+        <span class="n">tx</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+</pre></div>
+</div>
 <hr class="docutils" />
 <p>考虑到一个应用里面可能会有多个地方需要用到自动补全功能，所以这个程序使用了<code class="docutils literal notranslate"><span class="pre">subject</span></code>参数用来区分各种不同主题的自动补全建议表。在使用这个程序的时候，用户需要给定一个<code class="docutils literal notranslate"><span class="pre">subject</span></code>参数，然后程序就会根据该参数构建相应的键名，并将其用于创建自动补全建议表。</p>
 <p>此外，这个程序还提供了<code class="docutils literal notranslate"><span class="pre">set()</span></code>方法以便用户在有需要的时候可以修改指定内容的权重，又或者根据给定的权重创建建议表。</p>
@@ -232,6 +289,26 @@
 <p>基于上述原理，代码清单 CODE_FEEDEX 展示了带有自动移除冷门建议表特性的<code class="docutils literal notranslate"><span class="pre">feedex()</span></code>方法的具体定义。</p>
 <hr class="docutils" />
 <p>代码清单 CODE_FEEDEX <code class="docutils literal notranslate"><span class="pre">feedex()</span></code>方法 <code class="docutils literal notranslate"><span class="pre">auto_complete.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DEFAULT_WEIGHT</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="n">DEFAULT_TTL</span> <span class="o">=</span> <span class="mi">300</span>
+
+<span class="k">class</span> <span class="nc">AutoComplete</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="nf">feedex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">DEFAULT_WEIGHT</span><span class="p">,</span> <span class="n">ttl</span><span class="o">=</span><span class="n">DEFAULT_TTL</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        根据输入内容构建自动补全建议表。</span>
+<span class="sd">        可选的weight参数用于指定需要增加的输入权重。</span>
+<span class="sd">        可选的ttl参数用于指定建议表的生存时间，默认为300秒（5分钟）。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">pipeline</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">create_segments</span><span class="p">(</span><span class="n">content</span><span class="p">):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">make_ac_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subject</span><span class="p">,</span> <span class="n">seg</span><span class="p">)</span>
+            <span class="n">tx</span><span class="o">.</span><span class="n">zincrby</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
+            <span class="c1"># 为建议表设置生存时间</span>
+            <span class="n">tx</span><span class="o">.</span><span class="n">expire</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">ttl</span><span class="p">)</span>
+        <span class="n">tx</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+</pre></div>
+</div>
 <hr class="docutils" />
 <p>正如以下代码所示，<code class="docutils literal notranslate"><span class="pre">feedex()</span></code>的使用方式跟<code class="docutils literal notranslate"><span class="pre">feed()</span></code>基本相同，它们之间的主要区别在于<code class="docutils literal notranslate"><span class="pre">feedex()</span></code>创建的建议表必须持续地“续期”才会一直存在，否则它们就会随着键到期而消失，从而导致建议结果也消失：</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>

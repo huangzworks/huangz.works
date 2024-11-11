@@ -150,6 +150,82 @@
 <p>代码清单 CODE_LIST_MATRIX 展示了使用上述原理实现的矩阵程序。</p>
 <hr class="docutils" />
 <p>代码清单 CODE_LIST_MATRIX 列表实现的矩阵存储程序 <code class="docutils literal notranslate"><span class="pre">list_matrix.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">make_row_key</span><span class="p">(</span><span class="n">matrix_id</span><span class="p">,</span> <span class="n">row</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s2">&quot;Matrix:</span><span class="si">{0}</span><span class="s2">:</span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">matrix_id</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">ListMatrix</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">matrix_id</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        创建一个使用ID标识，由指定数量的行和列组成的矩阵。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">matrix_id</span> <span class="o">=</span> <span class="n">matrix_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">M</span> <span class="o">=</span> <span class="n">M</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">N</span> <span class="o">=</span> <span class="n">N</span>
+
+    <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elements</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        根据给定数据对矩阵进行初始化。</span>
+<span class="sd">        如果没有给定数据，那么将矩阵的所有元素初始化为0。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 这个函数只能在矩阵不存在的情况下执行</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">make_row_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matrix_id</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">assert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># 如果未给定初始化矩阵，那么创建一个全为0的矩阵</span>
+        <span class="k">if</span> <span class="n">elements</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">elements</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">):</span>
+                <span class="n">elements</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">)</span>
+
+        <span class="c1"># 检查矩阵的行数是否正确</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">elements</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Incorrect row number, it should be </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">))</span>
+        <span class="c1"># 检查矩阵中每个行的列数是否正确</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">elements</span><span class="p">[</span><span class="n">row</span><span class="p">])</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Incorrect col number, it should be </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">))</span>
+
+        <span class="c1"># 将给定的值推入矩阵的每一行中</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">):</span>
+            <span class="n">row_key</span> <span class="o">=</span> <span class="n">make_row_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matrix_id</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">rpush</span><span class="p">(</span><span class="n">row_key</span><span class="p">,</span> <span class="o">*</span><span class="n">elements</span><span class="p">[</span><span class="n">row</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        将指定行列上的元素设置为给定的值。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">row_key</span> <span class="o">=</span> <span class="n">make_row_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matrix_id</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">lset</span><span class="p">(</span><span class="n">row_key</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        获取指定行列的值。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">row_key</span> <span class="o">=</span> <span class="n">make_row_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matrix_id</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span>
+        <span class="n">raw_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">lindex</span><span class="p">(</span><span class="n">row_key</span><span class="p">,</span> <span class="n">col</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">raw_value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_row</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        获取指定行上所有列的值。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">row_key</span> <span class="o">=</span> <span class="n">make_row_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matrix_id</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span>
+        <span class="n">raw_cols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">lrange</span><span class="p">(</span><span class="n">row_key</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">raw_cols</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">get_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        获取整个矩阵的所有行和列。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">matrix</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># 遍历并获取矩阵的每一行</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">):</span>
+            <span class="n">matrix</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_row</span><span class="p">(</span><span class="n">row</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">matrix</span>
+</pre></div>
+</div>
 <hr class="docutils" />
 <p>作为例子，以下代码展示了这个矩阵程序的具体用法：</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
@@ -198,6 +274,93 @@
 <p>代码清单 CODE_BITMAP_MATRIX 展示了使用位图实现的矩阵数据储存程序。</p>
 <hr class="docutils" />
 <p>代码清单 CODE_BITMAP_MATRIX 位图实现的矩阵存储程序 <code class="docutils literal notranslate"><span class="pre">bitmap_matrix.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">make_row_key</span><span class="p">(</span><span class="n">matrix_id</span><span class="p">,</span> <span class="n">row</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s2">&quot;matrix:</span><span class="si">{0}</span><span class="s2">:</span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">BitmapMatrix</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">matrix_id</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;i64&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        创建一个使用ID标识，由指定数量的行和列组成的矩阵。</span>
+<span class="sd">        可选的type参数用于指定矩阵元素的类型。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">matrix_id</span> <span class="o">=</span> <span class="n">matrix_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">M</span> <span class="o">=</span> <span class="n">M</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">N</span> <span class="o">=</span> <span class="n">N</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="nb">type</span>
+
+    <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elements</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        根据给定数据对矩阵进行初始化。</span>
+<span class="sd">        如果没有给定数据，那么将矩阵的所有元素初始化为0。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 这个函数只能在矩阵不存在的情况下执行</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">make_row_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matrix_id</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">assert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># 如果未给定初始化矩阵，那么创建一个全为0的矩阵</span>
+        <span class="k">if</span> <span class="n">elements</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># 位图的所有位置默认都被设置为0，无需另行设置</span>
+            <span class="k">return</span>
+
+        <span class="c1"># 检查矩阵的行数是否正确</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">elements</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Incorrect row number, it should be </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">))</span>
+        <span class="c1"># 检查矩阵中每个行的列数是否正确</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">elements</span><span class="p">[</span><span class="n">row</span><span class="p">])</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Incorrect col number, it should be </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">))</span>
+
+        <span class="c1"># 遍历矩阵的每个行</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">make_row_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matrix_id</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span>
+            <span class="n">bfop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">bitfield</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="c1"># 对行中的每一列进行设置</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">):</span>
+                <span class="n">bfop</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="s2">&quot;#</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">col</span><span class="p">),</span> <span class="n">elements</span><span class="p">[</span><span class="n">row</span><span class="p">][</span><span class="n">col</span><span class="p">])</span>
+            <span class="n">bfop</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        将指定行列上的元素设置为给定的值。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">make_row_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matrix_id</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span>
+        <span class="n">bfop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">bitfield</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="n">bfop</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="s2">&quot;#</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">col</span><span class="p">),</span> <span class="n">value</span><span class="p">)</span>
+        <span class="n">bfop</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        获取指定行列的值。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">make_row_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matrix_id</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span>
+        <span class="n">bfop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">bitfield</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="n">bfop</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="s2">&quot;#</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">col</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">bfop</span><span class="o">.</span><span class="n">execute</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">get_row</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        获取指定行上所有列的值。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">make_row_key</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matrix_id</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span>
+        <span class="n">bfop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">bitfield</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="c1"># 遍历该行的所有列，获取它们的值</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">):</span>
+            <span class="n">bfop</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="s2">&quot;#</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">col</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">bfop</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">get_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        获取整个矩阵的所有行和列。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">matrix</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># 遍历并获取矩阵的每一行</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">):</span>
+            <span class="n">matrix</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_row</span><span class="p">(</span><span class="n">row</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">matrix</span>
+</pre></div>
+</div>
 <hr class="docutils" />
 <p>跟列表矩阵程序相比，位图矩阵程序的一个主要优点是：位图矩阵在默认情况下会把所有元素都看作是<code class="docutils literal notranslate"><span class="pre">0</span></code>，所以它无需初始化即可随时使用并对任意元素进行设置。</p>
 <p>比如以下代码就展示了如何使用位图矩阵对稀疏矩阵中少数几个不为<code class="docutils literal notranslate"><span class="pre">0</span></code>的元素进行设置：</p>

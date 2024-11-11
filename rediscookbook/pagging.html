@@ -220,6 +220,47 @@
 <p>代码清单 CODE_PAGGING 展示了基于上述原理实现的分页程序。</p>
 <hr class="docutils" />
 <p>代码清单 CODE_PAGGING 分页程序 <code class="docutils literal notranslate"><span class="pre">pagging.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">ceil</span>  <span class="c1"># 向下取整函数</span>
+
+<span class="n">DEFAULT_SIZE</span> <span class="o">=</span> <span class="mi">10</span>  <span class="c1"># 默认每页返回10个元素</span>
+
+<span class="k">class</span> <span class="nc">Pagging</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">items</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        将给定的一个或多个元素推入到分页列表中，</span>
+<span class="sd">        成功时返回列表当前包含的元素数量作为结果。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">lpush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="o">*</span><span class="n">items</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">page</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">DEFAULT_SIZE</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        从指定分页中取出指定数量的元素。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 根据给定的页数和元素数量计算出索引范围</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="p">(</span><span class="n">page</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">size</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">page</span><span class="o">*</span><span class="n">size</span><span class="o">-</span><span class="mi">1</span>
+        <span class="c1"># 根据索引从分页列表中获取元素</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">lrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回分页列表包含的元素总数量。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">llen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">number</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">DEFAULT_SIZE</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回在获取指定数量的元素时，分页列表包含的页数量。</span>
+<span class="sd">        如果分页列表为空则返回0。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ceil</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">()</span><span class="o">/</span><span class="n">size</span><span class="p">)</span>
+</pre></div>
+</div>
 <hr class="docutils" />
 <p>作为例子，以下代码展示了如何使用这个分页程序构建一个包含九个元素的分页列表，然后以每页三个元素的方式返回第一、第二和第三页的各个元素：</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>

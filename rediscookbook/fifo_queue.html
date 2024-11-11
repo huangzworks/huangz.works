@@ -147,6 +147,44 @@
 <p>代码清单 CODE_FIFO 展示了使用上述原理实现的先进先出队列。</p>
 <hr class="docutils" />
 <p>代码清单 CODE_FIFO 先进先出队列 <code class="docutils literal notranslate"><span class="pre">fifo_queue.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">NON_BLOCK</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+<span class="k">class</span> <span class="nc">FifoQueue</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">enqueue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">items</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        以先进先出顺序将给定的一个或多个元素推入队列。</span>
+<span class="sd">        返回推入操作执行之后，队列当前的长度作为结果。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">rpush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="o">*</span><span class="n">items</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">dequeue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">NON_BLOCK</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        以先进先出顺序弹出队列中的一个元素。</span>
+<span class="sd">        如果队列为空则返回None。</span>
+<span class="sd">        可选的timeout参数用于启用/关闭阻塞功能，它的值可以是：</span>
+<span class="sd">        1) NON_BLOCK ，默认值，不启用阻塞功能；</span>
+<span class="sd">        2）0 ，一直等待直到有值可弹出为止；</span>
+<span class="sd">        3）N ，大于0的秒数N，表示等待的最长秒数。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">timeout</span> <span class="o">==</span> <span class="n">NON_BLOCK</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">lpop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">blpop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ret</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">ret</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># 从(list, item)元组中获取被弹出元素</span>
+
+    <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回队列的长度。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">llen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+</pre></div>
+</div>
 <hr class="docutils" />
 <p>这个程序通过<code class="docutils literal notranslate"><span class="pre">RPUSH</span></code>命令将元素推入到列表的右端，并通过<code class="docutils literal notranslate"><span class="pre">LPOP</span></code>或<code class="docutils literal notranslate"><span class="pre">BLPOP</span></code>命令将元素从列表的左端弹出，从而形成先进先出队列。</p>
 <p>为了能够灵活地执行弹出操作，<code class="docutils literal notranslate"><span class="pre">dequeue()</span></code>方法同时支持阻塞和不阻塞两种形式。对于简单的程序和较短的队列，可以通过多次执行该方法来弹出元素：</p>
@@ -190,6 +228,44 @@
 跟之前<code class="docutils literal notranslate"><span class="pre">FifoQueue</span></code>类的定义相比，这个新实现的<code class="docutils literal notranslate"><span class="pre">FifoQueueR</span></code>类将原来的<code class="docutils literal notranslate"><span class="pre">RPUSH</span></code>替换成了<code class="docutils literal notranslate"><span class="pre">LPUSH</span></code>，而<code class="docutils literal notranslate"><span class="pre">LPOP</span></code>和<code class="docutils literal notranslate"><span class="pre">BLPOP</span></code>则分别替换成了<code class="docutils literal notranslate"><span class="pre">RPOP</span></code>和<code class="docutils literal notranslate"><span class="pre">BRPOP</span></code>。</p>
 <hr class="docutils" />
 <p>代码清单 CODE_REVERSED_FIFO 先进先出队列的另一种实现 <code class="docutils literal notranslate"><span class="pre">fifo_queue_r.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">NON_BLOCK</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+<span class="k">class</span> <span class="nc">FifoQueueR</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">enqueue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">items</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        以先进先出顺序将给定的一个或多个元素推入队列。</span>
+<span class="sd">        返回推入操作执行之后，队列当前的长度作为结果。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">lpush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="o">*</span><span class="n">items</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">dequeue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">NON_BLOCK</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        以先进先出顺序弹出队列中的一个元素。</span>
+<span class="sd">        如果队列为空则返回None。</span>
+<span class="sd">        可选的timeout参数用于启用/关闭阻塞功能，它的值可以是：</span>
+<span class="sd">        1) NON_BLOCK ，默认值，不启用阻塞功能；</span>
+<span class="sd">        2）0 ，一直等待直到有值可弹出为止；</span>
+<span class="sd">        3）N ，大于0的秒数N，表示等待的最长秒数。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">timeout</span> <span class="o">==</span> <span class="n">NON_BLOCK</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">rpop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">brpop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ret</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">ret</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># 从(list, item)元组中获取被弹出元素</span>
+
+    <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回队列的长度。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">llen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+</pre></div>
+</div>
 <hr class="docutils" />
 <p>除了底层实现入队和出队的方向不一样之外，<code class="docutils literal notranslate"><span class="pre">FifoQueueR</span></code>和<code class="docutils literal notranslate"><span class="pre">FifoQueue</span></code>的行为应该是完全一致的，它们对于相同的输入应该产生相同的输出：</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>

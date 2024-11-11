@@ -163,6 +163,60 @@
 <p>代码清单 CODE_MESSAGE_QUEUE 展示了基于上述原理实现的消息队列程序。</p>
 <hr class="docutils" />
 <p>代码清单 CODE_MESSAGE_QUEUE 消息队列程序 <code class="docutils literal notranslate"><span class="pre">message_queue.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">xread_iterator</span> <span class="kn">import</span> <span class="n">StreamIterator</span><span class="p">,</span> <span class="n">START_OF_STREAM</span>
+
+<span class="n">NON_BLOCK</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">BLOCK_FOREVER</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="n">DEFAULT_COUNT</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="n">START_OF_MQ</span> <span class="o">=</span> <span class="n">START_OF_STREAM</span>
+
+<span class="k">class</span> <span class="nc">MessageQueue</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">cursor</span><span class="o">=</span><span class="n">START_OF_MQ</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        根据给定的键，创建与之对应的消息队列。</span>
+<span class="sd">        消息队列的起始访问位置可以通过可选参数cursor指定。</span>
+<span class="sd">        默认情况下，cursor指向消息队列的最开头。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_iterator</span> <span class="o">=</span> <span class="n">StreamIterator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">cursor</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        接受一个键值对形式的消息，并将其放入队列。</span>
+<span class="sd">        完成之后返回消息在队列中的ID作为结果。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">xadd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">receive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="n">DEFAULT_COUNT</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">NON_BLOCK</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        根据消息的入队顺序，访问队列中的消息。</span>
+<span class="sd">        可选的count参数用于指定每次访问最多能够获取多少条消息，默认为10。</span>
+<span class="sd">        可选的timeout参数用于指定方法在未发现消息时是否阻塞，它的值可以是：</span>
+<span class="sd">        - NON_BLOCK，不阻塞直接返回，这是默认值；</span>
+<span class="sd">        - BLOCK_FOREVER，一直阻塞直到有消息可读为止；</span>
+<span class="sd">        - 一个大于零的整数，用于代表阻塞的最大毫秒数</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iterator</span><span class="o">.</span><span class="n">next</span><span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message_id</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        获取指定ID对应的消息。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">message_id</span><span class="p">,</span> <span class="n">message_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="p">[]:</span>
+            <span class="k">return</span> <span class="n">ret</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回整个消息队列目前包含的消息总数量。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">xlen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+</pre></div>
+</div>
 <hr class="docutils" />
 <p>这个程序复用了《流迭代器》一章中使用<code class="docutils literal notranslate"><span class="pre">XREAD</span></code>命令实现的流迭代器。通过这个迭代器，程序成功地将原本非常复杂的消息接收操作简化为一次针对<code class="docutils literal notranslate"><span class="pre">StreamIterator.next()</span></code>方法的调用，这也是这个消息队列程序能够保持简练的关键。</p>
 <p>作为例子，以下代码展示了这个消息队列程序的具体使用方式：</p>
@@ -189,6 +243,69 @@
 <p>为了更好地展示消息队列的功能，代码清单 CODE_CHAT 展示了一个使用消息队列实现的直播弹幕程序。这个程序可以让客户端通过执行<code class="docutils literal notranslate"><span class="pre">send()</span></code>方法发送普通弹幕或是付费弹幕，还可以通过执行<code class="docutils literal notranslate"><span class="pre">receive()</span></code>方法接收弹幕，或是直接通过执行<code class="docutils literal notranslate"><span class="pre">show()</span></code>方法不断地接收并打印弹幕。</p>
 <hr class="docutils" />
 <p>代码清单 CODE_CHAT 直播弹幕程序 <code class="docutils literal notranslate"><span class="pre">chat.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">message_queue</span> <span class="kn">import</span> <span class="n">MessageQueue</span><span class="p">,</span> <span class="n">DEFAULT_COUNT</span><span class="p">,</span> <span class="n">BLOCK_FOREVER</span>
+
+<span class="k">def</span> <span class="nf">make_chat_key</span><span class="p">(</span><span class="n">broadcaster</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    根据给定的主播ID，构建出相应的消息队列键，用于存储直播间发出的弹幕。</span>
+<span class="sd">    例子：&quot;Chat:Peter&quot;、&quot;Chat:10086&quot;等。</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;Chat:</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">broadcaster</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Chat</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">broadcaster</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        根据给定的主播ID，为其构建存储直播间弹幕的消息队列。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">broadcaster</span> <span class="o">=</span> <span class="n">broadcaster</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">make_chat_key</span><span class="p">(</span><span class="n">broadcaster</span><span class="p">)</span>
+        <span class="c1"># 因为消息队列默认从队列开头开始返回元素，所以这里需要</span>
+        <span class="c1"># 传入特殊值&quot;$&quot;作为ID，让队列只返回阻塞之后出现的新消息</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mq</span> <span class="o">=</span> <span class="n">MessageQueue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;$&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uid</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">donate</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        根据给定的用户ID和内容，向直播间发送一条弹幕。</span>
+<span class="sd">        如果donate参数的值不为0，那么说明这是一条付费弹幕（super chat）。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">donate</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;uid&quot;</span><span class="p">:</span> <span class="n">uid</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">content</span><span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;uid&quot;</span><span class="p">:</span> <span class="n">uid</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">content</span><span class="p">,</span> <span class="s2">&quot;donate&quot;</span><span class="p">:</span> <span class="n">donate</span><span class="p">}</span>
+        <span class="c1"># 将弹幕发送至消息队列中</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mq</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">receive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="n">DEFAULT_COUNT</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        从直播间接收并返回最多count条弹幕，默认为10条。</span>
+<span class="sd">        如果上次调用之后还有未接收的弹幕存在，那么先接收已有的弹幕，再接收新出现的弹幕。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 尝试从消息队列中取出弹幕</span>
+        <span class="c1"># 若队列为空就一直阻塞直到有弹幕可弹出为止</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mq</span><span class="o">.</span><span class="n">receive</span><span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="n">BLOCK_FOREVER</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">show</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        简易的弹幕打印器。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="c1"># 一直接收弹幕</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">receive</span><span class="p">():</span>
+                <span class="c1"># 丢弃消息ID，只获取消息本身</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;msg&quot;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="s2">&quot;donate&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">msg</span><span class="p">:</span>
+                    <span class="c1"># 打印普通弹幕</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="s2">&quot;uid&quot;</span><span class="p">],</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">]))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># 打印付费弹幕</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;+&quot;</span><span class="o">*</span><span class="mi">10</span> <span class="o">+</span> <span class="s2">&quot;SUPER CHAT&quot;</span> <span class="o">+</span> <span class="s2">&quot;+&quot;</span><span class="o">*</span><span class="mi">10</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">: </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="s2">&quot;uid&quot;</span><span class="p">],</span> <span class="n">msg</span><span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">]))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Donate: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="s2">&quot;donate&quot;</span><span class="p">]))</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="o">*</span><span class="mi">10</span> <span class="o">+</span> <span class="s2">&quot;SUPER CHAT&quot;</span> <span class="o">+</span> <span class="s2">&quot;-&quot;</span><span class="o">*</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
 <hr class="docutils" />
 <p>实现这个弹幕程序的关键是要做到以下两点：</p>
 <ol class="arabic simple">

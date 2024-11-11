@@ -48,7 +48,28 @@ Redis可以通过多种方法实现锁，其中包括带有基本功能的锁、
 
 代码清单 CODE_BASIC_LOCK 基本锁实现 ``lock.py``
 
-.. literalinclude:: code/lock.py
+::
+
+
+        VALUE_OF_LOCK = ""
+
+        class Lock:
+
+            def __init__(self, client, key):
+                self.client = client
+                self.key = key
+
+            def acquire(self):
+                """
+                尝试获取锁，成功时返回True，失败时则返回False。
+                """
+                return self.client.set(self.key, VALUE_OF_LOCK, nx=True) is True
+
+            def release(self):
+                """
+                尝试释放锁，成功时返回True，失败时则返回False。
+                """
+                return self.client.delete(self.key) == 1
 
 --------------
 
@@ -100,7 +121,36 @@ Redis可以通过多种方法实现锁，其中包括带有基本功能的锁、
 
 代码清单 CODE_AUTORELEASE_LOCK 带自动释放功能的锁实现 ``auto_release_lock.py``
 
-.. literalinclude:: code/auto_release_lock.py
+::
+
+
+        VALUE_OF_LOCK = ""
+
+        class AutoReleaseLock:
+
+            def __init__(self, client, key):
+                self.client = client
+                self.key = key
+
+            def acquire(self, timeout, unit="sec"):
+                """
+                尝试获取一个能够在指定时长之后自动释放的锁。
+                timeout参数用于设置锁的最大加锁时长。
+                可选的unit参数则用于设置时长的单位，
+                它的值可以是代表秒的'sec'或是代表毫秒的'ms'，默认为'sec'。
+                """
+                if unit == "sec":
+                    return self.client.set(self.key, VALUE_OF_LOCK, nx=True, ex=timeout) is True
+                elif unit == "ms":
+                    return self.client.set(self.key, VALUE_OF_LOCK, nx=True, px=timeout) is True
+                else:
+                    raise ValueError("Unit must be 'sec' or 'ms'!")
+
+            def release(self):
+                """
+                尝试释放锁，成功时返回True，失败时则返回False。
+                """
+                return self.client.delete(self.key) == 1
 
 --------------
 
