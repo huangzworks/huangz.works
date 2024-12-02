@@ -94,8 +94,14 @@
    :scale: 50
 
 
-版本信息
+随书代码
 ------------------
+
+代码库\ `github.com/huangzworks/rediscookbook <https://github.com/huangzworks/rediscookbook>`_\ 包含了书中展示的所有可执行代码，你也可以通过执行以下命令直接克隆该仓库：
+
+.. code:: git
+
+        git clone git@github.com:huangzworks/rediscookbook.git
 
 本书所有示例代码均基于Redis 7.4和Python 3.12编写，使用的redis-py客户端版本为5.1.0b7。
 
