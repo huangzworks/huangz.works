@@ -1,0 +1,122 @@
+勘误
+==========
+
+第1次印刷（2024年12月）
+------------------------
+
+44页
+^^^^^^
+
+本页的第3段代码中的：
+
+::
+
+        >>> for i in range(3):
+        ...
+           limiter.is_permitted("Peter")
+        ...
+
+应为：
+
+::
+
+        >>> for i in range(3):
+        ...   limiter.is_permitted("Peter")
+        ...
+
+本页最后一段代码中的：
+
+::
+
+        >>> for i in range(3):
+        ...
+           limiter.is_permitted("Peter")
+        ...
+
+修复方式同上。
+
+71页
+^^^^^^^
+
+代码清单13-2中的：
+
+::
+
+        DEFAULT_COUNT = 10
+        NON_BLOCK = None
+        START_OF_STREAM = 0
+        def tuple_to_dict(tpl):
+
+应为：
+
+::
+
+        DEFAULT_COUNT = 10
+        NON_BLOCK = None
+        START_OF_STREAM = 0
+
+        def tuple_to_dict(tpl):
+
+（第3行代码之后有一个空行）。
+
+164页
+^^^^^^^^
+
+第2段代码中的：
+
+::
+
+        >>> for i in range(8):  # 推入7~0这八个元素
+        ...
+           stack.push(i)
+        ...
+
+应为：
+
+::
+
+        >>> for i in range(8):  # 推入7~0这八个元素
+        ...   stack.push(i)
+        ...
+
+173页
+^^^^^^^^^^^
+
+最后一段代码中的：
+
+::
+
+        >>> for i in range(6):  # 遍历队列
+        ...
+           queue.rotate()
+        ...
+
+应为：
+
+::
+
+        >>> for i in range(6):  # 遍历队列
+        ...   queue.rotate()
+        ...
+
+175页
+^^^^^^^^^^
+
+最后一段代码中的：
+
+::
+
+        >>> for i in range(3):  # 遍历队列
+        ...
+           queue.rotate()
+        ...
+
+应为：
+
+::
+
+        >>> for i in range(3):  # 遍历队列
+        ...   queue.rotate()
+        ...
+
+
