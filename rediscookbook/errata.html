@@ -64,11 +64,12 @@
       aria-labelledby="dLabelLocalToc"><ul>
 <li><a class="reference internal" href="#">勘误</a><ul>
 <li><a class="reference internal" href="#id2">第1次印刷（2024年12月）</a><ul>
-<li><a class="reference internal" href="#id3">44页</a></li>
-<li><a class="reference internal" href="#id4">71页</a></li>
-<li><a class="reference internal" href="#id5">164页</a></li>
-<li><a class="reference internal" href="#id6">173页</a></li>
-<li><a class="reference internal" href="#id7">175页</a></li>
+<li><a class="reference internal" href="#id3">第4页</a></li>
+<li><a class="reference internal" href="#id4">44页</a></li>
+<li><a class="reference internal" href="#id5">71页</a></li>
+<li><a class="reference internal" href="#id6">164页</a></li>
+<li><a class="reference internal" href="#id7">173页</a></li>
+<li><a class="reference internal" href="#id8">175页</a></li>
 </ul>
 </li>
 </ul>
@@ -111,7 +112,20 @@
 <section id="id2">
 <h2>第1次印刷（2024年12月）<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
 <section id="id3">
-<h3>44页<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<h3>第4页<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<p>最后一行的克隆命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">git</span><span class="nd">@github</span><span class="o">.</span><span class="n">com</span><span class="p">:</span><span class="n">huangzworks</span><span class="o">/</span><span class="n">redis</span><span class="o">-</span><span class="n">usage</span><span class="o">-</span><span class="n">collection</span><span class="o">.</span><span class="n">git</span>
+</pre></div>
+</div>
+<p>应改为：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">git</span><span class="nd">@github</span><span class="o">.</span><span class="n">com</span><span class="p">:</span><span class="n">huangzworks</span><span class="o">/</span><span class="n">rediscookbook</span><span class="o">.</span><span class="n">git</span>
+</pre></div>
+</div>
+<p>这里的<code class="docutils literal notranslate"><span class="pre">redis-usage-collection</span></code>是我原本为书本源码设置的名字，后面觉得太长了，就修改为跟本书英文名相同的<code class="docutils literal notranslate"><span class="pre">rediscookbook</span></code>，但这个修改最后由于失误没能反映到最终的印刷版本中。</p>
+<p>为了热修复这个问题，我已在GitHub上为上述两个名字都创建了一模一样的源码库，无论你使用哪条命令（哪个名字），都能够正确获取代码。</p>
+</section>
+<section id="id4">
+<h3>44页<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
 <p>本页的第3段代码中的：</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
 <span class="gp">...</span>
@@ -134,8 +148,8 @@
 </div>
 <p>修复方式同上。</p>
 </section>
-<section id="id4">
-<h3>71页<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<section id="id5">
+<h3>71页<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
 <p>代码清单13-2中的：</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DEFAULT_COUNT</span> <span class="o">=</span> <span class="mi">10</span>
 <span class="n">NON_BLOCK</span> <span class="o">=</span> <span class="kc">None</span>
@@ -153,8 +167,8 @@
 </div>
 <p>（第3行代码之后有一个空行）。</p>
 </section>
-<section id="id5">
-<h3>164页<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
+<section id="id6">
+<h3>164页<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
 <p>第2段代码中的：</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span>  <span class="c1"># 推入7~0这八个元素</span>
 <span class="gp">...</span>
@@ -169,8 +183,8 @@
 </pre></div>
 </div>
 </section>
-<section id="id6">
-<h3>173页<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
+<section id="id7">
+<h3>173页<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
 <p>最后一段代码中的：</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>  <span class="c1"># 遍历队列</span>
 <span class="gp">...</span>
@@ -185,8 +199,8 @@
 </pre></div>
 </div>
 </section>
-<section id="id7">
-<h3>175页<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
+<section id="id8">
+<h3>175页<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
 <p>最后一段代码中的：</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>  <span class="c1"># 遍历队列</span>
 <span class="gp">...</span>

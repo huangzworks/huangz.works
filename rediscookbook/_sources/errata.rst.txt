@@ -4,6 +4,25 @@
 第1次印刷（2024年12月）
 ------------------------
 
+第4页
+^^^^^^^
+
+最后一行的克隆命令：
+
+::
+
+        git clone git@github.com:huangzworks/redis-usage-collection.git
+
+应改为：
+
+::
+
+        git clone git@github.com:huangzworks/rediscookbook.git
+
+这里的\ ``redis-usage-collection``\ 是我原本为书本源码设置的名字，后面觉得太长了，就修改为跟本书英文名相同的\ ``rediscookbook``\ ，但这个修改最后由于失误没能反映到最终的印刷版本中。
+
+为了热修复这个问题，我已在GitHub上为上述两个名字都创建了一模一样的源码库，无论你使用哪条命令（哪个名字），都能够正确获取代码。
+
 44页
 ^^^^^^
 
