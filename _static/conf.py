@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = '黄健宏 | huangz.works'
-copyright = '2024, 黄健宏'
+copyright = '2025, 黄健宏'
 author = '黄健宏'
 
 
