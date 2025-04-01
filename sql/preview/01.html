@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>第 1 章 设置编码环境 &#8212; huangz.works/sql 1.0 文档</title>
+    
+  <link href="../_static/css/theme.css" rel="stylesheet">
+  <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/blank.css?v=c4c5097c" />
+    
+  <link rel="preload" as="script" href="../_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script src="../_static/documentation_options.js?v=bfa25948"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="zh-cn">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+<a class="navbar-brand" href="../index.html">
+<p class="title">huangz.works/sql</p>
+</a>
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+      </ul>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar"><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+              
+              <div class="toc-item">
+                
+<div class="tocsection onthispage pt-5 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id2">
+   安装文本编辑器
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#github">
+   从GitHub下载代码和数据
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#postgresqlpgadmin">
+   安装PostgreSQL和pgAdmin
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#windows">
+     在Windows安装
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#python">
+       配置Python语言支持
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#macos">
+     在macOS安装
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#postgres-apppgadmin">
+       安装Postgres.app和pgAdmin
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#id3">
+       安装Python
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#linux">
+     在Linux安装
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#ubuntu">
+       Ubuntu安装示例
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#pgadmin">
+   使用pgAdmin
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#id4">
+     启动pgAdmin并设置主密码
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#postgres">
+     连接默认的postgres数据库
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#id5">
+     探索查询工具
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#id6">
+     自定义 pgAdmin
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id7">
+   pgAdmin之外的选择
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id8">
+   小结
+  </a>
+ </li>
+</ul>
+
+</nav>
+              </div>
+              
+              <div class="toc-item">
+                
+              </div>
+              
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <section id="id1">
+<h1>第 1 章 设置编码环境<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>兵马未动，粮草先行。为了完成本书布置的练习，我们首先要做的就是获取资源并安装软件。本章将向你展示如何安装文本编辑器、如何下载示例代码和数据，还有如何安装PostgreSQL数据库系统及其配套的图形用户界面pgAdmin。本章还会告诉你如何在有需要的时候获取帮助。阅读完本章之后，你的计算机将拥有一个健壮的环境，足以让你学习如何使用SQL进行数据分析。</p>
+<p>强烈建议你不要跳过本章。正如我的老学究高中老师以往说的那样：“三思而后行，防范于未然”。按照本章介绍的步骤行事可以有效地避免之后出现问题。</p>
+<p>我们的首个任务就是设置一个适用于数据处理的文本编辑器。</p>
+<section id="id2">
+<h2>安装文本编辑器<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>我们将要载入到SQL数据库中的源数据，通常会以<em>逗号分隔值</em>（CSV）格式储存在<em>文本文件</em>里面，第5章中的“处理带有分隔符的文本文件”一节将对这种格式做更详细的介绍。目前来说，我们要做的就是找到一个文本编辑器，它能够打开CSV格式的文件并且不会无意中伤害到文件中的数据。</p>
+<p>数据处理软件对于数据的格式通常会有非常严格的要求，而文字处理程序和电子表格程序这类常见的商业软件，往往会自作主张地把样式或是隐藏字符添加到文件里面，所以使用这些程序处理数据可能会引发问题。举个例子，如果你使用Microsoft
+Excel打开一个CSV文件，那么程序为了让数据变得更容易阅读，它将自动改变一些数据：比如说，它会把<code class="docutils literal notranslate"><span class="pre">3-09</span></code>这个条目代号看作是日期并将其格式化为<code class="docutils literal notranslate"><span class="pre">9-Mar</span></code>。因为文本编辑器只处理纯文本，并且它不会对纯文本执行包括格式化在内的任何修饰，所以程序员总是使用它们来编辑源码文件、数据和配置文件：在任何情况下，我们都希望文本仅仅被看作是文本，而不是其他别的东西。</p>
+<p>任何文本编辑器都能够满足本书的要求，如果你已经有自己的心头好，那么请放心地继续使用它。但如果你还没有找到适合自己的文本编辑器，那么以下是一些我使用过并且推荐的产品。除非另有说明，否则这里提到的大部分编辑器都是免费的，并且都能够适用于macOS、Windows还有Linux。</p>
+<ul class="simple">
+<li><p>微软的Visual Code Studio：<a class="reference external" href="https://code.visualstudio.com/">https://code.visualstudio.com/</a></p></li>
+<li><p>GitHub的Atom：<a class="reference external" href="https://atom.io/">https://atom.io/</a></p></li>
+<li><p>Sublime HQ的Sublime
+Text（可以免费试用，但需要付费才能持续使用）：<a class="reference external" href="https://www.sublimetext.com/">https://www.sublimetext.com/</a></p></li>
+<li><p>Don Ho开发的Notepad++ （只能在Windows上使用）:
+<a class="reference external" href="https://notepad-plus-plus.org/">https://notepad-plus-plus.org/</a>
+（注意，这和Windows内置的Notepad.exe不是同一个应用程序）</p></li>
+</ul>
+<p>那些喜欢在命令行工作的进阶用户可能会希望使用以下这两个文本编辑器中的一个，它们默认安装在某些版本的macOS和Linux中。</p>
+<ul class="simple">
+<li><p>由Bram Moolenaar和开源社区共同开发的Vim：<a class="reference external" href="https://www.vim.org/">https://www.vim.org/</a></p></li>
+<li><p>由Chris Allegretta和开源社区共同开发的GNU
+nano：<a class="reference external" href="https://www.nano-editor.org/">https://www.nano-editor.org/</a></p></li>
+</ul>
+<p>如果你还没有使用过文本编辑器，那么请下载并安装一个，然后学习一下如何使用它来打开文件夹并处理文件。</p>
+<p>在此之后，我们要做的就是获取本书使用的示例代码和数据。</p>
+</section>
+<section id="github">
+<h2>从GitHub下载代码和数据<a class="headerlink" href="#github" title="Link to this heading">¶</a></h2>
+<p>完成本书练习所需的全部代码和数据都可以通过下载获得。为此，你需要执行以下步骤：</p>
+<ol class="arabic simple">
+<li><p>访问位于No Starch
+Press网站上的本书主页：<a class="reference external" href="https://nostarch.com/practical-sql-2nd-edition/">https://nostarch.com/practical-sql-2nd-edition/</a></p></li>
+<li><p>点击页面中的<strong>Download the code from
+GitHub</strong>以访问包含本书资源的GitHub仓库。</p></li>
+<li><p>在GitHub的“Practical SQL 2nd
+Edition”页面上，有一个<strong>Code</strong>按钮。点击它，然后选择<strong>Download
+ZIP</strong>，这样就可以把ZIP格式的压缩文件保存到你的电脑里面。请把这些文件放在你触手可及的位置，比如“桌面”。（如果你是GitHub用户，你还可以克隆或者fork这个仓库）。</p></li>
+<li><p>解压文件。之后你将会看到一个名为<em>practical-sql-2-main</em>的文件夹，其中包含本书将要用到的各种文件以及子文件夹。同样，你可以把这个文件夹放到你易于查找的位置。</p></li>
+</ol>
+<blockquote>
+<div><p>注意</p>
+<p>为了让我们接下来将要安装的PostgreSQL数据库能够读写<code class="docutils literal notranslate"><span class="pre">practical-sql-2-master</span></code>文件夹中的内容，Windows用户需要为其提供相应的权限。为了做到这一点，请先用鼠标右键点击该文件夹，接着点击<strong>属性</strong>，然后点击其中的<strong>安全</strong>选项卡。之后，点击<strong>编辑</strong>，然后点击<strong>添加</strong>，再然后在“对象名称”的框体中键入<strong>Everyone</strong>并点击<strong>确定</strong>。最后，在用户列表里面选中“Everyone”，并勾选“允许”一栏下面的所有可选框，然后点击<strong>应用</strong>和<strong>确定</strong>。</p>
+</div></blockquote>
+<p>在
+<em>practical-sql-2-master</em>文件夹中，你会发现与本书每一章对应的<em>Chapter</em>_XX子文件夹，其中的<em>XX</em>就是相应的章号。每个子文件夹都包含了某一章对应的代码示例，还有一个扩展名为<em>.sql</em>的<em>Chapter</em>_XX文件。这是SQL代码文件，你可以用文本编辑器或者本章后面将要安装的PostgreSQL管理工具将其打开。注意，为了节约空间，书中的某些代码示例会被截断，在这种情况下，你需要使用<code class="docutils literal notranslate"><span class="pre">.sql</span></code>文件中完整展示的代码才能完成练习。当你在代码示例中看到<code class="docutils literal notranslate"><span class="pre">--snip--</span></code>时，说明该示例已被截断。</p>
+<p>现在，先决条件已经满足，是时候开始安装数据库软件了。</p>
+</section>
+<section id="postgresqlpgadmin">
+<h2>安装PostgreSQL和pgAdmin<a class="headerlink" href="#postgresqlpgadmin" title="Link to this heading">¶</a></h2>
+<p>在这一节，我们将要安装PostgreSQL数据库系统及其配套的图形管理工具pgAdmin。你可以把pgAdmin看作是管理PostgreSQL的一个有用的可视化工作区：它的界面能够让你看见数据库对象、管理设置、导入和导出数据，还可以编写查询——也即是通过代码从数据库里面检索数据。</p>
+<p>使用PostgreSQL的一个好处是开源社区已经为启动和运行PostgreSQL提供了非常棒的指南。以下各个小节大致描述了截至本文写作期间，在Windows、macOS和Linux上安装PostgreSQL的方法，但是随着软件或操作系统的新版本发布，相应的步骤可能会发生变化。请查阅每一节提到的文档还有包含本书资源的GitHub仓库，我会维护那里的文件以便更新和回答常见问题。</p>
+<blockquote>
+<div><p>注意</p>
+<p>为了获取最新的安全补丁及新特性，我建议你为自己的操作系统安装最新版本的PostgreSQL。在本书中，我假设你使用的是
+11.0或以上版本。</p>
+</div></blockquote>
+<section id="windows">
+<h3>在Windows安装<a class="headerlink" href="#windows" title="Link to this heading">¶</a></h3>
+<p>我推荐Windows用户使用由EDB公司（也即是原来的EnterpriseDB公司）提供的安装程序，EDB是一家为PostgreSQL用户提供支持和服务的公司。通过EDB下载PostgreSQL软件包还会同时获得pgAdmin和Stack
+Builder，后者包含的一些工具我们不仅会在本书后面用到，可能还会对你的整个SQL生涯有所帮助。</p>
+<p>为了获得安装包，我们需要访问https://www.postgresql.org/download/windows/并点击“EDB”一节中的<strong>Download
+the
+installer</strong>链接，然后链接会把我们引导至EDB网站的下载页面。除非你正在使用的是安装了32位Windows的旧电脑，否则请选择64位Windows能够使用的最新版PostgreSQL。</p>
+<blockquote>
+<div><p>注意</p>
+<p>本节接下来的内容覆盖的是Windows 10的安装步骤。如果你使用的是Windows
+11，那么请查看包含本书资源的GitHub仓库，以便了解安装步骤之间的具体差异。</p>
+</div></blockquote>
+<p>在下载完安装包之后，请按照以下步骤安装PostgreSQL、pgAdmin以及其他组件。</p>
+<ol class="arabic simple">
+<li><p>右键点击安装包，选择<strong>以管理员身份运行</strong>，并在系统提示是否允许应用对你的计算机进行修改时回答“是”。安装程序首先会执行一系列设置任务，然后呈现一个初始的欢迎屏幕。你可以通过点击进入下一步。</p></li>
+<li><p>在选择安装目录的界面中使用默认目录。</p></li>
+<li><p>在选择组件的界面中，通过勾选方框选择安装PostgreSQL服务器、pgAdmin工具、Stack
+Builder和命令行工具。</p></li>
+<li><p>选择储存数据的位置。如果选择默认，那么数据将被放置在PostgreSQL安装文件夹的<em>data</em>子文件夹中。</p></li>
+<li><p>为默认的起始数据库的超级用户账号<code class="docutils literal notranslate"><span class="pre">postgres</span></code>设置一个密码。PostgreSQL在安全和权限方面做得非常好。</p></li>
+<li><p>选择服务器将要监听的端口号。默认的端口号为<code class="docutils literal notranslate"><span class="pre">5432</span></code>，除非你有其他数据库或者应用程序在使用这个端口号，否则最好还是使用这个号码。如果默认的端口号已经被其他应用占用，那么你可以选择<code class="docutils literal notranslate"><span class="pre">5433</span></code>或者其他数字来代替。</p></li>
+<li><p>选择你所在的地区，一般来说保持默认就可以了。之后点击摘要屏幕，开始安装，这可能需要几分钟才能完成。</p></li>
+<li><p>安装完成之后，程序会询问你是否需要启动EnterpriseDB的Stack
+Builder以获取额外的软件包。请确保复选框已经被勾选，然后点击<strong>完成</strong>。</p></li>
+<li><p>Stack
+Builder启动之后，请在下拉菜单中选择“安装PostgreSQL”并点击<strong>下一步</strong>。程序将开始下载一系列附加应用。</p></li>
+<li><p>展开“空间扩展”的菜单，根据你所安装的PostgreSQL版本选择相应的PostGIS包。你可能会看到有多个不同版本的PostGIS包可选，如果是的话那么请选择最新版本。另外，展开<strong>插件、工具和实用程序</strong>的菜单并选择<strong>EDB语言包</strong>，以安装包括Python在内的编程语言支持。几次点击之后，安装程序就会开始下载所需的附加组件，请等待直至下载完成。</p></li>
+<li><p>当安装所需的文件下载完毕之后，请点击<strong>下一步</strong>以安装语言和PostGIS组件。对于PostGIS
+，你需要同意许可协议；之后一直点击直到出现组件选择界面。请确保“PostGIS”和“创建空间数据库”已经被选中，点击<strong>下一步</strong>，接受默认的安装位置，然后再次点击<strong>下一步</strong>。</p></li>
+<li><p>根据提示输入数据库密码，然后按照提示继续安装PostGIS 。</p></li>
+<li><p>在要求注册<code class="docutils literal notranslate"><span class="pre">PROJ_LIB</span></code>和<code class="docutils literal notranslate"><span class="pre">GDAL_DATA</span></code>环境变量时回答<strong>是</strong>。此外，在要求设置<code class="docutils literal notranslate"><span class="pre">POSTGIS_ENABLED_DRIVERS</span></code>和启用<code class="docutils literal notranslate"><span class="pre">POSTGIS_ENABLE_OUTDB_RASTERS</span></code>环境变量的提问出现时回答<strong>是</strong>。最后，点击“完成”按钮以完成安装并退出安装程序。根据版本的不同，你有可能会被提示需要重启电脑。</p></li>
+</ol>
+<p>安装完成之后，Windows的启动菜单应该会出现两个新的文件夹：一个是PostgreSQL的，而另一个则是PostGIS的。</p>
+<p>接下来的一节将会介绍如何为可选的Python语言支持设置相应的环境变量。但是由于本书需要到第17章才会介绍如何在Python中使用PostgreSQL，因此如果你现在只想尽快开始学习如何实际操作PostgreSQL，那么可以直接跳到后面的“使用pgAdmin”一节，等之后有需要时再回来学习如何设置Python。</p>
+<section id="python">
+<h4>配置Python语言支持<a class="headerlink" href="#python" title="Link to this heading">¶</a></h4>
+<p>我们将在第17章学习如何在Python编程语言中使用PostgreSQL。在上一节，我们安装的EDB语言包已经提供了Python支持，但是为了将语言包文件的位置添加到Windows系统的环境变量里面，我们还需要执行以下步骤：</p>
+<ol class="arabic">
+<li><p>点击Windows任务栏上的<strong>搜索</strong>图标，键入<strong>控制面板</strong>，然后通过点击<strong>控制面板</strong>的图标来打开Windows控制面板。</p></li>
+<li><p>在控制面板应用的搜索框里面键入<strong>环境</strong>，接着在显示的搜索结果列表里面点击<strong>编辑系统环境变量</strong>，然后将出现一个系统属性对话框。</p></li>
+<li><p>在系统属性对话框的“高级”选项卡里面，点击<strong>环境变量</strong>。新打开的对话框将包含两个部分：用户变量和系统变量。在系统变量部分，如果你没有看到<code class="docutils literal notranslate"><span class="pre">PATH</span></code>变量，那么请执行步骤a，创建一个新的变量；如果<code class="docutils literal notranslate"><span class="pre">PATH</span></code>变量已经存在，那么继续执行步骤b来修改它。</p>
+<ol class="loweralpha simple">
+<li><p>如果你在系统变量部分没有看到<code class="docutils literal notranslate"><span class="pre">PATH</span></code>，那么请点击<strong>新建</strong>以打开“创建新系统变量”对话框，如图1-1所示。</p></li>
+</ol>
+<p><img alt="figure-1-1" src="../_images/figure-1-1.png" />图1-1：在Windows 10中创建新的<code class="docutils literal notranslate"><span class="pre">PATH</span></code>环境变量</p>
+<p>在变量名一栏，键入<code class="docutils literal notranslate"><span class="pre">PATH</span></code>。在变量值一栏，加入<code class="docutils literal notranslate"><span class="pre">C:\edb\languagepack\v2\Python-3.9</span></code>。（除了直接键入变量位置之外，你还可以点击<strong>浏览目录</strong>，然后在浏览文件夹对话框里面导航至该目录。）在你手动输入路径或者通过浏览导航至该目录之后，请点击<strong>确定</strong>来关闭对话框。</p>
+<ol class="loweralpha simple" start="2">
+<li><p>如果<code class="docutils literal notranslate"><span class="pre">PATH</span></code>变量已经存在于系统变量部分，那么请高亮选中它并点击<strong>编辑</strong>，接着在展示的变量列表里面点击<strong>新建</strong>并键入<code class="docutils literal notranslate"><span class="pre">C:\edb\languagepack\v2\Python-3.9</span></code>。（跟前面一样，除了直接键入目录的位置之外，你还可以通过浏览目录并导航的方式确定目录的位置。）</p></li>
+</ol>
+<p>在添加语言包的位置之后，请在变量列表里面高亮选中它，然后点击<strong>向上移动</strong>直至该路径到达变量列表的顶端。这样一来，即便你安装了其他版本的Python，PostgreSQL也能够找到正确的Python版本。
+最后得到的结果应该会跟图1-2中的高亮行一样。请点击<strong>OK</strong>以关闭对话框。</p>
+<p><img alt="figure-1-2" src="../_images/figure-1-2.png" /> 图1-2：在Windows 10里面编辑已存在的<code class="docutils literal notranslate"><span class="pre">PATH</span></code>环境变量</p>
+</li>
+<li><p>最后，在系统变量部分，点击<strong>新建</strong>。接着在新建系统变量对话框的变量名称一栏，键入<code class="docutils literal notranslate"><span class="pre">PYTHONHOME</span></code>，并在变量值的一栏键入<code class="docutils literal notranslate"><span class="pre">C:\edb\languagepack\v2\Python-3.9</span></code>。完成之后，在所有对话框中点击<strong>确定</strong>以关闭它们。注意，这些Python路径将在下次重启系统之后开始生效。</p></li>
+</ol>
+<p>如果你在安装PostgreSQL的过程中遇到任何问题，那么请查看本书的在线资源，我会在那里指出不同版本的变化，并对其引发的问题进行解答。如果你无法通过Stack
+Builder安装PostGIS，那么请尝试从PostGIS的网站https://postgis.net/windows_downloads/下载独立的安装程序，并按照https://postgis.net/documentation/的指示进行安装。</p>
+<p>现在，请跳转到后面的“使用pgAdmin”一节继续阅读。</p>
+</section>
+</section>
+<section id="macos">
+<h3>在macOS安装<a class="headerlink" href="#macos" title="Link to this heading">¶</a></h3>
+<p>我建议macOS用户使用Postgres.app，它是一个开源的macOS应用程序，包含了PostgreSQL和PostGIS扩展以及其他一些好东西。此外，为了调用上述应用，你还需要安装pgAdmin图形用户界面以及Python语言。</p>
+<section id="postgres-apppgadmin">
+<h4>安装Postgres.app和pgAdmin<a class="headerlink" href="#postgres-apppgadmin" title="Link to this heading">¶</a></h4>
+<p>执行以下步骤：</p>
+<ol class="arabic simple">
+<li><p>访问https://postgresapp.com/，下载最新版本的应用程序，它将是一个以<code class="docutils literal notranslate"><span class="pre">.dmg</span></code>结尾的磁盘镜像文件。</p></li>
+<li><p>通过双击打开<code class="docutils literal notranslate"><span class="pre">.dmg</span></code>文件，然后将应用程序图标拖拽到你的<em>应用程序</em>文件夹里面。</p></li>
+<li><p>在<em>应用程序</em>文件夹里面，双击应用图标以启动Postgres.app。（如果你看到一个对话框，显示由于无法验证开发者而导致无法打开该应用程序，那么请点击<strong>取消</strong>。然后右键单击应用图标并选择<strong>打开</strong>。）在Postgres.app打开之后，点击<strong>初始化</strong>以创建和启动PostgreSQL数据库服务器。</p></li>
+</ol>
+<p>之后你的菜单栏会出现一个小小的大象图标，表明有数据库正在运行。为了设置内置的PostgreSQL命令行工具以便在将来使用它们，你需要打开终端应用程序并在提示符之后运行以下这段代码（你可以在
+Postgres.app的网站https://postgresapp.com/documentation/install.html找到并复制这行代码）：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span>/etc/paths.d<span class="w"> </span><span class="o">&amp;&amp;</span>
+<span class="nb">echo</span><span class="w"> </span>/Applications/Postgres.app/Contents/Versions/latest/bin<span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>tee<span class="w"> </span>/etc/
+paths.d/postgresapp
+</pre></div>
+</div>
+<p>执行这段代码时，系统可能会要求你输入登陆Mac时的密码，请按要求照做。上述命令在执行时应该不会产生任何输出。</p>
+<p>接下来，因为Postgres.app不包含pgAdmin，所以请根据以下步骤安装pgAdmin：</p>
+<ol class="arabic simple">
+<li><p>访问pgAdmin网站的macOS下载页面：<a class="reference external" href="https://www.pgadmin.org/download/pgadmin-4-macos/">https://www.pgadmin.org/download/pgadmin-4-macos/</a>。</p></li>
+<li><p>选择最新版本并下载安装程序（寻找以<em>.dmg</em>结尾的磁盘镜像文件）。</p></li>
+<li><p>先双击<em>.dmg</em>文件，然后点击提示框以接受相应的条款，最后将pgAdmin的大象应用程序图标拖拽到你的<em>应用程序</em>文件夹里面。</p></li>
+</ol>
+<p>在macOS上进行安装相对来说是比较容易的，但如果你遇到任何问题，那么请查看Postgres.app的文档：<a class="reference external" href="https://postgresapp.com/documentation">https://postgresapp.com/documentation</a>/和pgAdmin的文档：<a class="reference external" href="https://www.pgadmin.org/docs/">https://www.pgadmin.org/docs/</a>。</p>
+</section>
+<section id="id3">
+<h4>安装Python<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h4>
+<p>本书第17章将教你如何通过Python编程语言调用PostgreSQL。但如果你想要通过Python调用Postgres.app，那么就必须安装特定版本的Python，即便macOS已经预装了Python（并且你可能已经设置了额外的Python环境）。为了启用Postgres.app可选的Python语言支持，请执行以下步骤：</p>
+<ol class="arabic simple">
+<li><p>访问Python官方网站https://www.python.org/，点击下载菜单。</p></li>
+<li><p>在释出版本的列表中，找到并下载Python
+3.9的最新版本。请根据你的Mac所使用的处理器选择正确的安装程序——较旧的Mac使用的是英特尔芯片，而较新型号使用的则是Apple芯片。下载的文件应该是一个以<em>.pkg</em>结尾的Apple软件包文件。</p></li>
+<li><p>双击软件包文件以安装Python，点击查看许可协议，并在安装完成之后关闭安装程序。</p></li>
+</ol>
+<p>Postgres.app对Python的要求可能会随着时间而改变，请访问Postgres.app的文档https://postgresapp.com/documentation/plpython.html以及本书的在线资源以了解最新情况。</p>
+<p>现在，请跳转到后面的“使用pgAdmin”一节继续阅读。</p>
+</section>
+</section>
+<section id="linux">
+<h3>在Linux安装<a class="headerlink" href="#linux" title="Link to this heading">¶</a></h3>
+<p>对于Linux用户来说，安装PostgreSQL可能会非常简单，也可能会非常困难，根据我的经验，Linux世界就是这样运作的。大多数情况下，安装工作都可以通过几条命令来完成，只是找到这些命令需要在互联网上进行一番侦察。幸运的是，包括Ubuntu、Debian和CentOS在内，大部分流行的Linux发行版都将PostgreSQL包含在它们的标准包里面。但是，由于有些发行版比其他发行版更注重更新，所以通过标准包安装的PostgreSQL有可能不是最新的。如果你的发行版并没有预装PostgreSQL，又或者你想要把PostgreSQL升级至更新的版本，那么最好还是查阅发行版的文档以了解安装PostgreSQL的最佳方法。</p>
+<p>此外，PostgreSQL项目还为RedHat
+变种、Debian和Ubuntu维护着一个完整的、最新版本的软件包库，具体的细节可以通过访问https://yum.postgresql.org/和https://wiki.postgresql.org/wiki/Apt获知。上述网站提供的包内置了PostgreSQL的客户端和服务器端、pgAdmin（如果可用的话）、PostGIS和PL/Python。根据用户使用的Linux发行版不同，这些包的具体名字也会有所不同，并且使用这些包的用户还需要手动启动PostgreSQL数据库服务器。</p>
+<p>pgAdmin一般来说并不是Linux发行版的一部分。为此，我们需要访问pgAdmin的网站https://www.pgadmin.org/download/，确认自己的平台是否被支持，并获得安装该应用所需的最新安装说明。如果你喜欢冒险的感觉，那么也可以在https://www.pgadmin.org/download/pgadmin-4-source-code/找到如何从源代码构建应用程序的说明。在完成上述工作之后，请跳转到后面的“使用pgAdmin”一节继续阅读。</p>
+<section id="ubuntu">
+<h4>Ubuntu安装示例<a class="headerlink" href="#ubuntu" title="Link to this heading">¶</a></h4>
+<p>为了演示如何在Linux上安装PostgreSQL ，以下是在代号为Hirsute
+Hippo的Ubuntu 21.04上安装PostgreSQL 、pgAdmin 、PostGIS和PL/Python
+的具体步骤。
+这里用到的指令来自https://wiki.postgresql.org/wiki/Apt和https://help.ubuntu.com/community/PostgreSQL/
+的“基本服务器设置”部分。 如果你使用的也是Ubuntu
+，那么你可以按照这些步骤进行安装。</p>
+<p>通过CTRL+ALT+T组合按键打开终端。接着，通过在提示符之后键入以下命令，为PostgreSQL
+APT资源库导入密钥：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>curl<span class="w"> </span>ca-certificates<span class="w"> </span>gnupg
+curl<span class="w"> </span>https://www.postgresql.org/media/keys/ACCC4CF8.asc<span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>apt-key<span class="w"> </span>add<span class="w"> </span>-
+</pre></div>
+</div>
+<p>之后，通过运行以下命令，创建文件<em>/etc/apt/sources.list.d/pgdg.list</em> ：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;echo &quot;deb https://apt.postgresql.org/pub/repos/apt $(lsb_release</span>
+<span class="s1">-cs)-pgdg main&quot; &gt; /etc/apt/sources.list.d/pgdg.list&#39;</span>
+</pre></div>
+</div>
+<p>在此之后，通过执行以下两条命令，更新包列表并安装PostgreSQL和pgAdmin
+（此处安装的是PostgreSQL 13 ，你可以根据自己的情况选择可用的更新版本）：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>update
+sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>postgresql-13
+</pre></div>
+</div>
+<p>现在你应该已经启动了PostgreSQL
+了。请在终端键入以下这命令，该命令会以默认的<code class="docutils literal notranslate"><span class="pre">postgres</span></code>用户身份登录服务器并连接<code class="docutils literal notranslate"><span class="pre">postgres</span></code>数据库，并使用<code class="docutils literal notranslate"><span class="pre">psql</span></code>交互式终端（第
+18 章将对该终端做深入的介绍）：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>-u<span class="w"> </span>postgres<span class="w"> </span>psql<span class="w"> </span>postgres
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">psql</span></code>启动之后会显示版本信息以及<code class="docutils literal notranslate"><span class="pre">postgres=#</span></code>提示符。在提示符之后键入以下命令可以为用户设置一个密码：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">postgres</span><span class="o">=</span><span class="c1"># \password postgres</span>
+</pre></div>
+</div>
+<p>此外，我还喜欢创建一个跟Ubuntu用户名同名的用户账号。为此，请在<code class="docutils literal notranslate"><span class="pre">postgres=#</span></code>提示符之后键入以下命令，并将其中的<code class="docutils literal notranslate"><span class="pre">anthony</span></code>替换成你自己的Ubuntu用户名：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">postgres</span><span class="o">=</span><span class="c1"># CREATE USER anthony SUPERUSER;</span>
+</pre></div>
+</div>
+<p>你可以通过在<code class="docutils literal notranslate"><span class="pre">psql</span></code>的提示符后面键入<code class="docutils literal notranslate"><span class="pre">\q</span></code>来退出它，之后你应该就能重新看到系统终端的提示符。</p>
+<p>为了安装pgAdmin，我们首先需要导入资源库的密钥：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>https://www.pgadmin.org/static/packages_pgadmin_org.pub<span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>apt-key<span class="w"> </span>add
+</pre></div>
+</div>
+<p>之后，执行以下命令，创建文件<code class="docutils literal notranslate"><span class="pre">/etc/apt/sources.list.d/pgadmin4.list</span></code>并更新包列表：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;echo &quot;deb https://ftp.postgresql.org/pub/pgadmin/pgadmin4/</span>
+<span class="s1">apt/$(lsb_release -cs) pgadmin4 main&quot; &gt; /etc/apt/sources.list.d/pgadmin4.list</span>
+<span class="s1">&amp;&amp; apt update&#39;</span>
+</pre></div>
+</div>
+<p>然后我们就可以安装pgAdmin 4了：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>pgadmin4-desktop
+</pre></div>
+</div>
+<p>最后，为了安装PostGIS和PL/Python扩展，我们需要在终端执行以下命令（别忘了把版本号替换成你的Python版本）：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>postgresql-13-postgis-3
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>postgresql-plpython3-13
+</pre></div>
+</div>
+<p>你可以查阅Ubuntu和PostgreSQL的文档以获取最新的安装方法。安装过程中遇到的任何问题都可以求助搜索引擎，Linux相关的问题通常都可以通过这种手段解决。</p>
+</section>
+</section>
+</section>
+<section id="pgadmin">
+<h2>使用pgAdmin<a class="headerlink" href="#pgadmin" title="Link to this heading">¶</a></h2>
+<p>在配置工作的最后，让我们来熟悉一下pgAdmin这个监督和管理PostgreSQL的工具。尽管pgAdmin是免费软件，但它的性能一点也不容小觑：它不仅功能齐全，而且跟微软的SQL
+Server Management
+Studio等付费工具一样强大。通过pgAdmin提供的图形界面，用户可以对PostgreSQL的服务器及数据库的多个方面进行配置，并使用SQL查询工具编写、运行和保存查询语句——这也是本书接下来要做的。</p>
+<section id="id4">
+<h3>启动pgAdmin并设置主密码<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<p>如果你已经按照前面的步骤在操作系统上安装了pgAdmin，那么你应该可以通过以下方法来启动它。</p>
+<ul class="simple">
+<li><p><strong>Windows</strong>：进入“开始”菜单，在“PostgreSQL”文件夹里面找到你所安装的版本，点击它，然后选择<strong>pgAdmin4</strong>。</p></li>
+<li><p><strong>macOS</strong>：点击<em>应用程序</em>文件夹中的<strong>pgAdmin</strong>图标，请确保你已经启动了Postgres.app。</p></li>
+<li><p><strong>Linux</strong>：启动方法可能会根据Linux发行版的不同而不同。一般来说，在终端提示符里面输入<code class="docutils literal notranslate"><span class="pre">pgadmin4</span></code>然后按下回车键应该就可以了。在Ubuntu中，pgAdmin会作为应用程序出现在活动概览里面。</p></li>
+</ul>
+<p>在pgAdmin的启动画面出现之后，应用程序就会被打开，如图1-3所示。如果这是你第一次启动pgAdmin，那么它还会弹出一个提示，要求你设置一个主密码。这个密码跟你在安装PostgreSQL时设置的密码并无关系。请设置一个主密码，然后点击“确定”。</p>
+<p><img alt="1-3" src="../_images/1-3.png" /> 图1-3： 在Windows 10上运行的pgAdmin应用</p>
+<blockquote>
+<div><p>注意</p>
+<p>在macOS上，当你第一次启动pgAdmin时，系统可能会弹出一个对话框，显示“pgAdmin4无法打开，因为它来自一个身份不明的开发者”。在这种情况下，请通过右键单击图标然后点击<strong>打开</strong>。接下来弹出的对话框会提供选项让你能够打开该应用，请选择它，之后你的Mac就会记住你已经授予了该权限。</p>
+</div></blockquote>
+<p>pgAdmin的布局包括一个位于左侧的垂直面板，用于显示对象浏览器，你可以在这里看到可用的服务器、数据库、用户以及其他对象。横跨屏幕上方的是一系列菜单项，而位于菜单栏下面的则是多个标签，这些标签用于展示数据库对象以及性能的不同方面。下面让我们开始连接数据库。</p>
+</section>
+<section id="postgres">
+<h3>连接默认的postgres数据库<a class="headerlink" href="#postgres" title="Link to this heading">¶</a></h3>
+<p>PostgreSQL是一个<em>数据库管理系统</em>，这意味着它是一个允许你定义、管理和查询数据库的软件。当你安装PostgreSQL的时候，它将创建一个<em>数据库服务器</em>，也即是一个在你电脑之上运行的应用程序实例，该实例还包含了一个名为<code class="docutils literal notranslate"><span class="pre">postgres</span></code>的默认数据库。数据库由一系列对象组成，其中包括表、函数还有其他很多东西，并且数据库也是实际储存数据的地方。我们通过SQL语言和pgAdmin来管理储存在数据库里面的对象和数据。</p>
+<p>在接下来的一章，我们将通过在PostgreSQL服务器里面创建自己的数据库来组织自己的工作。但是现在，我们需要先通过连接默认的<code class="docutils literal notranslate"><span class="pre">postgres</span></code>数据库来探索
+pgAdmin 。做到这一点需要执行以下步骤：</p>
+<ol class="arabic simple">
+<li><p>在对象浏览器里面，点击服务器节点左边的向下箭头以展示默认服务器。根据你使用的操作系统，默认服务器的名字可能会是<em>localhost</em>或者<em>PostgreSQL
+x</em>，其中<em>x</em>为Postgres的版本号。</p></li>
+<li><p>双击服务器名称。如果有提示，就输入你在安装时设置的数据库密码（你还可以通过保存密码来避免将来的重复输入）。pgAdmin在建立连接的过程中会显示一条简短的消息。在连接成功之后，服务器名字下面应该会出现几个新的对象元素。</p></li>
+<li><p>先展开数据库分支，然后再展开默认的<code class="docutils literal notranslate"><span class="pre">postgres</span></code>数据库。</p></li>
+<li><p>在<code class="docutils literal notranslate"><span class="pre">postgres</span></code>分支的下面展开Schemas对象，然后再展开public分支。</p></li>
+</ol>
+<p>你的对象浏览器面板看上去应该跟图 1-4 差不多。</p>
+<p><img alt="1-4" src="../_images/1-4.png" /> 图1-4：pgAdmin的对象浏览器</p>
+<blockquote>
+<div><p>注意</p>
+<p>如果pgAdmin没有在服务器一栏显示默认的服务器，那么你需要手动添加它。请用右键单击服务器，然后点击<strong>创建
+▸
+服务器</strong>。接着在对话框的常规选项卡里面，为你的服务器键入一个名字，并在连接选项卡的“主机名称/地址”框里面键入<strong>localhost</strong>
+。之后，填写你在安装PostgreSQL时设置的用户名和密码，然后点击<strong>保存</strong>。执行上述步骤之后，你应该就能看到被列出的默认服务器了。</p>
+</div></blockquote>
+<p>这一系列对象定义了数据库服务器的每一个特性。其中包括表，也即是储存数据的地方。通过在pgAdmin里面访问表，你可以查看表的结构，又或者对表执行操作。我们将在第2章使用这个浏览器来创建一个新的数据库，并保持默认的<code class="docutils literal notranslate"><span class="pre">postgres</span></code>不变。</p>
+</section>
+<section id="id5">
+<h3>探索查询工具<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
+<p>pgAdmin应用包含一个查询工具，它可以让你在上面编写和执行代码。为了打开查询工具，你需要在pgAdmin的对象浏览器里面，通过在任意数据库中点击它一次来高亮显示它。比如说，点击<code class="docutils literal notranslate"><span class="pre">postgres</span></code>数据库，然后选择<strong>工具
+▸
+查询工具</strong>。然后你会看到三个面板：一个查询编辑器，一个用于在工作时保存代码片段的便笺本，还有一个显示查询结果的数据输出方框。你可以打开多个选项卡，从而连接不同的数据库并为它们编写查询，又或者以自己想要的方式组织代码。为了打开另一个标签，你可以在对象浏览器里面点击某个数据库，然后通过菜单再次打开查询工具。</p>
+<p>代码清单1-1中的语句能够返回你所安装的PostgreSQL版本，我们可以运行这个简单的查询并查看它的输出。这段代码以及书中展示的所有示例都可以通过位于https://nostarch.com/practical-sql-2nd-edition/的在线资源来获取，只要点击页面上的<strong>Download
+the code from GitHub</strong>链接就可以了。</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span><span class="w"> </span><span class="k">version</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>代码清单1-1 ：查看你的PostgreSQL版本</p>
+<p>你可以亲自把代码键入到查询编辑器里面，又或者从GitHub下载本书的代码之后，点击pgAdmin工具栏上的<strong>打开文件</strong>图标，导航至保存代码的文件夹，然后打开<em>Chapter_01</em>文件夹中的<em>Chapter_01.sql</em>文件。为了执行语句，你需要高亮选中以<code class="docutils literal notranslate"><span class="pre">SELECT</span></code>开头的代码行，然后点击工具栏上的<strong>执行/刷新</strong>图标（它的形状有点像播放按钮）。之后PostgreSQL应该会在pdAdmin的数据输出方框里面返回服务器的版本，如图1-5所示（你可能需要在数据输出方框里面通过点击右边缘并向右拖动来扩展列宽，从而看到全部结果）。</p>
+<p><img alt="1-5" src="../_images/1-5.png" /> 图 1-5 ：pgAdmin的查询工具显示查询结果</p>
+<p>本书将在之后介绍更多查询相关的知识，但是现在来说，你只需要知道这个查询使用了PostgreSQL特有的<code class="docutils literal notranslate"><span class="pre">version()</span></code>函数来检索服务器的版本信息即可。在图片展示的例子中，输出显示我正在使用PostgreSQL
+13.3，此外它还显示了一些与构建PostgreSQL有关的额外信息。</p>
+<blockquote>
+<div><p>注意</p>
+<p>你从GitHub上下载的绝大部分示例代码文件都包含不止一个查询。如果你想要每次只执行一个查询，那么就需要先高亮选中相应的查询代码，然后再点击执行/刷新按钮。</p>
+</div></blockquote>
+</section>
+<section id="id6">
+<h3>自定义 pgAdmin<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
+<p>从pgAdmin菜单中选择<strong>文件 ▸
+首选项</strong>可以打开一个对话框，你可以在里面定义pgAdmin的外观和选项。这里有三个你可能感兴趣的地方：</p>
+<ul class="simple">
+<li><p><strong>杂项 ▸ 主题</strong>允许你在标准的浅色pgAdmin主题和深色主题中进行选择。</p></li>
+<li><p><strong>查询工具 ▸
+结果网格</strong>允许你为查询结果设置一个最大列宽。请在该对话框中选择<strong>列数据</strong>，然后将<strong>最大列宽</strong>的值设置为<strong>300</strong>。</p></li>
+<li><p><strong>浏览器</strong>部分允许你配置pgAdmin的样式并设置键盘快捷键。</p></li>
+</ul>
+<p>要获得关于pgAdmin选项的更多信息，请从菜单中选择<strong>帮助 ▸
+在线帮助</strong>。在继续我们的冒险之前，你可以随意地探索这些首选项。</p>
+</section>
+</section>
+<section id="id7">
+<h2>pgAdmin之外的选择<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
+<p>虽然pgAdmin非常适合新手，但它对于完成本书的练习来说并不是必须的。因此，如果你喜欢另一个能够跟PostgreSQL一起工作的管理工具，那么尽管使用它好了。此外，如果你想使用操作系统的命令行来完成本书的所有练习，那么第18章提供了通过命令行使用PostgreSQL交互式终端<code class="docutils literal notranslate"><span class="pre">psql</span></code>的操作说明。本书的附录里面还列举了一些可供探索的PostgreSQL资源，你可以在里面找到其他管理工具。</p>
+</section>
+<section id="id8">
+<h2>小结<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<p>现在，你已经通过文本编辑器、PostgreSQL和pgAdmin建立起了编码环境，是时候开始学习SQL并使用它从数据中发掘有价值的洞见了！</p>
+<p>在接下来的第2章，我们将要学习如何创建数据库和表，还有如何载入数据并探索其中的内容。事不宜迟，让我们马上开始吧！</p>
+</section>
+</section>
+
+
+              </div>
+              
+              
+              <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+</div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <script src="../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+<footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2024, 黄健宏.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>

@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>第 2 章 创建首个数据库和表 &#8212; huangz.works/sql 1.0 文档</title>
+    
+  <link href="../_static/css/theme.css" rel="stylesheet">
+  <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/blank.css?v=c4c5097c" />
+    
+  <link rel="preload" as="script" href="../_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script src="../_static/documentation_options.js?v=bfa25948"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="zh-cn">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+<a class="navbar-brand" href="../index.html">
+<p class="title">huangz.works/sql</p>
+</a>
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+      </ul>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar"><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+              
+              <div class="toc-item">
+                
+<div class="tocsection onthispage pt-5 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id2">
+   什么是表
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id3">
+   创建数据库
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#pgadminsql">
+     在pgAdmin中执行SQL
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#analysis">
+     连接analysis数据库
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id4">
+   创建表
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#create-table">
+     使用
+     <code class="docutils literal notranslate">
+      <span class="pre">
+       CREATE
+      </span>
+      <span class="pre">
+       TABLE
+      </span>
+     </code>
+     语句
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#teachers">
+     创建
+     <code class="docutils literal notranslate">
+      <span class="pre">
+       teachers
+      </span>
+     </code>
+     表
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id5">
+   将行插入表
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#insert">
+     使用
+     <code class="docutils literal notranslate">
+      <span class="pre">
+       INSERT
+      </span>
+     </code>
+     语句
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#id6">
+     查看数据
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id7">
+   在代码出现问题时获得帮助
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#sql">
+   格式化SQL以提高可读性
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id8">
+   小结
+  </a>
+ </li>
+</ul>
+
+</nav>
+              </div>
+              
+              <div class="toc-item">
+                
+              </div>
+              
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <section id="id1">
+<h1>第 2 章 创建首个数据库和表<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>SQL语言不仅是一种从数据中提取知识的手段，它还能<em>定义</em>储存数据的结构，使得我们可以组织数据中的<em>关系</em>，而表（table）就是这些结构中最主要的一个。</p>
+<p>表是一个由行（row）和列（column）组成的网格，用于储存数据。表中的每个行都包含一个或多个列，而每个列则包含指定类型的数据：最常见的是数字、字符还有日期。我们不仅通过SQL定义表的结构以及每个表如何关联数据库中的其他表，还使用SQL来提取或<em>查询</em>表中的数据。</p>
+<p>在这一章，我们将创建首个数据库，向它添加表，并在pgAdmin的界面中使用SQL向表中插入数行数据，最后再使用pgAdmin查看执行结果。现在，让我们首先来了解一下表。</p>
+<section id="id2">
+<h2>什么是表<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>要了解数据库中的数据，首先要做的就是了解表。每次我开始着手处理一个新的数据库时，我首先要做的就是看看里面的表。我会从表的名字以及它们的列结构里面寻找蛛丝马迹。这些表是否包含文本、数字，又或者两者兼有？每张表包含了多少个行？</p>
+<p>之后，我会观察数据库中表的数量。最简单的数据库可能只有一个表，而一个处理客户数据或者跟踪航空旅行的完整应用则可能拥有数十甚至数百张表。表的数量不仅让我知道需要分析多少数据，它还是一个提示，告诉我应该探索每张表之间的数据关系。</p>
+<p>在深入研究SQL之前，让我们先来看一个例子，了解一下表里面的内容可能是什么样子的。我们将使用一个虚构的数据库来管理学校课程的招生情况；在这个数据库里面，会有几张表用于跟踪学生和他们的课程。第一张表名为<code class="docutils literal notranslate"><span class="pre">student_enrollment</span></code>，它记录了每个课程的报名学生：</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="n">student_id</span><span class="w">   </span><span class="n">class_id</span><span class="w">     </span><span class="n">class_section</span><span class="w">   </span><span class="n">semester</span>
+<span class="c1">----------   ----------   -------------   ---------</span>
+<span class="n">CHRISPA004</span><span class="w">   </span><span class="n">COMPSCI101</span><span class="w">   </span><span class="mi">3</span><span class="w">              </span><span class="n">Fall</span><span class="w"> </span><span class="mi">2023</span>
+<span class="n">DAVISHE010</span><span class="w">   </span><span class="n">COMPSCI101</span><span class="w">   </span><span class="mi">3</span><span class="w">              </span><span class="n">Fall</span><span class="w"> </span><span class="mi">2023</span>
+<span class="n">ABRILDA002</span><span class="w">   </span><span class="n">ENG101</span><span class="w">       </span><span class="mi">40</span><span class="w">             </span><span class="n">Fall</span><span class="w"> </span><span class="mi">2023</span>
+<span class="n">DAVISHE010</span><span class="w">   </span><span class="n">ENG101</span><span class="w">       </span><span class="mi">40</span><span class="w">             </span><span class="n">Fall</span><span class="w"> </span><span class="mi">2023</span>
+<span class="n">RILEYPH002</span><span class="w">   </span><span class="n">ENG101</span><span class="w">       </span><span class="mi">40</span><span class="w">             </span><span class="n">Fall</span><span class="w"> </span><span class="mi">2023</span>
+</pre></div>
+</div>
+<p>从这个表可见，两名学生报名了<code class="docutils literal notranslate"><span class="pre">COMPSCI101</span></code>课程，三名学生报名了<code class="docutils literal notranslate"><span class="pre">ENG101</span></code>课程。但是这个表并未记录每个学生和课程的具体细节。在这个例子中，这些信息被单独储存在名为<code class="docutils literal notranslate"><span class="pre">students</span></code>和<code class="docutils literal notranslate"><span class="pre">classes</span></code>的表里面，并且它们与<code class="docutils literal notranslate"><span class="pre">student_enrollment</span></code>表相互关联，而这正是<em>关系数据库</em>开始展现威力的地方。</p>
+<p><code class="docutils literal notranslate"><span class="pre">sutdents</span></code>表的前面几行包含以下内容：</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="n">student_id</span><span class="w">   </span><span class="n">first_name</span><span class="w">   </span><span class="n">last_name</span><span class="w">   </span><span class="n">dob</span>
+<span class="c1">----------   ----------   ---------   ----------</span>
+<span class="n">ABRILDA002</span><span class="w">   </span><span class="n">Abril</span><span class="w">        </span><span class="n">Davis</span><span class="w">      </span><span class="mi">2005</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">10</span>
+<span class="n">CHRISPA004</span><span class="w">   </span><span class="n">Chris</span><span class="w">        </span><span class="n">Park</span><span class="w">       </span><span class="mi">1999</span><span class="o">-</span><span class="mi">04</span><span class="o">-</span><span class="mi">10</span>
+<span class="n">DAVISHE010</span><span class="w">   </span><span class="n">Davis</span><span class="w">        </span><span class="n">Hernandez</span><span class="w">   </span><span class="mi">2006</span><span class="o">-</span><span class="mi">09</span><span class="o">-</span><span class="mi">14</span>
+<span class="n">RILEYPH002</span><span class="w">   </span><span class="n">Riley</span><span class="w">        </span><span class="n">Phelps</span><span class="w">      </span><span class="mi">2005</span><span class="o">-</span><span class="mi">06</span><span class="o">-</span><span class="mi">15</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">sutdents</span></code>表包含了每个学生的详细信息，并使用<code class="docutils literal notranslate"><span class="pre">student_id</span></code>列中的值标识每一个学生。通过把这个值用作连接两个表的唯一<em>键</em>，你就可以用<code class="docutils literal notranslate"><span class="pre">student_enrollment</span></code>表的<code class="docutils literal notranslate"><span class="pre">class_id</span></code>列，加上<code class="docutils literal notranslate"><span class="pre">students</span></code>表的<code class="docutils literal notranslate"><span class="pre">first_name</span></code>列和<code class="docutils literal notranslate"><span class="pre">last_name</span></code>列，创建出以下这样的行：</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="n">class_id</span><span class="w">     </span><span class="n">first_name</span><span class="w">   </span><span class="n">last_name</span>
+<span class="c1">----------   ----------   ---------</span>
+<span class="n">COMPSCI101</span><span class="w">   </span><span class="n">Davis</span><span class="w">        </span><span class="n">Hernandez</span>
+<span class="n">COMPSCI101</span><span class="w">   </span><span class="n">Chris</span><span class="w">        </span><span class="n">Park</span>
+<span class="n">ENG101</span><span class="w">       </span><span class="n">Abril</span><span class="w">        </span><span class="n">Davis</span>
+<span class="n">ENG101</span><span class="w">       </span><span class="n">Davis</span><span class="w">       </span><span class="n">Hernandez</span>
+<span class="n">ENG101</span><span class="w">       </span><span class="n">Riley</span><span class="w">       </span><span class="n">Phelps</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">classes</span></code>表的工作方式也是类似的，它由一个<code class="docutils literal notranslate"><span class="pre">class_id</span></code>列还有其他几个关于课程信息的列组成。数据库的建设者倾向于为数据库管理的每个主要<em>实体</em>创建单独的表来组织数据，从而减少冗余数据。在这个例子中，每个学生的名字和出生日期只会被储存一次。即便一个学生像Davis
+Hernandez那样注册了多个课程，我们也只会在<code class="docutils literal notranslate"><span class="pre">student_enrollment</span></code>表中储存他的学生ID，而不必浪费空间在每个他出现的地方都储存一次他的名字。</p>
+<p>因为表是每个数据库的核心组成部分，所以在这一章，我们将通过在一个新数据库里面创建表来开始你的SQL编程冒险，并在之后将数据载入至该表，最后再观察整个表。</p>
+</section>
+<section id="id3">
+<h2>创建数据库<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>我们在第1章中安装的PostgreSQL程序是一个<em>数据库管理系统</em>，它是一个软件包，允许你定义、管理和查询储存在数据库里面的数据。每个数据库都由一系列对象组成，其中包括表、函数还有其他很多东西。当你安装PostgreSQL的时候，它将创建一个<em>数据库服务器</em>，也即是一个运行在计算机之上的应用程序实例，其中包含一个名为<code class="docutils literal notranslate"><span class="pre">postgres</span></code>的默认数据库。</p>
+<p>正如PostgreSQL的文档所示：<a class="reference external" href="https://www.postgresql.org/docs/current/app-initdb.html">https://www.postgresql.org/docs/current/app-initdb.html</a>，默认的<code class="docutils literal notranslate"><span class="pre">postgres</span></code>数据库的作用是“供用户、实用程序和第三方应用程序使用”。为了把特定主题和应用程序相关的对象组织在一起，我们将为书中的示例创建并使用新的数据库，而不是使用默认数据库。这是一种正确的实践：它有助于避免把多个毫不相关的表堆积在一起，
+并确保如果你的数据用于驱动某个应用程序，比如移动应用，那么该应用的数据库只会包含相关的信息。</p>
+<p>正如代码清单2-1所示，创建一个数据库只需要一行SQL代码，我们稍后将使用pgAdmin来运行它。你可以通过以下网址，从GitHub上下载到包括这行代码在内的全书所有示例代码：<a class="reference external" href="https://www.nostarch.com/practical-sql-2nd-edition/">https://www.nostarch.com/practical-sql-2nd-edition/</a>。</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">DATABASE</span><span class="w"> </span><span class="n">analysis</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>代码清单2-1：创建名为<code class="docutils literal notranslate"><span class="pre">analysis</span></code>的数据库</p>
+<p>这个语句将使用默认的PostgreSQL设置，在你的服务器上创建一个名为<code class="docutils literal notranslate"><span class="pre">analysis</span></code>的数据库。注意这行代码包含了<code class="docutils literal notranslate"><span class="pre">CREATE</span></code>和<code class="docutils literal notranslate"><span class="pre">DATABASE</span></code>两个关键字，至于新数据库的名字则跟在这两个关键字的后面。语句的最后使用了分号，用于表示命令的结束。作为ANSI
+SQL标准的一部分，你必须使用分号来结束每个PostgreSQL语句。在某些情况下，即便省略了分号，查询也会正常执行，但这种情况并不是必然的，所以最好的做法还是使用分号。</p>
+<section id="pgadminsql">
+<h3>在pgAdmin中执行SQL<a class="headerlink" href="#pgadminsql" title="Link to this heading">¶</a></h3>
+<p>在接下来的大部分时间里，我们都会使用第1章安装的图形化管理工具pgAdmin来运行将要编写的SQL语句，这也即是所谓的<em>执行</em>代码的过程（如果你还没安装pgAdmin，那么请现在就去安装）。在之后的第18章，我们还会看到使用PostgreSQL命令行程序<code class="docutils literal notranslate"><span class="pre">psql</span></code>执行SQL语句的方法，但是对于刚开始学习SQL的我们来说，使用图形界面无疑会更容易以一些。</p>
+<p>我们将使用pgAdmin来运行代码清单2-1中的SQL语句，它首先会创建一个新的数据库，然后连接这个数据库并创建一个表。为此，我们需要执行以下步骤：</p>
+<ol class="arabic">
+<li><p>运行PostgreSQL。如果你使用的是Windows，安装程序会设置PostgreSQL在系统每次启动时自动启动。如果你使用的是macOS，那么你必须双击应用程序文件夹中的<em>Postgres.app</em>（如果你的菜单栏里面有一个大象图标，那么说明它已经在运行了）。</p></li>
+<li><p>启动pgAdmin。它会提示你输入第一次启动该应用时设置的pgAdmin主密码。</p></li>
+<li><p>跟第1章一样，在左边的垂直面板（对象浏览器）中点击服务器节点左边的箭头，显示默认服务器。根据安装PostgreSQL方式的不同，默认服务器的名字可能是<em>localhost</em>或者<em>PostgreSQL
+x</em>，其中<em>x</em>为应用程序的版本。你可能会收到另一个密码提示，该提示针对的是PostgreSQL而非pgAdmin，所以请输入你在安装PostgreSQL时为其设置的密码。之后，你应该会看到一条简短的消息，显示pgAdmin正在建立连接。</p></li>
+<li><p>在pgAdmin的对象浏览器，展开<strong>数据库</strong>并点击一次<code class="docutils literal notranslate"><span class="pre">postgres</span></code>以便高亮选中它，如图2-1所示。
+<img alt="2-1" src="../_images/2-1.png" /> 图 2-1 ：默认的<code class="docutils literal notranslate"><span class="pre">postgres</span></code>数据库</p></li>
+<li><p>通过选择<strong>工具 ▸ 查询工具</strong>打开查询工具。</p></li>
+<li><p>在顶部的水平方框也即是查询编辑器方框中，输入代码清单2-1中的代码。</p></li>
+<li><p>点击右箭头形状的<strong>执行/刷新</strong>图标来执行语句。PostgreSQL将创建相应的数据库，在查询工具输出方框属下的消息一栏，你将会看到一条消息，表明查询成功返回，如图
+2-2 所示。</p>
+<p><img alt="2-2" src="../_images/2-2.png" /> 图 2-2 ：创建名为<code class="docutils literal notranslate"><span class="pre">analysis</span></code>的数据库</p>
+</li>
+<li><p>为了看到新创建的数据库，我们需要用右键点击对象浏览器中的<strong>数据库</strong>，然后从弹出的菜单中选择<strong>刷新</strong>，这样<code class="docutils literal notranslate"><span class="pre">analysis</span></code>数据库才会出现在列表里面，如图
+2-3 所示。 <img alt="2-3" src="../_images/2-3.png" /> 图 2-3 ：在对象浏览器中显示的 <code class="docutils literal notranslate"><span class="pre">analysis</span></code> 数据库</p></li>
+</ol>
+<p>干得不错！现在你拥有了一个名为<code class="docutils literal notranslate"><span class="pre">analysis</span></code>的数据库，接下来你就可以在本书的大部分练习中使用它了。在个人工作中，最好的做法就是为每个项目都创建新的数据库，从而将拥有相关联数据的表都放置在一起。</p>
+<blockquote>
+<div><p>注意</p>
+<p>除了手动键入代码清单中的代码之外，你还可以在pgAdmin中打开你在GitHub下载的文件，然后通过高亮选中代码并点击<strong>执行/刷新</strong>来单独执行指定的代码。为了打开一个文件，你需要在查询工具里面点击<strong>打开文件</strong>图标，然后导航至你保存代码的位置。</p>
+</div></blockquote>
+</section>
+<section id="analysis">
+<h3>连接analysis数据库<a class="headerlink" href="#analysis" title="Link to this heading">¶</a></h3>
+<p>在创建表之前，你必须确保pgAdmin已经连接到<code class="docutils literal notranslate"><span class="pre">analysis</span></code>数据库而不是默认的<code class="docutils literal notranslate"><span class="pre">postgres</span></code>数据库。为此，我们需要执行以下步骤：</p>
+<ol class="arabic simple">
+<li><p>通过点击工具方框最右边的<strong>X</strong>来关闭查询工具，并在出现提示时，选择不需要保存文件。</p></li>
+<li><p>在对象浏览器，点击一次<code class="docutils literal notranslate"><span class="pre">analysis</span></code>数据库。</p></li>
+<li><p>通过选择<strong>工具 ▸
+查询工具</strong>打开新的查询工具窗口，这次它将连接至<code class="docutils literal notranslate"><span class="pre">analysis</span></code>数据库。</p></li>
+<li><p>你应该可以在查询工具窗口的顶部看到<code class="docutils literal notranslate"><span class="pre">analysis/postgres&#64;localhost</span></code>标签。（再次说明，你的pgAdmin显示的也可能是<code class="docutils literal notranslate"><span class="pre">PostgreSQL</span></code>而非<code class="docutils literal notranslate"><span class="pre">localhost</span></code>。）</p></li>
+</ol>
+<p>现在，你执行的任何操作都将应用到<code class="docutils literal notranslate"><span class="pre">analysis</span></code>数据库。</p>
+</section>
+</section>
+<section id="id4">
+<h2>创建表<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>正如之前所说，表是存放数据并且定义数据间关系的地方。在创建表的时候，你需要为每个<em>列</em>（有时候也被称为<em>字段</em>或者<em>属性</em>）指派一个名字和一种<em>类型</em>，后者决定了列能够接受的值，比如文本、整数、小数和日期等。定义数据类型是SQL保证数据完整性的一种方式，比如说，定义为日期的列只能接受包括<em>``YYYY-MM-DD``</em>在内的少数几种标准格式的数据。如果你尝试输入不符合日期格式的字符，比如单词<code class="docutils literal notranslate"><span class="pre">peach</span></code>，那么你将收到一个错误。</p>
+<p>储存在表的数据可以通过SQL语句进行访问、分析或者查询。除此之外，你还可以排序、编辑和查看数据，并在有需要进行修改的时候轻而易举地改变表。</p>
+<p>让我们首先在<code class="docutils literal notranslate"><span class="pre">analysis</span></code>数据库里面创建一个表。</p>
+<section id="create-table">
+<h3>使用<code class="docutils literal notranslate"><span class="pre">CREATE</span> <span class="pre">TABLE</span></code>语句<a class="headerlink" href="#create-table" title="Link to this heading">¶</a></h3>
+<p>在这个练习中，我们将使用一种经常被讨论的数据：教师工资。清单2-2展示了创建一个名为<code class="docutils literal notranslate"><span class="pre">teachers</span></code>的表所需的SQL语句。在将这段代码键入至pgAdmin并执行它之前，让我们先来审视一下它。</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="err">➊</span><span class="w"> </span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">teachers</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="err">❷</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="n">bigserial</span><span class="p">,</span>
+<span class="w">    </span><span class="err">❸</span><span class="w"> </span><span class="n">first_name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">25</span><span class="p">),</span>
+<span class="w">       </span><span class="n">last_name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">50</span><span class="p">),</span>
+<span class="w">       </span><span class="n">school</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">50</span><span class="p">),</span>
+<span class="w">    </span><span class="err">❹</span><span class="w"> </span><span class="n">hire_date</span><span class="w"> </span><span class="nb">date</span><span class="p">,</span>
+<span class="w">    </span><span class="err">❺</span><span class="w"> </span><span class="n">salary</span><span class="w"> </span><span class="nb">numeric</span>
+<span class="err">❻</span><span class="w"> </span><span class="p">);</span>
+</pre></div>
+</div>
+<p>代码清单2-2：创建一个包含六个列的<code class="docutils literal notranslate"><span class="pre">teachers</span></code>表</p>
+<p>这个表的定义还远远称不上全面。比如说，它缺少一些约束条件，这些条件用于确保必需填写的列必然会有数据，又或者确保我们不会无意中输入重复的值。本书的第8章将对约束条件做详细的介绍，但现在我们暂且先省略它们，先集中精力开始探索数据。</p>
+<p>这段代码以<code class="docutils literal notranslate"><span class="pre">CREATE</span></code>和<code class="docutils literal notranslate"><span class="pre">TABLE</span></code>➊两个SQL关键字为开始，后面跟着名字<code class="docutils literal notranslate"><span class="pre">teachers</span></code>，示意PostgreSQL接下来的一小段代码描述了一个将要被添加到数据库的表。对列的描述被包围在一对括号里面，其中的每条语句都包含了列的名字和类型，而多条语句之间则通过逗号进行分隔。出于代码风格的考虑，每行代码都单独占据一行并且缩进四个空格，这并不是必需的，但这种做法可以让代码更容易阅读。</p>
+<p>每个列名代表一个由数据类型定义的离散数据元素。<code class="docutils literal notranslate"><span class="pre">id</span></code>列➋的数据类型为<code class="docutils literal notranslate"><span class="pre">bigserial</span></code>，这是一种特殊的整数类型，它会在你每次向表中添加新行时自动递增：第一行的<code class="docutils literal notranslate"><span class="pre">id</span></code>列接收到的值为<code class="docutils literal notranslate"><span class="pre">1</span></code>，第二行接收到的值为<code class="docutils literal notranslate"><span class="pre">2</span></code>，以此类推。虽然<code class="docutils literal notranslate"><span class="pre">bigserial</span></code>数据类型还有其他序列类型都是PostgreSQL特有的实现，但绝大多数数据库系统都拥有类似的特性。</p>
+<p>之后，代码会为教师的名字、姓氏以及他们任教的学校创建列➌。这些列的数据类型都是<code class="docutils literal notranslate"><span class="pre">varchar</span></code>，这是一种文本类型，它的最大长度由括号中的数字指定。示例中的代码假设数据库不会出现超过50个字符的姓氏，尽管这是一个安全的假设，但随着时间推移，你可能还是会发现令人吃惊的意外情况。</p>
+<p>教师的<code class="docutils literal notranslate"><span class="pre">hire_date</span></code>➍被设置成了<code class="docutils literal notranslate"><span class="pre">date</span></code>数据类型，而<code class="docutils literal notranslate"><span class="pre">salary</span></code>列则被设置成了<code class="docutils literal notranslate"><span class="pre">numeric</span></code>➎。最后，整个代码段以一个分号作为结束➏。这个表展示了一些常见的数据类型例子，稍后的第4章将对这方面做更详细的介绍。</p>
+<p>在对SQL代码有了一定了解之后，现在是时候在pgAdmin里面运行这段代码了。</p>
+</section>
+<section id="teachers">
+<h3>创建<code class="docutils literal notranslate"><span class="pre">teachers</span></code>表<a class="headerlink" href="#teachers" title="Link to this heading">¶</a></h3>
+<p>在连接至数据库并且拥有所需的代码之后，我们就可以开始创建表了，其步骤跟创建数据库时基本相同：</p>
+<ol class="arabic simple">
+<li><p>打开pgAdmin的查询工具（如果该工具尚未被打开，那么你可以通过点击pgAdmin对象浏览器中的<code class="docutils literal notranslate"><span class="pre">analysis</span></code>一次，然后选择<strong>工具
+▸ 查询工具</strong>来打开这个工具）。</p></li>
+<li><p>将代码清单2-2中的<code class="docutils literal notranslate"><span class="pre">CREATE</span> <span class="pre">TABLE</span></code>脚本复制至SQL编辑器当中（如果你使用查询工具打开了从GitHub上下载的<em>Chapter_02.sql</em>文件，那么请高亮选中对应的代码）。</p></li>
+<li><p>通过点击右箭头形状的<strong>执行/刷新</strong>图标来执行脚本。</p></li>
+</ol>
+<p>如果一切顺利，那么你将会在pgAdmin查询工具底部的输出方框看到类似<code class="docutils literal notranslate"><span class="pre">Query</span> <span class="pre">returned</span> <span class="pre">successfully</span> <span class="pre">with</span> <span class="pre">no</span> <span class="pre">result</span> <span class="pre">in</span> <span class="pre">84</span> <span class="pre">msec</span></code>这样的消息。当然，查询的具体返回毫秒数将取决于你的系统。</p>
+<p>现在，我们需要找到刚刚创建的表。回到pgAdmin主窗口，在对象浏览器里面，用右键点击<strong>``analysis``</strong>并选择刷新。之后选择<strong>模式（Schemas）▸公开（public）▸表（Tables）</strong>就能看到新创建的表，如图
+2-4 所示。</p>
+<p><img alt="2-4" src="../_images/2-4.png" /> 图 2-4 ：对象浏览器中的 <code class="docutils literal notranslate"><span class="pre">teachers</span></code> 表</p>
+<p>你可以通过点击表名左边的箭头来展开<code class="docutils literal notranslate"><span class="pre">teachers</span></code>表节点，这将展示更多关于该表的细节，比如表包含的列名，如图
+2-5
+所示。除了列名之外，诸如索引、触发器和约束等特性的相关信息也会出现，但本书要到后面的章节才会介绍它们。通过点击表名，然后在pgAdmin的工作区域中选择<strong>SQL</strong>菜单，你将看到重建<code class="docutils literal notranslate"><span class="pre">teachers</span></code>表所需的全部SQL语句（注意，这些语句将包含额外的默认记号，它们是在创建表时隐含添加的）。</p>
+<p><img alt="2-5" src="../_images/2-5.png" /> 图2-5：<code class="docutils literal notranslate"><span class="pre">teachers</span></code>表的细节</p>
+<p>恭喜你！到目前为止，你已经成功构建起了一个数据库，并且将一个表添加到了这个数据库里面。接下来只要将数据添加到表里面，你就可以开始编写自己的第一个查询了。</p>
+</section>
+</section>
+<section id="id5">
+<h2>将行插入表<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>有好几种方式可以将数据添加至PostgreSQL的表中。很多时候，我们需要处理数量庞大的行，因此最简单的方法就是从文本文件或者其他数据库直接将数据导入至表。但是在刚开始的时候，我们会使用<code class="docutils literal notranslate"><span class="pre">INSERT</span> <span class="pre">INTO</span> <span class="pre">...</span> <span class="pre">VALUES</span></code>语句来添加少量行，并在语句中指定目标列以及数据值。然后我们就可以在数据的新家里面观察它们了。</p>
+<section id="insert">
+<h3>使用<code class="docutils literal notranslate"><span class="pre">INSERT</span></code>语句<a class="headerlink" href="#insert" title="Link to this heading">¶</a></h3>
+<p>为了将数据插入表，我们首先需要在pgAdmin的查询工具里面擦除刚刚执行过的<code class="docutils literal notranslate"><span class="pre">CREATE</span> <span class="pre">TABLE</span></code>语句。然后按照之前创建数据库和表时的相同步骤，将代码清单2-3中的代码复制至查询工具（又或者说，如果你是在查询工具里面打开了GitHub上下载的<em>Chapter_02.sql</em>文件，那么请高亮选中相应的代码段）。</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="err">➊</span><span class="w"> </span><span class="k">INSERT</span><span class="w"> </span><span class="k">INTO</span><span class="w"> </span><span class="n">teachers</span><span class="w"> </span><span class="p">(</span><span class="n">first_name</span><span class="p">,</span><span class="w"> </span><span class="n">last_name</span><span class="p">,</span><span class="w"> </span><span class="n">school</span><span class="p">,</span><span class="w"> </span><span class="n">hire_date</span><span class="p">,</span><span class="w"> </span><span class="n">salary</span><span class="p">)</span>
+<span class="err">➋</span><span class="w"> </span><span class="k">VALUES</span><span class="w"> </span><span class="p">(</span><span class="s1">&#39;Janet&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Smith&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;F.D. Roosevelt HS&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;2011-10-30&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">36200</span><span class="p">),</span>
+<span class="w">          </span><span class="p">(</span><span class="s1">&#39;Lee&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Reynolds&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;F.D. Roosevelt HS&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;1993-05-22&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">65000</span><span class="p">),</span>
+<span class="w">          </span><span class="p">(</span><span class="s1">&#39;Samuel&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Cole&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Myers Middle School&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;2005-08-01&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">43500</span><span class="p">),</span>
+<span class="w">          </span><span class="p">(</span><span class="s1">&#39;Samantha&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Bush&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Myers Middle School&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;2011-10-30&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">36200</span><span class="p">),</span>
+<span class="w">          </span><span class="p">(</span><span class="s1">&#39;Betty&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Diaz&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Myers Middle School&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;2005-08-30&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">43500</span><span class="p">),</span>
+<span class="w">          </span><span class="p">(</span><span class="s1">&#39;Kathleen&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Roush&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;F.D. Roosevelt HS&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;2010-10-22&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">38500</span><span class="p">);</span><span class="w"> </span><span class="err">➌</span>
+</pre></div>
+</div>
+<p>代码清单2-3：将数据插入至<code class="docutils literal notranslate"><span class="pre">teachers</span></code>表</p>
+<p>这个代码块插入了六位教师的名字和数据。PostgreSQL在这个语句中遵循了ANSI
+SQL标准：跟在<code class="docutils literal notranslate"><span class="pre">INSERT</span> <span class="pre">INTO</span></code>关键字后面的是表的名字，而之后被括号包围的则是需要填充的列
+➊
+。紧接着的下一行是<code class="docutils literal notranslate"><span class="pre">VALUES</span></code>关键字，还有将要插入至每一行每一列的数据
+➋
+。每个行的数据都需要用一组括号包围起来，并在括号内使用逗号分隔每个列的值，并且值的顺序必须与表名之后指定的列顺序一致。每个数据行都以逗号结束，除了最后一行，它使用分号代表整个语句结束
+➌ 。</p>
+<p>注意，被插入的值当中有些使用了单引号进行包围，而有些则不然。这是SQL标准要求的：文本和日期需要使用引号包围，而包括整数和小数在内的数字则不需要。每当示例中出现类似的标准要求时，本书都会专门指出它。另外请注意代码中使用的日期格式：一个四位数的年份之后跟着月份和日期，并且每个部分都使用连字符进行拼接。这是国际标准的日期格式，使用它可以帮助你避免混淆。（为什么使用<em>``YYYY-MM-DD``</em>格式是最好的选择？看看https://xkcd.com/1179/吧，这个绝妙的漫画会告诉你为什么。）PostgreSQL还支持很多其他日期格式，之后的示例将会展示其中几种。</p>
+<p>你可能会对表的第一个列<code class="docutils literal notranslate"><span class="pre">id</span></code>列感到疑惑。在创建表格的时候，我们在代码中把这个列指定为<code class="docutils literal notranslate"><span class="pre">bigserial</span></code>数据类型。因此，每当PostgreSQL向表中插入一个新行的时候，它都会自动地在<code class="docutils literal notranslate"><span class="pre">id</span></code>列中填入一个自动递增的整数。第4章在讨论数据类型的时候会对此作更详细的说明。</p>
+<p>现在，如果我们运行上面展示的这段代码，那么查询工具应该会显示以下信息：</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">INSERT</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">6</span>
+<span class="n">Query</span><span class="w"> </span><span class="n">returned</span><span class="w"> </span><span class="n">successfully</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="mi">150</span><span class="w"> </span><span class="n">msec</span><span class="p">.</span>
+</pre></div>
+</div>
+<p>跟在<code class="docutils literal notranslate"><span class="pre">INSERT</span></code>关键字后面的第二个数字用于报告成功插入的行数：6，而第一个数字则是一个未使用的PostgreSQL遗留值，返回它仅仅是为了满足连接协议；你可以安全地忽略该值。</p>
+</section>
+<section id="id6">
+<h3>查看数据<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
+<p>通过pgAdmin，我们可以快速地查看刚刚载入至<code class="docutils literal notranslate"><span class="pre">teachers</span></code>表的数据。在对象浏览器里面找到该表然后点击右键，接着在弹出的菜单里面选择<strong>查看/编辑数据
+▸
+所有行</strong>。如图2-6所示，表中包含了六个数据行，它们每个列的值都是由之前执行的SQL语句填充的。</p>
+<p><img alt="2-6" src="../_images/2-6.png" /> 图 2-6 ：直接在pgAdmin中查看表数据</p>
+<p>正如之前所说，尽管我们没有为<code class="docutils literal notranslate"><span class="pre">id</span></code>列插入值，但每个教师还是被指派了相应的ID号。此外，每一列的标题也展示了我们在创建表时为其定义的数据类型。（注意，在这个例子中，<code class="docutils literal notranslate"><span class="pre">varchar</span></code>类型被转换成了它在PostgreSQL中的完整形式，也即是<code class="docutils literal notranslate"><span class="pre">character</span> <span class="pre">varying</span></code>类型。）在查询结果中显示数据类型，可以帮助你在之后编写查询的时候，根据数据的类型对它们作出不同的安排。</p>
+<p>虽然pgAdmin能够让我们以不同的方式观察数据，但本书主要还是通过编写SQL来完成这一任务。</p>
+</section>
+</section>
+<section id="id7">
+<h2>在代码出现问题时获得帮助<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
+<p>也许存在一个世界，那里的代码永远都能够正常运作，但遗憾的是，我们还没有发明出能够将我们传送至那个世界的机器。在现实世界中，代码总是会遇到各种各样的问题。无论你是打错了字还是混淆了操作顺序，计算机语言对语法问题永远都是一丝不苟的。举个例子，如果你在执行代码清单2-3的代码时遗漏了一个逗号，那么PostgreSQL就会向你抱怨这个错误：</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="n">ERROR</span><span class="p">:</span><span class="w"> </span><span class="n">syntax</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="k">at</span><span class="w"> </span><span class="k">or</span><span class="w"> </span><span class="n">near</span><span class="w"> </span><span class="ss">&quot;(&quot;</span>
+<span class="n">LINE</span><span class="w"> </span><span class="mi">4</span><span class="p">:</span><span class="w">    </span><span class="p">(</span><span class="s1">&#39;Samuel&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Cole&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Myers Middle School&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;2005-08-01&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">43</span><span class="p">...</span>
+<span class="w">           </span><span class="o">^</span>
+</pre></div>
+</div>
+<p>幸运的是，这条错误信息指出了问题出现的原因以及位置：代码在第4行靠近左括号的地方出现了语法错误。不过在某些情况下，错误信息可能是晦涩难懂的。这时，你要做的就是跟其他优秀的程序员一样，根据错误信息在互联网上进行一次快速的搜索。大多数情况下，可能有人已经遇到过同样的问题，并且知道该如何解决它。我的经验是，在搜索引擎里面一字不差地输入错误信息，并指定你正在使用的数据库管理器的名字，然后将结果限制为最近新出现的条目以避免过时信息，这样你就能够得到最好的搜索结果。</p>
+</section>
+<section id="sql">
+<h2>格式化SQL以提高可读性<a class="headerlink" href="#sql" title="Link to this heading">¶</a></h2>
+<p>因为SQL对运行没有任何特殊的格式化要求，所以你大可以我行我素地使用自己喜欢的大小写惯例和缩进方式。但任何人都不可能永远孤军奋战，当你需要和其他人协作的时候，这种做法只会让你落得形单影只。如果你想要保证代码的可读性并且成为一个优秀的程序员，以下是一些可供参考的普遍惯例：</p>
+<ul class="simple">
+<li><p>对SQL关键字使用大写，比如<code class="docutils literal notranslate"><span class="pre">SELECT</span></code>。有些程序员还会对数据类型使用大写，比如<code class="docutils literal notranslate"><span class="pre">TEXT</span></code>和<code class="docutils literal notranslate"><span class="pre">INTEGER</span></code>。为了帮助你在头脑中区分关键字和数据类型，本书在展示数据类型时使用了小写字符，但如果你想要的话，也可以对它们使用大写。</p></li>
+<li><p>避免使用驼峰式大小写，而是使用像<code class="docutils literal notranslate"><span class="pre">lowercase_and_underscores</span></code>这样由下划线和小写字母组成的名字来表示诸如表名和列名等对象名称，这方面的更多细节将在第8章介绍。</p></li>
+<li><p>对子语句和代码块使用两个或者四个空格的缩进以保证可读性。有些程序员也喜欢使用制表符而不是空格，你可以根据个人的喜好或者所在的组织来决定该使用哪一个。</p></li>
+</ul>
+<p>以上就是最基本的SQL编码惯例，本书将在后续内容中继续探讨这一主题。</p>
+</section>
+<section id="id8">
+<h2>小结<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<p>我们在这一章完成了不少工作，包括创建数据库、表，还有将数据载入到表中。我们正在进一步熟悉SQL并逐渐将它加入到我们的数据分析工具箱当中！在接下来的下一章，我们将通过本章添加的这组教师数据，学习如何使用<code class="docutils literal notranslate"><span class="pre">SELECT</span></code>对表执行基本的查询。</p>
+<blockquote>
+<div><p>实战演练</p>
+<p>以下两个练习有助于你探索数据库、表以及数据关系的相关概念：</p>
+<ol class="arabic simple">
+<li><p>假设你正在建立一个数据库，以便对本地动物园的所有动物实施编目。你想要用一个表来跟踪园内动物的种类，而另一个表则用来跟踪每只动物的具体情况。请编写构建这两个表所需的<code class="docutils literal notranslate"><span class="pre">CREATE</span> <span class="pre">TABLE</span></code>语句并在其中包含需要用到的列，然后说明你包含这些列的原因。</p></li>
+<li><p>接着，创建<code class="docutils literal notranslate"><span class="pre">INSERT</span></code>语句，将样本数据载入至表，然后使用pgAdmin工具查看被插入的数据。请为这两个表分别创建一条额外的<code class="docutils literal notranslate"><span class="pre">INSERT</span></code>语句，然后在<code class="docutils literal notranslate"><span class="pre">VALUES</span></code>子句中故意省略某个用于分隔条目的逗号。这样做会导致你看到怎样的错误信息？它对你找出代码中的错误是否有帮助？</p></li>
+</ol>
+<p>所有练习的答案都可以在本书在线资源提供的<em>Try_It_Yourself.sql</em>文件中找到。</p>
+</div></blockquote>
+</section>
+</section>
+
+
+              </div>
+              
+              
+              <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+</div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <script src="../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+<footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2024, 黄健宏.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>

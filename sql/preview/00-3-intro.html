@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>引言 &#8212; huangz.works/sql 1.0 文档</title>
+    
+  <link href="../_static/css/theme.css" rel="stylesheet">
+  <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/blank.css?v=c4c5097c" />
+    
+  <link rel="preload" as="script" href="../_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script src="../_static/documentation_options.js?v=bfa25948"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="zh-cn">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+<a class="navbar-brand" href="../index.html">
+<p class="title">huangz.works/sql</p>
+</a>
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+      </ul>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar"><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+              
+              <div class="toc-item">
+                
+<div class="tocsection onthispage pt-5 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#sql">
+   什么是 SQL ？
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id2">
+   为什么是 SQL ？
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id3">
+   本书是为谁而写的？
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id4">
+   你将会学到什么？
+  </a>
+ </li>
+</ul>
+
+</nav>
+              </div>
+              
+              <div class="toc-item">
+                
+              </div>
+              
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <section id="id1">
+<h1>引言<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>在成为《今日美国》一员之后不久，我收到了一份数据集，那是一份每周畅销书排行榜，基于保密的销售数据对全国最畅销的图书进行排名。在之后的十年里，我每周都需要分析类似的数据集。这份榜单不仅产生了源源不断的故事创意，它还以一种独特的方式捕捉到了美国的时代思潮。</p>
+<p>你知道吗，在母亲节那一周，菜谱通常会比平时卖得更好一些，你又是否知道，很多作家仅仅因为奥普拉·温弗里 [1]_邀请他们上节目，就从默默无闻摇身一变成了首屈一指的畅销书作家？每周，书单编辑和我都会仔细研究销售数字和书籍流派，对数据进行排名，并据此决定排行榜的大标题。我们记录了从《哈里·波特》系列畅销书大热，到苏斯博士 [2]_的《Oh,
+the Places You’ll Go! 》成为新毕业生常年礼物的完整历程，几乎没有失手过。</p>
+<p>那时我使用数据库编程语言SQL（Structured Query
+Language，结构化查询语言）作为技术搭档，并且我很早就说服《今日美国》的IT部门允许我访问基于SQL构建的数据库系统以实现我们的书单应用。通过SQL，我能够发现隐藏在数据库里面的故事，其中包括与标题、作者、流派相关的销售数据，还有界定出版世界的行为准则。</p>
+<p>从那时起，无论我的职位是产品研发、内容战略，还是最近作为《华尔街日报》的数据编辑，SQL一直都是我的得力助手。在各种情况下，SQL都能帮助我从数据中找到有趣的故事，而这也正是你将要从本书中学到的。</p>
+<section id="sql">
+<h2>什么是 SQL ？<a class="headerlink" href="#sql" title="Link to this heading">¶</a></h2>
+<p>SQL是一种广泛用于管理数据和数据库系统的编程语言。无论你是营销分析师、记者还是绘制果蝇大脑神经元的研究人员，SQL收集、修改、探索和总结数据的能力都能让你受益。</p>
+<p>因为SQL是一种已经存在了数十年的成熟语言，所以它深深扎根在很多现代系统里面。在英国计算机科学家Edgar
+F.
+Codd理论工作的基础上，IBM的一对研究人员在1974年的一篇论文中首次阐述了SQL的语法（这种语言当时被称为SEQUEL）。在1979年，数据库公司Oracle的前身Relational
+Software成为了第一个在商业产品中使用该语言的公司。时至今日，SQL仍然是世界上使用最多的计算机语言，并且这种现象在短时间内都不会改变。</p>
+<p>每个数据库系统，比如PostgreSQL 、MySQL或者Microsoft SQL Server
+，都实现了自己的SQL变体。因此，如果你从一个系统突然转向另一个系统，那么你可能会发现一些或细微或明显的区别。这种现象的背后有好几个原因。美国国家标准协会（ANSI）在1986年通过了一个SQL标准，随后国际标准化组织（ISO）在1987年也通过了这一标准。但这个标准并未完整覆数据库实现SQL所需的方方面面，比如说，标准就没有规定如何创建索引。这就使得各个数据库系统制造商需要选择如何实现标准没有覆盖的功能，并且目前也没有任何制造商声称它们能够符合整个标准。</p>
+<p>与此同时，基于商业目的考虑，商业数据库供应商可能会创建非标准的SQL特性以获得竞争优势，又或者将其用作把用户留在自有生态系统的一种手段。比如说，Microsoft
+SQL
+Server使用的专有Transact-SQL（T-SQL）就包含了一些SQL标准之外的特性，比如它的局部变量定义语法。因此，把使用T-SQL编写的代码迁移至其他数据库系统可能并不是一件容易的事情。</p>
+<p>本书中的案例及代码均使用PostgreSQL（或简称Postgres）数据库系统，这是一个健壮的应用程序，能够处理大量数据。以下是本书选用PostgreSQL的一些主要原因：</p>
+<ul class="simple">
+<li><p>它是自由的。</p></li>
+<li><p>它可以用于Windows、macOS和Linux操作系统。</p></li>
+<li><p>它的SQL实现意在紧跟SQL标准。</p></li>
+<li><p>它获得了广泛的使用，因此在网上寻求帮助并不困难。</p></li>
+<li><p>它的地理空间扩展PostGIS可以让你分析几何数据，又或者配合QGIS等绘图软件一起使用以执行绘图功能。</p></li>
+<li><p>它可以在亚马逊AWS和Google Cloud等云计算环境中使用。</p></li>
+<li><p>它被很多Web应用程序用作数据存储，其中包括那些由流行的Django
+Web框架驱动的Web应用程序。</p></li>
+</ul>
+<p>值得一提的是，PostgreSQL的基本概念以及大部分核心SQL语法惯例在不同数据库中都是通用的。每当书本需要用到PostgreSQL特有的语法时，也会特别指出这一点。因此，即使你在工作中使用的是MySQL而不是PostgreSQL，你也可以利用在本书学到的大部分内容，又或者轻而易举地找到同等的代码概念。另一方面，如果你需要学习的SQL语法像Microsoft
+SQL
+Server的T-SQL那样，包含了游离于标准之外的特性，那么你可能需要补充一些专注于该系统的资源。</p>
+</section>
+<section id="id2">
+<h2>为什么是 SQL ？<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>显然，SQL并不是处理数据的唯一选择。在刚起步的时候，很多人会选择使用Microsoft
+Excel电子表格以及它提供的各种分析函数。之后，人们可能会从Excel进阶至Access，后者内置于某些版本的Microsoft
+Office里面，它提供的图形化查询界面可以让工作更容易完成。既然如此，我们为什么要学习SQL呢？</p>
+<p>其中一个原因是Excel和Access都有其局限性。目前，Excel的每个工作表最多只允许1048576行，而Access则将数据库的大小限制在2
+GB之内，并且每张表的列数量不能超过255个。在工作进行的最后关头，你肯定不想自己因为数据库系统的能力不足而无法完成任务。</p>
+<p>使用健壮的SQL数据库系统能够让你处理TB级别的数据、多个关联的表以及数以千计的行，并对数据的结构执行精细的控制，从而提高效率、速度以及至关紧要的——准确度。</p>
+<p>此外，对于R和Python这些在数据科学中使用的编程语言来说，SQL还是一个非常好的帮手。这些编程语言能够连接SQL数据库，甚至可以在有需要的时候直接在语言里面包含SQL语法。对于那些没有编程语言背景的人，SQL也常常被用作简明的入门教程，用于介绍数据结构以及编程逻辑的相关概念。</p>
+<p>最后，SQL的作用并不仅限于数据分析。如果你对构建在线应用有所了解，那么你肯定知道很多常见的Web框架、互动地图以及内容管理系统的后台，实际上都是数据库在为其提供动力。当你需要在这些应用程序的表面之下进行挖掘时，使用SQL管理数据和数据库的能力就会变得非常有用。</p>
+</section>
+<section id="id3">
+<h2>本书是为谁而写的？<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>如果你在日常生活中遇到了一些数据，并且希望学习如何分析、管理和转换它们，那么这本《SQL实战》就是为你准备的。为了做到这一点，本书涵盖了真实世界的数据和场景，比如美国的人口普查统计数据、犯罪报告以及纽约市的出租车乘车数据。我们的目标不仅仅是了解SQL的运作原理，还包括如何通过这些技术寻找有价值的见解。</p>
+<p>本书是为那些刚开始接触编程的人而写的，因此前面的章节涵盖了数据库、数据以及SQL语法相关的关键基础知识，而后面的章节则涵盖了更高级的主题，比如地理信息系统（GIS），有一定SQL经验的人应该会从这些章节中受益。本书假设你对电脑有基本的了解，知道如何安装程序、浏览硬盘以及从互联网上下载文件，但并不假设你有任何编程或者数据分析经验。</p>
+</section>
+<section id="id4">
+<h2>你将会学到什么？<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>《SQL实战》首先以设置系统、获取代码以及数据实例的一章开始，紧接着是介绍数据库、查询、表和数据等基础知识的章节，这些知识对于很多数据库系统的SQL都是共有的。第14章至第19章将介绍与PostgreSQL关系更密切的主题，比如全文搜索、函数和GIS。尽管本书的很多章节都是自成一格的，但是由于前面章节出现的数据集经常会在后面章节中出现，所以按顺序阅读本书将有助于你保持正确的方向，并且也能更好地夯实基础。</p>
+<p>以下摘要为每一章提供了更多细节：</p>
+<p><strong>第1章：设置编码环境</strong>
+讲解如何设置PostgreSQL、pgAdmin的用户界面以及文本编辑器，还有如何下载示例代码和数据。</p>
+<p><strong>第2章：创建首个数据库和表</strong>
+手把手教你如何将一个教师相关的简单数据集载入到一个崭新的数据库里面。</p>
+<p><strong>第3章：使用SELECT开始探索数据</strong>
+探讨基本的SQL查询语法，包括如何排序和过滤数据。</p>
+<p><strong>第4章：了解数据类型</strong>
+讲解如何通过定义，对表中的列进行设置，使得它们可以储存指定类型的数据，其中包括文本、日期以及各种形式的数字。</p>
+<p><strong>第5章：数据的导入与导出</strong>
+讲解如何通过SQL命令从外部文件中载入数据，然后又如何导出它们。你将载入一个由美国人口普查数据组成的表，本书之后的内容将会一直用到这个表。</p>
+<p><strong>第6章：使用SQL实现基本的算术和统计</strong>
+涵盖了算术操作符，并对求和、求平均和求中位数的聚合函数进行了介绍。</p>
+<p><strong>第7章：在关系数据库中连接表</strong>
+讲解如何通过连接表中的关键列来查询多个相关联的表，你将了解到使用各种不同类型连接的方法和时机。</p>
+<p><strong>第8章：按需设计表</strong>
+涵盖了如何设置表从而提高数据的组织度和完整性，还有如何使用索引来加快查询速度。</p>
+<p><strong>第9章：通过分组和汇总提取信息</strong>
+讲解如何基于年度调查报告，通过聚合函数寻找美国图书馆的使用趋势。</p>
+<p><strong>第10章：检查并修改数据</strong>
+以一个肉、蛋和家禽生产商的记录集合作为例子，探索如何查找并修复不完整或者不准确的数据。</p>
+<p><strong>第11章：SQL中的统计函数</strong>
+介绍关联、回归、排名以及其他函数，以便帮助你从数据集中发现更多意义。</p>
+<p><strong>第12章：处理日期与时间</strong>
+讲解如何在数据库中创建、操作和查询日期以及时间，其中包括如何处理时区，还有如何处理纽约市出租车行程以及美铁列车时刻表的相关数据。</p>
+<p><strong>第13章：高级查询技术</strong>
+讲解如何通过诸如子查询、交叉表以及<code class="docutils literal notranslate"><span class="pre">CASE</span></code>语句这样更为复杂的SQL操作，为温度读数数据集的值重新进行分类。</p>
+<p><strong>第14章：挖掘文本以查找有意义的数据</strong>
+涵盖如何通过PostgreSQL的全文搜索引擎以及正则表达式，从非结构化的文本中提取数据，其中使用了警察报告以及美国总统演讲稿作为例子。</p>
+<p><strong>第15章：使用PostGIS分析空间数据</strong>
+介绍了与空间对象相关的数据类型以及查询，它们能够让你分析诸如县、道路和河流等地理要素。</p>
+<p><strong>第16章：处理JSON数据</strong> 介绍了 JavaScript Object Notation
+（JSON）数据格式，并使用了与电影以及地震有关的数据来探索PostgreSQL对JSON的支持。</p>
+<p><strong>第17章：使用视图、函数和触发器以提高效率</strong>
+讲解了如何通过自动化数据库任务避免重复执行例行工作。</p>
+<p><strong>第18章：通过命令行使用PostgreSQL</strong>
+涵盖了如何在计算机的命令提示符里面，通过键入文本命令的方式连接数据库并执行查询。</p>
+<p><strong>第19章：维护数据库</strong>
+提供了跟踪数据库大小、自定义设置以及备份数据的相关技巧和程序。</p>
+<p><strong>第20章：讲述你的数据故事</strong>
+提供了一些指导，帮助你如何从分析中获取想法，如何审查数据，如何得出合理的结论，还有如何清晰地展示你的发现。</p>
+<p><strong>附录：更多PostgreSQL资源</strong> 列出了一些能够帮助你提升技术的软件和文档。</p>
+<p>每章的结尾都有一个“实战演练”的环节，里面包含的练习可以帮助你巩固刚刚学到的知识。</p>
+<p>准备好了吗？让我们开始第一章，《设置编码环境》。</p>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id5" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<p>奥普拉·温弗里是美国著名电视脱口秀节目《奥普拉·温弗里秀》的制作人和主持人，该节目是目前为止美国持续时间最长的日间电视节目，同时也是美国电视史上收视最高的脱口秀。——译者注</p>
+</aside>
+<aside class="footnote brackets" id="id6" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></span>
+<p>苏斯博士本名希奥多·苏斯·盖索，他是美国著名的作家和漫画家，以儿童绘本最为出名。——译者注</p>
+</aside>
+</aside>
+</section>
+</section>
+
+
+              </div>
+              
+              
+              <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+</div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <script src="../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+<footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2024, 黄健宏.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>

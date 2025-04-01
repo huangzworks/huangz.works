@@ -1,0 +1,27 @@
+致谢
+====
+
+这本《SQL实战》凝聚了很多人的心血。首先我要向No Starch
+Press团队致以诚挚的感谢。感谢Bill
+Pollock捕捉到了本书的景愿，并进一步改善了本书的初始构想，也感谢他同意我再写一次书。特别感谢和赞赏资深编辑Liz
+Chadwick，她通过富有洞察力的建议和巧妙的编辑改善每一章的内容，感谢文字编辑Kim
+Wimpsett，还有由Paula Williamson和Jennifer Kepler组成的制作团队。
+
+Crunchy Data公司的首席技术官，PostgreSQL社区的长期贡献者Stephen
+Frost负责这次新版的技术审校。非常感谢Stephen花时间给我解释PostgreSQL的内部工作原理和SQL概念。多亏了他细致入微的双眼，本书才能变得更好、更详尽和更准确。我还要感谢Josh
+Berkus，他作为第一版的技术审校所做的很多贡献在这次新版中仍然存在。
+
+感谢调查记者和编辑协会（Investigative Reporters and
+Editors，简称IRE）的成员以及工作人员，他们一直致力于教育记者如何从数据中发现故事。IRE也是我开始接触SQL和数据新闻 [1]_的地方。
+
+我的很多同事不仅传授了令人难忘的数据分析课程，还使得我的工作时光变得更加愉快。特别感谢Paul
+Overberg分享他在人口统计学以及美国人口普查方面的丰富知识，感谢Lou
+Schilling的许多技术课程，感谢Christopher
+Schnaars的SQL专业知识，感谢Peter Matseykanets的鼓励，感谢Chad Day、John
+West和Maureen Linke以及华尔街日报华盛顿分部视觉团队的不断启发。
+
+最后，我要把最诚挚的感谢献给妻子Elizabeth以及我们的孩子 ——
+你们是我生活中最耀眼的光芒。正如我们常说的那样：“享受旅程吧！”
+
+.. [1]
+   数据新闻指的是通过对大量数据进行分析与筛检后产出新闻报道（故事）的一种新闻处理方式。——译者注

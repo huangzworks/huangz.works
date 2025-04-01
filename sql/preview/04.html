@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>第4章 了解数据类型 &#8212; huangz.works/sql 1.0 文档</title>
+    
+  <link href="../_static/css/theme.css" rel="stylesheet">
+  <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/blank.css?v=c4c5097c" />
+    
+  <link rel="preload" as="script" href="../_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script src="../_static/documentation_options.js?v=bfa25948"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="zh-cn">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+<a class="navbar-brand" href="../index.html">
+<p class="title">huangz.works/sql</p>
+</a>
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+      </ul>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar"><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+              
+              <div class="toc-item">
+                
+<div class="tocsection onthispage pt-5 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id2">
+   了解字符
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id3">
+   了解数字
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#id4">
+     使用整数
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#id5">
+     自动递增整数
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#id6">
+       通过序列实现自动递增
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#identity">
+       通过IDENTITY实现自动递增
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id7">
+   使用小数
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#id8">
+     了解定点数
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#id9">
+     了解浮点数类型
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#id10">
+     使用定点和浮点类型
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#id11">
+     浮点数计算带来的问题
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#id12">
+     选择合适的数字类型
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id13">
+   了解日期和时间
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#interval">
+   在计算中使用interval数据类型
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#jsonjsonb">
+   了解JSON和JSONB
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id14">
+   使用各式各样的类型
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#cast">
+   使用CAST将值从一种类型转换为另一种类型
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id15">
+   使用CAST速记法
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id16">
+   小结
+  </a>
+ </li>
+</ul>
+
+</nav>
+              </div>
+              
+              <div class="toc-item">
+                
+              </div>
+              
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <section id="id1">
+<h1>第4章 了解数据类型<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>以恰当格式储存数据是建立可用数据库和实施准确分析的基础，因此了解数据类型至关重要。每当我钻研一个新数据库的时候，我都会检查每张表每个列所属的<em>数据类型</em>。在好运的情况下，我手上会有一份<em>数据字典</em>：这份文档会告诉我每个列到底是数字、字符还是其他类型，并对列的值进行解释。可惜的是，很多组织并没有创建和维护良好的文档，因此我听到“我们没有数据字典”的情况并不少见。在这种情况下，我会使用pgAdmin检视表结构并尽可能地获取信息。</p>
+<p>数据类型是一个编程概念，它并不仅仅适用于SQL。我们在本章探索的概念同样可以应用到很多你想要学习的其他语言上面。</p>
+<p>在SQL数据库中，表中的每个列仅能容纳一种数据类型，我们可以在<code class="docutils literal notranslate"><span class="pre">CREATE</span> <span class="pre">TABLE</span></code>语句中定义这一点，只需要在列名的后面声明数据类型即可。在下面的简单示例表中，你会看到三个列，它们分别拥有三种不同的数据类型：包括日期，数字还有文本。（你只需要观察这个表就可以，不必创建它。）</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">eagle_watch</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">observation_date</span><span class="w"> </span><span class="nb">date</span><span class="p">,</span>
+<span class="w">    </span><span class="n">eagles_seen</span><span class="w"> </span><span class="nb">integer</span><span class="p">,</span>
+<span class="w">    </span><span class="n">notes</span><span class="w"> </span><span class="nb">text</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+<p>在这个名为<code class="docutils literal notranslate"><span class="pre">eagle_watch</span></code>的虚构的老鹰清单中，我们通过在<code class="docutils literal notranslate"><span class="pre">observation_date</span></code>列的名字后面添加数据类型来声明该列容纳日期值。同样地，我们通过<code class="docutils literal notranslate"><span class="pre">integer</span></code>类型声明设置<code class="docutils literal notranslate"><span class="pre">eagles_seen</span></code>容纳整数，并通过<code class="docutils literal notranslate"><span class="pre">text</span></code>类型声明<code class="docutils literal notranslate"><span class="pre">notes</span></code>容纳字符。</p>
+<p>这些数据类型属于我们最经常会遇到的三种：</p>
+<p><strong>字符</strong> 任何字符或者符号</p>
+<p><strong>数字</strong> 包括整数和分数</p>
+<p><strong>日期和时间</strong> 时间相关的信息</p>
+<p>在接下来的内容中，我们将深入探讨每种数据类型；并说明它们是ANSI
+SQL标准的一部分还是PostgreSQL特有的。如果你想要全面且深入地了解PostgreSQL和SQL标准的区别，那么请参考：
+<a class="reference external" href="https://%20wiki.postgresql.org/wiki/PostgreSQL_vs_SQL_Standard">https://wiki.postgresql.org/wiki/PostgreSQL_vs_SQL_Standard</a>。</p>
+<section id="id2">
+<h2>了解字符<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p><em>字符串类型</em>是一种通用类型，适用于由文本、数字和符号组成的任意组合。该类型包含以下几种：</p>
+<p><code class="docutils literal notranslate"><span class="pre">char(n)</span></code>
+固定长度列，其中字符的长度由<code class="docutils literal notranslate"><span class="pre">n</span></code>指定。如果一个列被设置成<code class="docutils literal notranslate"><span class="pre">char(20)</span></code>，那么无论实际插入的字符有多少个，每个行的这一列都会储存20个字符。如果某个列插入的字符少于20个，那么PostgreSQL将用空格填充该列的剩余部分。这种类型是标准SQL的一部分，它还可以通过较长的名字<code class="docutils literal notranslate"><span class="pre">character(n)</span></code>来指定。时至今日，<code class="docutils literal notranslate"><span class="pre">char(n)</span></code>已经很少使用，它主要是作为老旧计算机系统的遗留物存在。</p>
+<p><code class="docutils literal notranslate"><span class="pre">varchar(n)</span></code>
+可变长度列，其中最大长度由<code class="docutils literal notranslate"><span class="pre">n</span></code>指定。即使实际插入的字符数量比<em>最大</em>长度要小，PostgreSQL也不会储存额外的空格。比如说，储存字符串<code class="docutils literal notranslate"><span class="pre">blue</span></code>只会占用四个空格，而储存字符串<code class="docutils literal notranslate"><span class="pre">123</span></code>只会占用三个。在大型数据库中，这种做法可以节省大量空间。这种类型包含在标准SQL当中，并且它还能够通过较长的名字<code class="docutils literal notranslate"><span class="pre">varying(n)</span></code>来指定。</p>
+<p><code class="docutils literal notranslate"><span class="pre">text</span></code>
+没有长度限制的可变长度列。（根据PostgreSQL文档描述，用户能够储存的最长字符串大约为
+1 GB）。<code class="docutils literal notranslate"><span class="pre">text</span></code>类型并不是标准SQL的一部分，但包括Microsoft
+SQL和MySQL在内的其他数据库系统里面都有类似的实现。</p>
+<p>根据PostgreSQL文档的记载，这三种类型在性能上并无实质区别：<a class="reference external" href="https://www.postgresql.org/docs/currentsubstantial/datatype-character.html">https://www.postgresql.org/docs/currentsubstantial/datatype-character.html</a>。不过如果你使用的是其他数据库管理器，那么情况可能会有所不同，所以最好还是通过检查文档确认一下。<code class="docutils literal notranslate"><span class="pre">varchar</span></code>和<code class="docutils literal notranslate"><span class="pre">text</span></code>不仅更灵活，而且还不会浪费空间储存不必要的字符，这让它们看上去似乎占尽优势。但如果你看过网上的一些讨论，就会知道有些用户建议使用<code class="docutils literal notranslate"><span class="pre">char</span></code>定义那些总是具有相同字符数量的列，以此来更好地表明列所容纳的数据。比如说，你可能会看到<code class="docutils literal notranslate"><span class="pre">char(2)</span></code>被用于储存美国各州的邮政缩写。</p>
+<blockquote>
+<div><p>注意</p>
+<p>因为储存在<code class="docutils literal notranslate"><span class="pre">char</span></code>列中的数字是无法执行数学运算的，所以请仅在数字表示代号的情况下才将它们储存为字符类型（比如在表示美国邮政编码的时候）。</p>
+</div></blockquote>
+<p>为了实际地观察这三种字符类型，我们可以运行代码清单4-1中展示的脚本。这个脚本会构建并载入一个简单的表，然后在你的计算机里面将数据导出至一个文本文件。</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">char_data_types</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="err">➊</span><span class="n">char_column</span><span class="w"> </span><span class="nb">char</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span>
+<span class="w">    </span><span class="n">varchar_column</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span>
+<span class="w">    </span><span class="n">text_column</span><span class="w"> </span><span class="nb">text</span>
+<span class="p">);</span>
+
+<span class="err">➋</span><span class="w"> </span><span class="k">INSERT</span><span class="w"> </span><span class="k">INTO</span><span class="w"> </span><span class="n">char_data_types</span>
+<span class="w">   </span><span class="k">VALUES</span>
+<span class="w">       </span><span class="p">(</span><span class="s1">&#39;abc&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;abc&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;abc&#39;</span><span class="p">),</span>
+<span class="w">       </span><span class="p">(</span><span class="s1">&#39;defghi&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;defghi&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;defghi&#39;</span><span class="p">);</span>
+
+<span class="err">➌</span><span class="w"> </span><span class="k">COPY</span><span class="w"> </span><span class="n">char_data_types</span><span class="w"> </span><span class="k">TO</span><span class="w"> </span><span class="s1">&#39;C:\YourDirectory\typetest.txt&#39;</span>
+<span class="err">➍</span><span class="w"> </span><span class="k">WITH</span><span class="w"> </span><span class="p">(</span><span class="n">FORMAT</span><span class="w"> </span><span class="n">CSV</span><span class="p">,</span><span class="w"> </span><span class="n">HEADER</span><span class="p">,</span><span class="w"> </span><span class="k">DELIMITER</span><span class="w"> </span><span class="s1">&#39;|&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>代码清单 4-1 ：实际使用字符数据类型</p>
+<p>这段代码首先定义了三个不同类型的字符列 ➊
+，然后插入两个行并在行的各个列中分别设置相同的字符串 ➋
+。跟第2章中展示的<code class="docutils literal notranslate"><span class="pre">INSERT</span> <span class="pre">INTO</span></code>语句不同，这段代码并没有指定各个列的名字。这是因为如果<code class="docutils literal notranslate"><span class="pre">VALUES</span></code>语句提供的值数量跟表的列数量保持一致，那么数据库就会认为你在按照定义表时指定列的顺序在插入值。</p>
+<p>之后，代码使用PostgreSQL的<code class="docutils literal notranslate"><span class="pre">COPY</span></code>关键字 ➌
+，将数据导出至指定文件夹的<em>typetest.txt</em>文本文件中。在执行这段代码的时候，你需要将<em>C::raw-latex:`YourDirectory`\</em>替换为你想要在计算机里面储存文件的完整目录路径。例子中使用的是Windows格式的目录路径，它是一个指向<em>C:</em>驱动器中的<em>YourDirectory</em>文件夹的路径，并且在文件夹和文件名之间使用了反斜线符号。
+除此之外，Windows用户还必需根据第1章“从GitHub中下载代码和数据”一节介绍的方法，为目标文件夹设置权限。</p>
+<p>Linux和macOS的文件路径格式跟Windows并不相同，它们在文件夹和文件名之间使用正斜线符号。比如说，在我的Mac中，指向桌面的文件路径为<em>/Users/anthony/Desktop/</em>。此外，被指定的目录必需已经存在，PostgreSQL不会自动为你创建指定的文件夹。</p>
+<blockquote>
+<div><p>注意</p>
+<p>因为PostgreSQL以<code class="docutils literal notranslate"><span class="pre">postgres</span></code>用户身份运行，它无法读写其他用户的文件夹，所以在Linux上执行<code class="docutils literal notranslate"><span class="pre">COPY</span></code>命令可能会由于权限不足而引发错误。解决这个问题的其中一个办法就是读写系统的<em>/tmp</em>文件夹，该文件夹允许所有用户访问。不过需要小心的是，由于某些配置的原因，这个文件夹可能会在计算机重启的时候被清空。关于解决这个问题的其他可选方法，请参考第5章中“通过pgAdmin导入和导出数据”一节，还有第18章关于psql的“导入、导出和使用文件”一节。</p>
+</div></blockquote>
+<p>在PostgreSQL中，<code class="docutils literal notranslate"><span class="pre">COPY</span> <span class="pre">table_name</span> <span class="pre">FROM</span></code>是导入函数，而<code class="docutils literal notranslate"><span class="pre">COPY</span> <span class="pre">table_name</span> <span class="pre">TO</span></code>则是导出函数。本书将在第5章深入介绍这两个函数，但是现在来说，我们只需要知道<code class="docutils literal notranslate"><span class="pre">WITH</span></code>关键字选项➍会格式化文件中的数据并使用<em>管道</em>符号（|）分隔每一列即可。这样一来，我们就可以轻而易举地看到<code class="docutils literal notranslate"><span class="pre">char</span></code>列中的未使用部分是如何被空格填充的。</p>
+<p>为了查看代码的输出结果，请使用你在第1章安装的文本编辑器打开<em>typetest.txt</em>文件（切记不要使用Word、Excel或者其他电子表格应用程序打开文件）。文件中包含的内容应该是这样的：</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>char_column|varchar_column|text_column
+abc       |abc|abc
+defghi    |defghi|defghi
+</pre></div>
+</div>
+<p>尽管我们将<code class="docutils literal notranslate"><span class="pre">char</span></code>列和<code class="docutils literal notranslate"><span class="pre">varchar</span></code>列的长度都设置成了10个字符，但只有<code class="docutils literal notranslate"><span class="pre">char</span></code>列会使用空格填充未使用空间，并且在两个行都输出了10个字符。与此相反，<code class="docutils literal notranslate"><span class="pre">varchar</span></code>列和<code class="docutils literal notranslate"><span class="pre">text</span></code>列只储存了被插入的字符。</p>
+<p>再次声明，尽管这个例子说明<code class="docutils literal notranslate"><span class="pre">char</span></code>类型可能会消耗比实际所需更多的储存空间，但这三种类型在性能方面并无实质差别。每一列中出现少量未使用空间初看上去似乎微不足道，但如果这种情况出现在数十张表的数百万个行中，你很快就会理解积小成多的道理。</p>
+<p>我个人倾向于对所有字符列使用<code class="docutils literal notranslate"><span class="pre">text</span></code>类型。这种做法使得我不必为每个可变长度的字符列逐一设置最大长度，并且当这些字符列的需求发生变化时，我也不必对它们的表进行修改。</p>
+</section>
+<section id="id3">
+<h2>了解数字<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>顾名思义，数字列能够容纳各种类型的数字，但这并不是全部：它还允许你对数字进行计算。</p>
+<p>以字符串形式储存在字符列的数字不能执行加法、乘法、除法还有其他一系列数学运算，这是非常重要的一点。此外，以字符形式储存的数字跟以数字形式储存的数字在排序时会产生不同结果，因此如果你需要进行数学运算或者数值排序，那么就需要用到数字类型。</p>
+<p>SQL的数字类型可以分为以下两类：</p>
+<p><strong>整数</strong> 包括正数和负数在内的所有整数 <strong>定点和浮点</strong>
+由整数构成的两种不同形式的分数</p>
+<p>接下来的内容将分别介绍这些类型。</p>
+<section id="id4">
+<h3>使用整数<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<p>整数数据类型是你在探索SQL数据库时最经常会见到的数字类型，它们是包括0、正数和负数在内的<em>所有整数</em>。从街道或公寓的编号，到冰箱上的序列号，再到抽奖券上的兑奖数字，整数在我们的日常生活中随处可见。</p>
+<p>SQL标准提供了三种整数类型，它们分别是：<code class="docutils literal notranslate"><span class="pre">smallint</span></code>、<code class="docutils literal notranslate"><span class="pre">integer</span></code>还有<code class="docutils literal notranslate"><span class="pre">bigint</span></code>。这三种类型之间的区别在于它们能够容纳的数字的最大体积。表4-1展示了这三种数字类型的最大值和最小值，还有储存这些数字所需的存储空间（字节）。</p>
+<p>表4-1：整数数据类型</p>
+<table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>数
+据类型</p></th>
+<th class="head"><p>存
+储空间大小</p></th>
+<th class="head"><p>取值范围</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sma</span>
+<span class="pre">llint</span></code></p></td>
+<td><p>2字节</p></td>
+<td><p>−32768 至 +32767</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">in</span>
+<span class="pre">teger</span></code></p></td>
+<td><p>4字节</p></td>
+<td><p>−2147483648 至 +2147483647</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">b</span>
+<span class="pre">igint</span></code></p></td>
+<td><p>8字节</p></td>
+<td><p>−9223372036854775808 至 +9223372036854775807</p></td>
+</tr>
+</tbody>
+</table>
+<p><code class="docutils literal notranslate"><span class="pre">bigint</span></code>类型几乎能够满足你对数字列的任何要求，但是它占用的存储空间也是最大的。当你需要处理大于21亿的数字时，使用<code class="docutils literal notranslate"><span class="pre">bigint</span></code>就是必须的，但你也可以简单地把这种类型看作是你的无忧默认选择，这样你就永远不必担心列能否容纳某个数字了。另一方面，如果你确信数字的范围不会超过<code class="docutils literal notranslate"><span class="pre">integer</span></code>的限制，那么使用这种类型也是一个不错的选择，因为它不会像<code class="docutils literal notranslate"><span class="pre">bigint</span></code>那样消耗那么多存储空间（这在处理上百万个数据行时会是一个需要关心的问题）。</p>
+<p>当你知道数值将持续受到约束的时候，使用<code class="docutils literal notranslate"><span class="pre">smallint</span></code>将是有意义的：比如月份的天数和年份的天数就是一个很好的例子。因为<code class="docutils literal notranslate"><span class="pre">smallint</span></code>类型占用的存储空间只有<code class="docutils literal notranslate"><span class="pre">integer</span></code>的一半，所以如果列的值总是能够维持在<code class="docutils literal notranslate"><span class="pre">smallint</span></code>的取值范围之内，那么使用<code class="docutils literal notranslate"><span class="pre">smallint</span></code>就是一种精明的数据库设计抉择。</p>
+<p>如果你尝试向上述类型的列中插入一个超出范围的数字，那么数据库将停止执行操作并返回一个越界错误。</p>
+</section>
+<section id="id5">
+<h3>自动递增整数<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
+<p>在一些情况下，创建一个容纳整数的列，并且在这个表每次添加新行的时候，让这个列的值<em>自动递增</em>，这样会很有帮助。举个例子，我们可以通过自动递增列，为表中的每个行创建一个独一无二的ID号码，并将其用作行的<em>主键</em>（primary
+key）。这样一来，数据库中的其他表就可以根据这个ID来引用行，本书稍后将在第7章介绍这个概念。</p>
+<p>PostgreSQL提供了两种方法对整数列实行自动递增。一种是使用<em>序列</em>数据类型，这是PostgreSQL对ANSI
+SQL标准中的自动编号<em>标识符列</em>的一种专有实现；而另一种则是使用ANSI
+SQL标准的<code class="docutils literal notranslate"><span class="pre">IDENTITY</span></code>关键字。接下来的内容将从序列类型开始介绍。</p>
+<section id="id6">
+<h4>通过序列实现自动递增<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h4>
+<p>前面的第2章在创建<code class="docutils literal notranslate"><span class="pre">teachers</span></code>表的时候，创建了一个声明为<code class="docutils literal notranslate"><span class="pre">bigserial</span></code>的<code class="docutils literal notranslate"><span class="pre">id</span></code>列：这个<code class="docutils literal notranslate"><span class="pre">bigserial</span></code>和它的兄弟<code class="docutils literal notranslate"><span class="pre">smallserial</span></code>以及<code class="docutils literal notranslate"><span class="pre">serial</span></code>与其说是真正的数据类型，不如说更像是<code class="docutils literal notranslate"><span class="pre">bigint</span></code>、<code class="docutils literal notranslate"><span class="pre">smallint</span></code>和<code class="docutils literal notranslate"><span class="pre">integer</span></code>对应的特殊<em>实现</em>。每当你插入一个新行并且行中带有序列类型的列时，PostgreSQL就会对这些列的值执行自增操作，从1开始，直到对应整数类型的最大值为止。</p>
+<p>表4-2展示了不同的序列类型以及它们的覆盖范围。</p>
+<p>表4-2：序列数据类型</p>
+<table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>数据类型</p></th>
+<th class="head"><p>存储空间</p></th>
+<th class="head"><p>取值范围</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">smallserial</span></code></p></td>
+<td><p>2字节</p></td>
+<td><p>1 至 32767</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">serial</span></code></p></td>
+<td><p>4字节</p></td>
+<td><p>1 至 2147483647</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">bigserial</span></code></p></td>
+<td><p>8字节</p></td>
+<td><p>1 至 9223372036854775807</p></td>
+</tr>
+</tbody>
+</table>
+<p>为了创建序列类型的列，我们需要在<code class="docutils literal notranslate"><span class="pre">CREATE</span> <span class="pre">TABLE</span></code>语句中声明它们，就像声明<code class="docutils literal notranslate"><span class="pre">integer</span></code>类型时一样。举个例子，通过以下代码，我们可以在创建<code class="docutils literal notranslate"><span class="pre">people</span></code>表的时候，让它拥有一个名为<code class="docutils literal notranslate"><span class="pre">id</span></code>的序列类型列，并且该列所需的存储空间等同于<code class="docutils literal notranslate"><span class="pre">integer</span></code>数据类型：</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">people</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">serial</span><span class="p">,</span>
+<span class="w">    </span><span class="n">person_name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+<p>现在，<code class="docutils literal notranslate"><span class="pre">people</span></code>表每增加一个包含<code class="docutils literal notranslate"><span class="pre">person_name</span></code>的新行，<code class="docutils literal notranslate"><span class="pre">id</span></code>列的值都会被加上1。</p>
+</section>
+<section id="identity">
+<h4>通过IDENTITY实现自动递增<a class="headerlink" href="#identity" title="Link to this heading">¶</a></h4>
+<p>PostgreSQL从第10版开始支持<code class="docutils literal notranslate"><span class="pre">IDENTITY</span></code>，这是自动递增整数的标准SQL实现。<code class="docutils literal notranslate"><span class="pre">IDENTITY</span></code>的语法比较冗长，一些数据库用户之所以选择它，更多是考虑到它和诸如<code class="docutils literal notranslate"><span class="pre">Oracle</span></code>等其他数据库系统的交叉兼容，另一方面则是考虑到它可以防止用户意外地往自动递增列中插入数值，而序列类型并不拒绝这种操作。</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">GENERATED</span> <span class="pre">ALWAYS</span> <span class="pre">AS</span> <span class="pre">IDENTITY</span></code>命令数据库总是使用自动递增的值来填充该列。除非用户手动覆盖该设置，否则他们将无法向<code class="docutils literal notranslate"><span class="pre">id</span></code>列插入任何值。详情请见PostgreSQL
+<code class="docutils literal notranslate"><span class="pre">INSERT</span></code>文档中的<code class="docutils literal notranslate"><span class="pre">OVERRIDING</span> <span class="pre">SYSTEM</span> <span class="pre">VALUE</span></code>一节：<a class="reference external" href="https://www.postgresql.org/docs/current/sql-insert.html">https://www.postgresql.org/docs/current/sql-insert.html</a>
+。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GENERATED</span> <span class="pre">BY</span> <span class="pre">DEFAULT</span> <span class="pre">AS</span> <span class="pre">IDENTITY</span></code>命令数据库在用户没有主动提供值的情况下，默认使用自动递增值来填充该列。这个选项可能会导致重复值出现，并给那些被用作键的列带来问题。稍后的第7章会更深入地探讨这个方面。</p></li>
+</ol>
+<p>目前来说，我们将继续使用第一个选项，也即是<code class="docutils literal notranslate"><span class="pre">ALWAYS</span></code>。为了创建一个名为<code class="docutils literal notranslate"><span class="pre">people</span></code>的表，并让它带有一个由<code class="docutils literal notranslate"><span class="pre">IDENTITY</span></code>填充的<code class="docutils literal notranslate"><span class="pre">id</span></code>列，我们需要用到以下代码：</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">people</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">integer</span><span class="w"> </span><span class="k">GENERATED</span><span class="w"> </span><span class="n">ALWAYS</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="k">IDENTITY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">person_name</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+<p>注意这里<code class="docutils literal notranslate"><span class="pre">id</span></code>列的数据类型为<code class="docutils literal notranslate"><span class="pre">integer</span></code>，并且后面跟着关键字<code class="docutils literal notranslate"><span class="pre">GENERATED</span> <span class="pre">ALWAYS</span> <span class="pre">AS</span> <span class="pre">IDENTITY</span></code>。现在，每当我们将一个<code class="docutils literal notranslate"><span class="pre">person_name</span></code>值插入到表，数据库就会使用一个自动递增的值来填充<code class="docutils literal notranslate"><span class="pre">id</span></code>列。</p>
+<p>考虑到<code class="docutils literal notranslate"><span class="pre">IDENTITY</span></code>对ANSI
+SQL标准的兼容性，本书将在接下来的内容中继续使用它。</p>
+<blockquote>
+<div><p>注意</p>
+<p>尽管自动递增列的值在每次添加新行时都会增加，但有些情况可能会导致列中的数字序列产生空隙。比如说，当一个行被删除之后，该行对应的自增值就永远消失了。又比如说，即使一次行插入被中止了，但自增列的序列仍然会被递增。</p>
+</div></blockquote>
+</section>
+</section>
+</section>
+<section id="id7">
+<h2>使用小数<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
+<p>小数由整数以及整数的分数组成，其中分数由<em>小数点</em>后的数字表示。SQL数据库使用<em>定点</em>和<em>浮点</em>数据类型来处理小数。比如说，从我家到最近的杂货店的距离为6.7英里；我可以把6.7插入到定点或者浮点列中，而PostgreSQL对此不会有任何怨言。定点和浮点这两种数据类型的唯一区别在于计算机储存它们的方式，稍后我们就会知道这其中的重要意义。</p>
+<section id="id8">
+<h3>了解定点数<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
+<p>定点类型，也称<em>任意精度</em>类型，在PostgreSQL中表示为<code class="docutils literal notranslate"><span class="pre">numeric(precision,</span> <span class="pre">scale)</span></code>。其中参数<code class="docutils literal notranslate"><span class="pre">precision</span></code>（精度）用于指定小数点左右两边的最大数字个数，而<code class="docutils literal notranslate"><span class="pre">scale</span></code>（刻度）则用于指定小数点右边允许的数字个数。此外，你还可以使用<code class="docutils literal notranslate"><span class="pre">decimal(precision,</span> <span class="pre">scale)</span></code>表示定点类型，它和<code class="docutils literal notranslate"><span class="pre">numeric</span></code>都是ANSI
+SQL标准的一部分。如果用户没有指定刻度，那么刻度将被设置为<code class="docutils literal notranslate"><span class="pre">0</span></code>，这实际上相当于创建一个整数。如果用户既没有指定精度，也没有指定刻度，那么数据库将在允许的最大范围内储存任意精度和刻度的值。（根据PostgreSQL的文档记录，这个最大值允许在小数点之前拥有最多131072个数字，并在小数点之后拥有最多16383个数字：<a class="reference external" href="https://www.postgresql.org/docs/current/datatype-numeric.html">https://www.postgresql.org/docs/current/datatype-numeric.html</a>
+。）</p>
+<p>举个例子，假设你正在收集几个当地机场的降雨总量——这是一个极有可能出现的数据分析任务。美国国家气象局有提供相关的数据，其中降雨量的测量会精确至小数点后两位数。（正如你的小学数学老师所说，小数点后面的两位数就是百分位。）</p>
+<p>为此，我们将使用<code class="docutils literal notranslate"><span class="pre">numeric(5,</span> <span class="pre">2)</span></code>
+在数据库中记录降雨量，其中精度总共为五个数字，而刻度则为小数点之后最多两个数字。此外，即使你并未像1.47、1.00和121.50那样，输入一个包含两位小数的数字，数据库也总是会返回小数点右边的两位数字。</p>
+</section>
+<section id="id9">
+<h3>了解浮点数类型<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h3>
+<p>浮点类型分为<code class="docutils literal notranslate"><span class="pre">real</span></code>和<code class="docutils literal notranslate"><span class="pre">double</span> <span class="pre">precision</span></code>两种，它们都是SQL标准的一部分，两者的区别在于能够储存的数据量不同：<code class="docutils literal notranslate"><span class="pre">real</span></code>类型允许精度达到6位小数，而<code class="docutils literal notranslate"><span class="pre">double</span> <span class="pre">precision</span></code>的精度则能够达到15位小数，并且这两种类型在小数点两边能够容纳的位数是相同的。这些浮点类型也被称为<em>可变精度</em>类型。数据库会将浮点类型的数字分成多个部分储存，其中包括表示数字的部分以及表示指数的部分，后者决定了小数点所在的位置。因此，跟固定精度和刻度的<code class="docutils literal notranslate"><span class="pre">numeric</span></code>不一样，浮点数列的小数点可以根据数字的不同而“浮动”。</p>
+</section>
+<section id="id10">
+<h3>使用定点和浮点类型<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h3>
+<p>如表4-3所示，每种类型能够容纳的总位数和精度都有所不同。</p>
+<p>表4-3：定点和浮点数据类型</p>
+<table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>数据类型</p></th>
+<th class="head"><p>存储
+空间</p></th>
+<th class="head"><p>存储
+类型</p></th>
+<th class="head"><p>取值范围</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">numeric</span></code>，<code class="docutils literal notranslate"><span class="pre">decimal</span></code></p></td>
+<td><p>大小
+可变</p></td>
+<td><p>定点</p></td>
+<td><p>小数点前
+最多131072位，小数点后最多16383位。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">real</span></code></p></td>
+<td><p>4
+字节</p></td>
+<td><p>浮点</p></td>
+<td><p>6位小数的精度</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dou</span>
+<span class="pre">ble</span> <span class="pre">precision</span></code></p></td>
+<td><p>8
+字节</p></td>
+<td><p>浮点</p></td>
+<td><p>15位小数的精度</p></td>
+</tr>
+</tbody>
+</table>
+<p>为了观察三种不同的数据类型如何处理相同数字，我们可以创建一个小型的表并向其插入各种测试用例，正如代码清单4-2所示。</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">number_data_types</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="err">➊</span><span class="w"> </span><span class="n">numeric_column</span><span class="w"> </span><span class="nb">numeric</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span>
+<span class="w">    </span><span class="n">real_column</span><span class="w"> </span><span class="nb">real</span><span class="p">,</span>
+<span class="w">    </span><span class="n">double_column</span><span class="w"> </span><span class="n">double</span><span class="w"> </span><span class="k">precision</span>
+<span class="p">);</span>
+
+<span class="err">➋</span><span class="w"> </span><span class="k">INSERT</span><span class="w"> </span><span class="k">INTO</span><span class="w"> </span><span class="n">number_data_types</span>
+<span class="w">   </span><span class="k">VALUES</span>
+<span class="w">       </span><span class="p">(.</span><span class="mi">7</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="mi">7</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="mi">7</span><span class="p">),</span>
+<span class="w">       </span><span class="p">(</span><span class="mi">2</span><span class="p">.</span><span class="mi">13579</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">.</span><span class="mi">13579</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">.</span><span class="mi">13579</span><span class="p">),</span>
+<span class="w">       </span><span class="p">(</span><span class="mi">2</span><span class="p">.</span><span class="mi">1357987654</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">.</span><span class="mi">1357987654</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">.</span><span class="mi">1357987654</span><span class="p">);</span>
+
+<span class="k">SELECT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">number_data_types</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>代码清单4-2：实际操作数字数据类型</p>
+<p>这段代码创建了一个表，并在其中为每种分数数据类型都创建了一个列 ➊
+，然后再将三个行导入至表中 ➋
+。每个行都会重复地在三个列里面储存相同的数字。最后，代码的末尾一行会从表中选取所有内容，并得到以下结果：</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="n">numeric_column</span><span class="w"> </span><span class="n">real_column</span><span class="w"> </span><span class="n">double_column</span>
+<span class="c1">-------------- ----------- -------------</span>
+<span class="w">       </span><span class="mi">0</span><span class="p">.</span><span class="mi">70000</span><span class="w">         </span><span class="mi">0</span><span class="p">.</span><span class="mi">7</span><span class="w">           </span><span class="mi">0</span><span class="p">.</span><span class="mi">7</span>
+<span class="w">       </span><span class="mi">2</span><span class="p">.</span><span class="mi">13579</span><span class="w">     </span><span class="mi">2</span><span class="p">.</span><span class="mi">13579</span><span class="w">       </span><span class="mi">2</span><span class="p">.</span><span class="mi">13579</span>
+<span class="w">       </span><span class="mi">2</span><span class="p">.</span><span class="mi">13580</span><span class="w">   </span><span class="mi">2</span><span class="p">.</span><span class="mi">1357987</span><span class="w">  </span><span class="mi">2</span><span class="p">.</span><span class="mi">1357987654</span>
+</pre></div>
+</div>
+<p>注意这段结果中出现的细微区别。在<code class="docutils literal notranslate"><span class="pre">numeric</span></code>列，因为刻度被设置为5，所以无论我们输入的小数有多少位，它都总是会储存五位小数。如果小数部分小于五位，那么它就用0填充余下的位数。如果小数部分多于五位，那么它就对小数实行四舍五入——比如表第3行的数字原本就有10位小数。</p>
+<p>跟<code class="docutils literal notranslate"><span class="pre">numeric</span></code>的做法相反，<code class="docutils literal notranslate"><span class="pre">real</span></code>和<code class="docutils literal notranslate"><span class="pre">double</span> <span class="pre">precision</span></code>列不会给数字添加任何填充。在第三行，我们会看到PostgreSQL在输出这两种类型时的默认行为：不展示整个值，而是以最简短的精确小数表示来输出浮点数。另外需要注意的是，较旧版本的PostgreSQL可能会显示稍微不一样的结果。</p>
+</section>
+<section id="id11">
+<h3>浮点数计算带来的问题<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h3>
+<p>如果你认为储存浮点数跟储存定点数没什么两样，那么你要小心了。计算机储存浮点数的方式可能会导致意想不到的数学错误。为了展示这一点，我们需要执行一些浮点数计算。请执行代码清单4-3中的脚本。</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="w">  </span><span class="k">SELECT</span>
+<span class="w">    </span><span class="err">➊</span><span class="w"> </span><span class="n">numeric_column</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">10000000</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">fixed</span><span class="p">,</span>
+<span class="w">       </span><span class="n">real_column</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">10000000</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">floating</span>
+<span class="w">  </span><span class="k">FROM</span><span class="w"> </span><span class="n">number_data_types</span>
+<span class="err">➋</span><span class="w"> </span><span class="k">WHERE</span><span class="w"> </span><span class="n">numeric_column</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="mi">7</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>代码清单4-3：浮点列的舍入问题</p>
+<p>这段代码将<code class="docutils literal notranslate"><span class="pre">numeric_column</span></code>列和<code class="docutils literal notranslate"><span class="pre">real_column</span></code>列的所有值都乘以一千万
+➊ ，然后使用<code class="docutils literal notranslate"><span class="pre">WHERE</span></code>子句筛选出结果集的第一行 ➋
+。初看上去，两项计算应该会得到相同的结果，是吧？但查询实际返回的结果却是这样子的：</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="n">fixed</span><span class="w">           </span><span class="n">floating</span>
+<span class="c1">-------------   ----------------</span>
+<span class="mi">7000000</span><span class="p">.</span><span class="mi">00000</span><span class="w">   </span><span class="mi">6999999</span><span class="p">.</span><span class="mi">88079071</span>
+</pre></div>
+</div>
+<p>你看，这就是浮点数类型被认为“不精确”的原因，也是它不适合完成火星发射任务或者计算联邦预算赤字的原因。</p>
+<p>浮点数之所以会产生这样的错误，跟计算机试图将大量信息塞进有限的比特位中有关。这个话题是很多著作的主题，但它超出了本书的范围，如果你有兴趣的话，可以在本书资源网站中找到一个很好的概要链接：<a class="reference external" href="https://www.nostarch.com/practical-sql-2nd-edition/">https://www.nostarch.com/practical-sql-2nd-edition/</a>。</p>
+<p><code class="docutils literal notranslate"><span class="pre">numeric</span></code>数据类型所需的存储空间是可变的，根据精度和刻度不同，它可能会比浮点类型消耗更多的空间。如果你需要处理的行非常多，那么可以考虑是否能够接受相对来说不太精确的浮点数计算。</p>
+</section>
+<section id="id12">
+<h3>选择合适的数字类型<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h3>
+<p>目前来说，在处理数字数据类型的时候，有三条准则可供参考：</p>
+<ul class="simple">
+<li><p>尽可能地使用整数。除非数据中包含小数，否则就应该坚持使用整数类型。</p></li>
+<li><p>如果你正在处理小数数据，并且处于金钱交易等需要精确计算的场合，那么请选择<code class="docutils literal notranslate"><span class="pre">numeric</span></code>或者它的等价物<code class="docutils literal notranslate"><span class="pre">decimal</span></code>。浮点类型虽然能够节约空间，但它在计算时的不精确性对很多应用来说是无法接受的，请在精确性不那么重要的情况下使用它。</p></li>
+<li><p>选择足够大的数字类型。除非你设计的数据库需要包含数百万个行，否则就应该尽可能地选择较大的数字类型。在使用<code class="docutils literal notranslate"><span class="pre">numeric</span></code>或者<code class="docutils literal notranslate"><span class="pre">decimal</span></code>的时候，将精度设置得足够大以便容纳小数点两边的所有数字。对于整数，除非你百分之百确定列的值可以容纳在较小的<code class="docutils literal notranslate"><span class="pre">integer</span></code>类型或者<code class="docutils literal notranslate"><span class="pre">smallint</span></code>类型中，否则就应该使用<code class="docutils literal notranslate"><span class="pre">bigint</span></code>类型。</p></li>
+</ul>
+</section>
+</section>
+<section id="id13">
+<h2>了解日期和时间<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h2>
+<p>每当我们在搜索框中键入日期的时候，数据库对（从服务器接收到的）当前时间的感知，还有对日历的日期、时间、闰年和时区等细节的格式处理能力，都让我们获益匪浅。这一点对于数据叙事来说至关重要，因为事件发生的<em>时间</em>往往和人物、内容还有参与人数一样重要。</p>
+<p>表4-4展示了PostgreSQL对日期和时间提供支持的四种主要数据类型。</p>
+<p>表4-4：日期和时间数据类型</p>
+<table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>数据类型</p></th>
+<th class="head"><p>存
+储空间</p></th>
+<th class="head"><p>描述</p></th>
+<th class="head"><p>取值范围</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ti</span>
+<span class="pre">mestamp</span></code></p></td>
+<td><p>8字节</p></td>
+<td><p>日期和时间</p></td>
+<td><p>公元前4713年至公元294276年</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">date</span></code></p></td>
+<td><p>4字节</p></td>
+<td><p>日
+期（没有时间）</p></td>
+<td><p>公元前4713年至公元5874897年</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">time</span></code></p></td>
+<td><p>8字节</p></td>
+<td><p>时
+间（没有日期）</p></td>
+<td><p>00:00:00至24:00:00</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">i</span>
+<span class="pre">nterval</span></code></p></td>
+<td><p>16字节</p></td>
+<td><p>时间间隔</p></td>
+<td><p>+/− 178,000,000年</p></td>
+</tr>
+</tbody>
+</table>
+<p>以下是PostgreSQL中这些时间和日期数据类型的简要描述：</p>
+<p><code class="docutils literal notranslate"><span class="pre">timestamp</span></code>
+记录日期和时间，非常适用于各种追踪任务：客运航班的出发和到达，美国职业棒球大联盟的时间表，又或者给一系列事件加上时间轴。我们通常需要添加关键字
+<code class="docutils literal notranslate"><span class="pre">with</span> <span class="pre">time</span> <span class="pre">zone</span></code>
+以确保事件记录的时间包含了相应的时区，否则全球不同地方记录的时间将无法进行对比。<code class="docutils literal notranslate"><span class="pre">timestamp</span> <span class="pre">with</span> <span class="pre">time</span> <span class="pre">zone</span></code>
+格式是SQL标准的一部分，我们可以在PostgreSQL中通过<code class="docutils literal notranslate"><span class="pre">timestamptz</span></code>指定这一数据类型。</p>
+<p><code class="docutils literal notranslate"><span class="pre">date</span></code> 只记录日期。它是SQL标准的一部分。</p>
+<p><code class="docutils literal notranslate"><span class="pre">time</span></code>
+只记录时间，也是SQL标准的一部分。尽管这种类型也允许我们添加<code class="docutils literal notranslate"><span class="pre">with</span> <span class="pre">time</span> <span class="pre">zone</span></code>关键字，但缺少日期的时区实际上并没有多大意义。</p>
+<p><code class="docutils literal notranslate"><span class="pre">intelval</span></code>
+这种值以<em>数量单位</em>格式表示时间单位。它不记录时间段的开始或结束，而是记录其长度，例如：12天或者8个小时。（PostgreSQL的文档列出了范围从<code class="docutils literal notranslate"><span class="pre">microsecond</span></code>到<code class="docutils literal notranslate"><span class="pre">millennium</span></code>在内的单位值：<a class="reference external" href="https://www.postgresql.org/docs/current/datatype-datetime.html">https://www.postgresql.org/docs/current/datatype-datetime.html</a>。）这种类型通常用于计算或是过滤其他的日期和时间列。<code class="docutils literal notranslate"><span class="pre">intelval</span></code>也是SQL标准的一部分，不过PostgreSQL通过特定语法为它提供了更多的选择。</p>
+<p>让我们先把注意力放到<code class="docutils literal notranslate"><span class="pre">timestamp</span> <span class="pre">with</span> <span class="pre">time</span> <span class="pre">zone</span></code>和<code class="docutils literal notranslate"><span class="pre">interval</span></code>这两种类型上面。为了了解它们的实际效果，我们需要运行代码清单4-4。</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="err">➊</span><span class="w"> </span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">date_time_types</span><span class="w"> </span><span class="p">(</span>
+<span class="w">       </span><span class="n">timestamp_column</span><span class="w"> </span><span class="k">timestamp</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="k">time</span><span class="w"> </span><span class="k">zone</span><span class="p">,</span>
+<span class="w">       </span><span class="n">interval_column</span><span class="w"> </span><span class="nb">interval</span>
+<span class="w">   </span><span class="p">);</span>
+
+<span class="err">➋</span><span class="w"> </span><span class="k">INSERT</span><span class="w"> </span><span class="k">INTO</span><span class="w"> </span><span class="n">date_time_types</span>
+<span class="w">   </span><span class="k">VALUES</span>
+<span class="w">       </span><span class="p">(</span><span class="s1">&#39;2022-12-31 01:00 EST&#39;</span><span class="p">,</span><span class="s1">&#39;2 days&#39;</span><span class="p">),</span>
+<span class="w">       </span><span class="p">(</span><span class="s1">&#39;2022-12-31 01:00 -8&#39;</span><span class="p">,</span><span class="s1">&#39;1 month&#39;</span><span class="p">),</span>
+<span class="w">       </span><span class="p">(</span><span class="s1">&#39;2022-12-31 01:00 Australia/Melbourne&#39;</span><span class="p">,</span><span class="s1">&#39;1 century&#39;</span><span class="p">),</span>
+<span class="w">     </span><span class="err">➌</span><span class="w"> </span><span class="p">(</span><span class="n">now</span><span class="p">(),</span><span class="s1">&#39;1 week&#39;</span><span class="p">);</span>
+<span class="w">   </span><span class="k">SELECT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">date_time_types</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>代码清单4-4：实际使用<code class="docutils literal notranslate"><span class="pre">timestamp</span></code>和<code class="docutils literal notranslate"><span class="pre">interval</span></code>类型</p>
+<p>这段代码首先在表中为两种不同的类型分别创建了列➊，然后向表中插入四个行➋。其中前三个行向<code class="docutils literal notranslate"><span class="pre">timestamp_column</span></code>列插入了相同的日期和时间（2022年12月31日的凌晨1点），使用的是国际标准化组织（ISO）的日期和时间格式：<em>``YYYY-MM-DD HH:MM:SS``</em>
+。SQL也支持其他日期格式，比如<em>``MM/DD/YYYY``</em>，但ISO格式能够在世界各地提供更好的可移植性。</p>
+<p>在插入的前三个行里面，我们除了时间之外，还分别用三种不同的格式指定了时区：第一行使用的是缩写<code class="docutils literal notranslate"><span class="pre">EST</span></code>，也即是美国的东部标准时间。</p>
+<p>在第二个行，代码使用了数值<code class="docutils literal notranslate"><span class="pre">-8</span></code>来设置时区，它代表该时区与世界标准时间——协调世界时（UTC）的时差或<em>偏移量</em>。UTC的值是+/-00:00，所以<code class="docutils literal notranslate"><span class="pre">-8</span></code>指定的时区比UTC晚8小时。在美国，当夏令时生效时，<code class="docutils literal notranslate"><span class="pre">-8</span></code>是阿拉斯加时区的数值。从11月到3月初，当美国恢复到标准时间时，<code class="docutils literal notranslate"><span class="pre">-8</span></code>指代的是太平洋时区。(关于UTC时区的地图，请见：<a class="reference external" href="https://en.wikipedia.org/wiki/Coordinated_Universal_Time#/media/File:Standard_World_Time_Zones.tif">https://en.wikipedia.org/wiki/Coordinated_Universal_Time#/media/File:Standard_World_Time_Zones.tif</a>)。</p>
+<p>第三行代码使用了一个地区和位置的名称来指定时区：<code class="docutils literal notranslate"><span class="pre">Australia/Melbourne</span></code>（澳大利亚/墨尔本）。这种格式使用了计算机编程中经常采用的标准时区数据库中的数值。你可以在以下链接中获取到更多关于时区数据库的信息：<a class="reference external" href="https://en.wikipedia.org/wiki/Tz_database">https://en.wikipedia.org/wiki/Tz_database</a>。</p>
+<p>在代码的第4行，脚本没有指定日期、时间和时区，而是使用了PostgreSQL的<code class="docutils literal notranslate"><span class="pre">now()</span></code>函数➌，从硬件中获取当前的事务处理时间（transaction
+time）。</p>
+<p>运行这个脚本之后，它将产生类似以下这样的输出（不过跟这里不会完全相同）：</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="n">timestamp_column</span><span class="w">               </span><span class="n">interval_column</span>
+<span class="c1">-----------------------------   ---------------</span>
+<span class="mi">2022</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">31</span><span class="w"> </span><span class="mi">01</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span><span class="o">-</span><span class="mi">05</span><span class="w">          </span><span class="mi">2</span><span class="w"> </span><span class="n">days</span>
+<span class="mi">2022</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">31</span><span class="w"> </span><span class="mi">04</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span><span class="o">-</span><span class="mi">05</span><span class="w">          </span><span class="mi">1</span><span class="w"> </span><span class="n">mon</span>
+<span class="mi">2022</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">30</span><span class="w"> </span><span class="mi">09</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span><span class="o">-</span><span class="mi">05</span><span class="w">          </span><span class="mi">100</span><span class="w"> </span><span class="n">years</span>
+<span class="mi">2020</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">31</span><span class="w"> </span><span class="mi">21</span><span class="p">:</span><span class="mi">31</span><span class="p">:</span><span class="mi">15</span><span class="p">.</span><span class="mi">716063</span><span class="o">-</span><span class="mi">05</span><span class="w">   </span><span class="mi">7</span><span class="w"> </span><span class="n">days</span>
+</pre></div>
+</div>
+<p>尽管代码在前三个行向<code class="docutils literal notranslate"><span class="pre">timestamp_column</span></code>提供了相同的日期和时间，但每个行输出的结果并不相同。原因在于pgAdmin会根据我所在的时区报告相对的日期和时间，所以在显示的结果中，每个时间戳后面都带有一个UTC偏移量<code class="docutils literal notranslate"><span class="pre">-05</span></code>。这个偏移量意味着当前时区的时间比UTC时间落后5个小时，相当于美国东部时区在秋季和冬季的标准时间。如果你生活在别的时区，那么你可能会看到不同的偏移量，并且结果显示的时间和日期也会和这里不一样。在之后的第12章，我们将会学习如何改变PostgreSQL报告这些时间戳的方式，并学习更多处理日期和时间的技巧。</p>
+<p>最后，PostgreSQL在<code class="docutils literal notranslate"><span class="pre">interval_column</span></code>列展示了我们输入的间隔值，并且基于展示间隔值的默认设置，把原本的1世纪修改成了100
+年、1周修改成了7天。你可以通过阅读PostgreSQL文档中关于“间隔输入”的部分来了解更多和间隔值有关的选项：<a class="reference external" href="https://www.postgresql.org/docs/current/datatype-datetime.html">https://www.postgresql.org/docs/current/datatype-datetime.html</a>。</p>
+</section>
+<section id="interval">
+<h2>在计算中使用interval数据类型<a class="headerlink" href="#interval" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">interval</span></code>数据类型非常有用，它能够让日期和时间数据的计算变得简单易懂。举个例子，如果你有一个列，它记录了客户签订合同的日期，那么通过<code class="docutils literal notranslate"><span class="pre">interval</span></code>数据，你可以给每个签订合同的日期加上90天的期限，从而确定应该在何时跟客户续约。</p>
+<p>为了观察<code class="docutils literal notranslate"><span class="pre">interval</span></code>数据类型是如何工作的，我们需要用到前面创建的<code class="docutils literal notranslate"><span class="pre">date_time_types</span></code>表，正如代码清单4-5所示。</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span>
+<span class="w">    </span><span class="n">timestamp_column</span><span class="p">,</span>
+<span class="w">    </span><span class="n">interval_column</span><span class="p">,</span>
+<span class="w"> </span><span class="err">➊</span><span class="w"> </span><span class="n">timestamp_column</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">interval_column</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">new_date</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">date_time_types</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>代码清单4-5：使用<code class="docutils literal notranslate"><span class="pre">interval</span></code>数据类型</p>
+<p>这是一个典型的<code class="docutils literal notranslate"><span class="pre">SELECT</span></code>语句，我们唯一要做的就是计算一个名为<code class="docutils literal notranslate"><span class="pre">new_date</span></code>
+➊的列，并在其中包含<code class="docutils literal notranslate"><span class="pre">timestamp_column</span></code>减去<code class="docutils literal notranslate"><span class="pre">interval_column</span></code>的结果。（这种使用列进行计算的技术被称为<em>表达式</em>，我们将会经常用到。）对于表中的每个行，代码都会使用日期减去<code class="docutils literal notranslate"><span class="pre">interval</span></code>数据类型所表示的时间单位，并最终产生以下结果：</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="n">timestamp_column</span><span class="w">                </span><span class="n">interval_column</span><span class="w">     </span><span class="n">new_date</span>
+<span class="c1">-----------------------------   ---------------     -----------------------------</span>
+<span class="mi">2022</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">31</span><span class="w"> </span><span class="mi">01</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span><span class="o">-</span><span class="mi">05</span><span class="w">          </span><span class="mi">2</span><span class="w"> </span><span class="n">days</span><span class="w">              </span><span class="mi">2022</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">29</span><span class="w"> </span><span class="mi">01</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span><span class="o">-</span><span class="mi">05</span>
+<span class="mi">2022</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">31</span><span class="w"> </span><span class="mi">04</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span><span class="o">-</span><span class="mi">05</span><span class="w">          </span><span class="mi">1</span><span class="w"> </span><span class="n">mon</span><span class="w">               </span><span class="mi">2022</span><span class="o">-</span><span class="mi">11</span><span class="o">-</span><span class="mi">30</span><span class="w"> </span><span class="mi">04</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span><span class="o">-</span><span class="mi">05</span>
+<span class="mi">2022</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">30</span><span class="w"> </span><span class="mi">09</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span><span class="o">-</span><span class="mi">05</span><span class="w">          </span><span class="mi">100</span><span class="w"> </span><span class="n">years</span><span class="w">           </span><span class="mi">1922</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">30</span><span class="w"> </span><span class="mi">09</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span><span class="o">-</span><span class="mi">05</span>
+<span class="mi">2020</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">31</span><span class="w"> </span><span class="mi">21</span><span class="p">:</span><span class="mi">31</span><span class="p">:</span><span class="mi">15</span><span class="p">.</span><span class="mi">716063</span><span class="o">-</span><span class="mi">05</span><span class="w">    </span><span class="mi">7</span><span class="w"> </span><span class="n">days</span><span class="w">              </span><span class="mi">2020</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">24</span><span class="w"> </span><span class="mi">21</span><span class="p">:</span><span class="mi">31</span><span class="p">:</span><span class="mi">15</span><span class="p">.</span><span class="mi">716063</span><span class="o">-</span><span class="mi">05</span>
+</pre></div>
+</div>
+<p>注意，<code class="docutils literal notranslate"><span class="pre">new_date</span></code>列默认会被格式化为<code class="docutils literal notranslate"><span class="pre">timestamp</span> <span class="pre">with</span> <span class="pre">time</span> <span class="pre">zone</span></code>类型，这样间隔值在有需要的时候就可以把它们展示为时间值或者日期了。（pgAdmin的结果网格会在列名的下面列出相应的数据类型。）再次提醒，根据你所处的时区，你看到的输出可能会跟这里展示的不一样。</p>
+</section>
+<section id="jsonjsonb">
+<h2>了解JSON和JSONB<a class="headerlink" href="#jsonjsonb" title="Link to this heading">¶</a></h2>
+<p><em>JavaScript Object
+Notation</em>（简称JSON）是一种结构化的数据格式，用于储存数据或者在计算机系统之间进行数据交换。所有主要的编程语言都支持读写JSON格式的数据，这种数据通常会把信息组织成一系列<em>键值对</em>以及值列表。下面是一个简单的例子：</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;business_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Old Ebbitt Grill&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;business_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Restaurant&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;employees&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">300</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;address&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;street&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;675 15th St NW&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;city&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Washington&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;state&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;DC&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;zip_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20005&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>这个JSON片段展示了这种格式的基本结构。一个<em>键</em>和一个<em>值</em>相关联，就像这个例子中的<code class="docutils literal notranslate"><span class="pre">business_name</span></code>和<code class="docutils literal notranslate"><span class="pre">Old</span> <span class="pre">Ebbitt</span> <span class="pre">Grill</span></code>那样。此外，一个键的值还可以由其他多个键值对组成，就像<code class="docutils literal notranslate"><span class="pre">address</span></code>展示的那样。JSON标准制定了相应的格式化规则，比如使用冒号分隔键和值，还有使用双引号包围键名等等。你可以使用诸如https://jsonlint.com/这样的在线工具检查JSON对象的格式化是否合法。</p>
+<p>PostgreSQL当前为JSON提供了两种数据类型，它们都能保证JSON的合法性，并且都提供了以JSON格式处理数据的函数：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">json</span></code> 储存JSON文本的精确拷贝</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">jsonb</span></code> 以二进制格式储存JSON文本</p></li>
+</ul>
+<p>这两种类型之间也存在一些显著的差异。比如说，<code class="docutils literal notranslate"><span class="pre">jsonb</span></code>支持索引，它可以有效地提升处理速度。</p>
+<p>JSON是在2016年进入SQL标准的，但早在这之前的好几年，PostgreSQL还是9.2版本的时候就开始支持JSON了。PostgreSQL目前实现了几个SQL标准中的函数，除此之外还提供了一些自己特有的JSON函数和操作符。稍后的第16章将对这两种类型以及它们相应的函数和操作符作更深入的介绍。</p>
+</section>
+<section id="id14">
+<h2>使用各式各样的类型<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h2>
+<p>字符、数字和日期/时间类型通常已经能够满足大部分工作的要求。但PostgreSQL还提供了很多其他类型，包括但不限于以下这些：</p>
+<ul class="simple">
+<li><p>储存<code class="docutils literal notranslate"><span class="pre">true</span></code>或<code class="docutils literal notranslate"><span class="pre">false</span></code>的<em>布尔</em>类型</p></li>
+<li><p>包含点、线、圆和其他二维对象的<em>几何</em>类型</p></li>
+<li><p>为PostgreSQL全文搜索引擎而设的<em>文本搜索类型</em></p></li>
+<li><p><em>网络地址类型</em>，比如 IP 或者 MAC 地址</p></li>
+<li><p><em>通用唯一标识符</em>（UUID）类型，有时会被用作表中的唯一键值</p></li>
+<li><p><em>范围类型</em>，它能够让你指定值的范围，比如整数或者时间戳</p></li>
+<li><p>储存<em>二进制</em>数据的类型</p></li>
+<li><p>以结构化格式储存信息的<em>XML</em>数据类型</p></li>
+</ul>
+<p>本书后续将在适当的时候介绍这些类型。</p>
+</section>
+<section id="cast">
+<h2>使用CAST将值从一种类型转换为另一种类型<a class="headerlink" href="#cast" title="Link to this heading">¶</a></h2>
+<p>在一些情况下，你可能会想要把一个值从它的存储数据类型转换为另一种类型。举个例子，你可能会想要以字符形式获取数字，以便把它和文本结合起来。又或者，你可能会想要把以字符形式储存的日期转换为真正的日期类型，以便按日期顺序对其进行排序，又或者对其执行间隔值计算。这样的转换可以通过<code class="docutils literal notranslate"><span class="pre">CAST()</span></code>函数来完成。</p>
+<p><code class="docutils literal notranslate"><span class="pre">CAST()</span></code>函数只有在目标数据类型能够容纳原始值的时候才会成功。将数字转换为文本是可行的，因为字符类型本身就能够包含数字，但是想要将包含字母的文本转换成数字却是不可能的。</p>
+<p>通过使用前面创建的包含三种数据类型的表，代码清单4-6列举了三个例子。前两个例子可以正常运行，但第三个例子会尝试执行无效的类型转换，以此来展示类型转换出现错误时的样子。</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="err">➊</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="n">timestamp_column</span><span class="p">,</span><span class="w"> </span><span class="k">CAST</span><span class="p">(</span><span class="n">timestamp_column</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+<span class="w">  </span><span class="k">FROM</span><span class="w"> </span><span class="n">date_time_types</span><span class="p">;</span>
+
+<span class="err">➋</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="n">numeric_column</span><span class="p">,</span>
+<span class="w">         </span><span class="k">CAST</span><span class="p">(</span><span class="n">numeric_column</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="nb">integer</span><span class="p">),</span>
+<span class="w">         </span><span class="k">CAST</span><span class="p">(</span><span class="n">numeric_column</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="nb">text</span><span class="p">)</span>
+<span class="w">  </span><span class="k">FROM</span><span class="w"> </span><span class="n">number_data_types</span><span class="p">;</span>
+
+<span class="err">➌</span><span class="w"> </span><span class="k">SELECT</span><span class="w"> </span><span class="k">CAST</span><span class="p">(</span><span class="n">char_column</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="nb">integer</span><span class="p">)</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">char_data_types</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>代码清单4-6：三个<code class="docutils literal notranslate"><span class="pre">CAST()</span></code>使用案例</p>
+<p>第一个<code class="docutils literal notranslate"><span class="pre">SELECT</span></code>语句➊会以<code class="docutils literal notranslate"><span class="pre">varchar</span></code>也即是可变长度字符列的形式返回<code class="docutils literal notranslate"><span class="pre">timestamp_column</span></code>的值。在这个例子中，代码将字符的长度设置成了10，这意味着在转换字符串的时候，只有前10个字符会被保留。这种做法对我们这个例子来说是挺方便的，因为这样一来就只有列的日期部分会被保留，而时间部分则会被排除。当然，还有更好的做法可以从时间戳里面移除时间部分，本书将在第12章的“从时间戳值中提取组成部分”一节中对此进行介绍。</p>
+<p>第二个<code class="docutils literal notranslate"><span class="pre">SELECT</span></code>语句➋会返回<code class="docutils literal notranslate"><span class="pre">numeric_column</span></code>三次：首先是它的原始形式，然后是它的整数形式，最后是它的文本形式。在进行整数转换的时候，PostgreSQL会将值四舍五入为整数。但是在进行文本转换的时候则不会发生四舍五入操作。</p>
+<p>最后的<code class="docutils literal notranslate"><span class="pre">SELECT</span></code>语句➌无法正常工作：因为文字无法转换成整数，所以它将返回一个<code class="docutils literal notranslate"><span class="pre">invalid</span> <span class="pre">input</span> <span class="pre">syntax</span> <span class="pre">for</span> <span class="pre">type</span> <span class="pre">integer</span></code>错误。</p>
+</section>
+<section id="id15">
+<h2>使用CAST速记法<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h2>
+<p>在编写SQL的时候，让后来者能够读懂你的代码是非常重要的，而<code class="docutils literal notranslate"><span class="pre">CAST()</span></code>的写法能够将你的使用意图表露无遗。但除此之外，PostgreSQL还提供了一种稍微没那么明显但是却能够节省更多空间的<em>双冒号</em>速记法。</p>
+<p>这种速记法需要在列名和想要转换的数据类型之间插入两个冒号。比如说，以下两个语句都可以将<code class="docutils literal notranslate"><span class="pre">timestamp_column</span></code>转换为<code class="docutils literal notranslate"><span class="pre">varchar</span></code>：</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span><span class="w"> </span><span class="n">timestamp_column</span><span class="p">,</span><span class="w"> </span><span class="k">CAST</span><span class="p">(</span><span class="n">timestamp_column</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="nb">varchar</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">date_time_types</span><span class="p">;</span>
+
+<span class="k">SELECT</span><span class="w"> </span><span class="n">timestamp_column</span><span class="p">::</span><span class="nb">varchar</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">date_time_types</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>你可以选择任意一种你想要的转换方式，但需要注意的是，双冒号速记法是PostgreSQL特有的实现，它不存在于其他SQL变种，所以这种写法是无法移植的。</p>
+</section>
+<section id="id16">
+<h2>小结<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h2>
+<p>在阅读完这一章之后，你在挖掘数据的时候就能够更好地理解数据格式之间的细微区别。你知道在遇到以浮点数形式储存的金融数值时，应该在执行任何计算之前把它们转换为小数，也学会了如何使用正确的文本列从而避免浪费数据库空间。</p>
+<p>接下来的一章将继续介绍SQL的基础知识，并向你展示如何将外部数据导入至数据库。</p>
+<blockquote>
+<div><p>实战演练</p>
+<p>请通过完成以下练习继续探索数据类型。</p>
+<ol class="arabic simple">
+<li><p>假设某家公司负责向当地的杂货铺运送水果和蔬菜，而你需要跟踪每个司机每天行驶的里程数，精确到十分之一英里。如果司机在一天内的行驶里程不会超过999英里，那么你应该在表中使用什么数据类型来表示里程列呢，这样选择的原因是什么？</p></li>
+<li><p>在记录公司司机的表中，记录司机的名字和姓氏应该使用什么数据类型？把名字和姓氏分成两列而不是合并成一个更大的名字列，这样做的好处是什么？</p></li>
+<li><p>假设你拥有一个文本列，里面包含了格式化为日期的字符串。其中一个字符串为<code class="docutils literal notranslate"><span class="pre">'4//2021'</span></code>。如果你试图把这个字符串转换为<code class="docutils literal notranslate"><span class="pre">timestamp</span></code>数据类型，会发生什么事情？</p></li>
+</ol>
+</div></blockquote>
+</section>
+</section>
+
+
+              </div>
+              
+              
+              <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+</div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <script src="../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+<footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2024, 黄健宏.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>
