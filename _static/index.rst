@@ -55,10 +55,10 @@ huangzworks@gmail.com、
 -------------
 
 
-.. image:: images/psql.png
+.. image:: images/psql.jpg
    :target: https://huangz.works/sql/
 
-`《SQL实战（第2版）》 <https://huangz.works/sql/>`_
+`《SQL实战》 <https://huangz.works/sql/>`_
 
 .. image:: images/gpwg.jpg
    :target: https://huangz.works/gpwg/
