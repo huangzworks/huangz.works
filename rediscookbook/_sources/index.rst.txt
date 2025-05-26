@@ -31,6 +31,7 @@
 - `京东自营 <https://u.jd.com/bgw8KA1>`_\ 
 - `淘宝(人邮社旗舰店) <https://detail.tmall.com/item.htm?abbucket=13&id=857647264092&skuId=5664641460142>`_\ 
 - `异步社区(纸书/电子书) <https://www.epubit.com/bookDetails?id=UB89026cdf362b1&typeName=%E6%90%9C%E7%B4%A2>`_\ 
+- `微信读书 <https://weread.qq.com/book-detail?type=1&senderVid=16030099&v=3f432fe0813ab9f6fg012cf7&wtheme=white&wfrom=app&wvid=16030099&scene=bottomSheetShare>`_\ 
 - `豆瓣 <https://book.douban.com/subject/37044995>`_
 
 
