@@ -35,6 +35,14 @@ huangzworks@gmail.com、
 著作
 ------------
 
+.. image:: images/practicalredis.jpg
+
+《Redis实战演练》（预计2025年下半年出版）
+
+.. image:: images/redisdefguide.jpg
+
+《Redis权威指南》（预计2025年下半年出版）
+
 .. image:: images/rediscookbook.jpg
    :target: https://huangz.works/rediscookbook/
 
@@ -53,7 +61,6 @@ huangzworks@gmail.com、
 
 译作
 -------------
-
 
 .. image:: images/psql.jpg
    :target: https://huangz.works/sql/
