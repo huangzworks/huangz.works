@@ -42,7 +42,7 @@ huangzworks@gmail.com、
 .. image:: images/redisdefguide.jpg
    :target: https://huangz.works/redisguide/
 
-《Redis权威指南》（预计2026年出版）
+`《Redis权威指南》（预计2026年出版） <https://huangz.works/redisguide/>`_
 
 .. image:: images/rediscookbook.jpg
    :target: https://huangz.works/rediscookbook/
