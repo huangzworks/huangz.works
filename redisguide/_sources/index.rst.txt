@@ -63,6 +63,7 @@ Redis应用与实战丛书
 《Redis权威指南》是继\ `《Redis应用实例》 <https://huangz.works/rediscookbook/>`_\ 之后，“Redis应用与实战丛书”的第2部作品。
 
 .. image:: images/series.jpg
+   :scale: 50%
 
 作者简介
 ----------------
