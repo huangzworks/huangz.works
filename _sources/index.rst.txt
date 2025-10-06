@@ -37,11 +37,12 @@ huangzworks@gmail.com、
 
 .. image:: images/practicalredis.jpg
 
-《Redis实战演练》（预计2025年下半年出版）
+《Redis实战演练》（预计2026年出版）
 
 .. image:: images/redisdefguide.jpg
+   :target: https://huangz.works/redisguide/
 
-《Redis权威指南》（预计2025年下半年出版）
+《Redis权威指南》（预计2026年出版）
 
 .. image:: images/rediscookbook.jpg
    :target: https://huangz.works/rediscookbook/
