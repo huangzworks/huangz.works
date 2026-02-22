@@ -1,0 +1,52 @@
+Valkey源码剖析（19）：共享对象
+==============================
+
+Valkey服务器在运行的过程中经常需要返回一些相同的回复：比如说，很多命令的回复都是\ ``"OK"``\ ，又或者很小的数字，又或者是一些常见的错误。
+
+在处理这些体积很小但又反复出现的对象时，如果在每次用到它们的时候才创建相应的对象，那么反复执行的内存分配操作不仅会耗费大量处理时间，而且还可能会产生大量内存碎片。
+
+为了避免上述问题，Valkey服务器在启动时会调用\ ``server.c/createSharedObjects()``\ 函数以创建一些常见的对象，并将其存储在全局变量\ ``server.c/shared``\ 中：
+
+.. code:: c
+
+   struct sharedObjectsStruct shared;
+
+   void createSharedObjects(void) {
+       int j;
+
+       /* Shared command responses */
+       // 常用命令回复
+       shared.ok = createSharedString("+OK\r\n");
+       shared.emptybulk = createSharedString("$0\r\n\r\n");
+       shared.czero = createSharedString(":0\r\n");
+       shared.cone = createSharedString(":1\r\n");
+       shared.emptyarray = createSharedString("*0\r\n");
+       shared.pong = createSharedString("+PONG\r\n");
+       shared.queued = createSharedString("+QUEUED\r\n");
+       shared.emptyscan = createSharedString("*2\r\n$1\r\n0\r\n*0\r\n");
+       shared.space = createSharedString(" ");
+       shared.plus = createSharedString("+");
+
+       // ... 
+   }
+
+``createSharedObjects()``\ 函数创建的对象包括：
+
+-  常用的命令回复，比如\ ``"OK"``\ 、\ ``"PONG"``\ 、\ ``"QUEUED"``\ 等；
+
+-  常用的命令错误回复，比如\ ``"ERR"``\ 、\ ``"ERR no such key"``\ 等等；
+
+-  不同版本协议的NULL对象；
+
+-  常用命令名的对象版本；
+
+-  常用命令参数的对象版本；
+
+-  常用整数的对象版本，比如值为0~9999的对象；
+
+等等。
+
+Valkey把这些对象称之为“共享对象”，它们会被整个服务器的所有调用者使用，并且其引用计数会被设置为特殊值，从而避免不必要的引用计数操作：所有共享对象只会在服务器启动时被创建一次，并在服务器关闭时被销毁，它们不需要进行对象引用计数。
+
+| 黄健宏
+| 2026.1.12

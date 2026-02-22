@@ -1,0 +1,32 @@
+Valkey源码剖析（3）：事件主循环
+===================================
+
+Valkey服务器在启动的最后，会调用\ ``ae.c/aeMain()``\ 函数以开启服务器的事件主循环：
+
+.. code:: c
+
+   /* Main is marked as weak so that unit tests can use their own main function. */
+   __attribute__((weak)) int main(int argc, char **argv) {
+       // ...
+       aeMain(server.el);
+       // ...
+   }
+
+``aeMain()``\ 函数要做的事情并不多，首先，它接受事件循环状态实例\ ``server.el``\ 为输入，接着初始化循环状态，然后在一个\ ``while``\ 循环中不断地调用\ ``ae.c/aeProcessEvents()``\ 函数以等待并处理服务器接收到的事件：
+
+.. code:: c
+
+   void aeMain(aeEventLoop *eventLoop) {
+       // 初始化循环状态
+       eventLoop->stop = 0;
+       // 启动主循环
+       while (!eventLoop->stop) {
+           // 等待并处理事件
+           aeProcessEvents(eventLoop, AE_ALL_EVENTS | AE_CALL_BEFORE_SLEEP | AE_CALL_AFTER_SLEEP);
+       }
+   }
+
+接下来的文章将对事件循环状态\ ``aeEventLoop``\ 类型以及\ ``aeProcessEvents()``\ 函数做进一步的介绍。
+
+| 黄健宏
+| 2025.12.24

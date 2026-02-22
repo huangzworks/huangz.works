@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>技术图书作译者的炼成方法 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="重分片对 Redis 集群的性能影响分析" href="redis-reshard-performance-issue.html" />
+    <link rel="prev" title="技术群讨论指导原则" href="group-guideline.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">技术图书作译者的炼成方法</a><ul>
+<li><a class="reference internal" href="#id3">你是谁，做过些什么</a></li>
+<li><a class="reference internal" href="#id7">为什么会想到写《Redis设计与实现》这本书，以及这本书是如何出版的</a></li>
+<li><a class="reference internal" href="#id10">为什么会翻译《Redis in Action》这本书，以及这本书的翻译过程</a></li>
+<li><a class="reference internal" href="#id14">专职作家如何才能养活自己</a></li>
+<li><a class="reference internal" href="#id15">你是如何成为作译者的</a></li>
+<li><a class="reference internal" href="#id16">对于想成为技术图书作者或者译者的人，有什么建议</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="group-guideline.html" title="Previous Chapter: 技术群讨论指导原则"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; 技术群讨论指导原则</span>
+    </a>
+  </li>
+  <li>
+    <a href="redis-reshard-performance-issue.html" title="Next Chapter: 重分片对 Redis 集群的性能影响分析"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">重分片对 Redis 集群的性能影响分析 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="id1">
+<h1>技术图书作译者的炼成方法<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>前段时间，
+我接受了<a class="reference external" href="https://codetimecn.com/">《代码时间》</a>播客的邀请，
+到他们的节目上分享了一些关于写作和翻译方面的经验，
+这篇文章就是当时节目分享中关于出书部分的精简和脱水版本。</p>
+<p>注意，
+因为本文是根据回忆修改和整理而成的，
+所以与录音节目中的内容可能会有一定差异。
+另外本文中《Redis实战》翻译过程相关的内容不少都是新增的，
+这些内容在录音中没有提及。</p>
+<p>除了本文提到的内容之外，
+我在节目里面还分享了很多其他方面的信息，
+如果你对本文感兴趣的话，
+不妨也去听听节目的录音，
+节目的内容比本文要丰富得多：
+<a class="reference external" href="https://codetimecn.com/episodes/publish">https://codetimecn.com/episodes/publish</a></p>
+<section id="id3">
+<h2>你是谁，做过些什么<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>我叫黄健宏，
+网络 ID 为 huangz ，
+最近几年都在做一些计算机方面的写作和翻译工作。</p>
+<p>我写过一本名为<a class="reference external" href="http://redisbook.com/">《Redis设计与实现》</a>的书，
+也翻译过<a class="reference external" href="https://www.manning.com/books/redis-in-action">《Redis in Action》</a>的简体中文版<a class="reference external" href="http://redisinaction.com/">《Redis实战》</a>。</p>
+<p>除了正式出版的这两本书之外，
+我还翻译和写作过一些开源的文档，
+比如<a class="reference external" href="http://redisdoc.com/">《Redis命令参考》</a>、<a class="reference external" href="http://disquebook.com/">《Disque 使用教程》</a>以及<a class="reference external" href="http://sicp.readthedocs.io/en/latest/">《SICP 解题集》</a>等。</p>
+<p>至于近期的工作方面，
+我目前正在写一本名为<a class="reference external" href="http://redisguide.com/">《Redis使用教程》</a>的书，
+跟前面提到的《Redis设计与实现》相比，
+前者关注的是 Redis 的内部实现，
+而后者关注的则是怎样使用 Redis 去实现各种各样的应用，
+比如队列、锁、用户关系等；
+与此同时我也在翻译一本英文的技术著作，
+目前已经完成了一半左右。
+如果一切顺利不拖稿的话，
+这两本新书应该都会在 2017 年跟大家见面。</p>
+</section>
+<section id="id7">
+<h2>为什么会想到写《Redis设计与实现》这本书，以及这本书是如何出版的<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
+<p>刚开始只是随便写着玩。
+当时是 Redis 用得比较多，
+出于性能和 debug 方面的原因，
+就开始对它的内部实现产生兴趣了。</p>
+<p>当时正好认识了 <a class="reference external" href="https://www.douban.com/people/hoterran/">hoterran</a> ，
+他把自己写的一本关于 Redis 源码的小书给我看了之后，
+引起了我对 Redis 源码的兴趣。
+于是我也开始着手研究 Redis 的源码：
+具体的方法就是一边阅读它的源码，
+一边对其进行注释，
+慢慢地就将 Redis 数据结构方面的几个模块都注释完了。</p>
+<p>因为代码注释终究属于比较细节和片面的资料，
+而我想要通过更高层次的角度去描述 Redis ，
+所以我就开始通过写博客文章的方式去记录 Redis 各个模块的实现原理，
+并在这些文章里面通过图片、表格和流程图去对这些模块进行描述。</p>
+<p>因为这些文章在微博、豆瓣以及 <a class="reference external" href="https://www.douban.com/people/iammutex/">iammutex</a> 的 NoSQLFan 上面都得到了不错的反响，
+于是我就想：“如果把这些文章汇集成一本书并发表出来，应该会蛮有趣的”。
+于是我就又看了更多模块，
+写了更多文章，
+并把之前写过的文章修正和改写了一下，
+凑齐了二十多章的一本书，
+并在 2013 年的 3 月 8 日发布了<a class="reference external" href="https://www.douban.com/note/264302057/">《Redis设计与实现》的网络版</a>。</p>
+<p>在网络版发布之后，
+机械工业出版社的<a class="reference external" href="http://weibo.com/maywuyi">吴怡编辑</a>通过 hoterran 的介绍联系到我，
+邀请我写一本正式版的《Redis设计与实现》，
+我答应了这个邀请，
+然后在经过一年多的写作之后，
+《Redis设计与实现》的正式版本终于在 2014 年 6 月份发布了。</p>
+</section>
+<section id="id10">
+<h2>为什么会翻译《Redis in Action》这本书，以及这本书的翻译过程<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h2>
+<p>早在 2013 年的 4 月份，
+人民邮电出版社的<a class="reference external" href="http://weibo.com/turingbookyanggu">杨海玲编辑</a>就联系过我，
+询问我是否有兴趣翻译《Redis in Action》（中文名《Redis实战》）一书，
+但是因为我当时正在进行《Redis设计与实现》正式版的写作工作，
+所以就遗憾地拒绝了这一邀请。</p>
+<p>在同一年的 10 月份，
+《Redis设计与实现》正式版的写作工作即将要完成的时候，
+我又发现了杨编辑在微博上为《Redis实战》一书寻找译者的消息，
+经过询问，
+才知道这本书在这半年间一直没有找到合适的译者。
+因为我自己很喜欢《Redis实战》这本书，
+并且当时《Redis设计与实现》正式版的写作工作也已经接近尾声，
+所以我就向杨编辑接下了翻译《Redis实战》的工作。</p>
+<p>虽然之前已经做过一些开源文档的翻译工作，
+但翻译图书对于我来说还是第一次，
+所以我在翻译《Redis实战》一书的过程中下了很大的功夫：</p>
+<ul class="simple">
+<li><p>比如说，
+每当我开发出一种新的翻译技巧或技术时，
+我都会将这些技术记录到博客里面和大家分享，
+当我翻译完《Redis实战》的时候，
+类似的文章在我博客上已经发表了十多篇。</p></li>
+<li><p>另外对于《Redis实战》这种 300 页左右的图书来说，
+出版社一般只会给译者三四个月，
+最多半年的时间来进行翻译，
+但是《Redis实战》的翻译工作却跨越了一年半之久。</p></li>
+</ul>
+<p>对《Redis实战》的翻译过程感兴趣的读者，
+可以参考我之前写的<a class="reference external" href="http://blog.huangz.me/diary/2015/memories-of-redis-in-action-translation.html">《Redis in Action》翻译记事</a>以及<a class="reference external" href="http://blog.huangz.me/diary/2016/riacn-one-year-anniversary.html">《Redis实战》一周年回顾</a>这两篇文章。</p>
+</section>
+<section id="id14">
+<h2>专职作家如何才能养活自己<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h2>
+<p>写一本书的收入主要跟书本的销量有关，
+具体收益可以通过以下公式计算：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">定价</span> <span class="o">*</span> <span class="n">销量</span> <span class="o">*</span> <span class="n">版税率</span> <span class="o">=</span> <span class="n">税前收入</span>
+</pre></div>
+</div>
+<p>其中：</p>
+<ul class="simple">
+<li><p>定价就是你书本的售价，
+比如 49、 59、 79 等等。</p></li>
+<li><p>销量就是你书本卖出的数量，
+比如 1 千册， 5 千册等等。</p></li>
+<li><p>版税率就是出版社买了你的版权之后，
+每卖出一本书给你的报酬，
+通常是书本定价的 7% ~ 10% ，
+但不同出版社、不同作者的版税率可能会有所不同。</p></li>
+</ul>
+<p>以上三个数相乘，
+就得出了作者的税前收入。
+在这个基础上，
+还要减去个人所得税，
+一般一万块钱稿费就要减去一千多，
+作者拿到手的就八千多。</p>
+<p>根据书本售价和版税率的不同，
+作者的收入也会有所不同，
+但总的来说，
+如果作者写一本书，
+一年能够卖出 3 万册的话，
+那么这本书给作者带来的收益和他在 IT 公司当一个普通程序员获得的收益是差不多的，
+如果你想要获得更好的收益的话，
+就要卖出更多的书才行。</p>
+<p>当然，
+3 万册并不是一个容易达到的数字：
+有些书如果卖得不好的话，
+可能在第一次印刷（通常是3~5千册，又或者 1 万册等）之后就不会加印，
+又或者只加印几次，
+累积个一两万册，
+但都达不到我们这里所说的 3 万册的标准，
+所以把写书当做职业的话，
+比起当程序员的风险是要高不少的。</p>
+</section>
+<section id="id15">
+<h2>你是如何成为作译者的<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h2>
+<p>因为对计算机的喜爱，
+我在高中二年级就从学校退学了，
+并开始专心自学计算机编程。
+在之后的数年里面，
+我通过网上的 OCW 课程以及各种经典的计算机书籍获得了基本的计算机知识。</p>
+<p>然后我就开始写程序，
+并进行一些开源文档的翻译和写作工作，
+之后又接触到了数据库以及 Redis ，
+然后就发生了上面所说的一切。</p>
+</section>
+<section id="id16">
+<h2>对于想成为技术图书作者或者译者的人，有什么建议<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h2>
+<p>想要成为作者的朋友，
+一开始不要心急，
+可以像我一样，
+先定个小目标：</p>
+<ul class="simple">
+<li><p>刚开始先写几篇博客，
+写完几篇之后再写几篇，
+写完几篇之后再写几篇，
+然后你就有了十篇八篇文章了。</p></li>
+<li><p>接着在这个基础上再扩展和修改，
+凑够十几二十篇文章，
+你就有了一本书。</p></li>
+<li><p>然后你就可以联系出版社的编辑，
+看他们是否有兴趣出版你的书；
+又或者，
+你也可以在网上书店又或者 GitBook 、 LeanPub 等平台上发布你的书。</p></li>
+</ul>
+<p>至于译者来说，
+我感觉最重要的是“认真”：</p>
+<ul class="simple">
+<li><p>在进行翻译的时候，
+遇到不认识的单词可以查，
+遇到不认识的语法也可以查，
+遇到不了解的内容可以在 Google 上搜索或者在维基百科上进行查找，
+所以你很少会遇到技术上的难题。</p></li>
+<li><p>既然技术上不会出现难题，
+那么决定翻译作品质量的就是译者的态度了：
+只要你足够认真地对待翻译工作，
+那么出来的作品就会比较好；
+但如果你不认真对待这个工作的话，
+那么出来的作品可能就会不如人意。</p></li>
+</ul>
+<p>最后，
+因为出书跟编程以及其他所有事情一样，
+都需要一个循序渐进的过程，
+所以无论是作者也好，
+译者也好，
+如果刚开始推出的作品在影响力和收益方面没有达到你想要的目标，
+也请不要灰心 ——
+只要努力地在这个领域耕耘下去，
+我想你迟早也会创造出受读者欢迎的作品，
+并成为一个能够以写作和翻译为生的技术作者和译者的。</p>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2017.1.25</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

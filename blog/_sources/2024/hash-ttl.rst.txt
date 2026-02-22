@@ -1,0 +1,70 @@
+Redis 7.4 RC1发布，支持为哈希字段单独设置过期时间
+=================================================
+
+Redis开发团队今天释出了Redis 7.4
+RC1，这是\ `Redis宣布采取双重许可协议 <https://www.bilibili.com/video/BV1Ux421k7uS>`__\ 之后的首次发布，具体的变动可以在这个页面看到：https://github.com/redis/redis/releases/tag/7.4-rc1。
+
+在这次发布中，最重要的新特性莫过于\ **支持为哈希字段单独设置过期时间**\ 了。过去，由于Redis只能对单个键设置过期时间，而无法对哈希键的字段设置过期时间，使得用户不得不将很多原本应该作为哈希键整体储存的数据分散至多个字符串键分别储存。
+
+但随着Redis
+7.4版本的推出，现在用户将能够直接为哈希键的字段设置过期时间，让它们像普通的数据库键一样在过期之后自动被移除，这样就不必再为了设置过期时间而去调整储存数据的键类型了。
+
+新命令
+------
+
+为了实现给哈希字段单独设置过期时间这一特性，Redis引入了9个新命令，它们分别是：
+
+-  用于设置秒级和毫秒级生存时间（TTL）的\ `HEXPIRE <https://redis.io/docs/latest/commands/hexpire/>`__\ 命令和\ `HPEXPIRE <https://redis.io/docs/latest/commands/hpexpire/>`__\ 命令（分别对应\ ``EXPIRE``\ 命令和\ ``PEXPIRE``\ 命令）。
+-  用于设置秒级和毫秒级UNIX过期时间戳的\ `HEXPIREAT <https://redis.io/docs/latest/commands/hexpireat/>`__\ 命令和\ `HPEXPIREAT <https://redis.io/docs/latest/commands/hpexpireat/>`__\ 命令（分别对应\ ``EXPIREAT``\ 命令和\ ``PEXPIREAT``\ 命令）。
+-  用于获取秒级和毫秒级生存时间的\ `HTTL <https://redis.io/docs/latest/commands/httl/>`__\ 命令和\ `HPTTL <https://redis.io/docs/latest/commands/hpttl/>`__\ 命令（分别对应\ ``TTL``\ 命令和\ ``PTTL``\ 命令）。
+-  用于获取秒级和毫秒级UNIX过期时间戳的\ `HEXPIRETIME <https://redis.io/docs/latest/commands/hexpiretime/>`__\ 命令和\ `HPEXPIRETIME <https://redis.io/docs/latest/commands/hpexpiretime/>`__\ 命令（对应\ ``EXPIRETIME``\ 命令和\ ``PEXPIRETIME``\ 命令）。
+-  用于移除过期时间的\ `HPERSIST <https://redis.io/docs/latest/commands/hpersist/>`__\ 命令（对应\ ``PERSIST``\ 命令）。
+
+这些新命令的具体用法可以通过点击命令的链接来查看它们对应的文档，总的来说，它们的用法和之前对单个数据库键设置过期时间的做法非常相似。
+
+代码示例
+--------
+
+作为例子，以下代码演示了如何给哈希键\ ``hash``\ 的字段\ ``k1``\ 、\ ``k2``\ 设置\ ``128``\ 秒的过期时间，并为字段\ ``k3``\ 设置\ ``256``\ 秒的过期时间：
+
+::
+
+   Redis> HSET hash k1 v1 k2 v2 k3 v3
+   (integer) 3
+   Redis> HEXPIRE hash 128 fields 2 k1 k2
+   1) (integer) 1
+   2) (integer) 1
+   Redis> HEXPIRE hash 256 fields 1 k3
+   1) (integer) 1
+
+之后，我们可以通过执行\ ``HTTL``\ 命令，查看上述三个字段的过期时间：
+
+::
+
+   Redis> HTTL hash fields 3 k1 k2 k3
+   1) (integer) 109
+   2) (integer) 109
+   3) (integer) 247
+
+在有需要的时候，我们还可以通过\ ``HPERSIST``\ 命令，移除\ ``k1``\ 字段的过期时间，然后再次通过执行\ ``HTTL``\ 命令确认该字段的过期时间已被移除：
+
+::
+
+   Redis> HPERSIST hash fields 1 k1
+   1) (integer) 1
+   Redis> HTTL hash fields 3 k1 k2 k3
+   1) (integer) -1
+   2) (integer) 97
+   3) (integer) 234
+
+
+结语
+----------
+
+好的，关于这次Redis 7.4
+RC1引入的为哈希字段设置过期时间的新特性就介绍到这里，后续的新版本如果有其他新值得一提的新特性出现的话，我也会继续写文章跟大家分享的。
+
+如果您觉得这篇文章对您有用的话，麻烦帮我在社交媒体上点个赞、转发下本文，非常感谢！
+
+| 黄健宏
+| 2024.6.7

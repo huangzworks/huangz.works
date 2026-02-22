@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>2017 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Redis 4.0 新功能简介：RDB-AOF 混合持久化" href="redis-rdb-aof-mixed-persistence.html" />
+    <link rel="prev" title="Redis 5 新功能介绍：ZPOPMAX、ZPOPMIN 以及它们的阻塞变种" href="../2018/zpopmax-zpopmin-in-redis-5.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">2017</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="../2018/zpopmax-zpopmin-in-redis-5.html" title="Previous Chapter: Redis 5 新功能介绍：ZPOPMAX、ZPOPMIN 以及它们的阻塞变种"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; Redis 5 新功能介绍...</span>
+    </a>
+  </li>
+  <li>
+    <a href="redis-rdb-aof-mixed-persistence.html" title="Next Chapter: Redis 4.0 新功能简介：RDB-AOF 混合持久化"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">Redis 4.0 新功能... &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="id1">
+<h1>2017<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="redis-rdb-aof-mixed-persistence.html">Redis 4.0 新功能简介：RDB-AOF 混合持久化</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="redis-rdb-aof-mixed-persistence.html#aof">创建包含混合持久化内容的 AOF 文件</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-rdb-aof-mixed-persistence.html#rdb-aof">启用 RDB-AOF 混合持久化</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-rdb-aof-mixed-persistence.html#id1">结语</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="release-redis-cheatsheet-as-free.html">《Redis 命令速查表》开放免费下载</a></li>
+<li class="toctree-l1"><a class="reference internal" href="redis-streams.html">Redis Streams（流）数据结构简介</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="redis-streams.html#id1">向流中添加新元素</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-streams.html#id">从流中获取指定 ID 范围内的元素</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-streams.html#id2">以阻塞方式获取流中元素</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-streams.html#id3">结语</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gwpcn-community-cooperation.html">《Go Web 编程》社区合作计划</a></li>
+<li class="toctree-l1"><a class="reference internal" href="memories-of-gwpcn-translation.html">《Go Web 编程》翻译记事</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gwpcn-translation-manuscript.html">《Go Web 编程》翻译手稿集</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gwpcn-translation-manuscript.html#id3">手稿样张</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="qq-group-log-001.html">QQ 群聊天记录 001 号：关于盗版书的讨论</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="qq-group-log-001.html#id1">既然电子书可以共享，那么为什么钱包不能够共享？</a></li>
+<li class="toctree-l2"><a class="reference internal" href="qq-group-log-001.html#id3">国内写书、翻译收入几何</a></li>
+<li class="toctree-l2"><a class="reference internal" href="qq-group-log-001.html#id5">本群禁止传播盗版资源的初衷</a></li>
+<li class="toctree-l2"><a class="reference internal" href="qq-group-log-001.html#id6">原创作者的创收方法讨论</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gastroscope-experience.html">胃镜检查记录</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gastroscope-experience.html#id3">见医生</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gastroscope-experience.html#id4">检查前准备</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gastroscope-experience.html#id6">检查</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gastroscope-experience.html#id7">关于无痛胃镜</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gastroscope-experience.html#id8">总结与提示</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="notes-about-translation-13.html">翻译笔记之十三：慎选原著</a></li>
+<li class="toctree-l1"><a class="reference internal" href="redis-lua-debuger-introduction.html">Redis Lua 脚本调试器用法说明</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="redis-lua-debuger-introduction.html#id1">概述</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-lua-debuger-introduction.html#id2">使用教程</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-lua-debuger-introduction.html#id3">调试会话的终止</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-lua-debuger-introduction.html#id4">调试命令的缩写</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-lua-debuger-introduction.html#id5">断点</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-lua-debuger-introduction.html#id6">动态断点</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-lua-debuger-introduction.html#id7">同步模式</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-lua-debuger-introduction.html#id8">在脚本中进行日志记录</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-lua-debuger-introduction.html#print-eval">使用 print 和 eval 视察程序状态</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-lua-debuger-introduction.html#id9">调试客户端</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="notes-about-translation-12.html">翻译笔记之十二：无标准译法词汇的处理办法</a></li>
+<li class="toctree-l1"><a class="reference internal" href="crime-and-punishment.html">自相矛盾的拉斯科尼科夫</a></li>
+<li class="toctree-l1"><a class="reference internal" href="group-guideline.html">技术群讨论指导原则</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="group-guideline.html#id2">主题</a></li>
+<li class="toctree-l2"><a class="reference internal" href="group-guideline.html#id3">提问</a></li>
+<li class="toctree-l2"><a class="reference internal" href="group-guideline.html#id4">发言</a></li>
+<li class="toctree-l2"><a class="reference internal" href="group-guideline.html#id5">发布您的作品</a></li>
+<li class="toctree-l2"><a class="reference internal" href="group-guideline.html#id6">发布招聘信息</a></li>
+<li class="toctree-l2"><a class="reference internal" href="group-guideline.html#id7">禁止行为</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="how-i-became-a-writer-and-translator.html">技术图书作译者的炼成方法</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="how-i-became-a-writer-and-translator.html#id3">你是谁，做过些什么</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how-i-became-a-writer-and-translator.html#id7">为什么会想到写《Redis设计与实现》这本书，以及这本书是如何出版的</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how-i-became-a-writer-and-translator.html#id10">为什么会翻译《Redis in Action》这本书，以及这本书的翻译过程</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how-i-became-a-writer-and-translator.html#id14">专职作家如何才能养活自己</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how-i-became-a-writer-and-translator.html#id15">你是如何成为作译者的</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how-i-became-a-writer-and-translator.html#id16">对于想成为技术图书作者或者译者的人，有什么建议</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="redis-reshard-performance-issue.html">重分片对 Redis 集群的性能影响分析</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="redis-reshard-performance-issue.html#id1">转向</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-reshard-performance-issue.html#moved">MOVED 转向会影响性能吗？</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-reshard-performance-issue.html#ask">ASK 转向会影响性能吗？</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-reshard-performance-issue.html#id2">重分片真正的性能问题所在</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-reshard-performance-issue.html#id3">软件从来都不是一个黑箱</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

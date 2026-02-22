@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>《Redis应用实例》书摘（15）：资源池 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="《Redis应用实例》书摘（16）：紧凑字符串" href="rediscookbook-compact-string.html" />
+    <link rel="prev" title="《Redis应用实例》书摘（14）：二元操作记录器" href="rediscookbook-binary-recorder.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">《Redis应用实例》书摘（15）：资源池</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="rediscookbook-binary-recorder.html" title="Previous Chapter: 《Redis应用实例》书摘（14）：二元操作记录器"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; 《Redis应用实例》书摘...</span>
+    </a>
+  </li>
+  <li>
+    <a href="rediscookbook-compact-string.html" title="Next Chapter: 《Redis应用实例》书摘（16）：紧凑字符串"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">《Redis应用实例》书摘... &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="redis-15">
+<h1>《Redis应用实例》书摘（15）：资源池<a class="headerlink" href="#redis-15" title="Link to this heading">¶</a></h1>
+<p>计算机系统中存在各式各样不同的资源：在硬件层面，资源可以是CPU时间、内存容量、硬盘空间或带宽等，而在软件层面，资源可以是文件、线程、进程又或者负责处理任务的客户端等。</p>
+<p>如何管理资源一直是计算机系统最常遇到的问题之一，解决这个问题的其中一种常见方法，就是将同类的资源都关联到一个资源池中，并在需要使用资源时向资源池发送请求以获取资源，最后再在资源使用完毕之后将其归还至资源池。</p>
+<p>考虑到资源池实际上就是一个记录资源的集合，所以我们使用Redis集合来实现它：其中将资源关联（或者说添加）到资源池的工作可以通过<code class="docutils literal notranslate"><span class="pre">SADD</span></code>命令来实现，而从资源池中取消关联（或者说移除）资源的工作则可以通过<code class="docutils literal notranslate"><span class="pre">SREM</span></code>命令来实现。</p>
+<p>代码清单 CODE_RESOURCE_POOL 展示了基于上述原理实现的资源池程序。</p>
+<hr class="docutils" />
+<p>代码清单 CODE_RESOURCE_POOL 资源池程序 <code class="docutils literal notranslate"><span class="pre">resource_pool.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">WatchError</span>
+
+<span class="k">def</span> <span class="nf">available_key</span><span class="p">(</span><span class="n">pool_name</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s2">&quot;ResourcePool:</span><span class="si">{0}</span><span class="s2">:available&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pool_name</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">occupied_key</span><span class="p">(</span><span class="n">pool_name</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s2">&quot;ResourcePool:</span><span class="si">{0}</span><span class="s2">:occupied&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pool_name</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">ResourcePool</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">pool_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        基于给定的资源池名字创建出相应的资源池对象。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">available_set</span> <span class="o">=</span> <span class="n">available_key</span><span class="p">(</span><span class="n">pool_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">occupied_set</span> <span class="o">=</span> <span class="n">occupied_key</span><span class="p">(</span><span class="n">pool_name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">associate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        将指定资源关联到资源池中。</span>
+<span class="sd">        返回True表示关联成功，返回False表示资源已存在，关联失败。</span>
+<span class="sd">        返回None则表示关联过程中操作失败，需要重新尝试。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">pipeline</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># 监视两个集合，观察它们是否在操作中途变化</span>
+            <span class="n">tx</span><span class="o">.</span><span class="n">watch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">available_set</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">occupied_set</span><span class="p">)</span>
+            <span class="c1"># 检查给定资源是否存在于两个集合之中</span>
+            <span class="k">if</span> <span class="n">tx</span><span class="o">.</span><span class="n">sismember</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">available_set</span><span class="p">,</span> <span class="n">resource</span><span class="p">)</span> <span class="ow">or</span> \
+               <span class="n">tx</span><span class="o">.</span><span class="n">sismember</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">occupied_set</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
+                <span class="c1"># 资源已存在，放弃添加</span>
+                <span class="n">tx</span><span class="o">.</span><span class="n">unwatch</span><span class="p">()</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># 资源未存在，尝试添加</span>
+                <span class="n">tx</span><span class="o">.</span><span class="n">multi</span><span class="p">()</span>
+                <span class="n">tx</span><span class="o">.</span><span class="n">sadd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">available_set</span><span class="p">,</span> <span class="n">resource</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">tx</span><span class="o">.</span><span class="n">execute</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span>  <span class="c1"># 添加是否成功？</span>
+        <span class="k">except</span> <span class="n">WatchError</span><span class="p">:</span>
+            <span class="c1"># 操作过程中集合键发生了变化，需要重试</span>
+            <span class="k">pass</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">tx</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">disassociate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        将指定资源从资源池中移除。</span>
+<span class="sd">        移除成功返回True，因资源不存在而导致移除失败返回False。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 使用事务同时向两个集合发出SREM命令</span>
+        <span class="c1"># 当资源存在于池中时，其中一个集合将返回1作为SREM命令的结果</span>
+        <span class="n">tx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">pipeline</span><span class="p">()</span>
+        <span class="n">tx</span><span class="o">.</span><span class="n">srem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">available_set</span><span class="p">,</span> <span class="n">resource</span><span class="p">)</span>
+        <span class="n">tx</span><span class="o">.</span><span class="n">srem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">occupied_set</span><span class="p">,</span> <span class="n">resource</span><span class="p">)</span>
+        <span class="n">ret1</span><span class="p">,</span> <span class="n">ret2</span> <span class="o">=</span> <span class="n">tx</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">ret1</span><span class="o">==</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">ret2</span><span class="o">==</span><span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        尝试从资源池中获取并返回可用的资源。</span>
+<span class="sd">        返回None表示资源池为空，或者获取操作过程中失败。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">pipeline</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># 监视两个集合，观察它们是否在操作中途变化</span>
+            <span class="n">tx</span><span class="o">.</span><span class="n">watch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">available_set</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">occupied_set</span><span class="p">)</span>
+            <span class="c1"># 尝试从可用集合中随机获取一项资源</span>
+            <span class="n">resource</span> <span class="o">=</span> <span class="n">tx</span><span class="o">.</span><span class="n">srandmember</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">available_set</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">resource</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># 将资源从可用集合移动到已占用集合</span>
+                <span class="n">tx</span><span class="o">.</span><span class="n">multi</span><span class="p">()</span>
+                <span class="n">tx</span><span class="o">.</span><span class="n">smove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">available_set</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">occupied_set</span><span class="p">,</span> <span class="n">resource</span><span class="p">)</span>
+                <span class="n">smove_ret</span> <span class="o">=</span> <span class="n">tx</span><span class="o">.</span><span class="n">execute</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">smove_ret</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">resource</span>
+        <span class="k">except</span> <span class="n">WatchError</span><span class="p">:</span>
+            <span class="c1"># 操作过程中集合键发生了变化，需要重试</span>
+            <span class="k">pass</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">tx</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">release</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resource</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        将给定的一项已被占用的资源回归至资源池。</span>
+<span class="sd">        回归成功时返回True，因资源不属于资源池而导致回归失败时返回False。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 将资源从已占用集合移动至可用集合</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">smove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">occupied_set</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">available_set</span><span class="p">,</span> <span class="n">resource</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>作为例子，以下代码展示了如何使用这个资源池程序的各项功能：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">resource_pool</span> <span class="kn">import</span> <span class="n">ResourcePool</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pool</span> <span class="o">=</span> <span class="n">ResourcePool</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;Workers&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">):</span>  <span class="c1"># 在资源池中关联5个工作进程</span>
+<span class="gp">... </span>  <span class="n">pool</span><span class="o">.</span><span class="n">associate</span><span class="p">(</span><span class="s2">&quot;Worker</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+<span class="gp">...</span>
+<span class="go">True</span>
+<span class="go"># ...</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pool</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>  <span class="c1"># 获取3个工作进程</span>
+<span class="go">&#39;Worker4&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pool</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+<span class="go">&#39;Worker2&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pool</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+<span class="go">&#39;Worker3&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pool</span><span class="o">.</span><span class="n">release</span><span class="p">(</span><span class="s2">&quot;Worker3&quot;</span><span class="p">)</span>  <span class="c1"># 释放1个工作进程</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pool</span><span class="o">.</span><span class="n">disassociate</span><span class="p">(</span><span class="s2">&quot;Worker1&quot;</span><span class="p">)</span>  <span class="c1"># 解除对Worker1的关联</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<div class="line-block">
+<div class="line">本文摘录自《Redis应用实例》一书。</div>
+<div class="line">欢迎访问书本主页以了解更多Redis使用案例：<a class="reference external" href="https://huangz.works/rediscookbook/">huangz.works/rediscookbook/</a></div>
+</div>
+<img alt="../_images/rediscookbook-banner.png" src="../_images/rediscookbook-banner.png" />
+</div>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

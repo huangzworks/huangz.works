@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Redis 7.0 新增管理命令简介 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Redis 7.0 RC1 释出报告" href="redis7-rc1.html" />
+    <link rel="prev" title="Redis 7.0 RC2 释出报告" href="redis7-rc2.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Redis 7.0 新增管理命令简介</a><ul>
+<li><a class="reference internal" href="#command-docs"><code class="docutils literal notranslate"><span class="pre">COMMAND</span> <span class="pre">DOCS</span></code> 命令</a></li>
+<li><a class="reference internal" href="#command-list"><code class="docutils literal notranslate"><span class="pre">COMMAND</span> <span class="pre">LIST</span></code> 命令</a></li>
+<li><a class="reference internal" href="#command-info"><code class="docutils literal notranslate"><span class="pre">COMMAND</span> <span class="pre">INFO</span></code> 命令</a></li>
+<li><a class="reference internal" href="#latency-histogram"><code class="docutils literal notranslate"><span class="pre">LATENCY</span> <span class="pre">HISTOGRAM</span></code> 命令</a></li>
+<li><a class="reference internal" href="#cluster-links"><code class="docutils literal notranslate"><span class="pre">CLUSTER</span> <span class="pre">LINKS</span></code> 命令</a></li>
+<li><a class="reference internal" href="#cluster-addslotsrange-cluster-delslotsrange"><code class="docutils literal notranslate"><span class="pre">CLUSTER</span> <span class="pre">ADDSLOTSRANGE</span></code> 和 <code class="docutils literal notranslate"><span class="pre">CLUSTER</span> <span class="pre">DELSLOTSRANGE</span></code> 命令</a></li>
+<li><a class="reference internal" href="#client-no-evict"><code class="docutils literal notranslate"><span class="pre">CLIENT</span> <span class="pre">NO-EVICT</span></code></a></li>
+<li><a class="reference internal" href="#acl-dryrun"><code class="docutils literal notranslate"><span class="pre">ACL</span> <span class="pre">DRYRUN</span></code></a></li>
+<li><a class="reference internal" href="#slowlog-get"><code class="docutils literal notranslate"><span class="pre">SLOWLOG</span> <span class="pre">GET</span></code></a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="redis7-rc2.html" title="Previous Chapter: Redis 7.0 RC2 释出报告"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; Redis 7.0 RC2 释出报告</span>
+    </a>
+  </li>
+  <li>
+    <a href="redis7-rc1.html" title="Next Chapter: Redis 7.0 RC1 释出报告"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">Redis 7.0 RC1 释出报告 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="redis-7-0">
+<h1>Redis 7.0 新增管理命令简介<a class="headerlink" href="#redis-7-0" title="Link to this heading">¶</a></h1>
+<p>最近推出的 Redis 7.0
+（RC1和RC2）新增/修改了不少命令，其中当然也包括一些管理相关的命令，本文将对这些管理相关的新命令做相应的介绍。</p>
+<section id="command-docs">
+<h2><code class="docutils literal notranslate"><span class="pre">COMMAND</span> <span class="pre">DOCS</span></code> 命令<a class="headerlink" href="#command-docs" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">COMMAND</span> <span class="pre">DOCS</span> <span class="pre">[command-name</span> <span class="pre">[command-name</span> <span class="pre">...]]</span></code></p>
+<p>这个新增的子命令会以数组方式，返回给定任意多个命令的文档。如果不指定命令，那么返回所有命令的文档。</p>
+<p>以下代码展示了如何获取 <code class="docutils literal notranslate"><span class="pre">INFO</span></code> 命令的文档：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">COMMAND</span> <span class="n">DOCS</span> <span class="n">INFO</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;info&quot;</span>
+<span class="mi">2</span><span class="p">)</span>  <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;summary&quot;</span>
+    <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;Get information and statistics about the server&quot;</span>
+    <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;since&quot;</span>
+    <span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;1.0.0&quot;</span>
+    <span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;group&quot;</span>
+    <span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;server&quot;</span>
+    <span class="mi">7</span><span class="p">)</span> <span class="s2">&quot;complexity&quot;</span>
+    <span class="mi">8</span><span class="p">)</span> <span class="s2">&quot;O(1)&quot;</span>
+    <span class="mi">9</span><span class="p">)</span> <span class="s2">&quot;history&quot;</span>
+   <span class="mi">10</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;7.0.0&quot;</span>
+          <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;Added support for taking multiple section arguments.&quot;</span>
+   <span class="mi">11</span><span class="p">)</span> <span class="s2">&quot;arguments&quot;</span>
+   <span class="mi">12</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;name&quot;</span>
+          <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;section&quot;</span>
+          <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;type&quot;</span>
+          <span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;string&quot;</span>
+          <span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;flags&quot;</span>
+          <span class="mi">6</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="n">optional</span>
+             <span class="mi">2</span><span class="p">)</span> <span class="n">multiple</span>
+</pre></div>
+</div>
+<p>对于子命令，如果我们想要获取它们的文档，那么就需要用 <code class="docutils literal notranslate"><span class="pre">|</span></code>
+作为命令和子命令之间的分隔符。</p>
+<p>比如说，以下代码展示了如何获取 <code class="docutils literal notranslate"><span class="pre">ACL</span> <span class="pre">CAT</span></code> 子命令的文档：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">COMMAND</span> <span class="n">DOCS</span> <span class="n">ACL</span><span class="o">|</span><span class="n">CAT</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;acl|cat&quot;</span>
+<span class="mi">2</span><span class="p">)</span>  <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;summary&quot;</span>
+    <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;List the ACL categories or the commands inside a category&quot;</span>
+    <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;since&quot;</span>
+    <span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;6.0.0&quot;</span>
+    <span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;group&quot;</span>
+    <span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;server&quot;</span>
+    <span class="mi">7</span><span class="p">)</span> <span class="s2">&quot;complexity&quot;</span>
+    <span class="mi">8</span><span class="p">)</span> <span class="s2">&quot;O(1) since the categories and commands are a fixed set.&quot;</span>
+    <span class="mi">9</span><span class="p">)</span> <span class="s2">&quot;arguments&quot;</span>
+   <span class="mi">10</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;name&quot;</span>
+          <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;categoryname&quot;</span>
+          <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;type&quot;</span>
+          <span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;string&quot;</span>
+          <span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;flags&quot;</span>
+          <span class="mi">6</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="n">optional</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">COMMAND</span> <span class="pre">DOCS</span></code> 命令的更多信息可以参考它的文档：
+<a class="reference external" href="https://redis.io/commands/command-docs">https://redis.io/commands/command-docs</a></p>
+</section>
+<section id="command-list">
+<h2><code class="docutils literal notranslate"><span class="pre">COMMAND</span> <span class="pre">LIST</span></code> 命令<a class="headerlink" href="#command-list" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">COMMAND</span> <span class="pre">LIST</span> <span class="pre">[FILTERBY</span> <span class="pre">MODULE</span> <span class="pre">module-name|ACLCAT</span> <span class="pre">category|PATTERN</span> <span class="pre">pattern]</span></code></p>
+<p>跟 <code class="docutils literal notranslate"><span class="pre">COMMAND</span> <span class="pre">DOCS</span></code> 类似，这个子命令是 7.0
+新增的，它可以列出服务器的所有命令。通过给定可选的 <code class="docutils literal notranslate"><span class="pre">FILTERBY</span></code>
+参数，可以让命令只返回符合过滤条件的命令。</p>
+<p>列出所有命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">COMMAND</span> <span class="n">LIST</span>
+  <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;zmpop&quot;</span>
+  <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;client&quot;</span>
+  <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;client|help&quot;</span>
+  <span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;client|getredir&quot;</span>
+ <span class="o">...</span>
+ <span class="mi">362</span><span class="p">)</span> <span class="s2">&quot;unsubscribe&quot;</span>
+ <span class="mi">363</span><span class="p">)</span> <span class="s2">&quot;bzmpop&quot;</span>
+ <span class="mi">364</span><span class="p">)</span> <span class="s2">&quot;georadiusbymember&quot;</span>
+</pre></div>
+</div>
+<p>列出 ACL 分类中的 <code class="docutils literal notranslate"><span class="pre">geo</span></code> 命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">COMMAND</span> <span class="n">LIST</span> <span class="n">FILTERBY</span> <span class="n">ACLCAT</span> <span class="n">geo</span>
+ <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;geopos&quot;</span>
+ <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;geodist&quot;</span>
+ <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;georadius&quot;</span>
+ <span class="o">...</span>
+ <span class="mi">9</span><span class="p">)</span> <span class="s2">&quot;geosearch&quot;</span>
+<span class="mi">10</span><span class="p">)</span> <span class="s2">&quot;georadiusbymember&quot;</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">COMMAND</span> <span class="pre">LIST</span></code> 命令的更多信息可以参考它的文档：
+<a class="reference external" href="https://redis.io/commands/command-list">https://redis.io/commands/command-list</a></p>
+</section>
+<section id="command-info">
+<h2><code class="docutils literal notranslate"><span class="pre">COMMAND</span> <span class="pre">INFO</span></code> 命令<a class="headerlink" href="#command-info" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">COMMAND</span> <span class="pre">INFO</span> <span class="pre">[command-name</span> <span class="pre">[command-name</span> <span class="pre">...]]</span></code></p>
+<p>这个也是新增的子命令，它会以数组形式返回给定的任意多个命令的细节信息。如果不给定命令，那么返回所有命令的细节信息。</p>
+<p>以下代码展示了如何获取 <code class="docutils literal notranslate"><span class="pre">INFO</span></code> 命令的细节信息：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">COMMAND</span> <span class="n">INFO</span> <span class="n">INFO</span>
+<span class="mi">1</span><span class="p">)</span>  <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;info&quot;</span>
+    <span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="mi">3</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="n">loading</span>
+       <span class="mi">2</span><span class="p">)</span> <span class="n">stale</span>
+    <span class="mi">4</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+    <span class="mi">5</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+    <span class="mi">6</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+    <span class="mi">7</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="nd">@slow</span>
+       <span class="mi">2</span><span class="p">)</span> <span class="nd">@dangerous</span>
+    <span class="mi">8</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;nondeterministic_output&quot;</span>
+       <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;request_policy:all_shards&quot;</span>
+       <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;response_policy:special&quot;</span>
+    <span class="mi">9</span><span class="p">)</span> <span class="p">(</span><span class="n">empty</span> <span class="n">array</span><span class="p">)</span>
+   <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="n">empty</span> <span class="n">array</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">COMMAND</span> <span class="pre">INFO</span></code>
+命令的更多信息可以参考它的文档：<a class="reference external" href="https://redis.io/commands/command-info">https://redis.io/commands/command-info</a></p>
+</section>
+<section id="latency-histogram">
+<h2><code class="docutils literal notranslate"><span class="pre">LATENCY</span> <span class="pre">HISTOGRAM</span></code> 命令<a class="headerlink" href="#latency-histogram" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">LATENCY</span> <span class="pre">HISTOGRAM</span> <span class="pre">[command</span> <span class="pre">[command</span> <span class="pre">...]]</span></code></p>
+<p>这个 7.0
+新增子命令会以直方图形式报告每个指定命令的累积分布延迟。如果不指定命令那么所有包含延时信息的命令都会被返回。</p>
+<p>每个报告的直方图包含以下字段：</p>
+<ul class="simple">
+<li><p>命令名称</p></li>
+<li><p>命令的总调用次数</p></li>
+<li><p>一个由时间桶构成的映射</p></li>
+<li><p>每个桶代表一个延时范围</p></li>
+<li><p>每个桶覆盖前一个桶的两倍范围</p></li>
+<li><p>空桶不会被打印</p></li>
+<li><p>追踪的延迟介于 1 微妙和大约 1 秒钟之间</p></li>
+<li><p>超过 1 秒钟的延迟都会被认为是 +Inf</p></li>
+<li><p>最大会有 <code class="docutils literal notranslate"><span class="pre">log2(1000000000)=30</span></code> 个桶</p></li>
+<li><p>这个命令需要启用扩展延迟监测功能（默认情况下是启用的）。如果你需要启用它，请使用
+<code class="docutils literal notranslate"><span class="pre">CONFIG</span> <span class="pre">SET</span> <span class="pre">latency-tracking</span> <span class="pre">yes</span></code> 。</p></li>
+</ul>
+<p>以下是该命令的执行示例：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">LATENCY</span> <span class="n">HISTOGRAM</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;command|info&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;calls&quot;</span>
+   <span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+   <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;histogram_usec&quot;</span>
+   <span class="mi">4</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">16</span>
+      <span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+      <span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">66</span>
+      <span class="mi">4</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2</span>
+      <span class="mi">5</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2113</span>
+      <span class="mi">6</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;command|docs&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;calls&quot;</span>
+   <span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">13</span>
+   <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;histogram_usec&quot;</span>
+   <span class="mi">4</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">16</span>
+      <span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">4</span>
+      <span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">33</span>
+      <span class="mi">4</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">7</span>
+      <span class="mi">5</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1056</span>
+      <span class="mi">6</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">11</span>
+      <span class="mi">7</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2113</span>
+      <span class="mi">8</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">13</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;command|list&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;calls&quot;</span>
+   <span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2</span>
+   <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;histogram_usec&quot;</span>
+   <span class="mi">4</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">33</span>
+      <span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+      <span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">132</span>
+      <span class="mi">4</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2</span>
+</pre></div>
+</div>
+<p>命令的详细信息请参考文档： <a class="reference external" href="https://redis.io/commands/latency-histogra">https://redis.io/commands/latency-histogra</a></p>
+</section>
+<section id="cluster-links">
+<h2><code class="docutils literal notranslate"><span class="pre">CLUSTER</span> <span class="pre">LINKS</span></code> 命令<a class="headerlink" href="#cluster-links" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">CLUSTER</span> <span class="pre">LINKS</span></code></p>
+<p>这个新增的子命令以数组形式，输出每个集群节点的具体信息，其中每个数组元素都是一个映射，映射中包含了每个独立连接的属性以及与之对应的值。</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&gt;</span> <span class="n">CLUSTER</span> <span class="n">LINKS</span>
+<span class="mi">1</span><span class="p">)</span>  <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;direction&quot;</span>
+    <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;to&quot;</span>
+    <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;node&quot;</span>
+    <span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;8149d745fa551e40764fecaf7cab9dbdf6b659ae&quot;</span>
+    <span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;create-time&quot;</span>
+    <span class="mi">6</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1639442739375</span>
+    <span class="mi">7</span><span class="p">)</span> <span class="s2">&quot;events&quot;</span>
+    <span class="mi">8</span><span class="p">)</span> <span class="s2">&quot;rw&quot;</span>
+    <span class="mi">9</span><span class="p">)</span> <span class="s2">&quot;send-buffer-allocated&quot;</span>
+   <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">4512</span>
+   <span class="mi">11</span><span class="p">)</span> <span class="s2">&quot;send-buffer-used&quot;</span>
+   <span class="mi">12</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+<span class="mi">2</span><span class="p">)</span>  <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;direction&quot;</span>
+    <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;from&quot;</span>
+    <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;node&quot;</span>
+    <span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;8149d745fa551e40764fecaf7cab9dbdf6b659ae&quot;</span>
+    <span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;create-time&quot;</span>
+    <span class="mi">6</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1639442739411</span>
+    <span class="mi">7</span><span class="p">)</span> <span class="s2">&quot;events&quot;</span>
+    <span class="mi">8</span><span class="p">)</span> <span class="s2">&quot;r&quot;</span>
+    <span class="mi">9</span><span class="p">)</span> <span class="s2">&quot;send-buffer-allocated&quot;</span>
+   <span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+   <span class="mi">11</span><span class="p">)</span> <span class="s2">&quot;send-buffer-used&quot;</span>
+   <span class="mi">12</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<p>命令的详细信息请参考文档： <a class="reference external" href="https://redis.io/commands/cluster-links">https://redis.io/commands/cluster-links</a></p>
+</section>
+<section id="cluster-addslotsrange-cluster-delslotsrange">
+<h2><code class="docutils literal notranslate"><span class="pre">CLUSTER</span> <span class="pre">ADDSLOTSRANGE</span></code> 和 <code class="docutils literal notranslate"><span class="pre">CLUSTER</span> <span class="pre">DELSLOTSRANGE</span></code> 命令<a class="headerlink" href="#cluster-addslotsrange-cluster-delslotsrange" title="Link to this heading">¶</a></h2>
+<p>过去只能用 <code class="docutils literal notranslate"><span class="pre">ADDSLOT</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">DELSLOT</span></code> 命令一个个地添加/删除槽，在
+7.0 新增以下两个子命令之后，现在可以直接添加/删除槽范围了：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">CLUSTER</span> <span class="n">ADDSLOTSRANGE</span> <span class="n">start</span><span class="o">-</span><span class="n">slot</span> <span class="n">end</span><span class="o">-</span><span class="n">slot</span> <span class="p">[</span><span class="n">start</span><span class="o">-</span><span class="n">slot</span> <span class="n">end</span><span class="o">-</span><span class="n">slot</span> <span class="o">...</span><span class="p">]</span>
+<span class="n">CLUSTER</span> <span class="n">DELSLOTSRANGE</span> <span class="n">start</span><span class="o">-</span><span class="n">slot</span> <span class="n">end</span><span class="o">-</span><span class="n">slot</span> <span class="p">[</span><span class="n">start</span><span class="o">-</span><span class="n">slot</span> <span class="n">end</span><span class="o">-</span><span class="n">slot</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>比如说，过去的：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&gt;</span> <span class="n">CLUSTER</span> <span class="n">ADDSLOTS</span> <span class="mi">1</span> <span class="mi">2</span> <span class="mi">3</span> <span class="mi">4</span> <span class="mi">5</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p>相当于现在的：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&gt;</span> <span class="n">CLUSTER</span> <span class="n">ADDSLOTSRANGE</span> <span class="mi">1</span> <span class="mi">5</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p>命令的详细信息请参考文档：<a class="reference external" href="https://redis.io/commands/cluster-addslotsrange">https://redis.io/commands/cluster-addslotsrange</a>
+和 <a class="reference external" href="https://redis.io/commands/cluster-delslotsrange">https://redis.io/commands/cluster-delslotsrange</a></p>
+</section>
+<section id="client-no-evict">
+<h2><code class="docutils literal notranslate"><span class="pre">CLIENT</span> <span class="pre">NO-EVICT</span></code><a class="headerlink" href="#client-no-evict" title="Link to this heading">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">CLIENT</span> <span class="n">NO</span><span class="o">-</span><span class="n">EVICT</span> <span class="n">ON</span><span class="o">|</span><span class="n">OFF</span>
+</pre></div>
+</div>
+<p>这个新增的子命令用于设置客户端的驱逐模式：</p>
+<ul class="simple">
+<li><p>当它处于打开状态时，即使这个客户端高于配置好的驱逐阈值，它也不会被驱逐。</p></li>
+<li><p>当它处于关闭状态时，这个客户端将被重新放进潜在的被驱逐客户端池里面。</p></li>
+</ul>
+<p>命令的详细信息请参考文档：<a class="reference external" href="https://redis.io/commands/client-no-evict">https://redis.io/commands/client-no-evict</a></p>
+</section>
+<section id="acl-dryrun">
+<h2><code class="docutils literal notranslate"><span class="pre">ACL</span> <span class="pre">DRYRUN</span></code><a class="headerlink" href="#acl-dryrun" title="Link to this heading">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ACL</span> <span class="n">DRYRUN</span> <span class="n">username</span> <span class="n">command</span> <span class="p">[</span><span class="n">arg</span> <span class="p">[</span><span class="n">arg</span> <span class="o">...</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p>这个新增的子命令可以在不实际执行命令的情况下，判断指定用户能否执行给定的命令。</p>
+<p>一个用于检测用户权限的命令。</p>
+<p>例子：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&gt;</span> <span class="n">ACL</span> <span class="n">SETUSER</span> <span class="n">VIRGINIA</span> <span class="o">+</span><span class="n">SET</span> <span class="o">~*</span>
+<span class="s2">&quot;OK&quot;</span>
+<span class="o">&gt;</span> <span class="n">ACL</span> <span class="n">DRYRUN</span> <span class="n">VIRGINIA</span> <span class="n">SET</span> <span class="n">foo</span> <span class="n">bar</span>
+<span class="s2">&quot;OK&quot;</span>
+<span class="o">&gt;</span> <span class="n">ACL</span> <span class="n">DRYRUN</span> <span class="n">VIRGINIA</span> <span class="n">GET</span> <span class="n">foo</span> <span class="n">bar</span>
+<span class="s2">&quot;This user has no permissions to run the &#39;GET&#39; command&quot;</span>
+</pre></div>
+</div>
+<p>命令的详细信息请参考文档： <a class="reference external" href="https://redis.io/commands/acl-dryrun">https://redis.io/commands/acl-dryrun</a></p>
+</section>
+<section id="slowlog-get">
+<h2><code class="docutils literal notranslate"><span class="pre">SLOWLOG</span> <span class="pre">GET</span></code><a class="headerlink" href="#slowlog-get" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">SLOWLOG</span> <span class="pre">GET</span> <span class="pre">[count]</span></code></p>
+<p>这个命令之前的版本已经存在，7.0 让这个命令可以通过接受 <code class="docutils literal notranslate"><span class="pre">-1</span></code>
+为参数，以此来获取所有条目。</p>
+<p>示例：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">SLOWLOG</span> <span class="n">GET</span> <span class="o">-</span><span class="mi">1</span>
+<span class="mi">1</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2</span>
+   <span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1646980811</span>
+   <span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">5</span>
+   <span class="mi">4</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;GET&quot;</span>
+      <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;msg&quot;</span>
+   <span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;127.0.0.1:50082&quot;</span>
+   <span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+   <span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1646980809</span>
+   <span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">5</span>
+   <span class="mi">4</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;SET&quot;</span>
+      <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;msg&quot;</span>
+      <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;hello&quot;</span>
+   <span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;127.0.0.1:50082&quot;</span>
+   <span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;&quot;</span>
+</pre></div>
+</div>
+<p>命令的详细信息请参考文档：<a class="reference external" href="https://redis.io/commands/slowlog-get">https://redis.io/commands/slowlog-get</a></p>
+<div class="line-block">
+<div class="line">对管理命令其实不太感兴趣但又不得不了解的黄健宏</div>
+<div class="line">2022.3.11</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

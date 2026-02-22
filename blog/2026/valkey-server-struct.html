@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Valkey源码剖析（2）：服务器状态表示 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Valkey源码剖析（3）：事件主循环" href="valkey-event-loop.html" />
+    <link rel="prev" title="Valkey源码剖析（1）：启动服务器" href="valkey-lunch-server.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Valkey源码剖析（2）：服务器状态表示</a><ul>
+<li><a class="reference internal" href="#id1">初始化常量属性</a></li>
+<li><a class="reference internal" href="#id2">初始化数据结构</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="valkey-lunch-server.html" title="Previous Chapter: Valkey源码剖析（1）：启动服务器"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; Valkey源码剖析（1）：启动服务器</span>
+    </a>
+  </li>
+  <li>
+    <a href="valkey-event-loop.html" title="Next Chapter: Valkey源码剖析（3）：事件主循环"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">Valkey源码剖析（3）：事件主循环 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="valkey-2">
+<h1>Valkey源码剖析（2）：服务器状态表示<a class="headerlink" href="#valkey-2" title="Link to this heading">¶</a></h1>
+<p>Valkey服务器使用server.h/valkeyServer结构表示自身状态，这个结构包含了大量属性：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">valkeyServer</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Valkey根据各项属性的作用使用注释把它们分割成了多个部分，比如通用部分：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cm">/* General */</span>
+<span class="kt">pid_t</span><span class="w"> </span><span class="n">pid</span><span class="p">;</span><span class="w">                </span><span class="cm">/* Main process pid. */</span>
+<span class="n">pthread_t</span><span class="w"> </span><span class="n">main_thread_id</span><span class="p">;</span><span class="w"> </span><span class="cm">/* Main thread id */</span>
+<span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">configfile</span><span class="p">;</span><span class="w">         </span><span class="cm">/* Absolute config file path, or NULL */</span>
+<span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">executable</span><span class="p">;</span><span class="w">         </span><span class="cm">/* Absolute executable file path. */</span>
+<span class="kt">char</span><span class="w"> </span><span class="o">**</span><span class="n">exec_argv</span><span class="p">;</span><span class="w">         </span><span class="cm">/* Executable argv vector (copy). */</span>
+<span class="kt">mode_t</span><span class="w"> </span><span class="n">umask</span><span class="p">;</span><span class="w">             </span><span class="cm">/* The umask value of the process on startup */</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">hz</span><span class="p">;</span><span class="w">                   </span><span class="cm">/* serverCron() calls frequency in hertz */</span>
+<span class="c1">// ...</span>
+</pre></div>
+</div>
+<p>AOF持久化部分：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cm">/* AOF persistence */</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">aof_enabled</span><span class="p">;</span><span class="w">                    </span><span class="cm">/* AOF configuration */</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">aof_state</span><span class="p">;</span><span class="w">                      </span><span class="cm">/* AOF_(ON|OFF|WAIT_REWRITE) */</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">aof_fsync</span><span class="p">;</span><span class="w">                      </span><span class="cm">/* Kind of fsync() policy */</span>
+<span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">aof_filename</span><span class="p">;</span><span class="w">                 </span><span class="cm">/* Basename of the AOF file and manifest file */</span>
+<span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">aof_dirname</span><span class="p">;</span><span class="w">                  </span><span class="cm">/* Name of the AOF directory */</span>
+<span class="c1">// ...</span>
+</pre></div>
+</div>
+<p>RDB持久化部分：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cm">/* RDB persistence */</span>
+<span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">dirty</span><span class="p">;</span><span class="w">                      </span><span class="cm">/* Changes to DB from the last save */</span>
+<span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">dirty_before_bgsave</span><span class="p">;</span><span class="w">        </span><span class="cm">/* Used to restore dirty on failed BGSAVE */</span>
+<span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">rdb_last_load_keys_expired</span><span class="p">;</span><span class="w"> </span><span class="cm">/* number of expired keys when loading RDB */</span>
+<span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">rdb_last_load_keys_loaded</span><span class="p">;</span><span class="w">  </span><span class="cm">/* number of loaded keys when loading RDB */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">saveparam</span><span class="w"> </span><span class="o">*</span><span class="n">saveparams</span><span class="p">;</span><span class="w">         </span><span class="cm">/* Save points array for RDB */</span>
+<span class="c1">// ...</span>
+</pre></div>
+</div>
+<p>集群部分：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cm">/* Cluster */</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">cluster_enabled</span><span class="p">;</span><span class="w">                                   </span><span class="cm">/* Is cluster enabled? */</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">cluster_port</span><span class="p">;</span><span class="w">                                      </span><span class="cm">/* Set the cluster port for a node. */</span>
+<span class="n">mstime_t</span><span class="w"> </span><span class="n">cluster_node_timeout</span><span class="p">;</span><span class="w">                         </span><span class="cm">/* Cluster node timeout. */</span>
+<span class="n">mstime_t</span><span class="w"> </span><span class="n">cluster_ping_interval</span><span class="p">;</span><span class="w">                        </span><span class="cm">/* A debug configuration for setting how often cluster nodes send ping messages. */</span>
+<span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">cluster_configfile</span><span class="p">;</span><span class="w">                              </span><span class="cm">/* Cluster auto-generated config file name. */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">clusterState</span><span class="w"> </span><span class="o">*</span><span class="n">cluster</span><span class="p">;</span><span class="w">                          </span><span class="cm">/* State of the cluster */</span>
+<span class="c1">// ...</span>
+</pre></div>
+</div>
+<p>等等。</p>
+<section id="id1">
+<h2>初始化常量属性<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>Valkey服务器使用server.c/initServerConfig()函数对valkeyServer结构中的常量属性进行初始化：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">initServerConfig</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">j</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">default_bindaddr</span><span class="p">[</span><span class="n">CONFIG_DEFAULT_BINDADDR_COUNT</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CONFIG_DEFAULT_BINDADDR</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 使用默认值初始化配置</span>
+<span class="w">    </span><span class="n">initConfigValues</span><span class="p">();</span>
+<span class="w">    </span><span class="n">updateCachedTime</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">cmd_time_snapshot</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">server</span><span class="p">.</span><span class="n">mstime</span><span class="p">;</span>
+<span class="w">    </span><span class="n">getRandomHexChars</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">runid</span><span class="p">,</span><span class="w"> </span><span class="n">CONFIG_RUN_ID_SIZE</span><span class="p">);</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">runid</span><span class="p">[</span><span class="n">CONFIG_RUN_ID_SIZE</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sc">&#39;\0&#39;</span><span class="p">;</span>
+<span class="w">    </span><span class="n">changeReplicationId</span><span class="p">();</span>
+<span class="w">    </span><span class="n">clearReplicationId2</span><span class="p">();</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">hz</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CONFIG_DEFAULT_HZ</span><span class="p">;</span><span class="w">   </span><span class="cm">/* Initialize it ASAP, even if it may get</span>
+<span class="cm">                                        updated later after loading the config.</span>
+<span class="cm">                                        This value may be used before the server</span>
+<span class="cm">                                        is initialized. */</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">timezone</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getTimeZone</span><span class="p">();</span><span class="w"> </span><span class="cm">/* Initialized by tzset(). */</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">configfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">executable</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">arch_bits</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">long</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">8</span><span class="p">)</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">64</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">32</span><span class="p">;</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">bindaddr_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CONFIG_DEFAULT_BINDADDR_COUNT</span><span class="p">;</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">CONFIG_DEFAULT_BINDADDR_COUNT</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="n">server</span><span class="p">.</span><span class="n">bindaddr</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">zstrdup</span><span class="p">(</span><span class="n">default_bindaddr</span><span class="p">[</span><span class="n">j</span><span class="p">]);</span>
+<span class="w">    </span><span class="n">memset</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">listeners</span><span class="p">,</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">listeners</span><span class="p">));</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">active_expire_enabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">lazy_expire_disabled</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">skip_checksum_validation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>可以看到，这个函数的主要作用就是对valkeyServer结构实例server变量的各项常量属性设置默认值。</p>
+</section>
+<section id="id2">
+<h2>初始化数据结构<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>在初始化服务器状态结构的常量属性，并载入启动服务器时给定的配置选项之后，服务器会调用server.c/initServer()函数，对服务器状态结构进行进一步的初始化，比如创建服务器所需的各项数据结构、创建服务器的输入和输出缓冲区、创建数据库数据结构等等：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">initServer</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">signal</span><span class="p">(</span><span class="n">SIGHUP</span><span class="p">,</span><span class="w"> </span><span class="n">SIG_IGN</span><span class="p">);</span>
+<span class="w">    </span><span class="n">signal</span><span class="p">(</span><span class="n">SIGPIPE</span><span class="p">,</span><span class="w"> </span><span class="n">SIG_IGN</span><span class="p">);</span>
+<span class="w">    </span><span class="n">setupSignalHandlers</span><span class="p">();</span>
+<span class="w">    </span><span class="n">ThreadsManager_init</span><span class="p">();</span>
+<span class="w">    </span><span class="n">makeThreadKillable</span><span class="p">();</span>
+
+<span class="w">    </span><span class="c1">// ...</span>
+
+<span class="w">    </span><span class="cm">/* Initialization after setting defaults from the config system. */</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">aof_state</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">server</span><span class="p">.</span><span class="n">aof_enabled</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">AOF_ON</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">AOF_OFF</span><span class="p">;</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">fsynced_reploff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">server</span><span class="p">.</span><span class="n">aof_enabled</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">-1</span><span class="p">;</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">in_fork_child</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CHILD_TYPE_NONE</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">clients</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listCreate</span><span class="p">();</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">clients_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">raxNew</span><span class="p">();</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">clients_to_close</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listCreate</span><span class="p">();</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">replicas</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listCreate</span><span class="p">();</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">monitors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listCreate</span><span class="p">();</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">replicas_waiting_psync</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">raxNew</span><span class="p">();</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">wait_before_rdb_client_free</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">DEFAULT_WAIT_BEFORE_RDB_CLIENT_FREE</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">// ...</span>
+
+<span class="w">    </span><span class="c1">// 创建共享对象</span>
+<span class="w">    </span><span class="n">createSharedObjects</span><span class="p">();</span>
+<span class="w">    </span><span class="n">adjustOpenFilesLimit</span><span class="p">();</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">clk_msg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">monotonicInit</span><span class="p">();</span>
+<span class="w">    </span><span class="n">serverLog</span><span class="p">(</span><span class="n">LL_NOTICE</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;monotonic clock: %s&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">clk_msg</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 创建服务器事件主循环状态</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">el</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">aeCreateEventLoop</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">maxclients</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">CONFIG_FDSET_INCR</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">el</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">serverLog</span><span class="p">(</span><span class="n">LL_WARNING</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Failed creating the event loop. Error message: &#39;%s&#39;&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
+<span class="w">        </span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 创建数据库</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">dbnum</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">server</span><span class="p">.</span><span class="n">cluster_enabled</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">server</span><span class="p">.</span><span class="n">config_databases_cluster</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">server</span><span class="p">.</span><span class="n">config_databases</span><span class="p">;</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">db</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">zcalloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">serverDb</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">server</span><span class="p">.</span><span class="n">dbnum</span><span class="p">);</span>
+<span class="w">    </span><span class="n">createDatabaseIfNeeded</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span><span class="w"> </span><span class="cm">/* The default database should always exist */</span>
+
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2025.12.23</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

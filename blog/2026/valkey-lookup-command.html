@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Valkey源码剖析（12）：查找命令 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Valkey源码剖析（13）：执行命令" href="valkey-exec-command.html" />
+    <link rel="prev" title="Valkey源码剖析（11）：构建命令表" href="valkey-command-table.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Valkey源码剖析（12）：查找命令</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="valkey-command-table.html" title="Previous Chapter: Valkey源码剖析（11）：构建命令表"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; Valkey源码剖析（11）：构建命令表</span>
+    </a>
+  </li>
+  <li>
+    <a href="valkey-exec-command.html" title="Next Chapter: Valkey源码剖析（13）：执行命令"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">Valkey源码剖析（13）：执行命令 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="valkey-12">
+<h1>Valkey源码剖析（12）：查找命令<a class="headerlink" href="#valkey-12" title="Link to this heading">¶</a></h1>
+<p>前面的文章介绍了Valkey服务器如何通过<code class="docutils literal notranslate"><span class="pre">populateCommandTable()</span></code>函数构建起将命令名映射至命令结构的命令表。下面来看看，在客户端向服务器发送命令请求的时候，Valkey服务器是如何根据请求查找对应命令的。</p>
+<p>当Valkey服务器接收到客户端发送的命令请求之后，它会对请求进行解析，然后将请求想要执行的命令参数以及命令参数的个数记录到客户端对应的<code class="docutils literal notranslate"><span class="pre">server.h/client</span></code>结构中：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">client</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="c1">// ...</span>
+
+<span class="w">    </span><span class="c1">// 命令参数</span>
+<span class="w">    </span><span class="n">robj</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="p">;</span><span class="w">         </span><span class="cm">/* Arguments of current command. */</span>
+<span class="w">    </span><span class="c1">// 命令参数数量</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">;</span><span class="w">            </span><span class="cm">/* Num of arguments of current command. */</span>
+
+<span class="w">    </span><span class="c1">// ...</span>
+
+<span class="p">}</span><span class="w"> </span><span class="n">client</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>举个例子，当Valkey服务器接收到客户端发送的以下命令时：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>SET<span class="w"> </span>msg<span class="w"> </span><span class="s2">&quot;hello&quot;</span>
+</pre></div>
+</div>
+<p>服务器将把该客户端对应<code class="docutils literal notranslate"><span class="pre">client</span></code>结构的<code class="docutils literal notranslate"><span class="pre">argv</span></code>属性设置为包含<code class="docutils literal notranslate"><span class="pre">&quot;SET&quot;</span></code>、<code class="docutils literal notranslate"><span class="pre">&quot;msg&quot;</span></code>、<code class="docutils literal notranslate"><span class="pre">&quot;hello&quot;</span></code>三个参数的数组，并将<code class="docutils literal notranslate"><span class="pre">argc</span></code>属性的值设置为3。</p>
+<p>之后，服务器会调用<code class="docutils literal notranslate"><span class="pre">server.c/lookupCommand()</span></code>函数，并将客户端的<code class="docutils literal notranslate"><span class="pre">argv</span></code>、<code class="docutils literal notranslate"><span class="pre">argc</span></code>属性传递给该函数以查找命令对应的命令结构，并在找到之后将其记录在<code class="docutils literal notranslate"><span class="pre">client</span></code>结构的<code class="docutils literal notranslate"><span class="pre">cmd</span></code>属性中：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">serverCommand</span><span class="w"> </span><span class="o">*</span><span class="n">lookupCommand</span><span class="p">(</span><span class="n">robj</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">lookupCommandLogic</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">commands</span><span class="p">,</span><span class="w"> </span><span class="n">argv</span><span class="p">,</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">serverCommand</span><span class="w"> </span><span class="o">*</span><span class="n">lookupCommandLogic</span><span class="p">(</span><span class="n">hashtable</span><span class="w"> </span><span class="o">*</span><span class="n">commands</span><span class="p">,</span><span class="w"> </span><span class="n">robj</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">strict</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">entry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">// 查找命令并回报结果</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">found_command</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">hashtableFind</span><span class="p">(</span><span class="n">commands</span><span class="p">,</span><span class="w"> </span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">ptr</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">entry</span><span class="p">);</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">serverCommand</span><span class="w"> </span><span class="o">*</span><span class="n">base_cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">entry</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">has_subcommands</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">found_command</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">base_cmd</span><span class="o">-&gt;</span><span class="n">subcommands_ht</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">argc</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="n">has_subcommands</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">strict</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">argc</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">        </span><span class="cm">/* Note: It is possible that base_cmd-&gt;proc==NULL (e.g. CONFIG) */</span>
+<span class="w">        </span><span class="c1">// 返回找到的命令实现函数</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">base_cmd</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* argc &gt; 1 &amp;&amp; has_subcommands */</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">strict</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">argc</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">        </span><span class="cm">/* Note: Currently we support just one level of subcommands */</span>
+<span class="w">        </span><span class="c1">// 按需进一步查找子命令</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">lookupSubcommand</span><span class="p">(</span><span class="n">base_cmd</span><span class="p">,</span><span class="w"> </span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">ptr</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>从上面展示的代码可以看到，<code class="docutils literal notranslate"><span class="pre">lookupSubcommand()</span></code>函数将调用<code class="docutils literal notranslate"><span class="pre">server.c/lookupCommandLogic()</span></code>函数，而后者会继续调用<code class="docutils literal notranslate"><span class="pre">hashtable.c/hashtableFind()</span></code>函数，并根据给定的命令名，从传入的命令表<code class="docutils literal notranslate"><span class="pre">server.commands</span></code>中查找与给定命令名对应的命令结构：</p>
+<ul class="simple">
+<li><p>如果找到了对应的命令结构，那么返回它，并在之后将其设置至客户端的<code class="docutils literal notranslate"><span class="pre">client-&gt;cmd</span></code>属性中；</p></li>
+<li><p>如果传入的命令还包含子命令，那么调用<code class="docutils literal notranslate"><span class="pre">server.c/lookupSubcommand()</span></code>函数进一步查找子命令对应的命令结构；</p></li>
+<li><p>最后，如果未能找到对应的命令结构，那么返回<code class="docutils literal notranslate"><span class="pre">NULL</span></code>。</p></li>
+</ul>
+<p>以<code class="docutils literal notranslate"><span class="pre">SET</span></code>命令为例，当服务器接收到客户端想要执行<code class="docutils literal notranslate"><span class="pre">SET</span></code>命令的请求时，它会根据<code class="docutils literal notranslate"><span class="pre">&quot;SET&quot;</span></code>字符串在命令表中查找与之对应的命令结构，然后把它设置到客户端<code class="docutils literal notranslate"><span class="pre">client</span></code>结构的<code class="docutils literal notranslate"><span class="pre">cmd</span></code>属性中：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">client</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="c1">// ...</span>
+
+<span class="w">    </span><span class="c1">// 正在执行的命令</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">serverCommand</span><span class="w"> </span><span class="o">*</span><span class="n">cmd</span><span class="p">;</span><span class="w">        </span><span class="cm">/* Current command. */</span>
+
+<span class="w">    </span><span class="c1">// ...</span>
+
+<span class="p">}</span><span class="w"> </span><span class="n">client</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>在找到对应的命令结构之后，服务器接下来就要执行被请求的命令了，具体的流程将在下一篇文章中进行介绍。</p>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2026.1.4</div>
+</div>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

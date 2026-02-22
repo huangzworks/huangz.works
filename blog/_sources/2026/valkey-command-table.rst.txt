@@ -1,0 +1,168 @@
+Valkey源码剖析（11）：构建命令表
+================================
+
+对于Valkey中的每个命令，源代码中的\ ``commands``\ 文件夹都包含一个与命令对应的JSON文件，这些文件以“命令名.json”的格式命名，包含了命令相关的所有信息：
+
+.. code:: bash
+
+   valkey/src/commands$ ls | more
+   README.md
+   acl-cat.json
+   acl-deluser.json
+   acl-dryrun.json
+   acl-genpass.json
+   acl-getuser.json
+   acl-help.json
+   acl-list.json
+   acl-load.json
+   acl-log.json
+   acl-save.json
+   acl-setuser.json
+   acl-users.json
+   acl-whoami.json
+   acl.json
+   append.json
+   asking.json
+   auth.json
+   bgrewriteaof.json
+   bgsave.json
+   bitcount.json
+   bitfield.json
+   bitfield_ro.json
+   bitop.json
+   bitpos.json
+   ...
+
+..
+
+   [!Note]
+   关于这些JSON文件的更多信息，可以查看文件夹中的\ ``README.md``\ 文件来获取。
+
+以\ ``ECHO``\ 命令为例，通过打开\ ``commands``\ 文件夹中的\ ``echo.json``\ 文件，可以看到该命令的描述（summary）、复杂度（complexity）、分组（group）、参数（arguments）、和实现函数（function）等所有信息：
+
+.. code:: json
+
+   {
+       "ECHO": {
+           "summary": "Returns the given string.",
+           "complexity": "O(1)",
+           "group": "connection",
+           "since": "1.0.0",
+           "arity": 2,
+           "function": "echoCommand",
+           "command_flags": [
+               "LOADING",
+               "STALE",
+               "FAST"
+           ],
+           "acl_categories": [
+               "CONNECTION"
+           ],
+           "reply_schema": {
+               "description": "The given string",
+               "type": "string"
+           },
+           "arguments": [
+               {
+                   "name": "message",
+                   "type": "string"
+               }
+           ]
+       }
+   }
+
+Valkey服务器在启动的时候，会根据\ ``commands``\ 文件夹中的JSON文件自动生成一个包含所有命令的列表，然后再调用\ ``server.c/populateCommandStructure()``\ 函数，根据命令列表为每个命令分别填充命令结构，并将其关联至服务器的命令表中：
+
+.. code:: c
+
+   // 命令列表
+   extern struct serverCommand serverCommandTable[];
+
+.. code:: c
+
+   void populateCommandTable(void) {
+       int j;
+       struct serverCommand *c;
+
+       // 遍历命令列表
+       for (j = 0;; j++) {
+           // 获取当前被访问的命令
+           c = serverCommandTable + j;
+
+           // 命令列表使用declared_name为NULL作为表的尽头标识，
+           // 遇到该标识就表示命令表遍历完毕，跳出循环
+           if (c->declared_name == NULL) break;
+
+           int retval1, retval2;
+
+           // 设置命令名字
+           c->fullname = sdsnew(c->declared_name);
+           c->current_name = c->fullname;
+
+           // 填充命令结构
+           if (populateCommandStructure(c) == C_ERR) continue;
+
+           // 将命令结构关联至命令表和原名命令表中
+           retval1 = hashtableAdd(server.commands, c);
+           /* Populate an additional dictionary that will be unaffected
+            * by rename-command statements in valkey.conf. */
+           retval2 = hashtableAdd(server.orig_commands, c);
+           serverAssert(retval1 && retval2);
+       }
+   }
+
+.. code:: c
+
+   int populateCommandStructure(struct serverCommand *c) {
+       /* If the command marks with CMD_SENTINEL, it exists in sentinel. */
+       // 不添加哨兵相关命令
+       if (!(c->flags & CMD_SENTINEL) && server.sentinel_mode) return C_ERR;
+
+       /* If the command marks with CMD_ONLY_SENTINEL, it only exists in sentinel. */
+       // 不添加哨兵专属命令
+       if (c->flags & CMD_ONLY_SENTINEL && !server.sentinel_mode) return C_ERR;
+
+       /* Translate the command string flags description into an actual
+        * set of flags. */
+       // 将命令的字符串标识描述转换为实际的标识集合
+       setImplicitACLCategories(c);
+
+       /* We start with an unallocated histogram and only allocate memory when a command
+        * has been issued for the first time */
+       c->latency_histogram = NULL;
+
+       /* Handle the legacy range spec and the "movablekeys" flag (must be done after populating all key specs). */
+       populateCommandLegacyRangeSpec(c);
+
+       /* Assign the ID used for ACL. */
+       // 设置ACL使用的命令ID
+       c->id = ACLGetCommandID(c->fullname);
+
+       /* Handle subcommands */
+       // 如果该命令有子命令的话，那么为这些子命令也创建命令结构，并将其设置为该命令的子命令
+       if (c->subcommands) {
+           // 遍历该命令的所有子命令
+           for (int j = 0; c->subcommands[j].declared_name; j++) {
+               // 访问当前子命令
+               struct serverCommand *sub = c->subcommands + j;
+
+               // 拼接命令名字
+               sub->fullname = catSubCommandFullname(c->declared_name, sub->declared_name);
+
+               // 创建命令结构
+               if (populateCommandStructure(sub) == C_ERR) continue;
+
+               // 关联父子命令
+               commandAddSubcommand(c, sub);
+           }
+       }
+
+       return C_OK;
+   }
+
+可以看到，\ ``populateCommandTable()``\ 函数要做的就是遍历命令列表\ ``serverCommandTable``\ ，调用\ ``populateCommandStructure()``\ 函数填充每个命令的命令结构，然后再将命令结构关联至服务器的两个命令表中。
+
+这样一来，命令名与命令结构之间的映射就构建起来了，之后服务器就可以在有需要的时候根据命令名查找对应的命令结构，进而执行所需的命令。接下来的文章就会对这个过程进行介绍。
+
+| 黄健宏
+| 2026.1.4

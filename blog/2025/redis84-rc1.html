@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Redis 8.4 RC1 新增字符串命令介绍（DIGEST、DELEX、MSETEX） &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PostgreSQL人物周刊：Peter Zaitsev" href="peter-zaitsev.html" />
+    <link rel="prev" title="答网友问：中文PostgreSQL书只选一本的话，推荐哪本？" href="cn-pg-book-recommend.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Redis 8.4 RC1 新增字符串命令介绍（DIGEST、DELEX、MSETEX）</a><ul>
+<li><a class="reference internal" href="#digest">DIGEST</a></li>
+<li><a class="reference internal" href="#delex">DELEX</a></li>
+<li><a class="reference internal" href="#set">SET命令新选项</a></li>
+<li><a class="reference internal" href="#msetex">MSETEX</a></li>
+<li><a class="reference internal" href="#id1">结语</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="cn-pg-book-recommend.html" title="Previous Chapter: 答网友问：中文PostgreSQL书只选一本的话，推荐哪本？"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; 答网友问：中文Postgr...</span>
+    </a>
+  </li>
+  <li>
+    <a href="peter-zaitsev.html" title="Next Chapter: PostgreSQL人物周刊：Peter Zaitsev"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">PostgreSQL人物周... &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="redis-8-4-rc1-digestdelexmsetex">
+<h1>Redis 8.4 RC1 新增字符串命令介绍（DIGEST、DELEX、MSETEX）<a class="headerlink" href="#redis-8-4-rc1-digestdelexmsetex" title="Link to this heading">¶</a></h1>
+<p>在最近发布的<a class="reference external" href="https://github.com/redis/redis/releases/tag/8.4-rc1">Redis 8.4
+RC1版本</a>中，新增了<code class="docutils literal notranslate"><span class="pre">DIGEST</span></code>、<code class="docutils literal notranslate"><span class="pre">DELEX</span></code>、<code class="docutils literal notranslate"><span class="pre">MSETEX</span></code>三个命令，并为<code class="docutils literal notranslate"><span class="pre">SET</span></code>命令添加了<code class="docutils literal notranslate"><span class="pre">IFEQ</span></code>、<code class="docutils literal notranslate"><span class="pre">IFNE</span></code>等多个选项，本文将对此进行介绍。</p>
+<section id="digest">
+<h2>DIGEST<a class="headerlink" href="#digest" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">DIGEST</span></code>命令可以获取给定字符串键值的哈希值，并以十六进制字符串的形式返回它：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DIGEST</span> <span class="n">key</span>
+</pre></div>
+</div>
+<p>比如以下代码就展示了如何使用<code class="docutils literal notranslate"><span class="pre">DIGEST</span></code>命令获取<code class="docutils literal notranslate"><span class="pre">msg</span></code>键的值的哈希值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">msg</span> <span class="s2">&quot;hello&quot;</span>
+<span class="n">OK</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">DIGEST</span> <span class="n">msg</span>
+<span class="s2">&quot;9555e8555c62dcfd&quot;</span>
+</pre></div>
+</div>
+<p>命令计算哈希值时使用的是<a class="reference external" href="https://xxhash.com/">xxHash哈希算法</a>。</p>
+</section>
+<section id="delex">
+<h2>DELEX<a class="headerlink" href="#delex" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">DELEX</span></code>命令会根据给定的条件以及给定键的值，决定是否删除给定键：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DELEX</span> <span class="n">key</span> <span class="p">[</span><span class="n">IFEQ</span> <span class="n">match</span><span class="o">-</span><span class="n">value</span> <span class="o">|</span> <span class="n">IFNE</span> <span class="n">match</span><span class="o">-</span><span class="n">value</span> <span class="o">|</span> <span class="n">IFDEQ</span> <span class="n">match</span><span class="o">-</span><span class="n">digest</span> <span class="o">|</span> <span class="n">IFDNE</span> <span class="n">match</span><span class="o">-</span><span class="n">digest</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>以下是四个可选条件以及它们的作用：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">IFEQ</span> <span class="pre">match-value</span></code>，如果给定值与键值相等，那么删除给定键</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFNE</span> <span class="pre">match-value</span></code>，如果给定值与键值不相等，那么删除给定键</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFDEQ</span> <span class="pre">match-digest</span></code>，如果给定哈希值与键值的哈希值相等，那么删除给定键</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFDNE</span> <span class="pre">match-digest</span></code>，如果给定哈希值与键值的哈希值不相等，那么删除给定键</p></li>
+</ul>
+<p>在以下示例中，由于键值与给定值并不相等，所以第一个<code class="docutils literal notranslate"><span class="pre">DELEX</span></code>命令未能删除给定键，而第二个<code class="docutils literal notranslate"><span class="pre">DELEX</span></code>命令则成功删除了：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">msg</span> <span class="s2">&quot;hello&quot;</span>
+<span class="n">OK</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">DELEX</span> <span class="n">msg</span> <span class="n">IFEQ</span> <span class="s2">&quot;good&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">DELEX</span> <span class="n">msg</span> <span class="n">IFEQ</span> <span class="s2">&quot;hello&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>以下示例也是类似——第一次<code class="docutils literal notranslate"><span class="pre">DELEX</span></code>命令由于给定哈希值不相等而未删除给定键，而第二个命令则成功删除了：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">msg</span> <span class="s2">&quot;hello&quot;</span>
+<span class="n">OK</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">DIGEST</span> <span class="n">msg</span>
+<span class="s2">&quot;9555e8555c62dcfd&quot;</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">DELEX</span> <span class="n">msg</span> <span class="n">IFDEQ</span> <span class="s2">&quot;ffffffffffffffff&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">DELEX</span> <span class="n">msg</span> <span class="n">IFDEQ</span> <span class="s2">&quot;9555e8555c62dcfd&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+</pre></div>
+</div>
+</section>
+<section id="set">
+<h2>SET命令新选项<a class="headerlink" href="#set" title="Link to this heading">¶</a></h2>
+<p>在添加<code class="docutils literal notranslate"><span class="pre">DELEX</span></code>命令之后，<code class="docutils literal notranslate"><span class="pre">SET</span></code>命令也新增了与该命令类似的<code class="docutils literal notranslate"><span class="pre">IFEQ</span></code>、<code class="docutils literal notranslate"><span class="pre">IFNE</span></code>等选项：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SET</span> <span class="n">key</span> <span class="n">value</span> <span class="p">[</span><span class="n">NX</span> <span class="o">|</span> <span class="n">XX</span> <span class="o">|</span> <span class="n">IFEQ</span> <span class="n">match</span><span class="o">-</span><span class="n">value</span> <span class="o">|</span> <span class="n">IFNE</span> <span class="n">match</span><span class="o">-</span><span class="n">value</span> <span class="o">|</span> <span class="n">IFDEQ</span> <span class="n">match</span><span class="o">-</span><span class="n">digest</span> <span class="o">|</span> <span class="n">IFDNE</span> <span class="n">match</span><span class="o">-</span><span class="n">digest</span><span class="p">]</span>
+              <span class="p">[</span><span class="n">GET</span><span class="p">]</span>
+              <span class="p">[</span><span class="n">EX</span> <span class="n">seconds</span> <span class="o">|</span> <span class="n">PX</span> <span class="n">milliseconds</span> <span class="o">|</span> <span class="n">EXAT</span> <span class="n">unix</span><span class="o">-</span><span class="n">time</span><span class="o">-</span><span class="n">seconds</span> <span class="o">|</span> <span class="n">PXAT</span> <span class="n">unix</span><span class="o">-</span><span class="n">time</span><span class="o">-</span><span class="n">milliseconds</span> <span class="o">|</span> <span class="n">KEEPTTL</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>以下是四个新增选项的作用：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">IFEQ</span> <span class="pre">match-value</span></code>，只在键值与给定值相等的情况下执行设置</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFNE</span> <span class="pre">match-value</span></code>，只在键值与给定值不相等的情况下执行设置</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFDEQ</span> <span class="pre">match-digest</span></code>，只在键值的哈希值与给定哈希值相等的情况下执行设置</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFDNE</span> <span class="pre">match-digest</span></code>，只在键值的哈希值与给定哈希值不相等的情况下执行设置</p></li>
+</ul>
+<p>在以下示例中，由于第一次给定的<code class="docutils literal notranslate"><span class="pre">IFEQ</span></code>条件不满足，所以设置未执行，而第二次满足条件的设置则成功执行了：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">msg</span> <span class="s2">&quot;hello&quot;</span>
+<span class="n">OK</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">msg</span> <span class="s2">&quot;hello redis!&quot;</span> <span class="n">IFEQ</span> <span class="s2">&quot;hi&quot;</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">msg</span> <span class="s2">&quot;hello redis!&quot;</span> <span class="n">IFEQ</span> <span class="s2">&quot;hello&quot;</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+</section>
+<section id="msetex">
+<h2>MSETEX<a class="headerlink" href="#msetex" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">MSETEX</span></code>命令可以同时为多个字符串键设置同一个过期时间，它的出现应该是受到了<code class="docutils literal notranslate"><span class="pre">HSETEX</span></code>等命令的影响：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>MSETEX numkeys key value [key value …]
+               [XX | NX]
+               [EX seconds | PX milliseconds | EXAT unix-time-seconds | PXAT unix-time-milliseconds | KEEPTTL]
+</pre></div>
+</div>
+<p>比如以下示例就使用<code class="docutils literal notranslate"><span class="pre">MSETEX</span></code>命令同时为<code class="docutils literal notranslate"><span class="pre">k1</span></code>、<code class="docutils literal notranslate"><span class="pre">k2</span></code>、<code class="docutils literal notranslate"><span class="pre">k3</span></code>三个字符串键设置了值，并将它们的过期时间都设置为3600秒：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">MSETEX</span> <span class="mi">3</span> <span class="n">k1</span> <span class="s2">&quot;v1&quot;</span> <span class="n">k2</span> <span class="s2">&quot;v2&quot;</span> <span class="n">k3</span> <span class="s2">&quot;v3&quot;</span> <span class="n">EX</span> <span class="mi">3600</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>以下两个命令确认了键值设置成功和过期时间设置成功：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">MGET</span> <span class="n">k1</span> <span class="n">k2</span> <span class="n">k3</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;v1&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;v2&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;v3&quot;</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">MULTI</span>
+<span class="n">OK</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="p">(</span><span class="n">TX</span><span class="p">)</span><span class="o">&gt;</span> <span class="n">TTL</span> <span class="n">k1</span>
+<span class="n">QUEUED</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="p">(</span><span class="n">TX</span><span class="p">)</span><span class="o">&gt;</span> <span class="n">TTL</span> <span class="n">k2</span>
+<span class="n">QUEUED</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="p">(</span><span class="n">TX</span><span class="p">)</span><span class="o">&gt;</span> <span class="n">TTL</span> <span class="n">k3</span>
+<span class="n">QUEUED</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="p">(</span><span class="n">TX</span><span class="p">)</span><span class="o">&gt;</span> <span class="n">EXEC</span>
+<span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3564</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3564</span>
+<span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3564</span>
+</pre></div>
+</div>
+</section>
+<section id="id1">
+<h2>结语<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>好的，关于Redis 8.4 RC1
+新增字符串命令的相关介绍到这里就结束，感谢您的阅读！</p>
+<p>对Redis感兴趣的朋友可以多关注本博客或者<a class="reference external" href="https://huangz.works/">本人的社交媒体</a>以获取更多相关信息。</p>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2025.11.11</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

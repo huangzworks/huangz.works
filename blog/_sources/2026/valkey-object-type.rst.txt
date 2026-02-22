@@ -1,0 +1,37 @@
+Valkey源码剖析（14）：对象类型
+==============================
+
+Valkey服务器使用对象表示重要的数据，比如数据库中的键和值，还有返回给客户端的回复等。
+
+Valkey目前共有7种对象，都定义在\ ``server.h``\ 中：
+
+.. code:: c
+
+   #define OBJ_STRING 0 /* String object. */
+   #define OBJ_LIST 1   /* List object. */
+   #define OBJ_SET 2    /* Set object. */
+   #define OBJ_ZSET 3   /* Sorted set object. */
+   #define OBJ_HASH 4   /* Hash object. */
+   #define OBJ_MODULE 5   /* Module object. */
+   #define OBJ_STREAM 6   /* Stream object. */
+
+Valkey数据库中的每个键值对通常都由一组对象组成，其中键总是字符串对象，而值则可以是任意类型的对象，它决定了键在数据库中的类型：
+
+-  字符串键的键和值都是字符串对象；
+-  列表键的键是字符串对象，而值则是列表对象；
+-  哈希键的键是字符串对象，而值则是哈希对象；
+
+诸如此类。
+
+   **并非所有键值对都由一组对象组成**
+
+   在最近版本的Valkey中，在条件允许的情况下，服务器会将键和值保存在同一个对象里面以节约内存。
+
+..
+
+   **并非所有类型的键都拥有与之对应的对象类型**
+
+   因为Valkey中某些类型的键会复用已有的对象类型，所以这些键的底层对象跟它们顶层表示的键类型并不一致：比如位图键的值就是字符串对象，而地理位置键的值则是有序集合。
+
+| 黄健宏
+| 2026.1.12

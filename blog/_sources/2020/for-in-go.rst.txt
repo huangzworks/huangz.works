@@ -1,0 +1,77 @@
+Go 语言中的 ``for`` 关键字
+===============================
+
+.. note::
+
+    本文摘录自《Go语言趣学指南》第 3 章，
+    请访问 `gpwgcn.com <http://gpwgcn.com>`_  以获取更多相关信息。
+
+    .. image:: image/gpwgcn.jpg
+       :scale: 80%
+
+
+当你需要重复执行同一段代码的时候，比起一遍又一遍键入相同的代码，更好的办法是使用
+``for`` 关键字。 比如代码清单 3-8 就展示了如何重复执行同一段代码直到
+``count`` 变量的值等于 ``0`` 。
+
+.. image:: image/rocket.jpg
+   :align: right
+
+--------------
+
+代码清单 3-8 倒数循环： ``countdown.go``
+
+.. code-block:: go
+
+    package main
+
+    import (
+        "fmt"
+        "time"
+    )
+
+    func main() {
+        var count = 10              // 声明并初始化
+
+        for count > 0 {             // 为循环设置条件
+            fmt.Println(count)
+            time.Sleep(time.Second)
+            count--                 // 每次循环之后将计数器的值减一，以免产生无限循环
+        }
+        fmt.Println("Liftoff!")
+    }
+
+--------------
+
+在每次迭代开始之前，表达式 ``count > 0`` 都会被求值并产生一个布尔值：
+当该值为 ``false`` 也即是 ``count`` 变量等于 ``0``
+的时候，循环就会停止；
+反之，如果布尔值为真，那么程序将继续执行循环的体（body），也即是被 ``{``
+和 ``}`` 包裹的那部分代码。
+
+此外，我们还可以通过不为 ``for``
+语句设置任何条件来产生\ *无限*\ 循环，然后在有需要的时候通过在循环体内使用
+``break`` 语句来跳出循环。 比如接下来的代码清单 3-9 就会持续地进行 360°
+旋转，直到随机触发停止条件为止。
+
+--------------
+
+代码清单 3-9 超越无限： ``infinity.go``
+
+.. code-block:: go
+
+    var degrees = 0
+
+    for {
+        fmt.Println(degrees)
+
+        degrees++
+        if degrees >= 360 {
+            degrees = 0
+            if rand.Intn(2) == 0 {
+                break
+            }
+        }
+    }
+
+

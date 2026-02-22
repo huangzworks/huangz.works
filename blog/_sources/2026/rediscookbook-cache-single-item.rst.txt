@@ -1,0 +1,37 @@
+《Redis应用实例》书摘（1）：缓存单项数据
+=============================================
+
+因为Redis把数据储存在内存里面，并且提供了方便的键值对索引方式以及多样化的数据类型，所以使用Redis作为缓存是Redis最常见的用法之一。
+
+代码清单 CODE_BASIC_CACHE 展示了基于这一原理实现的缓存程序。
+
+--------------
+
+代码清单 CODE_BASIC_CACHE 基本的缓存程序 ``cache.py``
+
+.. literalinclude:: code/cache.py
+
+--------------
+
+作为例子，代码清单 CODE_USAGE_BASIC_CACHE 展示了这个缓存程序的基本用法。
+
+--------------
+
+代码清单 CODE_USAGE_BASIC_CACHE 缓存程序的基本用例 ``cache_usage.py``
+
+.. literalinclude:: code/cache_usage.py
+
+--------------
+
+根据这段程序的执行结果可知，程序只会在第一次请求时访问数据库并根据模板生成HTML页面，而后续一分钟内发生的其他请求都是通过访问Redis保存的缓存来完成的：
+
+::
+
+        $ python3 cache_usage.py
+        Fetch post from database&template.
+        Fetch post from cache.
+        Fetch post from cache.
+        Fetch post from cache.
+        Fetch post from cache.
+
+.. include:: rediscookbook-promote.rst

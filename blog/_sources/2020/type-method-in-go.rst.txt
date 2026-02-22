@@ -1,0 +1,114 @@
+在 Go 语言中通过方法为类型添加行为
+===================================
+
+    他的胡言乱语竟有方法自圆其说。 —— 莎士比亚，《哈姆雷特》
+
+.. image:: image/sharks.png
+   :align: right
+   :scale: 50%
+
+数十年以来，
+传统的面向对象语言总是说方法属于类，
+但 Go 不是这样做的:
+它提供了方法，
+但是并没有提供类和对象。
+乍一看，
+这种做法似乎有些奇怪，
+甚至可以说有点儿疯狂， 
+但实际上 Go 的方法比以往其他语言的方法都要灵活。
+
+使用 ``kelvinToCelsius`` 、 ``celsiusToFahrenheit`` 、 ``fahrenheitToCelsius`` 、  ``celsiusToKelvin`` 这样的函数虽然也能够完成温度转换工作，
+但是通过声明相应的方法并把它们放置到属于自己的地方，
+能够让温度转换代码变得更加简洁明了。
+
+我们可以将方法与同一个包中声明的任何类型相关联，
+但是不能为 ``int`` 和 ``float64`` 之类的预声明类型关联方法。
+其中，
+声明类型的方法在前面已经介绍过了:
+
+.. code:: go
+
+    type kelvin float64
+
+``kelvin`` 类型跟它的底层类型 ``float64`` 具有相同的行为，
+我们可以像处理浮点数那样，
+对 ``kelvin`` 类型的值执行加法运算、乘法运算以及其他操作。
+此外，
+声明一个将 ``kelvin`` 转换为 ``celsius`` 的方法就跟声明一个具有同等作用的函数一样简单——它们都以关键字 ``func`` 开头，
+并且函数体跟方法体完全一样:
+
+.. code:: go
+
+    func kelvinToCelsius(k kelvin) celsius {    // kelvinToCelsius 函数
+        return celsius(k - 273.15)
+    }
+    func (k kelvin) celsius() celsius {    // kelvin 类型的 celsius 方法
+        return celsius(k - 273.15) 
+    }
+
+如图 13-1 所示，
+``celsius`` 方法虽然没有接受任何形参，
+但它的名字前面却有一个类似形参的接收者。
+每个方法和函数都可以接受多个形参，
+但一个方法必须并且只能有一个接收者。
+在 ``celsius`` 方法体中，
+接收者的行为就跟其他形参一样。
+
+----
+
+.. figure:: image/13-1.png
+
+   图 13-1 方法声明
+
+----
+
+除声明语法有些许不同之外，
+调用方法的语法与调用函数的语法也不一样:
+
+.. code:: go
+
+    var k kelvin = 294.0 
+    var c celsius
+
+    c = kelvinToCelsius(k)     // 调用 kelvinToCelsius 函数 
+    c = k.celsius()    // 调用celsius方法
+
+跟调用其他包中的函数一样，
+调用方法也需要用到点记号。
+以上面的代码为例，
+在调用方法的时候，
+程序首先需要给出正确类型的变量，
+接着是一个点号，
+最后才是被调用方法的名字。
+
+既然温度转换操作现在已经是 ``kelvin`` 类型的方法，
+那么继续使用 ``kelvinToCelsius`` 这样的名字就没有必要了。
+在同一个包里面，
+如果一个名字已经被函数占用了，
+那么这个包就无法再定义同名的类型，
+因此在使用函数的情况下，
+我们将无法使用 ``celsius`` 函数返回 ``celsius`` 类型的值。
+然而，
+如果我们使用的是方法，
+那么每种温度类型都可以具有自己的 ``celsius`` 方法，
+就像以下展示的 ``fahrenheit`` 类型一样:
+
+.. code:: go
+
+    type fahrenheit float64
+    // celsius方法会将华氏度转换为摄氏度
+    func (f fahrenheit) celsius() celsius {
+    return celsius((f - 32.0) * 5.0 / 9.0) }
+
+通过让每种温度类型都具有相应的 ``celsius`` 方法以转换为摄氏温度，
+我们可以创造出一种完美的对称。
+
+.. note::
+
+    本文摘录自《Go语言趣学指南》第 13 章，
+    请访问 `gpwgcn.com <http://gpwgcn.com>`_  以获取更多相关信息。
+
+    .. image:: image/gpwgcn.jpg
+       :scale: 80%
+
+

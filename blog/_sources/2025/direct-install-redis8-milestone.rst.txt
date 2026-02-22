@@ -1,0 +1,47 @@
+在Linux和macOS上直接安装Redis 8.0 Milestone版本
+===============================================
+
+自从Redis推出其8.0
+Milestone版本（简称“M”版本）之后，在\ `M1 <https://github.com/redis/redis/releases/tag/8.0-m01>`__\ 和\ `M2 <https://github.com/redis/redis/releases/tag/8.0-m02>`__\ 版本上一直只提供Docker容器安装，这对于我这种不常使用容器的人来说并不是特别方便。
+
+但是从\ `M3版本 <https://github.com/redis/redis/releases/tag/8.0-m03>`__\ 开始，Redis也提供了\ `Snap <https://snapcraft.io/>`__\ 和\ `Homebrew <https://brew.sh/>`__\ 两种安装方式，允许用户不通过容器，直接在Linux和macOS上安装Redis。
+
+比如对于预装了Snap的Ubuntu系统来说，只需要执行以下命令即可在本地安装最新的Redis
+8.0 Milestone版本：
+
+::
+
+   $ sudo snap install redis --edge
+
+与此类似，对于安装了Homebrew的macOS系统来说，只需要执行以下命令即可在本地安装最新的Redis
+8.0 Milestone版本：
+
+::
+
+   $ brew tap redis/redis
+   $ brew install --cask redis-rc
+
+在安装过程执行完毕之后，通过查看Redis服务器的版本号可以确认其显示的正是Redis
+8.0的开发版本\ ``7.9.X``\ ：
+
+::
+
+   $ redis-cli
+   127.0.0.1:6379> INFO server
+   # Server
+   redis_version:7.9.226
+   ...
+
+并且在Redis 8.0中新增的\ ``JSON``\ 数据结构也已可用：
+
+::
+
+   127.0.0.1:6379> JSON.SET jsonmsg $ '{"ctx": "Hello, Redis!"}'
+   OK
+   127.0.0.1:6379> JSON.GET jsonmsg
+   "{\"ctx\":\"Hello, Redis!\"}"
+
+这说明最新的Redis 8.0 Milestone版本已经安装到我们的系统上了！
+
+| 黄健宏
+| 2025.2.5

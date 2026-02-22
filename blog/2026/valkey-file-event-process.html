@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Valkey源码剖析（7）：文件事件处理流程 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Valkey源码剖析（8）：时间事件处理流程" href="valkey-time-event-process.html" />
+    <link rel="prev" title="Valkey源码剖析（6）：时间事件的表示" href="valkey-time-event-struct.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Valkey源码剖析（7）：文件事件处理流程</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="valkey-time-event-struct.html" title="Previous Chapter: Valkey源码剖析（6）：时间事件的表示"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; Valkey源码剖析（6）：时间事件的表示</span>
+    </a>
+  </li>
+  <li>
+    <a href="valkey-time-event-process.html" title="Next Chapter: Valkey源码剖析（8）：时间事件处理流程"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">Valkey源码剖析（8）... &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="valkey-7">
+<h1>Valkey源码剖析（7）：文件事件处理流程<a class="headerlink" href="#valkey-7" title="Link to this heading">¶</a></h1>
+<p>在介绍完文件事件和时间事件的表示之后，接下来该说说处理这两种事件的方式了。</p>
+<p>前面说过，Valkey服务器在启动时会调用<code class="docutils literal notranslate"><span class="pre">ae.c/aeMain()</span></code>函数以启动事件主循环，而该循环所做的事情就是不断地调用<code class="docutils literal notranslate"><span class="pre">ae.c/aeProcessEvents()</span></code>函数以等待并处理就绪的事件（包括时间事件和文件事件）：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">aeProcessEvents</span><span class="p">(</span><span class="n">aeEventLoop</span><span class="w"> </span><span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">flags</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>在进入休眠并等待文件事件之前，<code class="docutils literal notranslate"><span class="pre">aeProcessEvents()</span></code>函数首先要做的是执行休眠前置函数：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">beforesleep</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nb">NULL</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">(</span><span class="n">flags</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">AE_CALL_BEFORE_SLEEP</span><span class="p">))</span><span class="w"> </span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">beforesleep</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>接着<code class="docutils literal notranslate"><span class="pre">aeProcessEvents()</span></code>函数需要根据当前所处的事件模式以及最近将要就绪的时间事件来决定休眠时长：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="c1">// 计算最大休眠时长，如果设置了AE_DONT_WAIT标识就设置为0（不等待）</span>
+<span class="k">if</span><span class="w"> </span><span class="p">((</span><span class="n">flags</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">AE_DONT_WAIT</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="p">(</span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">flags</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">AE_DONT_WAIT</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">tv</span><span class="p">.</span><span class="n">tv_sec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tv</span><span class="p">.</span><span class="n">tv_usec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">tvp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">tv</span><span class="p">;</span>
+<span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">flags</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">AE_TIME_EVENTS</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 根据最近将要就绪的时间事件来决定休眠时长</span>
+<span class="w">    </span><span class="n">usUntilTimer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">usUntilEarliestTimer</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">usUntilTimer</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">tv</span><span class="p">.</span><span class="n">tv_sec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">usUntilTimer</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">1000000</span><span class="p">;</span>
+<span class="w">        </span><span class="n">tv</span><span class="p">.</span><span class="n">tv_usec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">usUntilTimer</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">1000000</span><span class="p">;</span>
+<span class="w">        </span><span class="n">tvp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">tv</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>在计算出最大休眠时长之后，<code class="docutils literal notranslate"><span class="pre">aeProcessEvents()</span></code>函数就会调用<code class="docutils literal notranslate"><span class="pre">aeApiPoll()</span></code>函数，在给定的休眠时长内等待可能出现的文件事件：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">numevents</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">aeApiPoll</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">,</span><span class="w"> </span><span class="n">tvp</span><span class="p">);</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">aeApiPoll()</span></code>函数会返回文件事件已就绪的套接字数量，并将已就绪文件事件的相关信息填充至<code class="docutils literal notranslate"><span class="pre">eventLoop-&gt;fired</span></code>数组中。</p>
+<p>在休眠完成之后和处理已就绪文件事件之前，<code class="docutils literal notranslate"><span class="pre">aeProcessEvents()</span></code>函数还需要调用休眠后置函数：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">aftersleep</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nb">NULL</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">flags</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">AE_CALL_AFTER_SLEEP</span><span class="p">)</span><span class="w"> </span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">aftersleep</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">,</span><span class="w"> </span><span class="n">numevents</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>在此之后，<code class="docutils literal notranslate"><span class="pre">aeProcessEvents()</span></code>函数就可以开始处理已就绪的文件事件了：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="c1">// 遍历并处理所有已就绪事件的文件描述符</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">numevents</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 从已就绪结构中获取发生事件的文件描述符</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">fd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">fired</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">fd</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">// 获取文件描述符对应的文件事件结构</span>
+<span class="w">    </span><span class="n">aeFileEvent</span><span class="w"> </span><span class="o">*</span><span class="n">fe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">events</span><span class="p">[</span><span class="n">fd</span><span class="p">];</span>
+<span class="w">    </span><span class="c1">// 获取已就绪的事件类型</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">mask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">fired</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">mask</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">fired</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="cm">/* Number of events fired for current fd. */</span>
+
+<span class="w">    </span><span class="c1">// 在默认情况下先处理读事件，后处理写事件</span>
+<span class="w">    </span><span class="c1">// 但如果设置了AE_BARRIER那么反过来，先处理写，后处理读</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">invert</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">mask</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">AE_BARRIER</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">invert</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">mask</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">mask</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">AE_READABLE</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 调用读事件处理函数，处理读事件</span>
+<span class="w">        </span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">rfileProc</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">,</span><span class="w"> </span><span class="n">fd</span><span class="p">,</span><span class="w"> </span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">clientData</span><span class="p">,</span><span class="w"> </span><span class="n">mask</span><span class="p">);</span>
+<span class="w">        </span><span class="n">fired</span><span class="o">++</span><span class="p">;</span>
+<span class="w">        </span><span class="n">fe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">events</span><span class="p">[</span><span class="n">fd</span><span class="p">];</span><span class="w"> </span><span class="cm">/* Refresh in case of resize. */</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* Fire the writable event. */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">mask</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">mask</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">AE_WRITABLE</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">fired</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">wfileProc</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">rfileProc</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="c1">// 调用写事件处理函数，处理写事件</span>
+<span class="w">            </span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">wfileProc</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">,</span><span class="w"> </span><span class="n">fd</span><span class="p">,</span><span class="w"> </span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">clientData</span><span class="p">,</span><span class="w"> </span><span class="n">mask</span><span class="p">);</span>
+<span class="w">            </span><span class="n">fired</span><span class="o">++</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* If we have to invert the call, fire the readable event now</span>
+<span class="cm">     * after the writable one. */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">invert</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">fe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">eventLoop</span><span class="o">-&gt;</span><span class="n">events</span><span class="p">[</span><span class="n">fd</span><span class="p">];</span><span class="w"> </span><span class="cm">/* Refresh in case of resize. */</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">((</span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">mask</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">mask</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">AE_READABLE</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">fired</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">wfileProc</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">rfileProc</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="c1">// 处理读事件（在处理写事件之后）</span>
+<span class="w">            </span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">rfileProc</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">,</span><span class="w"> </span><span class="n">fd</span><span class="p">,</span><span class="w"> </span><span class="n">fe</span><span class="o">-&gt;</span><span class="n">clientData</span><span class="p">,</span><span class="w"> </span><span class="n">mask</span><span class="p">);</span>
+<span class="w">            </span><span class="n">fired</span><span class="o">++</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 记录已处理事件数量</span>
+<span class="w">    </span><span class="n">processed</span><span class="o">++</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>简单来说，这段代码所做的就是遍历<code class="docutils literal notranslate"><span class="pre">eventLoop-&gt;fired[j]</span></code>，获取每个文件事件已就绪的套接字，然后按需调用相应的读或写回调函数以处理已就绪的事情。</p>
+<p>在默认情况下，<code class="docutils literal notranslate"><span class="pre">aeProcessEvents()</span></code>函数总是先处理读事件，然后再处理写事件。但如果已就绪事件打开了<code class="docutils literal notranslate"><span class="pre">AE_BARRIER</span></code>掩码，那么就会反其道而行之。</p>
+<p>再然后<code class="docutils literal notranslate"><span class="pre">aeProcessEvents()</span></code>函数会调用<code class="docutils literal notranslate"><span class="pre">ae.c/processTimeEvents()</span></code>函数以处理时间事件，最后再将本次迭代处理的事件总数<code class="docutils literal notranslate"><span class="pre">processed</span></code>返回给调用者：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">aeProcessEvents</span><span class="p">(</span><span class="n">aeEventLoop</span><span class="w"> </span><span class="o">*</span><span class="n">eventLoop</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">flags</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// ...</span>
+
+<span class="w">    </span><span class="cm">/* Check time events */</span>
+<span class="w">    </span><span class="c1">// 处理时间事件并记录已处理事件数量</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">flags</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">AE_TIME_EVENTS</span><span class="p">)</span><span class="w"> </span><span class="n">processed</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">processTimeEvents</span><span class="p">(</span><span class="n">eventLoop</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 返回本次已处理的事件数量</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">processed</span><span class="p">;</span><span class="w"> </span><span class="cm">/* return the number of processed file/time events */</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>这就是Valkey在一次事件主循环中处理已就绪事件的流程。处理时间事件的<code class="docutils literal notranslate"><span class="pre">processTimeEvents()</span></code>函数的运行逻辑将在下一篇文章中介绍。</p>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2025.12.28</div>
+</div>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

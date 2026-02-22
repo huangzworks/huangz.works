@@ -1,0 +1,54 @@
+《Redis应用实例》书摘（13）：速率限制器
+===================================================
+
+速率限制是计算机系统常用的一种限制手段，它可以用于控制系统处理请求或是执行操作的频率，从而达到保护系统自身、数据及用户安全等多个方面的目的。
+
+代码清单 CODE_RATE_LIMITER 展示了基于字符串实现的速率限制程序。
+
+----
+
+代码清单 CODE_RATE_LIMITER 速率限制器 ``rate_limiter.py``
+
+.. literalinclude:: code/rate_limiter.py
+
+----
+
+为了展示这个速率限制器的使用方法，以下代码创建了一个限制用户在24小时内最多只能尝试登录5次的速率限制器：
+
+::
+
+        >>> from redis import Redis
+        >>> from rate_limiter import RateLimiter
+        >>> client = Redis(decode_responses=True)
+        >>> limiter = RateLimiter(client, "login", 86400, 5)
+
+之后，程序可以使用以下代码来模拟Peter执行了三次登录操作，而这些操作都会被允许：
+
+::
+
+        >>> for i in range(3):
+        ...   limiter.is_permitted("Peter")
+        ...
+        True
+        True
+        True
+
+而\ ``remaining()``\ 方法则显示Peter至少还能够再尝试登录两次：
+
+::
+
+        >>> limiter.remaining("Peter")
+        2
+
+再次尝试登录三次之后，前两次将会成功，而最后一次也即是第6次则会失败：
+
+::
+
+        >>> for i in range(3):
+        ...   limiter.is_permitted("Peter")
+        ...
+        True
+        True
+        False
+
+.. include:: rediscookbook-promote.rst

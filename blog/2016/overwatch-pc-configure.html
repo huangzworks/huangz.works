@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>守望先锋主机配置分享 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Redis 学习路线" href="how-to-learn-redis.html" />
+    <link rel="prev" title="翻译笔记之十：不要强求一致" href="notes-about-translation-10.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">守望先锋主机配置分享</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="notes-about-translation-10.html" title="Previous Chapter: 翻译笔记之十：不要强求一致"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; 翻译笔记之十：不要强求一致</span>
+    </a>
+  </li>
+  <li>
+    <a href="how-to-learn-redis.html" title="Next Chapter: Redis 学习路线"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">Redis 学习路线 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="id1">
+<h1>守望先锋主机配置分享<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>最近组了一台电脑主机来玩守望先锋，
+花了 3000 块左右，
+在游戏里面能用高画质稳定地跑在 90 幁上下，
+整体的表现非常流畅，
+比我那台只有核显的 MacBook Pro 好多了（低画质也只能跑 15 幁，卡得不要不要的，哭）。</p>
+<p>因为想到可能有其他玩家也在考虑怎样配主机，
+所以在这里分享一下我的配置，
+供各位参考。</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>硬件</p></th>
+<th class="head"><p>主要特点和选择理由</p></th>
+<th class="head"><p>在守望先锋中的实际效果</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="http://item.jd.com/2011989.html">酷睿双核 i3-6100</a></p></td>
+<td><p>Skylake 平台，2 核 4 线程，主频 3.7 GHz ，
+3 MB 三级缓存，支持 DDR4-2133 内存。</p></td>
+<td><p>CPU 占用率在载入地图时会有一两秒钟达到 100% ，
+其他时候都是稳定在 70% 左右。</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="http://item.jd.com/1853383.html">技嘉 B150M-D3H 主板</a></p></td>
+<td><p>M-ATX 小板，LGA 1151 接口，
+最大支持 64 GB 内存，支持 DDR4-2133 内存，
+带有 M2 接口和 6 个 SATA 3.0 接口。
+一直都买技嘉的主板，对质量很放心。</p></td>
+<td><p>（无）</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="http://item.jd.com/1212631.html">华硕猛禽 STRIX-GTX750TI-OC-2G</a></p></td>
+<td><p>最大核心频率 1202MHz ，2 GB DDR5 显存，
+DVI、HDMI、DP 接口各一个。
+在众多 GTX 750 Ti 显卡中，
+这张的最大核心频率是最高的，
+并且华硕的品质让人放心，
+所以就选它了。</p></td>
+<td><p>低画质稳定跑在 100 幁左右，
+高画质稳定跑在 90 幁左右，
+超高画质没有仔细测试，
+但能够明显地感受到画面有延迟存在，
+想要使用这张显卡流畅地运行游戏的话，
+高画质应该是一个不错的选项。
+另外，请记得在游戏的选项页面里面，
+把“帧率限制”这个选项关掉，对幁数提升有很大的帮助。</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="http://item.jd.com/1358803.html">金士顿 DDR4 2133 8GB 台式机内存</a></p></td>
+<td><p>金士顿内存，稳定的保证!</p></td>
+<td><p>我安装的系统是 Windows 10 ，
+运行守望先锋之后整个系统还有大约 3 GB
+的空闲内存可用。</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="http://item.jd.com/2010277.html">三星 750 EVO 120G SATA3 固态硬盘</a></p></td>
+<td><p>在同价位的主流固态硬盘厂商中，
+三星的这款硬盘给出的测试速度是最快的，
+所以就选它了。</p></td>
+<td><p>没有仔细计算过游戏载入地图时的时间，
+但都是很快就完成了，
+估计在 3 ~ 5 秒钟左右。
+Windows 10 开机一般 11~14 秒钟左右，
+最快试过 7 秒钟。
+安装 Windows 10 花了 15 个 GB ，
+安装游戏花了 6 个 GB ，
+硬盘还有不少空间可以用。</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="http://item.jd.com/568742.html">美商海盗船450W VS450 电源</a></p></td>
+<td><p>以前电源基本上都是买安钛克的，
+因为海盗船这牌子看上去比较逼格，
+价格也差不多，
+并且安钛克质保 2 年而这个保 3 年，
+所以这次就上船了。</p></td>
+<td><p>（无）</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="http://item.jd.com/1186783.html">Tt 启航者 S3 M-ATX 迷你机箱</a></p></td>
+<td><p>Tt 品牌产品，100 块就可以拿下，超值。
+小机箱，比较节约空间。
+有两个硬盘位和一个 SSD 位，
+水冷的位置也有，为将来升级留下了空间。</p></td>
+<td><p>（无）</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="http://item.jd.com/132920.html">酷冷至尊黑旋风-L12 机箱风扇</a></p></td>
+<td><p>便宜，声音不大，没有灯，不闪眼睛。</p></td>
+<td><p>（无）</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="http://item.jd.com/1429780.html">EDUP EP-AC1606 双频无线网卡</a></p></td>
+<td><p>AC 无线双频，USB 3.0 接口，带双天线。</p></td>
+<td><p>信号不错，隔着一栋厚墙连家里的路由，
+信号可以达到 Windows 的“佳”状态（差一格满格）。
+2.4 G 和 5 G 频率都可以。
+家里用的是 100 Mb 的电信宽带，
+游戏时的 ping 值在 40 左右。</p></td>
+</tr>
+</tbody>
+</table>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<div class="line-block">
+<div class="line">黄健宏（huangz）</div>
+<div class="line">2016.6.18</div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<hr class="docutils" />
+<p>2016.7.4 更新：</p>
+<p>最初购买电脑时选择的 <a class="reference external" href="http://item.jd.com/1079260.html">TP-LINK TL-WDN5200 USB无线网卡</a> 在使用两天之后出现了掉速的情况：
+网络的连接速度会反覆地从正常的 100 Mb 掉至 0 Mb ，
+然后断线，
+尝试更新驱动和调整网卡位置之后都没有解决问题，
+于是新入手了上面列出的 EDUP 网卡，
+新网卡没有出现类似的问题，
+而且游戏时的 ping 值从原来使用 TP-LINK 网卡时的 50 左右降低至了 40 左右。</p>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

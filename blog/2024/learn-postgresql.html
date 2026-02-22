@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>如何系统地学习PostgreSQL &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="用文字构筑的迷宫" href="maze.html" />
+    <link rel="prev" title="如何选择合适的数据库（一）：对比MariaDB和PostgreSQL" href="mariadb-vs-postgresql.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">如何系统地学习PostgreSQL</a><ul>
+<li><a class="reference internal" href="#sql">学习SQL</a></li>
+<li><a class="reference internal" href="#id1">学习PostgreSQL</a></li>
+<li><a class="reference internal" href="#id2">学习PostgreSQL扩展</a></li>
+<li><a class="reference internal" href="#postgresql-rdbms">学习PostgreSQL/RDBMS实现原理</a></li>
+<li><a class="reference internal" href="#id3">结语</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="mariadb-vs-postgresql.html" title="Previous Chapter: 如何选择合适的数据库（一）：对比MariaDB和PostgreSQL"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; 如何选择合适的数据库（一）...</span>
+    </a>
+  </li>
+  <li>
+    <a href="maze.html" title="Next Chapter: 用文字构筑的迷宫"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">用文字构筑的迷宫 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="postgresql">
+<h1>如何系统地学习PostgreSQL<a class="headerlink" href="#postgresql" title="Link to this heading">¶</a></h1>
+<img alt="../_images/pglogo.jpg" src="../_images/pglogo.jpg" />
+<p>最近，有读者群的群友给我发消息，咨询我该如何系统地学习PostgreSQL。</p>
+<p>其实我本人认真学习SQL和PostgreSQL的时间并不长，这次正好借翻译<a class="reference external" href="https://huangz.works/sql/">《SQL实战》</a>的机会才算是逐渐开始深入学习SQL和PostgreSQL，自觉在这方面还有很多需要完善的地方，远远没有达到可以很好地指点其他朋友如何学习的地步。</p>
+<p>因此这篇文章算是抛砖引玉，只是浅谈一下目前我认知的学习方式和方法，如果有不正确的地方请大家不吝指点。</p>
+<p>本文接下来的四个小节将分别介绍我觉得系统学习PostgreSQL应该遵循的四个步骤：</p>
+<ol class="arabic simple">
+<li><p>学习SQL</p></li>
+<li><p>学习PostgreSQL</p></li>
+<li><p>学习PostgreSQL扩展</p></li>
+<li><p>学习PostgreSQL/RDBMS实现原理</p></li>
+</ol>
+<section id="sql">
+<h2>学习SQL<a class="headerlink" href="#sql" title="Link to this heading">¶</a></h2>
+<p>SQL是操纵PostgreSQL的关键，也是基础中的基础，因此学习PostgreSQL首先需要学习的就是SQL语言。</p>
+<p>这方面的在线教程可以看w3schools的<a class="reference external" href="https://www.w3schools.com/sql/">《SQL
+Tutorial》</a>或者GeeksforGeeks的<a class="reference external" href="https://www.geeksforgeeks.org/sql-tutorial/">《SQL
+Tutorial》</a>，前者对初学者更友好，后者则更详尽和细致。</p>
+<p>这方面的图书我推荐的是<a class="reference external" href="https://item.jd.com/12937316.html">《SQL必知必会》</a>和<a class="reference external" href="https://item.jd.com/12212242.html">《SQL基础教程》</a>：</p>
+<ul class="simple">
+<li><p>前者言简意赅、重实践而非理论，所以它适合动手能力强的朋友边看边实践，跟着书上的代码完整跑一遍能够获得一个很好的基础了。</p></li>
+<li><p>后者在讲解SQL概念方面更详尽，并且附有丰富的表格和图示，所以它更适合没那么喜欢动手或者想尽量通过看书就把SQL弄懂的朋友。</p></li>
+</ul>
+</section>
+<section id="id1">
+<h2>学习PostgreSQL<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>前面介绍的SQL资料虽然非常好，但它们教导的通常只是SQL中最常被使用的一部分特性，也即是多个关系数据库中一个公共的SQL特性子集。</p>
+<p>作为“The World’s Most Advanced Open Source Relational
+Database（世上最先进的开源关系数据库）”，PostgreSQL实现了很多其他关系数据库不具备的特性，而在学习基本的SQL知识之后，我们接下来要学习和了解的就是PostgreSQL支持的更强大的特性。</p>
+<p>对于了解PostgreSQL自身来说，没有比<a class="reference external" href="https://www.postgresql.org/docs/current/index.html">官方文档</a>更好的资料了，在这个阶段，文档的《II. The SQL Language》、《III. Server Administration》、《V. Server Programming》和《VI. Reference》应该都是你经常翻阅的对象。</p>
+<p>至于图书我推荐的是<a class="reference external" href="https://item.jd.com/12736201.html">《PostgreSQL修炼之道》</a>，这本书内容很全面，PostgreSQL的方方面面都有涉及，是我经常会查阅的PostgreSQL中文参考资料之一。</p>
+</section>
+<section id="id2">
+<h2>学习PostgreSQL扩展<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>PostgreSQL之所以强大，不仅仅因为它是一个功能强劲的关系数据库，还有一个原因就是它拥有非常丰富的扩展可用：无论你是做AI、科学计算、数据分析、搜索引擎还是储存地理位置等等，都能找到相应的PostgreSQL扩展来完成任务。</p>
+<p>换句话来说，你不仅可以将PostgreSQL用作关系数据库管理器，还可以把它用作数据平台，在其上通过扩展提供近乎无限多的功能。</p>
+<p><a class="reference external" href="https://gist.github.com/joelonsql/e5aa27f8cc9bd22b8999b7de8aee9d47">这个Gist列表</a>列出了比较完整的PostgreSQL扩展，数量达1000多个，而Pigsty的<a class="reference external" href="https://pigsty.cc/zh/docs/reference/extension/">扩展列表</a>也列出了比较常用的200多个扩展。大家可以按图索骥，寻找自己需要的扩展，并根据它们各自提供的文档进行学习。</p>
+</section>
+<section id="postgresql-rdbms">
+<h2>学习PostgreSQL/RDBMS实现原理<a class="headerlink" href="#postgresql-rdbms" title="Link to this heading">¶</a></h2>
+<p>最后，在掌握了PostgreSQL自身及其支持的丰富的扩展之后，你可能还想更进一步，了解PostgreSQL自身的构成以及RDBMS（关系数据库管理系统）的实现方式，从而更好地理解PostgreSQL的运作原理，乃至开始对PostgreSQL自身进行修改等等。</p>
+<p>对于了解PostgreSQL的构造来说，官方文档的<a class="reference external" href="https://www.postgresql.org/docs/current/internals.html">《VII. Internals》</a>是很好的起点。至于了解RDBMS的实现原理，可以推荐的图书是<a class="reference external" href="https://item.jd.com/13318646.html">《数据库系统概念》</a>和<a class="reference external" href="https://item.jd.com/12656779.html">《数据库系统内幕》</a>，前者理论内容丰富，讲解了整个数据库系统实现原理的方方面面，而后者则主要关注实现数据库的核心算法和数据结构。</p>
+<p>最后，为了构建强大的数据库系统，分布式知识是必不可少的，这方面我推荐的图书是<a class="reference external" href="https://item.jd.com/13495948.html">《分布式数据库原理、架构与实践》</a>。这本书介绍了很多数据库相关的主流分布式模型的理论知识，是深入特定模型、研读特定论文之前的一本很好的前置阅读材料。</p>
+</section>
+<section id="id3">
+<h2>结语<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>好的，关于“如何系统地学习PostgreSQL”这个问题，我的分享就到这里。</p>
+<p>如果大家觉得这篇文章对你有帮助的话，请记得帮我在社交网站上转发、点赞或者评论一下，谢谢各位~！</p>
+<div class="line-block">
+<div class="line">坚定地认为PostgreSQL是世界上最好的关系数据库的黄健宏</div>
+<div class="line">2024.5.11</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

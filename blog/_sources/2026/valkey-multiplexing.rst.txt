@@ -1,0 +1,76 @@
+Valkey源码剖析（9）：基于多路复用实现的文件事件
+===============================================
+
+前面的文章说过，负责处理事件的\ ``ae.c/aeProcessEvents()``\ 函数会调用\ ``ae.c/aeApiPoll()``\ 函数以休眠并等待文件事件就绪：
+
+.. code:: c
+
+   int aeProcessEvents(aeEventLoop *eventLoop, int flags) {
+       
+       // ...
+       
+       numevents = aeApiPoll(eventLoop, tvp);
+
+       // ...
+   }
+
+Valkey的文件事件本质上就是对底层多路复用库的包装，而这里对\ ``aeApiPoll()``\ 函数的调用实际上就是对底层多路复用库类Poll函数的调用。
+
+根据\ ``ae.c``\ 文件的定义，编译器在编译Valkey服务器的时候，将根据系统对多路复用库的支持，选出该系统能够使用的性能最优的多路复用库：
+
+.. code:: c
+
+   #ifdef HAVE_EVPORT
+   #include "ae_evport.c"
+   #else
+   #ifdef HAVE_EPOLL
+   #include "ae_epoll.c"
+   #else
+   #ifdef HAVE_KQUEUE
+   #include "ae_kqueue.c"
+   #else
+   #include "ae_select.c"
+   #endif
+   #endif
+   #endif
+
+以Linux系统为例，编译后的Valkey服务器通常将使用\ ``ae_epoll.c``\ 库。在这种情况下，对\ ``aeApiPoll()``\ 的调用将引发对\ ``ae_epoll.c/epoll_wait()``\ 函数的调用，而后者将在指定的时间内监听指定的文件描述符，并在它们变为可写或者可读的时候将其转化为相应的Valkey文件事件——``aeApiPoll()``\ 函数的定义很好地说明了这一点：
+
+.. code:: c
+
+   // 休眠并等待事件就绪
+   static int aeApiPoll(aeEventLoop *eventLoop, struct timeval *tvp) {
+       aeApiState *state = eventLoop->apidata;
+       int retval, numevents = 0;
+
+       // 在指定的时间内休眠，然后返回就绪的文件描述符数量
+       retval = epoll_wait(state->epfd, state->events, eventLoop->setsize,
+                           tvp ? (tvp->tv_sec * 1000 + (tvp->tv_usec + 999) / 1000) : -1);
+       if (retval > 0) {
+           int j;
+
+           // 根据就绪的事件，设置eventLoop->fired[j]中的fd属性和mask属性，
+           // 从而分别记录已就绪的文件描述符，以及它们就绪的事件（读还是写）
+           numevents = retval;
+           for (j = 0; j < numevents; j++) {
+               int mask = 0;
+               struct epoll_event *e = state->events + j;
+
+               if (e->events & EPOLLIN) mask |= AE_READABLE;
+               if (e->events & EPOLLOUT) mask |= AE_WRITABLE;
+               if (e->events & EPOLLERR) mask |= AE_WRITABLE | AE_READABLE;
+               if (e->events & EPOLLHUP) mask |= AE_WRITABLE | AE_READABLE;
+               eventLoop->fired[j].fd = e->data.fd;
+               eventLoop->fired[j].mask = mask;
+           }
+       } else if (retval == -1 && errno != EINTR) {
+           panic("aeApiPoll: epoll_wait, %s", strerror(errno));
+       }
+
+       return numevents;
+   }
+
+以上就是Valkey通过多路复用库实现文件事件的核心逻辑。
+
+| 黄健宏
+| 2026.1.2

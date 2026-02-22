@@ -1,0 +1,40 @@
+《Redis应用实例》书摘（22）：矩阵
+========================================
+
+矩阵是一种具有多个行和列的元素矩形阵列，其中的元素通常为数字。
+
+矩阵在数学、物理、三维动画等多个领域均有大量应用，是计算机最常储存和处理的数据之一，因此研究如何在Redis中高效地存储矩阵数据是非常有意义的。
+
+代码清单 CODE_LIST_MATRIX 展示了使用列表实现的矩阵程序。
+
+----
+
+代码清单 CODE_LIST_MATRIX 列表实现的矩阵存储程序 ``list_matrix.py``
+
+.. literalinclude:: code/list_matrix.py
+
+----
+
+作为例子，以下代码展示了这个矩阵程序的具体用法：
+
+.. code:: python
+
+        >>> from redis import Redis
+        >>> from list_matrix import ListMatrix
+        >>> client = Redis(decode_responses=True)
+        >>> matrix = ListMatrix(client, "Matrix", 3, 4)
+        >>> matrix.init([[1, 3, 9, 2], [5, 20, 32, 11], [73, 28, 65, 33]])  # 初始化矩阵
+        >>> matrix.get(0, 0)  # 获取指定位置上的值
+        1
+        >>> matrix.get(0, 1)
+        3
+        >>> matrix.get_row(0)  # 获取指定行的所有列
+        [1, 3, 9, 2]
+        >>> matrix.get_all()  # 获取整个矩阵
+        [[1, 3, 9, 2], [5, 20, 32, 11], [73, 28, 65, 33]]
+        >>> matrix.set(0, 0, 10086)  # 设置指定位置的值然后获取矩阵进行检查
+        >>> matrix.get_all()
+        [[10086, 3, 9, 2], [5, 20, 32, 11], [73, 28, 65, 33]]
+
+
+.. include:: rediscookbook-promote.rst

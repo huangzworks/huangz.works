@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Valkey源码剖析（21）：命令请求的读取、解析与执行 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Valkey源码剖析（22）：命令回复的存储" href="valkey-client-response-store.html" />
+    <link rel="prev" title="Valkey源码剖析（20）：客户端表示" href="valkey-client-struct.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Valkey源码剖析（21）：命令请求的读取、解析与执行</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="valkey-client-struct.html" title="Previous Chapter: Valkey源码剖析（20）：客户端表示"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; Valkey源码剖析（20）：客户端表示</span>
+    </a>
+  </li>
+  <li>
+    <a href="valkey-client-response-store.html" title="Next Chapter: Valkey源码剖析（22）：命令回复的存储"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">Valkey源码剖析（22... &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="valkey-21">
+<h1>Valkey源码剖析（21）：命令请求的读取、解析与执行<a class="headerlink" href="#valkey-21" title="Link to this heading">¶</a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">networking.c/createClient()</span></code>函数在为客户端创建<code class="docutils literal notranslate"><span class="pre">client</span></code>结构时，会为客户端在事件子系统中绑定<code class="docutils literal notranslate"><span class="pre">networking.c/readQueryFromClient()</span></code>函数作为读事件的处理器：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">client</span><span class="w"> </span><span class="o">*</span><span class="nf">createClient</span><span class="p">(</span><span class="n">connection</span><span class="w"> </span><span class="o">*</span><span class="n">conn</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">client</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">zmalloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">client</span><span class="p">));</span>
+
+<span class="w">    </span><span class="c1">// 连接可以为NULL，用于在Lua脚本等环境中执行命令（因为Redis执行命令必须在客户端上下文中）</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">conn</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 绑定查询读取处理器</span>
+<span class="w">        </span><span class="n">connSetReadHandler</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span><span class="w"> </span><span class="n">readQueryFromClient</span><span class="p">);</span>
+<span class="w">        </span><span class="c1">// 设置私有数据</span>
+<span class="w">        </span><span class="n">connSetPrivateData</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">);</span>
+<span class="w">        </span><span class="c1">// 设置状态</span>
+<span class="w">        </span><span class="n">conn</span><span class="o">-&gt;</span><span class="n">flags</span><span class="w"> </span><span class="o">|=</span><span class="w"> </span><span class="n">CONN_FLAG_ALLOW_ACCEPT_OFFLOAD</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// ...</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">c</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>当客户端向服务器发送命令请求的时候，客户端对应读事件就会就绪，而<code class="docutils literal notranslate"><span class="pre">readQueryFromClient()</span></code>处理器就会被调用：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="c1">// 每次文件事件循环可以尝试读取的最大次数</span>
+<span class="cp">#define REPL_MAX_READS_PER_IO_EVENT 25</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">readQueryFromClient</span><span class="p">(</span><span class="n">connection</span><span class="w"> </span><span class="o">*</span><span class="n">conn</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 从连接中获取客户端</span>
+<span class="w">    </span><span class="n">client</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">connGetPrivateData</span><span class="p">(</span><span class="n">conn</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* Check if we can send the client to be handled by the IO-thread */</span>
+<span class="w">    </span><span class="c1">// 判断本次读取能否由IO线程来处理</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">postponeClientRead</span><span class="p">(</span><span class="n">c</span><span class="p">))</span><span class="w"> </span><span class="k">return</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 如果状态不为IDLE，那么说明已经有读或写操作在进行中，直接返回</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">io_write_state</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">CLIENT_IDLE</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">io_read_state</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">CLIENT_IDLE</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="p">;</span>
+
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">repeat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">iter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">do</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 读取套接字</span>
+<span class="w">        </span><span class="kt">bool</span><span class="w"> </span><span class="n">full_read</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">readToQueryBuf</span><span class="p">(</span><span class="n">c</span><span class="p">);</span>
+<span class="w">        </span><span class="c1">// 检查读取情况并处理可能出现的错误</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">handleReadResult</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">C_OK</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="c1">// 读取正常，那么……</span>
+<span class="w">            </span><span class="c1">// 对客户端查询缓冲区进行解析，并执行解析所得的命令</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">processInputBuffer</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="p">;</span>
+<span class="w">            </span><span class="c1">// 释放已解析命令队列中未使用的内存（仅在命令已经执行完毕的情况下进行）</span>
+<span class="w">            </span><span class="n">trimCommandQueue</span><span class="p">(</span><span class="n">c</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="c1">// 在读取次数不超过限制次数的情况下，尽可能地多读取客户端传来的数据</span>
+<span class="w">        </span><span class="n">repeat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">flag</span><span class="p">.</span><span class="n">primary</span><span class="w"> </span><span class="o">&amp;&amp;</span>
+<span class="w">                  </span><span class="o">!</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">flag</span><span class="p">.</span><span class="n">close_asap</span><span class="w"> </span><span class="o">&amp;&amp;</span>
+<span class="w">                  </span><span class="o">++</span><span class="n">iter</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">REPL_MAX_READS_PER_IO_EVENT</span><span class="w"> </span><span class="o">&amp;&amp;</span>
+<span class="w">                  </span><span class="n">full_read</span><span class="p">);</span>
+<span class="w">        </span><span class="c1">// 执行那些需要在转而处理下个客户端之前，需要对当前客户端执行的操作</span>
+<span class="w">        </span><span class="n">beforeNextClient</span><span class="p">(</span><span class="n">c</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">repeat</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">readToQueryBuf()</span></code>函数的主要工作如下：</p>
+<ol class="arabic simple">
+<li><p>调用<code class="docutils literal notranslate"><span class="pre">networking.c/readToQueryBuf()</span></code>函数，从客户端套接字中读取数据，并将其存储至客户端的查询缓冲区<code class="docutils literal notranslate"><span class="pre">client-&gt;querybuf</span></code>中。</p></li>
+<li><p>调用<code class="docutils literal notranslate"><span class="pre">networking.c/processInputBuffer()</span></code>函数，解析客户端查询缓冲区中的命令请求，然后执行这些命令。</p></li>
+</ol>
+<p><code class="docutils literal notranslate"><span class="pre">processInputBuffer()</span></code>函数的主要定义如下：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">processInputBuffer</span><span class="p">(</span><span class="n">client</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="cm">/* Parse the query buffer and/or execute already parsed commands. */</span>
+<span class="w">    </span><span class="c1">// 解析查询缓冲区并/或执行已解析命令</span>
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">((</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">querybuf</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">qb_pos</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">sdslen</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">querybuf</span><span class="p">))</span><span class="w"> </span><span class="o">||</span>
+<span class="w">           </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">cmd_queue</span><span class="p">.</span><span class="n">off</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">cmd_queue</span><span class="p">.</span><span class="n">len</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">        </span><span class="c1">// ...</span>
+
+<span class="w">        </span><span class="c1">// 尝试从命令队列中弹出首个命令作为当前命令</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">consumeCommandQueue</span><span class="p">(</span><span class="n">c</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="c1">// 如果队列中没有可供弹出的命令，那么解析输入缓冲区以获取可执行命令</span>
+<span class="w">            </span><span class="n">parseInputBuffer</span><span class="p">(</span><span class="n">c</span><span class="p">);</span>
+<span class="w">            </span><span class="c1">// 预处理当前命令</span>
+<span class="w">            </span><span class="n">prepareCommandQueue</span><span class="p">(</span><span class="n">c</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="c1">// ...</span>
+
+<span class="w">        </span><span class="cm">/* We are finally ready to execute the command. */</span>
+<span class="w">        </span><span class="c1">// 正式开始处理和执行命令</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">processCommandAndResetClient</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="cm">/* If the client is no longer valid, we avoid exiting this</span>
+<span class="cm">             * loop and trimming the client buffer later. So we return</span>
+<span class="cm">             * ASAP in that case. */</span>
+<span class="w">            </span><span class="c1">// 当客户端不再有效时，立即退出此循环，并在稍后修剪客户端缓冲区</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">C_OK</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>在<code class="docutils literal notranslate"><span class="pre">processInputBuffer()</span></code>函数的定义中，它首先会调用<code class="docutils literal notranslate"><span class="pre">networking.c/parseInputBuffer()</span></code>函数以尝试解析查询缓冲区中的数据，并将待执行的命令请求放到客户端的命令队列中。</p>
+<p>接着，<code class="docutils literal notranslate"><span class="pre">processInputBuffer()</span></code>函数会调用<code class="docutils literal notranslate"><span class="pre">server.c/prepareCommandQueue()</span></code>函数，对客户端命令队列中待执行的命令进行预处理，确保它们可以进入被执行的状态。</p>
+<p>最后，<code class="docutils literal notranslate"><span class="pre">processInputBuffer()</span></code>函数会调用<code class="docutils literal notranslate"><span class="pre">networking.c/processCommandAndResetClient()</span></code>函数，正式开始处理和执行命令队列中的命令。</p>
+<p><code class="docutils literal notranslate"><span class="pre">processCommandAndResetClient()</span></code>函数要做的事情不多，它最重要的工作就是调用<code class="docutils literal notranslate"><span class="pre">server.c/processCommand()</span></code>函数以执行客户端的当前命令，这之后的工作就跟我们在之前的系列文章中看到过的Valkey命令的执行过程一样了：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">processCommandAndResetClient</span><span class="p">(</span><span class="n">client</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">deadclient</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">client</span><span class="w"> </span><span class="o">*</span><span class="n">old_client</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">server</span><span class="p">.</span><span class="n">current_client</span><span class="p">;</span>
+<span class="w">    </span><span class="n">server</span><span class="p">.</span><span class="n">current_client</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 执行命令</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">processCommand</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">C_OK</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 执行一些命令执行之后的后续操作，比如：清空客户端、更新复制偏移量、传播命令等</span>
+<span class="w">        </span><span class="n">commandProcessed</span><span class="p">(</span><span class="n">c</span><span class="p">);</span>
+<span class="w">        </span><span class="cm">/* Update the client&#39;s memory to include output buffer growth following the</span>
+<span class="cm">         * processed command. */</span>
+<span class="w">        </span><span class="c1">// 更新客户端内存信息</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">conn</span><span class="p">)</span><span class="w"> </span><span class="n">updateClientMemUsageAndBucket</span><span class="p">(</span><span class="n">c</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>以下是<code class="docutils literal notranslate"><span class="pre">server.h/client</span></code>结构中与查询缓冲区及命令执行有关的主要属性：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">client</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="c1">// ...</span>
+
+<span class="w">    </span><span class="c1">// 查询缓冲区</span>
+<span class="w">    </span><span class="n">sds</span><span class="w"> </span><span class="n">querybuf</span><span class="p">;</span><span class="w">        </span><span class="cm">/* Buffer we use to accumulate client queries. */</span>
+
+<span class="w">    </span><span class="c1">// 已读取查询缓冲区的偏移量</span>
+<span class="w">    </span><span class="kt">size_t</span><span class="w"> </span><span class="n">qb_pos</span><span class="p">;</span><span class="w">       </span><span class="cm">/* The position we have read in querybuf. */</span>
+
+<span class="w">    </span><span class="c1">// （当前正在执行命令的）命令参数</span>
+<span class="w">    </span><span class="n">robj</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="p">;</span><span class="w">         </span><span class="cm">/* Arguments of current command. */</span>
+
+<span class="w">    </span><span class="c1">// （当前正在执行命令的）命令参数数量</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">;</span><span class="w">            </span><span class="cm">/* Num of arguments of current command. */</span>
+
+<span class="w">    </span><span class="c1">// 命令参数数组的长度（可能大于实际的参数数量）</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">argv_len</span><span class="p">;</span><span class="w">        </span><span class="cm">/* Size of argv array (may be more than argc) */</span>
+
+<span class="w">    </span><span class="c1">// 已解析命令队列</span>
+<span class="w">    </span><span class="n">cmdQueue</span><span class="w"> </span><span class="n">cmd_queue</span><span class="p">;</span><span class="w">  </span><span class="cm">/* Parsed commands queue */</span>
+
+<span class="w">    </span><span class="c1">// 正在执行的命令</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">serverCommand</span><span class="w"> </span><span class="o">*</span><span class="n">cmd</span><span class="p">;</span><span class="w">        </span><span class="cm">/* Current command. */</span>
+
+<span class="w">    </span><span class="c1">// ...</span>
+
+<span class="p">}</span><span class="w"> </span><span class="n">client</span><span class="p">;</span>
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2026.1.26</div>
+</div>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

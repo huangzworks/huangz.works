@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PostgreSQL人物周刊：Peter Zaitsev &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Redis 8 正式版更新摘要" href="redis8-ga.html" />
+    <link rel="prev" title="Redis 8.4 RC1 新增字符串命令介绍（DIGEST、DELEX、MSETEX）" href="redis84-rc1.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">PostgreSQL人物周刊：Peter Zaitsev</a><ul>
+<li><a class="reference internal" href="#id1">请简单介绍下自己</a></li>
+<li><a class="reference internal" href="#id2">你在大学学的计算机吗，它们对你现在的工作有何帮助？</a></li>
+<li><a class="reference internal" href="#id3">你最近读了什么书，或者有什么书你是想推荐给大家的？</a></li>
+<li><a class="reference internal" href="#postgresql">你从何时开始使用PostgreSQL，原因又是什么？</a></li>
+<li><a class="reference internal" href="#id4">你还记得刚开始时使用的PostgreSQL版本吗？</a></li>
+<li><a class="reference internal" href="#id5">你还有使用别的数据库吗，哪一个是你的最爱？</a></li>
+<li><a class="reference internal" href="#id6">你目前正在从事哪些与PostgreSQL相关的项目？</a></li>
+<li><a class="reference internal" href="#perconapostgresql">Percona开始使用PostgreSQL的契机是什么？</a></li>
+<li><a class="reference internal" href="#mysqlpostgresql">MySQL和PostgreSQL，哪个带来的收益更多？</a></li>
+<li><a class="reference internal" href="#id7">你们如何为PostgreSQL做出贡献？</a></li>
+<li><a class="reference internal" href="#id8">有什么不需要写代码也可以为PostgreSQL做贡献的方法吗？</a></li>
+<li><a class="reference internal" href="#id9">你最喜欢的PostgreSQL扩展是？</a></li>
+<li><a class="reference internal" href="#id10">PostgreSQL最让你困扰的事情是什么，有办法解决它吗？</a></li>
+<li><a class="reference internal" href="#id11">你最喜欢的新版PostgreSQL功能是什么？</a></li>
+<li><a class="reference internal" href="#id12">除此之外，你还希望看到什么特性或机制在PostgreSQL中出现？</a></li>
+<li><a class="reference internal" href="#id13">PostgreSQL是否应该内置连接池？</a></li>
+<li><a class="reference internal" href="#id14">PostgreSQL是否应该内置多主复制功能？</a></li>
+<li><a class="reference internal" href="#id15">哪些技能是PostgreSQL开发者和用户必须掌握的？</a></li>
+<li><a class="reference internal" href="#id16">你参加过哪些PostgreSQL会议，做过哪些演讲？</a></li>
+<li><a class="reference internal" href="#id17">你认为PostgreSQL的入门门槛高吗？</a></li>
+<li><a class="reference internal" href="#id18">你对那些想要为PostgreSQL开发做贡献的人有什么建议？</a></li>
+<li><a class="reference internal" href="#id19">你认为PostgreSQL会在未来继续存在很多年吗？</a></li>
+<li><a class="reference internal" href="#id20">你会推荐PostgreSQL用于商业项目还是业余项目？</a></li>
+<li><a class="reference internal" href="#orm">你怎么看ORM？</a></li>
+<li><a class="reference internal" href="#sqlnosql">你怎么看SQL数据库和NoSQL数据库？</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="redis84-rc1.html" title="Previous Chapter: Redis 8.4 RC1 新增字符串命令介绍（DIGEST、DELEX、MSETEX）"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; Redis 8.4 RC1...</span>
+    </a>
+  </li>
+  <li>
+    <a href="redis8-ga.html" title="Next Chapter: Redis 8 正式版更新摘要"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">Redis 8 正式版更新摘要 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="postgresql-peter-zaitsev">
+<h1>PostgreSQL人物周刊：Peter Zaitsev<a class="headerlink" href="#postgresql-peter-zaitsev" title="Link to this heading">¶</a></h1>
+<img alt="../_images/peterz.jpg" src="../_images/peterz.jpg" />
+<blockquote>
+<div><p>PostgreSQL是世界上最先进的开源关系数据库，《PostgreSQL人物周刊》系列访谈介绍了使该项目取得今天成就的人物。</p>
+<p>本次访谈的受访者<a class="reference external" href="https://peterzaitsev.com/">Peter Zaitsev</a>是Percona公司的联合创始人，数据库方面的著名专家。他曾经领导过MySQL
+AB公司的高性能团队，也是图书《高性能MySQL（第3版）》的作者之一。</p>
+<p>本译文的原文来自<a class="reference external" href="https://postgresql.life/post/peter_zaitsev/">PostgreSQL Person of the
+Week</a>网站，译文有少量删改，并且只翻译了原文中与技术和PostgreSQL有关的部分。</p>
+</div></blockquote>
+<section id="id1">
+<h2>请简单介绍下自己<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>我是Peter Zaitsev，大家也叫我PeterZ或者PZ。</p>
+<p>我在俄罗斯莫斯科长大，毕业于莫斯科国立大学，并在那里创办了我的第一家初创公司。2004年，我在MySQL
+AB工作期间移居美国。</p>
+</section>
+<section id="id2">
+<h2>你在大学学的计算机吗，它们对你现在的工作有何帮助？<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>我在莫斯科国立大学学的是计算机科学。这对我的职业生涯很有帮助，尤其是对基础知识的理解——如果你真的想要了解数据库是如何运行的，那么概率和统计、离散数学、博弈论等知识将会有很大的帮助。</p>
+</section>
+<section id="id3">
+<h2>你最近读了什么书，或者有什么书你是想推荐给大家的？<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>《光环效应》、《从0到1》和《10x Is Easier Than
+2x》。从这也能看出我更关注创业和商业方面的书。技术方面的话，我觉得比起书籍，其他渠道提供的实时技术信息会更多。但如果真要推荐技术书的话，我觉得《性能之巅》就很不错。</p>
+<p>我觉得阅读那些告诉你在给定PostgreSQL版本中应该使用哪些特定命令的大部头只是浪费时间，在人工智能时代更是如此。更重要的是要理解系统设计和性能分析的原则，从这个角度来看，数据库只是另一个系统。只要你掌握了系统架构和性能优化的基本原理，你就可以将其应用于任何系统。</p>
+</section>
+<section id="postgresql">
+<h2>你从何时开始使用PostgreSQL，原因又是什么？<a class="headerlink" href="#postgresql" title="Link to this heading">¶</a></h2>
+<p>早在1999年，我在创建第一家公司SpyLOG的时候就差点要开始使用PostgreSQL了，但那时一个偶然的机会让我接触到了MySQL，并且改用了它。</p>
+<p>我是在2018年Percona官方开始支持PostgreSQL的时候才真正开始关注PostgreSQL的。在Percona，我们的重要原则之一就是站在客户的立场上——当客户需要我们帮助其做出选择的时候，我们必须做出最成功的选择。早在2018年之前的好几年，PostgreSQL就出现在我们客户的需要和想要清单上。但作为一家自力更生的公司，我们必须确保有足够资源来做好它，并有能力帮助客户应对他们面临的最复杂的情况，所以直到2018年我们才真正开始做这件事。</p>
+</section>
+<section id="id4">
+<h2>你还记得刚开始时使用的PostgreSQL版本吗？<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>在Percona，我们是从PostgreSQL
+11开始的，但我也偶然参与过一段时间早期版本的工作。</p>
+</section>
+<section id="id5">
+<h2>你还有使用别的数据库吗，哪一个是你的最爱？<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>MySQL是我最得心应手的数据库。近年来我也开始对SQLite、Prometheus、Clickhouse和DuckDB等技术着迷。</p>
+</section>
+<section id="id6">
+<h2>你目前正在从事哪些与PostgreSQL相关的项目？<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<p>在Percona，我们正在开发开源透明数据库加密TDE，并在Percona
+Everest的其他数据库中为PostgreSQL提供类似AWS
+RDS的体验。我们还在Coroot中为PostgreSQL的可观察性提供了一些非常酷的支持。</p>
+</section>
+<section id="perconapostgresql">
+<h2>Percona开始使用PostgreSQL的契机是什么？<a class="headerlink" href="#perconapostgresql" title="Link to this heading">¶</a></h2>
+<p>在Percona，我们不会偏袒任何技术，而是想方设法地去满足客户的需求。随着越来越多的客户开始运行PostgreSQL，我们也就开始像对MySQL一样为PostgreSQL提供支持。</p>
+</section>
+<section id="mysqlpostgresql">
+<h2>MySQL和PostgreSQL，哪个带来的收益更多？<a class="headerlink" href="#mysqlpostgresql" title="Link to this heading">¶</a></h2>
+<p>我们的大部分业务仍然来自MySQL，但PostgreSQL业务增长更快。</p>
+</section>
+<section id="id7">
+<h2>你们如何为PostgreSQL做出贡献？<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
+<p>Percona通过扩展为PostgreSQL做贡献，同时也为PostgreSQL生态系统做贡献——我们有一个在K8S上运行PostgreSQL的操作器，在Percona的监控和管理系统（PMM）中也有PostgreSQL监控器，Percona的工具包中也有一些工具支持PostgreSQL。</p>
+</section>
+<section id="id8">
+<h2>有什么不需要写代码也可以为PostgreSQL做贡献的方法吗？<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<p>有的兄弟，有的。我们一直在支持PostgreSQL的许多活动，Percona和我本人也一直在帮助宣传PostgreSQL。比如我最近就在PostgreSQL印度大会上做了主题演讲。</p>
+</section>
+<section id="id9">
+<h2>你最喜欢的PostgreSQL扩展是？<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h2>
+<p>因为解决不同的工作需要用到不同的工具，所以很难只选出一个喜欢的。但如果非要选一个的话，我会选<code class="docutils literal notranslate"><span class="pre">pg_stat_statements</span></code>，毕竟我是了解查询性能的专家。我们还用它作为<code class="docutils literal notranslate"><span class="pre">pg_stat_monitor</span></code>的基础，这是查询性能监控的更高级解决方案。</p>
+</section>
+<section id="id10">
+<h2>PostgreSQL最让你困扰的事情是什么，有办法解决它吗？<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h2>
+<p>技术方面：DDL复制是其中之一，这个问题有很多外部解决方案，但没有内置的。</p>
+<p>组织方面：没有与bugs.mysql.com类似的BUG数据库，仅仅依靠邮件列表来跟踪BUG让人有些费解。</p>
+</section>
+<section id="id11">
+<h2>你最喜欢的新版PostgreSQL功能是什么？<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h2>
+<p>我非常喜欢PostgreSQL 18中的异步IO功能。</p>
+</section>
+<section id="id12">
+<h2>除此之外，你还希望看到什么特性或机制在PostgreSQL中出现？<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h2>
+<p>某种形式的分片解决方案。向上扩展始终会有限制，并且越往上扩展价格就越贵，痛苦也会倍增。</p>
+</section>
+<section id="id13">
+<h2>PostgreSQL是否应该内置连接池？<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h2>
+<p>连接点是一种技术……无论如何，如果PostgreSQL本身能够高效地处理大量并发连接和每秒连接的话，对于用户来说肯定也是一件好事。</p>
+<p>为了一项简单的核心功能而要求额外的组件并不可取。</p>
+</section>
+<section id="id14">
+<h2>PostgreSQL是否应该内置多主复制功能？<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h2>
+<p>是的，我知道有些人认为多主复制不是一个好的模式，但有些人却认为它非常有用。一般来说，需要较少组件的、简单易用的复制/集群是值得赞赏的。</p>
+</section>
+<section id="id15">
+<h2>哪些技能是PostgreSQL开发者和用户必须掌握的？<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h2>
+<p>实事求是地说，越来越多的用户可以使用基于人工智能的“Vibe
+Coding”等工具来构建支持PostgreSQL的应用程序而几乎无需任何技能。</p>
+<p>但如果你真的想要构建大规模的基于PostgreSQL的复杂应用，我认为你需要对计算机系统（包括网络、存储云）以及数据库内部结构和关系代数等SQL基础知识有深入的了解。</p>
+<p>不过随着时间推移，我预计拥有那么多底层知识的专家数量会持续下降。</p>
+</section>
+<section id="id16">
+<h2>你参加过哪些PostgreSQL会议，做过哪些演讲？<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h2>
+<p>我参加过各种pgconf/pgday活动，也参加过最近很多活动中与PostgreSQL有关的小活动（tracks）。我最近参与的两个会议分别是在奥兰多和印度的班加罗尔举行。</p>
+<p>我们还在Percona组织的活动中报道PostgreSQL，如Percona Connect和Percona
+University。我也提交演讲，但主要是高层次的演讲，毕竟我并非PostgreSQL方面的专家。</p>
+</section>
+<section id="id17">
+<h2>你认为PostgreSQL的入门门槛高吗？<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h2>
+<p>这取决于你对PostgreSQL的理解。越来越多开发人员使用PostgreSQL作为其托管开发框架的一部分（比如Vercel），它们使用起来非常简单。还有Supabase这样的解决方案，也是为简化开发人员而优化的。亚马逊RDS
+PostgreSQL等DBaaS解决方案也只需点击两下就能完成配置，而且易于管理，因此也相当简单。</p>
+<p>但是，如果要从零开始以DIY的方式将开源的PostgreSQL构建为高性能、安全、高可用的集群，那么就没那么容易了。我很喜欢K8S操作器为简化这一过程而做的工作。我们还在Percona
+Everest项目中开展工作，以降低完全开源自助托管环境的入门门槛。</p>
+</section>
+<section id="id18">
+<h2>你对那些想要为PostgreSQL开发做贡献的人有什么建议？<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h2>
+<p>我认为最重要的是要选择自己感兴趣的领域，然后在该领域上进行工作——PostgreSQL的生态系统非常庞大，你可以开发PostgreSQL核心、扩展，又或是各种图形界面工具和客户端。</p>
+</section>
+<section id="id19">
+<h2>你认为PostgreSQL会在未来继续存在很多年吗？<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h2>
+<p>是的。首先，数据库具有令人难以置信的粘性；其次，PostgreSQL现在风头正盛，市场份额只增不减。</p>
+</section>
+<section id="id20">
+<h2>你会推荐PostgreSQL用于商业项目还是业余项目？<a class="headerlink" href="#id20" title="Link to this heading">¶</a></h2>
+<p>PostgreSQL已经成为很多大小项目的默认选择，我觉得这是有一定道理在的。话虽如此，尽管PostgreSQL在许多案例中都表现出色，但它并非万能。没有什么是完美的。</p>
+</section>
+<section id="orm">
+<h2>你怎么看ORM？<a class="headerlink" href="#orm" title="Link to this heading">¶</a></h2>
+<p>ORM的存在是有现实理由的。很多开发者无法在没有ORM的情况下直接使用数据库，我个人的喜好无法改变这一点。</p>
+<p>关于ORM，我的主要建议是：作为开发者，你必须为你选择的查询负责，无论这个查询是否由ORM产生。如果ORM产生了次优查询，那么你就有责任解决这个问题——不管是配置ORM还是在特定查询中完全绕过ORM。</p>
+<p>ORM的很多问题都来源于开发者采取了放任自流的态度——直接把ORM生成的所有查询都丢给PostgreSQL去执行，这种做法是行不通的。</p>
+</section>
+<section id="sqlnosql">
+<h2>你怎么看SQL数据库和NoSQL数据库？<a class="headerlink" href="#sqlnosql" title="Link to this heading">¶</a></h2>
+<p>尽管SQL语言和关系模型适用于非常多的场景，但它们并非唯一可用的选择。我喜欢人们把NoSQL表述为“并非只有SQL”，我认为很多事情正在朝这个方向发展。</p>
+<p>PostgreSQL等数据库可以通过各种不同的协议进行访问，比如在FerretDB的帮助下，PostgreSQL可以像MongoDB一样运行。与此相对，许多非关系型数据库也倾向于提供类似SQL语言的东西，比如CQL和N1QL。</p>
+<hr class="docutils" />
+<div class="line-block">
+<div class="line">文/PostgreSQL Person of the Week&amp;Peter Zaitsev</div>
+<div class="line">译/黄健宏</div>
+<div class="line">2025.7.23</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

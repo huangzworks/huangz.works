@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Redis 4.0 新功能简介 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="翻译笔记之十一：简化非必要技术名词" href="notes-about-translation-11.html" />
+    <link rel="prev" title="个人工具一览表" href="tools.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Redis 4.0 新功能简介</a><ul>
+<li><a class="reference internal" href="#id1">模块系统</a></li>
+<li><a class="reference internal" href="#psync-2-0">PSYNC 2.0</a></li>
+<li><a class="reference internal" href="#id2">缓存驱逐策略优化</a></li>
+<li><a class="reference internal" href="#del-flushdb-flushall">非阻塞 DEL 、 FLUSHDB 和 FLUSHALL</a></li>
+<li><a class="reference internal" href="#id3">交换数据库</a></li>
+<li><a class="reference internal" href="#rdb-aof">混合 RDB-AOF 持久化格式</a></li>
+<li><a class="reference internal" href="#id4">内存命令</a></li>
+<li><a class="reference internal" href="#nat-docker">兼容 NAT 和 Docker</a></li>
+<li><a class="reference internal" href="#id5">结语</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="tools.html" title="Previous Chapter: 个人工具一览表"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; 个人工具一览表</span>
+    </a>
+  </li>
+  <li>
+    <a href="notes-about-translation-11.html" title="Next Chapter: 翻译笔记之十一：简化非必要技术名词"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">翻译笔记之十一：简化非必要技术名词 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="redis-4-0">
+<h1>Redis 4.0 新功能简介<a class="headerlink" href="#redis-4-0" title="Link to this heading">¶</a></h1>
+<p>Redis 的作者 antirez 在三天之前通过博客文章《<a class="reference external" href="http://antirez.com/news/110">The first release candidate of Redis 4.0 is out</a>》发布了 Redis 4.0 的第一个 RC 版本，
+在博文中他说，
+因为这个新版本的 Redis 出现了多项改变，
+所以他决定从原来的 3.x 版本直接跳到 4.0 版本，
+以此来强调这次更新的变化之大。</p>
+<p>本文将对 Redis 4.0 的各项主要新功能做一个简单的介绍，
+方便大家第一时间了解到这次更新的主要内容。</p>
+<section id="id1">
+<h2>模块系统<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>Redis 4.0 发生的最大变化就是加入了模块系统，
+这个系统可以让用户通过自己编写的代码来扩展和实现 Redis 本身并不具备的功能，
+具体使用方法可以参考 antirez 的博文《Redis Loadable Module System》：
+<a class="reference external" href="http://antirez.com/news/106">http://antirez.com/news/106</a></p>
+<p>因为模块系统是通过高层次 API 实现的，
+它与 Redis 内核本身完全分离、互不干扰，
+所以用户可以在有需要的情况下才启用这个功能，
+以下是 <code class="docutils literal notranslate"><span class="pre">redis.conf</span></code> 中记载的模块载入方法：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">################################## MODULES #####################################</span>
+
+<span class="c1"># Load modules at startup. If the server is not able to load modules</span>
+<span class="c1"># it will abort. It is possible to use multiple loadmodule directives.</span>
+<span class="c1">#</span>
+<span class="c1"># loadmodule /path/to/my_module.so</span>
+<span class="c1"># loadmodule /path/to/other_module.so</span>
+</pre></div>
+</div>
+<p>目前已经有人使用这个功能开发了各种各样的模块，
+比如 Redis Labs 开发的一些模块就可以在 <a class="reference external" href="http://redismodules.com">http://redismodules.com</a> 看到，
+此外 antirez 自己也使用这个功能开发了一个神经网络模块：
+<a class="reference external" href="https://github.com/antirez/neural-redis">https://github.com/antirez/neural-redis</a></p>
+<p>模块功能使得用户可以将 Redis 用作基础设施，
+并在上面构建更多功能，
+这给 Redis 带来了无数新的可能性。</p>
+</section>
+<section id="psync-2-0">
+<h2>PSYNC 2.0<a class="headerlink" href="#psync-2-0" title="Link to this heading">¶</a></h2>
+<p>新版本的 <code class="docutils literal notranslate"><span class="pre">PSYNC</span></code> 命令解决了旧版本的 Redis 在复制时的一些不够优化的地方：</p>
+<ul class="simple">
+<li><p>在旧版本 Redis 中，
+如果一个从服务器在 FAILOVER 之后成为了新的主节点，
+那么其他从节点在复制这个新主的时候就必须进行全量复制。
+在 Redis 4.0 中，
+新主和从服务器在处理这种情况时，
+将在条件允许的情况下使用部分复制。</p></li>
+<li><p>在旧版本 Redis 中，
+一个从服务器如果重启了，
+那么它就必须与主服务器重新进行全量复制，
+在 Redis 4.0 中，
+只要条件允许，
+主从在处理这种情况时将使用部分复制。</p></li>
+</ul>
+</section>
+<section id="id2">
+<h2>缓存驱逐策略优化<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>新添加了 Last Frequently Used 缓存驱逐策略，
+具体信息见 antirez 的博文《Random notes on improving the Redis LRU algorithm》： <a class="reference external" href="http://antirez.com/news/109">http://antirez.com/news/109</a></p>
+<p>另外 Redis 4.0 还对已有的缓存驱逐策略进行了优化，
+使得它们能够更健壮、高效、快速和精确。</p>
+</section>
+<section id="del-flushdb-flushall">
+<h2>非阻塞 DEL 、 FLUSHDB 和 FLUSHALL<a class="headerlink" href="#del-flushdb-flushall" title="Link to this heading">¶</a></h2>
+<p>在 Redis 4.0 之前，
+用户在使用 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令删除体积较大的键，
+又或者在使用 <code class="docutils literal notranslate"><span class="pre">FLUSHDB</span></code> 和 <code class="docutils literal notranslate"><span class="pre">FLUSHALL</span></code> 删除包含大量键的数据库时，
+都可能会造成服务器阻塞。</p>
+<p>为了解决以上问题，
+Redis 4.0 新添加了 <code class="docutils literal notranslate"><span class="pre">UNLINK</span></code> 命令，
+这个命令是 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令的异步版本，
+它可以将删除指定键的操作放在后台线程里面执行，
+从而尽可能地避免服务器阻塞：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">UNLINK</span> <span class="n">fruits</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>因为一些历史原因，
+执行同步删除操作的 <code class="docutils literal notranslate"><span class="pre">DEL</span></code> 命令将会继续保留。</p>
+<p>此外，
+Redis 4.0 中的 <code class="docutils literal notranslate"><span class="pre">FLUSHDB</span></code> 和 <code class="docutils literal notranslate"><span class="pre">FLUSHALL</span></code> 这两个命令都新添加了 <code class="docutils literal notranslate"><span class="pre">ASYNC</span></code> 选项，
+带有这个选项的数据库删除操作将在后台线程进行：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">FLUSHDB</span> <span class="n">ASYNC</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">FLUSHALL</span> <span class="n">ASYNC</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+</section>
+<section id="id3">
+<h2>交换数据库<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>Redis 4.0 对数据库命令的另外一个修改是新增了 <code class="docutils literal notranslate"><span class="pre">SWAPDB</span></code> 命令，
+这个命令可以对指定的两个数据库进行互换：
+比如说，
+通过执行命令 <code class="docutils literal notranslate"><span class="pre">SWAPDB</span> <span class="pre">0</span> <span class="pre">1</span></code> ，
+我们可以将原来的数据库 0 变成数据库 1 ，
+而原来的数据库 1 则变成数据库 0 。</p>
+<p>以下是一个使用 <code class="docutils literal notranslate"><span class="pre">SWAPDB</span></code> 的例子：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">your_name</span> <span class="s2">&quot;huangz&quot;</span>  <span class="o">--</span> <span class="n">在数据库</span> <span class="mi">0</span> <span class="n">中设置一个键</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">your_name</span>
+<span class="s2">&quot;huangz&quot;</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SWAPDB</span> <span class="mi">0</span> <span class="mi">1</span>  <span class="o">--</span> <span class="n">互换数据库</span> <span class="mi">0</span> <span class="n">和数据库</span> <span class="mi">1</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">your_name</span>  <span class="o">--</span> <span class="n">现在的数据库</span> <span class="mi">0</span> <span class="n">已经没有之前设置的键了</span>
+<span class="p">(</span><span class="n">nil</span><span class="p">)</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SELECT</span> <span class="mi">1</span>  <span class="o">--</span> <span class="n">切换到数据库</span> <span class="mi">1</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">your_name</span>  <span class="o">--</span> <span class="n">之前在数据库</span> <span class="mi">0</span> <span class="n">设置的键现在可以在数据库</span> <span class="mi">1</span> <span class="n">找到</span>
+<span class="s2">&quot;huangz&quot;</span>                 <span class="o">--</span> <span class="n">证明两个数据库已经互换</span>
+</pre></div>
+</div>
+</section>
+<section id="rdb-aof">
+<h2>混合 RDB-AOF 持久化格式<a class="headerlink" href="#rdb-aof" title="Link to this heading">¶</a></h2>
+<p>Redis 4.0 新增了 RDB-AOF 混合持久化格式，
+这是一个可选的功能，
+在开启了这个功能之后，
+AOF 重写产生的文件将同时包含 RDB 格式的内容和 AOF 格式的内容，
+其中 RDB 格式的内容用于记录已有的数据，
+而 AOF 格式的内存则用于记录最近发生了变化的数据，
+这样 Redis 就可以同时兼有 RDB 持久化和 AOF 持久化的优点 ——
+既能够快速地生成重写文件，
+也能够在出现问题时，
+快速地载入数据。</p>
+<p>这个功能可以通过 <code class="docutils literal notranslate"><span class="pre">aof-use-rdb-preamble</span></code> 选项进行开启，
+<code class="docutils literal notranslate"><span class="pre">redis.conf</span></code> 文件中记录了这个选项的使用方法：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># When rewriting the AOF file, Redis is able to use an RDB preamble in the</span>
+<span class="c1"># AOF file for faster rewrites and recoveries. When this option is turned</span>
+<span class="c1"># on the rewritten AOF file is composed of two different stanzas:</span>
+<span class="c1">#</span>
+<span class="c1">#   [RDB file][AOF tail]</span>
+<span class="c1">#</span>
+<span class="c1"># When loading Redis recognizes that the AOF file starts with the &quot;REDIS&quot;</span>
+<span class="c1"># string and loads the prefixed RDB file, and continues loading the AOF</span>
+<span class="c1"># tail.</span>
+<span class="c1">#</span>
+<span class="c1"># This is currently turned off by default in order to avoid the surprise</span>
+<span class="c1"># of a format change, but will at some point be used as the default.</span>
+<span class="n">aof</span><span class="o">-</span><span class="n">use</span><span class="o">-</span><span class="n">rdb</span><span class="o">-</span><span class="n">preamble</span> <span class="n">no</span>
+</pre></div>
+</div>
+</section>
+<section id="id4">
+<h2>内存命令<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>新添加了一个 <code class="docutils literal notranslate"><span class="pre">MEMORY</span></code> 命令，
+这个命令可以用于视察内存使用情况，
+并进行相应的内存管理操作：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">MEMORY</span> <span class="n">HELP</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;MEMORY USAGE &lt;key&gt; [SAMPLES &lt;count&gt;] - Estimate memory usage of key&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;MEMORY STATS                         - Show memory usage details&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;MEMORY PURGE                         - Ask the allocator to release memory&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;MEMORY MALLOC-STATS                  - Show allocator internal stats&quot;</span>
+</pre></div>
+</div>
+<p>其中，
+使用 <code class="docutils literal notranslate"><span class="pre">MEMORY</span> <span class="pre">USAGE</span></code> 子命令可以估算储存给定键所需的内存：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">msg</span> <span class="s2">&quot;hello world&quot;</span>
+<span class="n">OK</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SADD</span> <span class="n">fruits</span> <span class="n">apple</span> <span class="n">banana</span> <span class="n">cherry</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">MEMORY</span> <span class="n">USAGE</span> <span class="n">msg</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">62</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">MEMORY</span> <span class="n">USAGE</span> <span class="n">fruits</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">375</span>
+</pre></div>
+</div>
+<p>使用 <code class="docutils literal notranslate"><span class="pre">MEMORY</span> <span class="pre">STATS</span></code> 子命令可以查看 Redis 当前的内存使用情况：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">MEMORY</span> <span class="n">STATS</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;peak.allocated&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1014480</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;total.allocated&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1014512</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;startup.allocated&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">963040</span>
+<span class="mi">7</span><span class="p">)</span> <span class="s2">&quot;replication.backlog&quot;</span>
+<span class="mi">8</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+<span class="mi">9</span><span class="p">)</span> <span class="s2">&quot;clients.slaves&quot;</span>
+<span class="mi">10</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+<span class="mi">11</span><span class="p">)</span> <span class="s2">&quot;clients.normal&quot;</span>
+<span class="mi">12</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">49614</span>
+<span class="mi">13</span><span class="p">)</span> <span class="s2">&quot;aof.buffer&quot;</span>
+<span class="mi">14</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+<span class="mi">15</span><span class="p">)</span> <span class="s2">&quot;db.0&quot;</span>
+<span class="mi">16</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;overhead.hashtable.main&quot;</span>
+    <span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">264</span>
+    <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;overhead.hashtable.expires&quot;</span>
+    <span class="mi">4</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">32</span>
+<span class="mi">17</span><span class="p">)</span> <span class="s2">&quot;overhead.total&quot;</span>
+<span class="mi">18</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1012950</span>
+<span class="mi">19</span><span class="p">)</span> <span class="s2">&quot;keys.count&quot;</span>
+<span class="mi">20</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">5</span>
+<span class="mi">21</span><span class="p">)</span> <span class="s2">&quot;keys.bytes-per-key&quot;</span>
+<span class="mi">22</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">10294</span>
+<span class="mi">23</span><span class="p">)</span> <span class="s2">&quot;dataset.bytes&quot;</span>
+<span class="mi">24</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1562</span>
+<span class="mi">25</span><span class="p">)</span> <span class="s2">&quot;dataset.percentage&quot;</span>
+<span class="mi">26</span><span class="p">)</span> <span class="s2">&quot;3.0346596240997314&quot;</span>
+<span class="mi">27</span><span class="p">)</span> <span class="s2">&quot;peak.percentage&quot;</span>
+<span class="mi">28</span><span class="p">)</span> <span class="s2">&quot;100.00315093994141&quot;</span>
+<span class="mi">29</span><span class="p">)</span> <span class="s2">&quot;fragmentation&quot;</span>
+<span class="mi">30</span><span class="p">)</span> <span class="s2">&quot;2.1193723678588867&quot;</span>
+</pre></div>
+</div>
+<p>使用 <code class="docutils literal notranslate"><span class="pre">MEMORY</span> <span class="pre">PURGE</span></code> 子命令可以要求分配器释放更多内存：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">MEMORY</span> <span class="n">PURGE</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p>使用 <code class="docutils literal notranslate"><span class="pre">MEMORY</span> <span class="pre">MALLOC-STATS</span></code> 子命令可以展示分配器内部状态：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">MEMORY</span> <span class="n">MALLOC</span><span class="o">-</span><span class="n">STATS</span>
+<span class="n">Stats</span> <span class="ow">not</span> <span class="n">supported</span> <span class="k">for</span> <span class="n">the</span> <span class="n">current</span> <span class="n">allocator</span>
+</pre></div>
+</div>
+</section>
+<section id="nat-docker">
+<h2>兼容 NAT 和 Docker<a class="headerlink" href="#nat-docker" title="Link to this heading">¶</a></h2>
+<p>Redis 4.0 将兼容 NAT 和 Docker ，
+具体的使用方法在 <code class="docutils literal notranslate"><span class="pre">redis.conf</span></code> 中有记载：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">########################## CLUSTER DOCKER/NAT support  ########################</span>
+
+<span class="c1"># In certain deployments, Redis Cluster nodes address discovery fails, because</span>
+<span class="c1"># addresses are NAT-ted or because ports are forwarded (the typical case is</span>
+<span class="c1"># Docker and other containers).</span>
+<span class="c1">#</span>
+<span class="c1"># In order to make Redis Cluster working in such environments, a static</span>
+<span class="c1"># configuration where each node known its public address is needed. The</span>
+<span class="c1"># following two options are used for this scope, and are:</span>
+<span class="c1">#</span>
+<span class="c1"># * cluster-announce-ip</span>
+<span class="c1"># * cluster-announce-port</span>
+<span class="c1"># * cluster-announce-bus-port</span>
+<span class="c1">#</span>
+<span class="c1"># Each instruct the node about its address, client port, and cluster message</span>
+<span class="c1"># bus port. The information is then published in the header of the bus packets</span>
+<span class="c1"># so that other nodes will be able to correctly map the address of the node</span>
+<span class="c1"># publishing the information.</span>
+<span class="c1">#</span>
+<span class="c1"># If the above options are not used, the normal Redis Cluster auto-detection</span>
+<span class="c1"># will be used instead.</span>
+<span class="c1">#</span>
+<span class="c1"># Note that when remapped, the bus port may not be at the fixed offset of</span>
+<span class="c1"># clients port + 10000, so you can specify any port and bus-port depending</span>
+<span class="c1"># on how they get remapped. If the bus-port is not set, a fixed offset of</span>
+<span class="c1"># 10000 will be used as usually.</span>
+<span class="c1">#</span>
+<span class="c1"># Example:</span>
+<span class="c1">#</span>
+<span class="c1"># cluster-announce-ip 10.1.1.5</span>
+<span class="c1"># cluster-announce-port 6379</span>
+<span class="c1"># cluster-announce-bus-port 6380</span>
+</pre></div>
+</div>
+</section>
+<section id="id5">
+<h2>结语<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>关于 Redis 4.0 的主要更新就介绍到这里，
+想要详细了解 Redis 4.0 各项修改的读者可以参考 Release Note ：
+<a class="reference external" href="https://raw.githubusercontent.com/antirez/redis/4.0/00-RELEASENOTES">https://raw.githubusercontent.com/antirez/redis/4.0/00-RELEASENOTES</a></p>
+<p>想要试用新版本的读者，
+只要直接获取 <a class="reference external" href="https://github.com/antirez/redis">https://github.com/antirez/redis</a> 的 unstable 分支即可。</p>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2016.12.6</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

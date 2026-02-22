@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>修改 Ubuntu 软件更新源 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="2019" href="../2019/index.html" />
+    <link rel="prev" title="通过 Linux 子系统在 Windows 10 上安装 Ubuntu" href="windows-subsystem-for-linux.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">修改 Ubuntu 软件更新源</a><ul>
+<li><a class="reference internal" href="#id1">步骤</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="windows-subsystem-for-linux.html" title="Previous Chapter: 通过 Linux 子系统在 Windows 10 上安装 Ubuntu"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; 通过 Linux 子系统在...</span>
+    </a>
+  </li>
+  <li>
+    <a href="../2019/index.html" title="Next Chapter: 2019"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">2019 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="ubuntu">
+<h1>修改 Ubuntu 软件更新源<a class="headerlink" href="#ubuntu" title="Link to this heading">¶</a></h1>
+<img alt="../_images/ubuntu-logo.png" src="../_images/ubuntu-logo.png" />
+<p>由于设置原因又或者用户疏忽，
+某些 Ubuntu 系统在安装完毕之后使用的是国外而不是国内的软件更新源，
+导致系统在升级软件的时候无法达到最优的下载速度。
+为了解决这个问题，
+我们需要将系统的软件更新源修改为本地源。</p>
+<p>Ubuntu 在国内有很多源可供选择，
+比如清华大学的 TUNA 源就是一个不错的选择。
+我们可以根据自己的 Ubuntu 版本在 <a class="reference external" href="https://mirror.tuna.tsinghua.edu.cn/help/ubuntu/">https://mirror.tuna.tsinghua.edu.cn/help/ubuntu/</a> 上面找到对应的源地址。</p>
+<section id="id1">
+<h2>步骤<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>Ubuntu 的软件源配置文件为 <code class="docutils literal notranslate"><span class="pre">/etc/apt/sources.list</span></code> ，
+我们只需要修改这个文件的内容就能够达到改变更新源的目的，
+以下是具体的步骤。</p>
+<ol class="arabic">
+<li><p>备份原来的源文件：</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># cp /etc/apt/sources.list /etc/apt/sources.list.backup</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>了解系统版本：</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># lsb_release -a</span>
+<span class="n">No</span> <span class="n">LSB</span> <span class="n">modules</span> <span class="n">are</span> <span class="n">available</span><span class="o">.</span>
+<span class="n">Distributor</span> <span class="n">ID</span><span class="p">:</span> <span class="n">Ubuntu</span>
+<span class="n">Description</span><span class="p">:</span>    <span class="n">Ubuntu</span> <span class="mf">19.10</span>
+<span class="n">Release</span><span class="p">:</span>        <span class="mf">19.10</span>
+<span class="n">Codename</span><span class="p">:</span>       <span class="n">eoan</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>根据版本（19.10）在上述的 TUNA 帮助页面找到相应的源地址，并复制全部内容：</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># 默认注释了源码镜像以提高 apt update 速度，如有需要可自行取消注释</span>
+<span class="n">deb</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">mirrors</span><span class="o">.</span><span class="n">tuna</span><span class="o">.</span><span class="n">tsinghua</span><span class="o">.</span><span class="n">edu</span><span class="o">.</span><span class="n">cn</span><span class="o">/</span><span class="n">ubuntu</span><span class="o">/</span> <span class="n">eoan</span> <span class="n">main</span> <span class="n">restricted</span> <span class="n">universe</span> <span class="n">multiverse</span>
+<span class="c1"># deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ eoan main restricted universe multiverse</span>
+<span class="n">deb</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">mirrors</span><span class="o">.</span><span class="n">tuna</span><span class="o">.</span><span class="n">tsinghua</span><span class="o">.</span><span class="n">edu</span><span class="o">.</span><span class="n">cn</span><span class="o">/</span><span class="n">ubuntu</span><span class="o">/</span> <span class="n">eoan</span><span class="o">-</span><span class="n">updates</span> <span class="n">main</span> <span class="n">restricted</span> <span class="n">universe</span> <span class="n">multiverse</span>
+<span class="c1"># deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ eoan-updates main restricted universe multiverse</span>
+<span class="n">deb</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">mirrors</span><span class="o">.</span><span class="n">tuna</span><span class="o">.</span><span class="n">tsinghua</span><span class="o">.</span><span class="n">edu</span><span class="o">.</span><span class="n">cn</span><span class="o">/</span><span class="n">ubuntu</span><span class="o">/</span> <span class="n">eoan</span><span class="o">-</span><span class="n">backports</span> <span class="n">main</span> <span class="n">restricted</span> <span class="n">universe</span> <span class="n">multiverse</span>
+<span class="c1"># deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ eoan-backports main restricted universe multiverse</span>
+<span class="n">deb</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">mirrors</span><span class="o">.</span><span class="n">tuna</span><span class="o">.</span><span class="n">tsinghua</span><span class="o">.</span><span class="n">edu</span><span class="o">.</span><span class="n">cn</span><span class="o">/</span><span class="n">ubuntu</span><span class="o">/</span> <span class="n">eoan</span><span class="o">-</span><span class="n">security</span> <span class="n">main</span> <span class="n">restricted</span> <span class="n">universe</span> <span class="n">multiverse</span>
+<span class="c1"># deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ eoan-security main restricted universe multiverse</span>
+
+<span class="c1"># 预发布软件源，不建议启用</span>
+<span class="c1"># deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ eoan-proposed main restricted universe multiverse</span>
+<span class="c1"># deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ eoan-proposed main restricted universe multiverse</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>打开文件，将文件内容替换为已复制的内容：</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># vi /etc/apt/sources.list</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>从新的软件源中获取包的更新信息：</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># apt update</span>
+<span class="n">Get</span><span class="p">:</span><span class="mi">1</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">mirrors</span><span class="o">.</span><span class="n">tuna</span><span class="o">.</span><span class="n">tsinghua</span><span class="o">.</span><span class="n">edu</span><span class="o">.</span><span class="n">cn</span><span class="o">/</span><span class="n">ubuntu</span> <span class="n">eoan</span> <span class="n">InRelease</span> <span class="p">[</span><span class="mi">255</span> <span class="n">kB</span><span class="p">]</span>
+<span class="n">Get</span><span class="p">:</span><span class="mi">2</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">mirrors</span><span class="o">.</span><span class="n">tuna</span><span class="o">.</span><span class="n">tsinghua</span><span class="o">.</span><span class="n">edu</span><span class="o">.</span><span class="n">cn</span><span class="o">/</span><span class="n">ubuntu</span> <span class="n">eoan</span><span class="o">-</span><span class="n">updates</span> <span class="n">InRelease</span> <span class="p">[</span><span class="mf">97.5</span> <span class="n">kB</span><span class="p">]</span>
+<span class="n">Get</span><span class="p">:</span><span class="mi">3</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">mirrors</span><span class="o">.</span><span class="n">tuna</span><span class="o">.</span><span class="n">tsinghua</span><span class="o">.</span><span class="n">edu</span><span class="o">.</span><span class="n">cn</span><span class="o">/</span><span class="n">ubuntu</span> <span class="n">eoan</span><span class="o">-</span><span class="n">backports</span> <span class="n">InRelease</span> <span class="p">[</span><span class="mf">88.8</span> <span class="n">kB</span><span class="p">]</span>
+<span class="n">Get</span><span class="p">:</span><span class="mi">4</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">mirrors</span><span class="o">.</span><span class="n">tuna</span><span class="o">.</span><span class="n">tsinghua</span><span class="o">.</span><span class="n">edu</span><span class="o">.</span><span class="n">cn</span><span class="o">/</span><span class="n">ubuntu</span> <span class="n">eoan</span><span class="o">-</span><span class="n">security</span> <span class="n">InRelease</span> <span class="p">[</span><span class="mf">97.5</span> <span class="n">kB</span><span class="p">]</span>
+<span class="n">Get</span><span class="p">:</span><span class="mi">5</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">mirrors</span><span class="o">.</span><span class="n">tuna</span><span class="o">.</span><span class="n">tsinghua</span><span class="o">.</span><span class="n">edu</span><span class="o">.</span><span class="n">cn</span><span class="o">/</span><span class="n">ubuntu</span> <span class="n">eoan</span><span class="o">/</span><span class="n">main</span> <span class="n">amd64</span> <span class="n">Packages</span> <span class="p">[</span><span class="mi">969</span> <span class="n">kB</span><span class="p">]</span>
+<span class="o">...</span>
+<span class="n">Get</span><span class="p">:</span><span class="mi">80</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">mirrors</span><span class="o">.</span><span class="n">tuna</span><span class="o">.</span><span class="n">tsinghua</span><span class="o">.</span><span class="n">edu</span><span class="o">.</span><span class="n">cn</span><span class="o">/</span><span class="n">ubuntu</span> <span class="n">eoan</span><span class="o">-</span><span class="n">security</span><span class="o">/</span><span class="n">multiverse</span> <span class="n">Translation</span><span class="o">-</span><span class="n">en</span> <span class="p">[</span><span class="mi">632</span> <span class="n">B</span><span class="p">]</span>
+<span class="n">Get</span><span class="p">:</span><span class="mi">81</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">mirrors</span><span class="o">.</span><span class="n">tuna</span><span class="o">.</span><span class="n">tsinghua</span><span class="o">.</span><span class="n">edu</span><span class="o">.</span><span class="n">cn</span><span class="o">/</span><span class="n">ubuntu</span> <span class="n">eoan</span><span class="o">-</span><span class="n">security</span><span class="o">/</span><span class="n">multiverse</span> <span class="n">amd64</span> <span class="n">c</span><span class="o">-</span><span class="n">n</span><span class="o">-</span><span class="n">f</span> <span class="n">Metadata</span> <span class="p">[</span><span class="mi">116</span> <span class="n">B</span><span class="p">]</span>
+<span class="n">Fetched</span> <span class="mf">43.3</span> <span class="n">MB</span> <span class="ow">in</span> <span class="mi">5</span><span class="n">s</span> <span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">199</span> <span class="n">kB</span><span class="o">/</span><span class="n">s</span><span class="p">)</span>
+<span class="n">Reading</span> <span class="n">package</span> <span class="n">lists</span><span class="o">...</span> <span class="n">Done</span>
+<span class="n">Building</span> <span class="n">dependency</span> <span class="n">tree</span>
+<span class="n">Reading</span> <span class="n">state</span> <span class="n">information</span><span class="o">...</span> <span class="n">Done</span>
+<span class="n">All</span> <span class="n">packages</span> <span class="n">are</span> <span class="n">up</span> <span class="n">to</span> <span class="n">date</span><span class="o">.</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>更新软件包：</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># apt upgrade</span>
+<span class="n">Reading</span> <span class="n">package</span> <span class="n">lists</span><span class="o">...</span> <span class="n">Done</span>
+<span class="n">Building</span> <span class="n">dependency</span> <span class="n">tree</span>
+<span class="n">Reading</span> <span class="n">state</span> <span class="n">information</span><span class="o">...</span> <span class="n">Done</span>
+<span class="n">Calculating</span> <span class="n">upgrade</span><span class="o">...</span> <span class="n">Done</span>
+<span class="mi">0</span> <span class="n">upgraded</span><span class="p">,</span> <span class="mi">0</span> <span class="n">newly</span> <span class="n">installed</span><span class="p">,</span> <span class="mi">0</span> <span class="n">to</span> <span class="n">remove</span> <span class="ow">and</span> <span class="mi">0</span> <span class="ow">not</span> <span class="n">upgraded</span><span class="o">.</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+</ol>
+<div class="line-block">
+<div class="line">觉得更新系统速度一定要快的黄健宏</div>
+<div class="line">2020.2.6</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

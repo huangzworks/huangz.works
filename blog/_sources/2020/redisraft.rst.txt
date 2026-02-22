@@ -1,0 +1,204 @@
+使用 RedisRaft 构建强一致的 Redis 集群
+=====================================================
+
+.. image:: image/redisraft.jpg
+
+**本文由黄健宏翻译自**
+`RedisLabs.com/blog <https://redislabs.com/blog/redisraft-new-strong-consistency-deployment-option/>`_
+**，首发于**
+`blog.huangz.me <http://blog.huangz.me>`_ 。
+
+
+正在开发中的 `RedisRaft <https://github.com/RedisLabs/redisraft/>`_ 是一个开源的 Redis 模块，
+它可以将多个 Redis 服务器用作一个单一容错且强一致的集群来运行。
+顾名思义，
+这个模块基于 `Raft 的共识算法 <https://raft.github.io/>`_\ 并且使用了一个\ `实现该算法的开源 C 库 <https://github.com/willemt/raft>`_\ 。
+
+RedisRaft 为 Redis 和 Redis 生态系统带来了新的\ `强一致性与严格的序列化 <https://jepsen.io/consistency/models/strict-serializable#:~:text=Informally%2C%20strict%20serializability%20(a.k.a.%20PL,B%20in%20the%20serialization%20order>`_\ 部署方案。
+新模块使 Redis 与 Redis 现有的客户端、库和数据类型一起在需要高可靠性和一致性的超越缓存（beyond-cache）的场景中使用成为可能。
+
+
+RedisRaft 的由来
+-------------------------
+
+RedisRaft 始于 Redis 5 发布之前的一个实验性的“副项目”。
+至于 Redis 模块这一特性则从 Redis 4 开始引入，
+它可以通过模块的方式实现新的数据类型和命令。
+我们想探索我们能够将 API 扩展到什么程度，
+并使用模块以更激进的方式扩展 Redis 。
+但我们也希望最终能得到一些有用的东西 —— 一个可选的强一致的 Redis 。
+
+RedisRaft 集群能够提供的一致性和可靠性跟 ZooKeeper 、 Etcd 等常见的可靠数据库存储处于同一水平。
+简单来说，
+在 RedisRaft 中：
+
+- 已确认的写入保证会被提交并且永不丢失。
+- 读取将始终返回最新的已提交写入。
+
+正如人们预期的一样，
+提供这种级别的一致性可靠存储带来了性能和可用性方面的折中。
+在 RedisRaft 中：
+
+- 客户端操作依赖于集群节点的消息交换，它们将受到网络延迟的影响。
+- 写入必须在完成之前刷新到磁盘上，它们会受到磁盘 I/O 延迟的约束。
+- 只有在大多数节点都正常运行、健康并且能够相互通信的情况下，集群才是可用的。
+
+
+RedisRaft 的工作原理
+---------------------------
+
+一旦 RedisRaft 模块被加载到 Redis 中，
+它就会接管集群节点之间的通信、Raft 日志或快照的复制、持久化等工作。
+Redis 核心不会察觉到这一点，
+它就像是一个没有启用集群、持久化和复制特性的独立服务器。
+
+设置一个三节点 RedisRaft 集群就像启动三个 Redis 服务器一样简单，
+我们首先要做的就是执行以下命令，
+载入 RedisRaft 模块：
+
+::
+
+    redis-server --loadmodule /path/to/redisraft.so
+
+接着，
+执行以下命令能够连接到第一个服务器并且创建 Raft 集群：
+
+::
+
+    10.0.0.1:6379> RAFT.CLUSTER INIT
+    OK 989645460313dd2ddb051f033c791222
+
+之后，
+我们可以执行以下两条命令，
+将另外两台服务器加入到集群里面：
+
+::
+
+    10.0.0.2:6379> RAFT.CLUSTER JOIN 10.0.0.1:6379
+    OK
+
+    10.0.0.3:6379> RAFT.CLUSTER JOIN 10.0.0.1:6379
+    OK
+
+
+访问集群
+-----------------
+
+在设置好 RedisRaft 集群之后，
+我们就可以向它写入数据：
+
+::
+
+    10.0.0.1:6379> INCR counter:1
+    (integer) 1
+
+收到回复表明写入已经被复制到\ **不少于**\ 半数集群节点（在我们的情况下是2个节点），
+并提交到它们的持久化存储中。
+
+Raft 基于强领导者（strong leader）概念，
+这意味着所有客户端操作都应该发送至领导者节点（leader node）并由它发起。
+在本例中，
+我们的客户端确实连接到了领导者，
+但集群领导力是动态的，
+客户端不一定知道谁是领导者。
+
+在一个跟随者（非领导者）节点上尝试同样的操作，
+会产生这样的响应：
+
+::
+
+    10.0.0.3:6379> INCR counter:1.
+    (error) MOVED 10.0.0.1:6379
+
+客户端可以捕捉这个错误，
+并按照指示重新连接至领导者节点，
+然后重新执行命令。
+
+但是，
+如果我们不想修改现有的应用程序怎么办？
+幸运的是，
+RedisRaft 也可以被配置为自动为我们处理这个问题。
+通过启用 follower 代理模式，
+我们可以让集群节点自动将请求转发给领导者，
+并在其可用时提供回复。
+
+::
+
+    10.0.0.3:6379> RAFT.CONFIG SET follower-proxy yes.
+    OK
+
+    10.0.0.3:6379> INCR counter:1
+    (integer) 2
+
+这种做法要简单得多，
+但是由于访问非领导者节点会产生额外的网络跳数，
+所以对延迟和网络负载都会有影响。
+
+
+改变集群
+---------------
+
+在设置集群时，
+我们实际上进行了三种不同的操作。
+
+- 在一个节点上创建集群。
+- 添加了第二个节点。
+- 添加第三个节点。
+
+RedisRaft 集群的配置并不是静态的，
+在集群创建之后并且处于活跃状态时，
+我们可以随时往集群里面添加或者移除节点。
+
+假设现在我们需要替换第三个节点，
+那么我们首先要做的就是加入一个替换该节点的新节点。
+注意，
+为了避免集群和宝贵的数据在数据迁移期间处于退化的冗余状态，
+我们需要”先添加新节点，再移除旧节点“，
+而不是”先移除旧节点再添加新节点“：
+
+::
+
+    10.0.0.4:6379> RAFT.CLUSTER JOIN 10.0.0.1:6379
+    OK
+
+接下来，
+我们查找随机分配给我们第三个节点的 ID 。
+
+::
+
+    redis-cli -h 10.0.0.1 --raw RAFT.INFO | grep 10.0.0.3
+    node2:id=1739451728,state=connected,voting=yes,addr=10.0.0.3,port=6379。
+    last_conn_secs=3537，conn_errors=0，conn_oks=1。
+
+然后将第三个节点删除：
+
+::
+
+    10.0.0.1:6379> RAFT.NODE REMOVE 1739451728
+    OK
+
+
+RedisRaft 的发布状态
+---------------------------
+
+作为 RedisRaft 开发工作的一部分，
+我们一直在与 Kyle Kingsbury（又名\ `Aphyr <https://aphyr.com/about>`_\ ） 合作，
+使用\ `Jepsen <https://jepsen.io/>`_\ （一个测试分布式系统安全性和正确性的著名框架）分析和测试 RedisRaft 。
+到目前为止，
+这次合作已经形成了\ `一份已发表的分析报告 <https://jepsen.io/analyses/redis-raft-1b3fbf6>`_\ 。
+
+虽然仍然处于开发当中，
+但 RedisRaft 的大部分基本功能已经到位。
+目前，
+我们正在为第一个预览版而努力，
+预计几个月后就会推出。
+至于正式版（GA）的 RedisRaft 则会以 GNU AGPLv3 和 Redis 源码可用许可证（RSAL）双重许可证的形式发布。
+
+| 文/Yossi Gottlieb · 译/黄健宏
+| 2020.6.28
+
+
+.. tip::
+
+    如果你对 Redis 感兴趣，
+    那么请不要错过我即将推出的 \ `《Redis入门与实战》 <http://learnredis.com/>`_\ 以及\ `其他 Redis 书 <http://huangz.me/>`_\ 。

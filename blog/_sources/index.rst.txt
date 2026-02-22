@@ -1,0 +1,29 @@
+.. Right Track Wrong Train documentation master file, created by
+   sphinx-quickstart on Sat Oct  6 22:07:15 2012.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+
+健宏创作研究
+============================
+
+欢迎来到\ `黄健宏 <https://huangz.works>`_\ 的博客，我会在这里写一些关于图书创作、计算机技术以及日常生活的文章，感谢您的阅读！
+
+.. toctree::
+   :maxdepth: 2
+
+   2026/index
+   2025/index
+   2024/index
+   2023/index
+   2022/index
+   2021/index
+   2020/index
+   2019/index
+   2018/index
+   2017/index
+   2016/index
+   2015/index
+   2014/index
+   2013/index
+   2012/index

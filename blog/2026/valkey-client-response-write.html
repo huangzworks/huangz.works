@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Valkey源码剖析（23）：命令回复的写入 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="2025" href="../2025/index.html" />
+    <link rel="prev" title="Valkey源码剖析（22）：命令回复的存储" href="valkey-client-response-store.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Valkey源码剖析（23）：命令回复的写入</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="valkey-client-response-store.html" title="Previous Chapter: Valkey源码剖析（22）：命令回复的存储"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; Valkey源码剖析（22...</span>
+    </a>
+  </li>
+  <li>
+    <a href="../2025/index.html" title="Next Chapter: 2025"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">2025 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="valkey-23">
+<h1>Valkey源码剖析（23）：命令回复的写入<a class="headerlink" href="#valkey-23" title="Link to this heading">¶</a></h1>
+<p>Valkey服务器在调用<code class="docutils literal notranslate"><span class="pre">addReply</span></code>系列函数的时候，会调用<code class="docutils literal notranslate"><span class="pre">networking.c/prepareClientToWrite()</span></code>函数，而后者则会通过调用<code class="docutils literal notranslate"><span class="pre">networking.c/putClientInPendingWriteQueue()</span></code>，将客户端添加至服务器全局的待写入客户端链表中：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="c1">// 在每次尝试向客户端发送数据之前调用，检查各种条件以判断发送操作能否进行</span>
+<span class="c1">// 可以的话返回C_OK，不行的话返回C_ERR</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">prepareClientToWrite</span><span class="p">(</span><span class="n">client</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="c1">// ...</span>
+
+<span class="w">    </span><span class="cm">/* Schedule the client to write the output buffers to the socket, unless</span>
+<span class="cm">     * it should already be setup to do so (it has already pending data). */</span>
+<span class="w">    </span><span class="c1">// 安排客户端将输出缓冲区写入至套接字，除非它之前已经设置好了（有待处理数据）</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">clientHasPendingReplies</span><span class="p">(</span><span class="n">c</span><span class="p">))</span><span class="w"> </span><span class="n">putClientInPendingWriteQueue</span><span class="p">(</span><span class="n">c</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">putClientInPendingWriteQueue</span><span class="p">(</span><span class="n">client</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="cm">/* Schedule the client to write the output buffers to the socket only</span>
+<span class="cm">     * if not already done and, for replicas, if the replica can actually receive</span>
+<span class="cm">     * writes at this stage. */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">flag</span><span class="p">.</span><span class="n">pending_write</span><span class="w"> </span><span class="o">&amp;&amp;</span>
+<span class="w">        </span><span class="p">(</span><span class="o">!</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">repl_data</span><span class="w"> </span><span class="o">||</span>
+<span class="w">         </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">repl_data</span><span class="o">-&gt;</span><span class="n">repl_state</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">REPL_STATE_NONE</span><span class="w"> </span><span class="o">||</span>
+<span class="w">         </span><span class="p">(</span><span class="n">isReplicaReadyForReplData</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">!</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">repl_data</span><span class="o">-&gt;</span><span class="n">repl_start_cmd_stream_on_ack</span><span class="p">))</span><span class="w"> </span><span class="o">&amp;&amp;</span>
+<span class="w">        </span><span class="n">clusterSlotMigrationShouldInstallWriteHandler</span><span class="p">(</span><span class="n">c</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="cm">/* Here instead of installing the write handler, we just flag the</span>
+<span class="cm">         * client and put it into a list of clients that have something</span>
+<span class="cm">         * to write to the socket. This way before re-entering the event</span>
+<span class="cm">         * loop, we can try to directly write to the client sockets avoiding</span>
+<span class="cm">         * a system call. We&#39;ll only really install the write handler if</span>
+<span class="cm">         * we&#39;ll not be able to write the whole reply at once. */</span>
+<span class="w">        </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">flag</span><span class="p">.</span><span class="n">pending_write</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">        </span><span class="n">listLinkNodeHead</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">clients_pending_write</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">clients_pending_write_node</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>在服务器进入下一个事件循环之前，休眠前置函数<code class="docutils literal notranslate"><span class="pre">server.c/beforeSleep()</span></code>函数被调用的时候，<code class="docutils literal notranslate"><span class="pre">networking.c/handleClientsWithPendingWrites()</span></code>函数将会被调用：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">beforeSleep</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">aeEventLoop</span><span class="w"> </span><span class="o">*</span><span class="n">eventLoop</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="c1">// ...</span>
+
+<span class="w">    </span><span class="c1">// 只执行部分关键函数，从而避免在执行processEventsWhileBlocked()时重新进入事件循环。</span>
+<span class="w">    </span><span class="c1">// 注意，在这种情况下，程序会记录正在处理的事件数量，</span>
+<span class="w">    </span><span class="c1">// 以便processEventsWhileBlocked()函数在无事可处理的时候尽快停止。</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ProcessingEventsWhileBlocked</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">processed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="w">        </span><span class="c1">// ...</span>
+
+<span class="w">        </span><span class="c1">// 尝试直接写入客户端的输出缓冲区</span>
+<span class="w">        </span><span class="n">processed</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">handleClientsWithPendingWrites</span><span class="p">();</span>
+
+<span class="w">        </span><span class="c1">// ...</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// ...</span>
+
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">handleClientsWithPendingWrites()</span></code>函数会遍历服务器待写入客户端链表<code class="docutils literal notranslate"><span class="pre">server.clients_pending_write</span></code>，尝试对客户端进行同步写入，只有在同步写入之后，客户端仍然有数据需要写入的情况下，服务器才会对客户端安装写入事件处理器<code class="docutils literal notranslate"><span class="pre">server.c/installClientWriteHandler()</span></code>，并在之后由事件子系统进行后续的异步写入：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="c1">// 在进入事件循环前调用，尝试在不使用系统调用以安装可写事件句柄等一系列操作的情况下，</span>
+<span class="c1">// 直接将回复写入至客户端输出缓冲区。</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">handleClientsWithPendingWrites</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">processed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">pending_writes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listLength</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">clients_pending_write</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">pending_writes</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">processed</span><span class="p">;</span><span class="w"> </span><span class="cm">/* Return ASAP if there are no clients. */</span>
+
+<span class="w">    </span><span class="cm">/* Adjust the number of I/O threads based on the number of pending writes this is required in case pending_writes &gt;</span>
+<span class="cm">     * poll_events (for example in pubsub) */</span>
+<span class="w">    </span><span class="n">adjustIOThreadsByEventLoad</span><span class="p">(</span><span class="n">pending_writes</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 遍历服务器中的待写入客户端链表</span>
+<span class="w">    </span><span class="n">listIter</span><span class="w"> </span><span class="n">li</span><span class="p">;</span>
+<span class="w">    </span><span class="n">listNode</span><span class="w"> </span><span class="o">*</span><span class="n">ln</span><span class="p">;</span>
+<span class="w">    </span><span class="n">listRewind</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">clients_pending_write</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">li</span><span class="p">);</span>
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">((</span><span class="n">ln</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listNext</span><span class="p">(</span><span class="o">&amp;</span><span class="n">li</span><span class="p">)))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 获取待写入客户端</span>
+<span class="w">        </span><span class="n">client</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listNodeValue</span><span class="p">(</span><span class="n">ln</span><span class="p">);</span>
+<span class="w">        </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">flag</span><span class="p">.</span><span class="n">pending_write</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">        </span><span class="n">listUnlinkNode</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">clients_pending_write</span><span class="p">,</span><span class="w"> </span><span class="n">ln</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// ...</span>
+
+<span class="w">        </span><span class="c1">// 更新写入计数器</span>
+<span class="w">        </span><span class="n">processed</span><span class="o">++</span><span class="p">;</span>
+
+<span class="w">        </span><span class="cm">/* Try to write buffers to the client socket. */</span>
+<span class="w">        </span><span class="c1">// 尝试将缓冲区数据写入至客户端套接字</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">writeToClient</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">)</span><span class="w"> </span><span class="k">continue</span><span class="p">;</span>
+
+<span class="w">        </span><span class="cm">/* If after the synchronous writes above we still have data to</span>
+<span class="cm">         * output to the client, we need to install the writable handler. */</span>
+<span class="w">        </span><span class="c1">// 如果在上面的同步写入执行之后，服务器仍然有数据需要输出至客户端，</span>
+<span class="w">        </span><span class="c1">// 那么安装写事件处理器，由它处理接下来的写入</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">clientHasPendingReplies</span><span class="p">(</span><span class="n">c</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">installClientWriteHandler</span><span class="p">(</span><span class="n">c</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 返回本次写入的客户端数量</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">processed</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">installClientWriteHandler()</span></code>函数要做的就是安装<code class="docutils literal notranslate"><span class="pre">server.c/sendReplyToClient()</span></code>函数作为客户端连接的写事件处理器：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="c1">// 为客户端设置写事件处理函数</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">installClientWriteHandler</span><span class="p">(</span><span class="n">client</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">ae_barrier</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="cm">/* For the fsync=always policy, we want that a given FD is never</span>
+<span class="cm">     * served for reading and writing in the same event loop iteration,</span>
+<span class="cm">     * so that in the middle of receiving the query, and serving it</span>
+<span class="cm">     * to the client, we&#39;ll call beforeSleep() that will do the</span>
+<span class="cm">     * actual fsync of AOF to disk. the write barrier ensures that. */</span>
+<span class="w">    </span><span class="c1">// 当fsync选项被设置为always时，开启ae_barrier，</span>
+<span class="w">    </span><span class="c1">// 以便在向客户端返回回复之前，将AOF数据追加至硬盘</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">aof_state</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">AOF_ON</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">server</span><span class="p">.</span><span class="n">aof_fsync</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">AOF_FSYNC_ALWAYS</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ae_barrier</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">connSetWriteHandlerWithBarrier</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">conn</span><span class="p">,</span><span class="w"> </span><span class="n">sendReplyToClient</span><span class="p">,</span><span class="w"> </span><span class="n">ae_barrier</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">freeClientAsync</span><span class="p">(</span><span class="n">c</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>这样当客户端连接的写事件就绪的时候，事件子系统就会执行<code class="docutils literal notranslate"><span class="pre">server.c/sendReplyToClient()</span></code>函数以执行写事件，而后者要做的就是调用相应的写入函数，把命令回复缓冲区或命令回复链表中的数据写入至客户端对应的套接字中：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="c1">// 写入事件处理器。</span>
+<span class="c1">// 这个函数要做的就是把数据发送至客户端。</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">sendReplyToClient</span><span class="p">(</span><span class="n">connection</span><span class="w"> </span><span class="o">*</span><span class="n">conn</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 根据连接获取客户端</span>
+<span class="w">    </span><span class="n">client</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">connGetPrivateData</span><span class="p">(</span><span class="n">conn</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// 先尝试使用IO线程进行写入</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">trySendWriteToIOThreads</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">C_OK</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">// 如果没有启用IO线程的话，那么再由主线程进行常规的写入操作</span>
+<span class="w">    </span><span class="n">writeToClient</span><span class="p">(</span><span class="n">c</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2026.1.26</div>
+</div>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

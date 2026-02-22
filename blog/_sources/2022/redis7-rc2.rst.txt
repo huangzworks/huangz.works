@@ -1,0 +1,132 @@
+Redis 7.0 RC2 释出报告
+======================
+
+Redis 核心团队最近释出了 7.0 版本的第 2 个 RC
+，并在\ `释出报告 <https://groups.google.com/g/redis-db/c/OmrGqfMYu0M/m/6ppeNkD0BAAJ?pli=1>`__\ 中罗列了该版本的变化，本文是该报告的中文翻译。
+
+新特性
+------
+
+-  为流消费者组添加了延迟追踪和报告功能(\ `#9127 <https://github.com/redis/redis/pull/9127>`__)
+-  为函数 API 和 Lua 脚本添加了显式检查 ACL
+   权限的功能(\ `#10220 <https://github.com/redis/redis/pull/10220>`__)
+
+新用户命令以及命令参数
+~~~~~~~~~~~~~~~~~~~~~~
+
+-  新增 ``COMMAND GETKEYSANDFLAGS``
+   子命令(\ `#10237 <https://github.com/redis/redis/pull/10237>`__)
+-  ``INFO``
+   命令现在能够接受多个部分（section）作为参数(\ `#6891 <https://github.com/redis/redis/pull/6891>`__)
+-  为 ``XGROUP CREATE`` 和 ``SETID`` 添加了新的 ``ENTRIESREAD``
+   可选项(\ `#9127 <https://github.com/redis/redis/pull/9127>`__)
+-  为 ``XSETID`` 添加了新的 ``ENTRIESADDED`` 和 ``MAXDELETEDID``
+   可选项(\ `#9127 <https://github.com/redis/redis/pull/9127>`__)
+
+回复被扩展了的命令
+~~~~~~~~~~~~~~~~~~
+
+-  ``XINFO``
+   命令现在会汇报消费者组的延迟以及其他一些字段(\ `#9127 <https://github.com/redis/redis/pull/9127>`__)
+-  ``XAUTOCLAIM`` 命令现在会返回一个由被删除 ID 组成的列表
+   (`#10227 <https://github.com/redis/redis/pull/10227>`__)
+
+可能会破环兼容的修改
+--------------------
+
+-  ``X[AUTO]CLAIM`` 现在会跳过被移除的节点而不是返回 ``Nil``
+   ，并从等待节点列表中移除这些已被移除的节点(\ `#10227 <https://github.com/redis/redis/pull/10227>`__)
+-  修正了 ``EVAL``
+   脚本返回混乱的错误代码的问题(\ `#10218 <https://github.com/redis/redis/pull/10218>`__,
+   `#10329 <https://github.com/redis/redis/pull/10329>`__)
+-  ``COMMAND INFO`` 命令将“键描述” ``CHANNEL`` 标志修改成了 ``NOT_KEY``
+   标志(\ `#10299 <https://github.com/redis/redis/pull/10299>`__)
+
+性能和资源利用改进
+------------------
+
+-  减少了客户端在回复时用到的系统调用和小体积包(\ `#9934 <https://github.com/redis/redis/pull/9934>`__)
+-  减少了陈旧（stale）客户端的内存占用(\ `#9822 <https://github.com/redis/redis/pull/9822>`__)
+-  修正了 Reids 6.2 引入的， ``Z[REV]RANGE``
+   命令在按排名排序时产生的回归问题(\ `#10337 <https://github.com/redis/redis/pull/10337>`__)
+
+命令行工具的修改
+----------------
+
+-  改造 ``redis-check-aof`` 工具以便让它适应新的分段式
+   AOF(\ `#10061 <https://github.com/redis/redis/pull/10061>`__)
+-  让 ``redis-benchmark`` 开始使用 RESP3
+   协议模式(\ `#10335 <https://github.com/redis/redis/pull/10335>`__)
+
+平台/工具链的相关改进
+---------------------
+
+-  修正 OpenSSL 3.0.x
+   相关的问题(\ `#10291 <https://github.com/redis/redis/pull/10291>`__)
+
+INFO 字段以及内省修改
+---------------------
+
+-  ``COMMAND INFO`` 键描述现在有了新的 ``variable_flags`` 标志
+   (`#10237 <https://github.com/redis/redis/pull/10237>`__,
+   `#10148 <https://github.com/redis/redis/pull/10148>`__)
+-  INFO 状态：添加了 ``aof_rewrites and rdb_snapshots``
+   计数器(\ `#10178 <https://github.com/redis/redis/pull/10178>`__)
+-  INFO 状态：添加了 ``reply_buffer_shrinks`` 以及
+   ``reply_buffer_expends`` 字段
+   (`#9822 <https://github.com/redis/redis/pull/9822>`__)
+-  INFO 模块：添加了 ``no-implicit-signal-modified``
+   模块可选项(\ `#10284 <https://github.com/redis/redis/pull/10284>`__)
+
+模块 API 修改
+-------------
+
+-  Add ``RM_SetCommandInfo`` API to set command metadata for the new
+   ``COMMAND`` introspection features and ACL key permissions
+   (`#10108 <https://github.com/redis/redis/pull/10108>`__)
+-  Add ``RM_KeyAtPosWithFlags`` and ``RM_GetCommandKeysWithFlags APIs``
+   (`#10237 <https://github.com/redis/redis/pull/10237>`__)
+-  Add ``getchannels-api`` command flag and
+   ``RM_IsChannelsPositionRequest``, ``RM_ChannelAtPosWithFlags APIs``
+   (`#10299 <https://github.com/redis/redis/pull/10299>`__)
+-  Change ``RM_ACLCheckChannelPermissions`` and
+   ``RM_ACLCheckKeyPermissions APIs`` (released in RC1) to take
+   different flags
+   (`#10299 <https://github.com/redis/redis/pull/10299>`__)
+-  Fix ``RM_SetModuleOptions`` flag collision. Bug in 7.0 RC1 header
+   file, modules that used ``OPTIONS_HANDLE_REPL_ASYNC_LOAD`` will mess
+   up key invalidations
+   (`#10284 <https://github.com/redis/redis/pull/10284>`__)
+
+BUG 修复
+--------
+
+-  Modules: Fix thread safety violation when a module thread adds an
+   error reply, broken in 6.2
+   (`#10278 <https://github.com/redis/redis/pull/10278>`__)
+-  Lua: Fix Eval scripts active defrag, broken 7.0 in RC1
+   (`#10271 <https://github.com/redis/redis/pull/10271>`__)
+-  Fix geo search bounding box check causing missing results
+   (`#10018 <https://github.com/redis/redis/pull/10018>`__)
+-  Lua: Add checks for ``min-slave-*`` configs when evaluating Lua
+   scripts and Functions
+   (`#10160 <https://github.com/redis/redis/pull/10160>`__)
+-  Modules: Prevent crashes and memory leaks when ``MODULE UNLOAD`` is
+   used on module with a pending timer
+   (`#10187 <https://github.com/redis/redis/pull/10187>`__)
+-  Fix error stats and failed command stats for blocked clients
+   (`#10309 <https://github.com/redis/redis/pull/10309>`__)
+-  Lua/Modules: Fix missing and duplicate error stats for scripts and
+   modules (`#10329 <https://github.com/redis/redis/pull/10329>`__,
+   `#10278 <https://github.com/redis/redis/pull/10278>`__)
+-  Check target node is a primary during ``CLUSTER SETSLOT``
+   (`#10277 <https://github.com/redis/redis/pull/10277>`__)
+-  Fix key deletion not to invalidate ``WATCH`` when used on a logically
+   expired key (`#10256 <https://github.com/redis/redis/pull/10256>`__)
+-  Sentinel: return an error if configuration save fails
+   (`#10151 <https://github.com/redis/redis/pull/10151>`__)
+-  Sentinel: fix a free-after-use issue re-registering Sentinels
+   (`#10333 <https://github.com/redis/redis/pull/10333>`__)
+
+| 干杯，
+| Redis 核心团队

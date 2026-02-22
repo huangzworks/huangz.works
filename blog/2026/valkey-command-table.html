@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Valkey源码剖析（11）：构建命令表 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Valkey源码剖析（12）：查找命令" href="valkey-lookup-command.html" />
+    <link rel="prev" title="Valkey源码剖析（10）：命令的表示" href="valkey-command-struct.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Valkey源码剖析（11）：构建命令表</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="valkey-command-struct.html" title="Previous Chapter: Valkey源码剖析（10）：命令的表示"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; Valkey源码剖析（10）：命令的表示</span>
+    </a>
+  </li>
+  <li>
+    <a href="valkey-lookup-command.html" title="Next Chapter: Valkey源码剖析（12）：查找命令"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">Valkey源码剖析（12）：查找命令 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="valkey-11">
+<h1>Valkey源码剖析（11）：构建命令表<a class="headerlink" href="#valkey-11" title="Link to this heading">¶</a></h1>
+<p>对于Valkey中的每个命令，源代码中的<code class="docutils literal notranslate"><span class="pre">commands</span></code>文件夹都包含一个与命令对应的JSON文件，这些文件以“命令名.json”的格式命名，包含了命令相关的所有信息：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>valkey/src/commands$<span class="w"> </span>ls<span class="w"> </span><span class="p">|</span><span class="w"> </span>more
+README.md
+acl-cat.json
+acl-deluser.json
+acl-dryrun.json
+acl-genpass.json
+acl-getuser.json
+acl-help.json
+acl-list.json
+acl-load.json
+acl-log.json
+acl-save.json
+acl-setuser.json
+acl-users.json
+acl-whoami.json
+acl.json
+append.json
+asking.json
+auth.json
+bgrewriteaof.json
+bgsave.json
+bitcount.json
+bitfield.json
+bitfield_ro.json
+bitop.json
+bitpos.json
+...
+</pre></div>
+</div>
+<blockquote>
+<div><p>[!Note]
+关于这些JSON文件的更多信息，可以查看文件夹中的<code class="docutils literal notranslate"><span class="pre">README.md</span></code>文件来获取。</p>
+</div></blockquote>
+<p>以<code class="docutils literal notranslate"><span class="pre">ECHO</span></code>命令为例，通过打开<code class="docutils literal notranslate"><span class="pre">commands</span></code>文件夹中的<code class="docutils literal notranslate"><span class="pre">echo.json</span></code>文件，可以看到该命令的描述（summary）、复杂度（complexity）、分组（group）、参数（arguments）、和实现函数（function）等所有信息：</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;ECHO&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Returns the given string.&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;complexity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;O(1)&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;group&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;connection&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;since&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.0.0&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;arity&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;function&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;echoCommand&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;command_flags&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="s2">&quot;LOADING&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="s2">&quot;STALE&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="s2">&quot;FAST&quot;</span>
+<span class="w">        </span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;acl_categories&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="s2">&quot;CONNECTION&quot;</span>
+<span class="w">        </span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;reply_schema&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The given string&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;arguments&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="p">{</span>
+<span class="w">                </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;message&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Valkey服务器在启动的时候，会根据<code class="docutils literal notranslate"><span class="pre">commands</span></code>文件夹中的JSON文件自动生成一个包含所有命令的列表，然后再调用<code class="docutils literal notranslate"><span class="pre">server.c/populateCommandStructure()</span></code>函数，根据命令列表为每个命令分别填充命令结构，并将其关联至服务器的命令表中：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="c1">// 命令列表</span>
+<span class="k">extern</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">serverCommand</span><span class="w"> </span><span class="n">serverCommandTable</span><span class="p">[];</span>
+</pre></div>
+</div>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">populateCommandTable</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">j</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">serverCommand</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 遍历命令列表</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;;</span><span class="w"> </span><span class="n">j</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 获取当前被访问的命令</span>
+<span class="w">        </span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">serverCommandTable</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">j</span><span class="p">;</span>
+
+<span class="w">        </span><span class="c1">// 命令列表使用declared_name为NULL作为表的尽头标识，</span>
+<span class="w">        </span><span class="c1">// 遇到该标识就表示命令表遍历完毕，跳出循环</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">declared_name</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span><span class="w"> </span><span class="k">break</span><span class="p">;</span>
+
+<span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="n">retval1</span><span class="p">,</span><span class="w"> </span><span class="n">retval2</span><span class="p">;</span>
+
+<span class="w">        </span><span class="c1">// 设置命令名字</span>
+<span class="w">        </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">fullname</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sdsnew</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">declared_name</span><span class="p">);</span>
+<span class="w">        </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">current_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">fullname</span><span class="p">;</span>
+
+<span class="w">        </span><span class="c1">// 填充命令结构</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">populateCommandStructure</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">)</span><span class="w"> </span><span class="k">continue</span><span class="p">;</span>
+
+<span class="w">        </span><span class="c1">// 将命令结构关联至命令表和原名命令表中</span>
+<span class="w">        </span><span class="n">retval1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">hashtableAdd</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">commands</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">);</span>
+<span class="w">        </span><span class="cm">/* Populate an additional dictionary that will be unaffected</span>
+<span class="cm">         * by rename-command statements in valkey.conf. */</span>
+<span class="w">        </span><span class="n">retval2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">hashtableAdd</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">orig_commands</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">);</span>
+<span class="w">        </span><span class="n">serverAssert</span><span class="p">(</span><span class="n">retval1</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">retval2</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">populateCommandStructure</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">serverCommand</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="cm">/* If the command marks with CMD_SENTINEL, it exists in sentinel. */</span>
+<span class="w">    </span><span class="c1">// 不添加哨兵相关命令</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">flags</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">CMD_SENTINEL</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">server</span><span class="p">.</span><span class="n">sentinel_mode</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* If the command marks with CMD_ONLY_SENTINEL, it only exists in sentinel. */</span>
+<span class="w">    </span><span class="c1">// 不添加哨兵专属命令</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">flags</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">CMD_ONLY_SENTINEL</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">!</span><span class="n">server</span><span class="p">.</span><span class="n">sentinel_mode</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* Translate the command string flags description into an actual</span>
+<span class="cm">     * set of flags. */</span>
+<span class="w">    </span><span class="c1">// 将命令的字符串标识描述转换为实际的标识集合</span>
+<span class="w">    </span><span class="n">setImplicitACLCategories</span><span class="p">(</span><span class="n">c</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* We start with an unallocated histogram and only allocate memory when a command</span>
+<span class="cm">     * has been issued for the first time */</span>
+<span class="w">    </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">latency_histogram</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* Handle the legacy range spec and the &quot;movablekeys&quot; flag (must be done after populating all key specs). */</span>
+<span class="w">    </span><span class="n">populateCommandLegacyRangeSpec</span><span class="p">(</span><span class="n">c</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* Assign the ID used for ACL. */</span>
+<span class="w">    </span><span class="c1">// 设置ACL使用的命令ID</span>
+<span class="w">    </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ACLGetCommandID</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">fullname</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* Handle subcommands */</span>
+<span class="w">    </span><span class="c1">// 如果该命令有子命令的话，那么为这些子命令也创建命令结构，并将其设置为该命令的子命令</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">subcommands</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 遍历该命令的所有子命令</span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">subcommands</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">declared_name</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="c1">// 访问当前子命令</span>
+<span class="w">            </span><span class="k">struct</span><span class="w"> </span><span class="nc">serverCommand</span><span class="w"> </span><span class="o">*</span><span class="n">sub</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">subcommands</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">j</span><span class="p">;</span>
+
+<span class="w">            </span><span class="c1">// 拼接命令名字</span>
+<span class="w">            </span><span class="n">sub</span><span class="o">-&gt;</span><span class="n">fullname</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">catSubCommandFullname</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">declared_name</span><span class="p">,</span><span class="w"> </span><span class="n">sub</span><span class="o">-&gt;</span><span class="n">declared_name</span><span class="p">);</span>
+
+<span class="w">            </span><span class="c1">// 创建命令结构</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">populateCommandStructure</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">)</span><span class="w"> </span><span class="k">continue</span><span class="p">;</span>
+
+<span class="w">            </span><span class="c1">// 关联父子命令</span>
+<span class="w">            </span><span class="n">commandAddSubcommand</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">sub</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">C_OK</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>可以看到，<code class="docutils literal notranslate"><span class="pre">populateCommandTable()</span></code>函数要做的就是遍历命令列表<code class="docutils literal notranslate"><span class="pre">serverCommandTable</span></code>，调用<code class="docutils literal notranslate"><span class="pre">populateCommandStructure()</span></code>函数填充每个命令的命令结构，然后再将命令结构关联至服务器的两个命令表中。</p>
+<p>这样一来，命令名与命令结构之间的映射就构建起来了，之后服务器就可以在有需要的时候根据命令名查找对应的命令结构，进而执行所需的命令。接下来的文章就会对这个过程进行介绍。</p>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2026.1.4</div>
+</div>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

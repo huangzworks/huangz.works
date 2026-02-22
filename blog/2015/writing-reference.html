@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>关于编写参考手册的思考 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="翻译笔记之四：消除人称代词" href="notes-about-translation-4.html" />
+    <link rel="prev" title="《Redis in Action》翻译记事" href="memories-of-redis-in-action-translation.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">关于编写参考手册的思考</a><ul>
+<li><a class="reference internal" href="#id2">参考手册的定义</a></li>
+<li><a class="reference internal" href="#id5">好的参考手册应该是完整的</a></li>
+<li><a class="reference internal" href="#id6">好的参考手册应该是精确的</a></li>
+<li><a class="reference internal" href="#id7">好的参考手册应该是及时更新的</a></li>
+<li><a class="reference internal" href="#id8">好的参考手册应该是有所取舍的</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="memories-of-redis-in-action-translation.html" title="Previous Chapter: 《Redis in Action》翻译记事"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; 《Redis in Action》翻译记事</span>
+    </a>
+  </li>
+  <li>
+    <a href="notes-about-translation-4.html" title="Next Chapter: 翻译笔记之四：消除人称代词"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">翻译笔记之四：消除人称代词 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="id1">
+<h1>关于编写参考手册的思考<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
+<p>自从本月月初<a class="reference external" href="http://www.douban.com/people/i_m_huangz/status/1664912517/">完成了《Redis in Action》的翻译工作</a>之后，
+我就开始了新书的写作。
+这次的新书是一本参考手册类型的书，
+篇幅比较多，
+需要写的内容也比较多，
+不过内容还是非常有趣的，
+所以整个写作过程还是非常愉快的。</p>
+<p>因为我是第一次写参考手册方面的书籍，
+所以在这方面做了一些思考，
+希望能把这本书写好，
+而这篇文章就会和大家分享一下我关于如何编写参考手册的想法。</p>
+<p>总的来说，
+我认为一本好的参考手册应该是完整的、精确的、及时更新的并且有所取舍的，
+接下来的几个小节将分别对这几个方面进行介绍。</p>
+<section id="id2">
+<h2>参考手册的定义<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>一本参考手册就是关于一个软件、一个系统或者一项技术的完整描述，
+这种描述可以是针对某一方面的，
+也可以是针对整个软件、系统和技术的。</p>
+<p>举个例子，
+对于 Python 这门编程语言本身来说，
+<a class="reference external" href="https://docs.python.org/3/reference/index.html">《The Python Language Reference》</a>就是它的参考手册。</p>
+<p>又比如说，
+对于 Redis 的命令来说，
+<a class="reference external" href="http://redis.io/commands">《Redis Command Reference》</a>就是它的参考手册。</p>
+<p>除了在线的手册之外，
+有一些参考手册也是以书本的形式出现的，
+比如说 <a class="reference external" href="http://book.douban.com/subject/1767969/">《C: A Reference Manual 》</a> 、
+<a class="reference external" href="http://book.douban.com/subject/25900403/">《UNIX 环境高级编程》</a> 、
+<a class="reference external" href="http://book.douban.com/subject/4859464/">《UNIX 网络编程》</a> 、
+甚至 <a class="reference external" href="http://book.douban.com/subject/20432061/">《算法导论》</a> 也可以算是参考手册。</p>
+</section>
+<section id="id5">
+<h2>好的参考手册应该是完整的<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>参考手册的一个最基本的要求就是完整，
+这是参考手册安身立命之所在：
+它应该包含详细的、齐全的信息，
+书中应该对所有必需的知识点进行覆盖，
+并包含那些读者想要在参考手册里面找到的信息。</p>
+<p>举个例子，
+如果一个软件有两百个必需的知识点，
+那么参考手册也应该对这两百个知识点进行介绍，
+缺一不可。
+又比如说，
+如果一个软件有三百个重要的特性，
+那么参考手册也应该对这三百个特性进行介绍，
+甚至超越这三百个特性，
+对整个系统进行必要的描述。</p>
+<p>当读者翻开一本参考手册的时候，
+他应该可以找到书本关于某个特性的详细描述，
+如果参考手册不能做到这一点的话，
+那么它将是失职的、不合格的。</p>
+<p>与此同时，
+因为参考手册的作者必须对整个系统的每个部分都有所了解，
+这样才能写出对系统进行完整描述的参考手册，
+因此编写参考手册将是一件非常繁重而辛苦的工作。
+要描述的系统越大，
+参考手册的篇幅也会越大，
+作者需要花费的功夫也会越多。</p>
+</section>
+<section id="id6">
+<h2>好的参考手册应该是精确的<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<p>一本参考手册应该是精确的，
+它所描述的信息应该是准确而没有歧义的，
+它的例子应该是有效的、具有示范性质的。</p>
+<p>要让手册的内容保持精确，
+其中一个办法就是假设有人在参照你的手册编写实现（implementation，比如编程语言解释器），
+这时你就必须写出精确的手册，
+描述好程序在不同情况下产生的不同行为，
+针对什么输入会产生什么输出等等。</p>
+<p>让手册保持精确的另一个要点在于示例的选择：
+作者在给知识点添加例子的时候，
+应该尽量选择简单的示例，
+示例里面应该只描述必须的信息，
+并且这个示例应该是自包含的，
+它不需要去引用其他信息；
+示例本身带有良好的注释，
+确保读者可以理解这些例子；
+诸如此类。</p>
+</section>
+<section id="id7">
+<h2>好的参考手册应该是及时更新的<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
+<p>一本参考手册应该是及时更新的，
+当读者阅读它的时候，
+看到的应该是与最新版本同步的信息。</p>
+<p>举个例子，
+如果一个软件出了 2.0 版本，
+那么它的参考手册应该也是讲述 2.0 版本的；
+又比如说，
+如果一个软件出了 3.0 版本，
+那么它的参考手册应该也是讲述 3.0 版本的；
+诸如此类。</p>
+<p>读者永远都希望自己能接收到最新出炉的信息，
+他们肯定不希望把自己的宝贵时间浪费在阅读过时的信息上面，
+而参考手册的其中一个目标就是满足这一需求，
+但是要做到这一点并不容易。</p>
+<p>首先，
+及时更新对作者来说是一个严峻的考验：
+当软件释出一个新版本之后，
+作者必须研究新版本的新特性，
+了解新版与旧版之间的兼容问题，
+软件本身发生的变化等等，
+并把这些信息通过自己的语言写入到手册里面，
+而这一切必须在尽可能短的时间内完成。
+当新版本的修改非常多的时候，
+及时地更新手册就会变成一项难度非常高的任务，
+将给作者带来非常大的压力。</p>
+<p>其次，
+及时更新对于书本的发行商来说也是一个严峻的考验，
+对于传统出版社来说，
+更是如此：
+一般来说，
+作者在交稿之后，
+出版社都要对书本原稿进行编辑、排版、印刷，
+最后再将印刷好的书本运送到全国各地的书店以及各个网上书店的仓库上面，
+而这个过程少说也需要几个月的时间，
+即使作者在新版释出之后第一时间进行写作，
+纸书的制造流程也会令书本的新鲜度大打折扣。</p>
+<p>另一方面，
+如果通过电子书手段发行参考手册的话，
+我们就可以把发行新版手册所需的时间大大减少：
+根据选择的电子发行商不同，
+这个时间可以是一个月，
+一周，
+几天，
+甚至即时发行也是有可能的。</p>
+<p>因此，
+对于打算编写参考手册的作者来说，
+通过电子书来发行自己的手册应该是一个不错的方式。
+如果一定要通过纸书方式来发行，
+那么就应该提前与出版社商量好发行时限（交稿之后多久才会完成整个纸书制造流程？）、发行新版的间隔（半年更新一次？一年更新一次？一年半更新一次？）等等。</p>
+</section>
+<section id="id8">
+<h2>好的参考手册应该是有所取舍的<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<p>最后一点，
+也是我认为编写参考手册最难的一点，
+那就是对内容进行取舍。</p>
+<p>正如本文之前所讲，
+一本好的参考手册应该是完整的、详细的，
+但是与此同时，
+参考手册必须有所取舍：
+如果一本参考手册的内容太过繁琐、太过沉迷于细节，
+变成了一本难以阅读的“字典”甚至“天书”，
+那么它对于读者将是没有价值的。</p>
+<p>一本好的参考手册应该在读者能够接受的篇幅范围之内，
+填充最有用的信息，
+保证内容的稠密程度，
+并在必要的时候保留一定程度的细节，
+但是不要过分地深入，
+要懂得适可而止。</p>
+<p>最近在写作的时候，
+我思考得最多的就是“这些知识要写进书里面吗”、
+“这些知识看上去比较难懂，有没有更好的办法来简化它们呢？”、
+“这个知识点是必须的吗？如果移除它的话会怎样？”，
+诸如此类的问题。
+思考这些问题真的非常伤脑筋，
+但是我相信这些努力最终都会有所回报 ——
+我希望读者将来在阅读这本书的时候，
+可以发现对于他们来说真正有用的东西，
+而不是一堆包含了大量无用细节的垃圾。</p>
+<p>对于一本参考手册来说，
+它没有说什么和它说了什么一样重要，
+有时候前者甚至会比后者更重要。</p>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2015.6.28</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

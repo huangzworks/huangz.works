@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>如何选择合适的数据库（一）：对比MariaDB和PostgreSQL &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="如何系统地学习PostgreSQL" href="learn-postgresql.html" />
+    <link rel="prev" title="如何选择合适的数据库（二）：对比MariaDB和MongoDB" href="mariadb-vs-mongodb.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">如何选择合适的数据库（一）：对比MariaDB和PostgreSQL</a><ul>
+<li><a class="reference internal" href="#id1">MariaDB与PostgreSQL</a><ul>
+<li><a class="reference internal" href="#id2">相似之处</a></li>
+<li><a class="reference internal" href="#id3">不同之处</a></li>
+<li><a class="reference internal" href="#id4">最佳用例</a></li>
+<li><a class="reference internal" href="#id5">总结</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="mariadb-vs-mongodb.html" title="Previous Chapter: 如何选择合适的数据库（二）：对比MariaDB和MongoDB"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; 如何选择合适的数据库（二）...</span>
+    </a>
+  </li>
+  <li>
+    <a href="learn-postgresql.html" title="Next Chapter: 如何系统地学习PostgreSQL"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">如何系统地学习PostgreSQL &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="mariadbpostgresql">
+<h1>如何选择合适的数据库（一）：对比MariaDB和PostgreSQL<a class="headerlink" href="#mariadbpostgresql" title="Link to this heading">¶</a></h1>
+<a class="reference internal image-reference" href="../_images/cubes.jpg"><img alt="../_images/cubes.jpg" src="../_images/cubes.jpg" style="width: 608.0px; height: 340.5px;" /></a>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>本文编译自<a class="reference external" href="https://www.percona.com/blog/choosing-the-right-database-comparing-mariadb-vs-mysql-postgresql-and-mongodb/">Percona博客文章</a>，有删改。</p>
+<p>这是“如何选择正确的数据库”系列文章的第一篇，本系列共三篇，其余文章请见<a class="reference external" href="https://huangz.blog/">huangz.blog</a>。</p>
+</div>
+<p>为了确保与现有应用程序和基础设施的兼容、优化应用程序性能并降低成本，选择符合需求的数据库技术非常重要。但是数据库那么多，想要做出明智的抉择并不容易。</p>
+<p>这篇博文对MariaDB和PostgreSQL进行了正面的比较，强调它们之间的相似之处和不同之处。我们将重点关注成本、支持选项、社区生态系统、特定功能和使用场景等关键方面。</p>
+<p>希望这里提供的专家意见能够帮助你更好地选择符合自己需求的数据库。</p>
+<section id="id1">
+<h2>MariaDB与PostgreSQL<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>首先，让我们来对比MariaDB和PostgreSQL这两个著名的开源数据库。我们将研究它们主要的相似之处和不同之处，重点关注功能、性能和理想用例。</p>
+<section id="id2">
+<h3>相似之处<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<p>MariaDB和PostgreSQL都是强大的数据库系统，因其可靠性和强大的社区支持而广受认可。两者都支持各种编程语言，比如Python、Java、C/C++和PHP，并提供诸如ACID合规性以确保事务可靠性并支持复杂的查询。</p>
+</section>
+<section id="id3">
+<h3>不同之处<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<p><strong>性能和存储引擎</strong>：MariaDB以其速度而著称，它包含多个存储引擎（包括Aria和InnoDB），每个引擎都有它们各自适合的工作负载，并且可以根据特定的性能或数据完整性需求进行微调。与此相反，PostgreSQL使用单一的默认ACID兼容存储引擎，该引擎对并发性和数据完整性进行了优化，这种做法简化了架构，但是也限制了针对特定性能场景进行微调的可能。</p>
+<p><strong>复杂性</strong>：与MariaDB相比，PostgreSQL提供了更高级的特性，但这些特性也带来了更陡峭的学习曲线。</p>
+<p><strong>高级特性</strong>：PostgreSQL经常因其特性丰富而受到表扬，比如它强大存储过程、复杂的加锁机制以及对JSON、XML和数组等“NoSQL”数据类型的支持。这些功能使得PostgreSQL成为需要复杂数据集成和强大数据完整性的应用程序的理想选择。</p>
+<p><strong>扩展和索引</strong>：PostgreSQL还支持更高级的索引类型和非常多的扩展，使其具有极强的可扩展性。比如PostgreSQL的GIN和GIST索引就非常适合实现全文搜索和储存地理空间数据。MariaDB虽然也提供了灵活的插件架构，但它支持的专用索引类型并不多。</p>
+</section>
+<section id="id4">
+<h3>最佳用例<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<p><strong>MariaDB使用案例</strong>：MariaDB对于在不同条件下需要高性能的应用程序非常有效，比如基于Web的应用程序、电子商务平台以及任何速度至关重要的环境。此外，由于MariaDB和MySQL基本兼容，所以MariaDB对于希望平滑地从MySQL过渡的用户来说不失为一个好选择。</p>
+<p><strong>PostgreSQL使用案例</strong>：PostgreSQL提供的强大特性使得它非常适合需要复杂解决方案的企业，比如地理信息系统（GIS）、大型数据库中的全文搜索，还有涉及复杂事务或大型数据集分析的应用。</p>
+</section>
+<section id="id5">
+<h3>总结<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
+<p>MariaDB和PostgreSQL之间的选择取决于具体的项目要求：</p>
+<ul class="simple">
+<li><p>在需要灵活性和速度的情况下，尤其是需要MySQL兼容时，MariaDB是一个不错的选择；</p></li>
+<li><p>在需要强大的数据完整性、广泛的查询特性以及可扩展性，以此来处理各种数据类型并进行分析的应用程序中，PostgreSQL将大放异彩。</p></li>
+</ul>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2024.5.18</div>
+</div>
+</section>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

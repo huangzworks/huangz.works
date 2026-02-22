@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>在 Go 语言中定义新类型 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">在 Go 语言中定义新类型</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="go">
+<h1>在 Go 语言中定义新类型<a class="headerlink" href="#go" title="Link to this heading">¶</a></h1>
+<p>Go 声明了许多类型，
+我们在第 2 单元已经看到过其中的相当一部分，
+但是这些类型有时候并不能充分地描述我们想要持有的值。
+声明新类型不仅能够让代码变得更加清晰，
+还可以有效地预防错误。</p>
+<p>例如，
+温度作为一种度量值，
+它的单位应该是摄氏、华氏或者开尔文。
+程序虽然可以使用 <code class="docutils literal notranslate"><span class="pre">float64</span></code> 类型作为温度的底层表示，
+但是直接把 <code class="docutils literal notranslate"><span class="pre">float64</span></code> 类型看作等同于温度并不是一个好主意。</p>
+<p>正如代码清单 13-1 所示，
+关键字 <code class="docutils literal notranslate"><span class="pre">type</span></code> 可以通过一个名字和一个底层类型来声明新的类型。</p>
+<hr class="docutils" />
+<p>代码清单 13-1 摄氏类型: <code class="docutils literal notranslate"><span class="pre">celsius.go</span></code></p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kd">type</span><span class="w"> </span><span class="nx">celsius</span><span class="w"> </span><span class="kt">float64</span><span class="w">    </span><span class="c1">//  底层类型为 float64</span>
+<span class="kd">var</span><span class="w"> </span><span class="nx">temperature</span><span class="w"> </span><span class="nx">celsius</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">20</span>
+<span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">temperature</span><span class="p">)</span><span class="w">    </span><span class="c1">//  打印出“20”</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>因为数字字面量 20 跟其他数字字面量一样都是无类型常量，
+所以无论是 <code class="docutils literal notranslate"><span class="pre">int</span></code> 类型、 <code class="docutils literal notranslate"><span class="pre">float64</span></code> 类型或者其他任何数字类型的变量，
+都可以被赋予这个字面量。
+与此同时，
+虽然 <code class="docutils literal notranslate"><span class="pre">celsius</span></code> 类型是一种全新的数字类型，
+但是由于它与 <code class="docutils literal notranslate"><span class="pre">float64</span></code> 具有相同的行为和表示，
+因此代码清单 13-1 中的赋值操作能够顺利执行。</p>
+<p>正如代码清单 13-2 所示，
+除赋值之外，
+我们还可以对温度执行加法运算，
+并把它当作 <code class="docutils literal notranslate"><span class="pre">float64</span></code> 值那样使用。</p>
+<hr class="docutils" />
+<p>代码清单 13-2 与 <code class="docutils literal notranslate"><span class="pre">float64</span></code> 具有相同行为的摄氏类型: <code class="docutils literal notranslate"><span class="pre">celsius-addition.go</span></code></p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kd">type</span><span class="w"> </span><span class="nx">celsius</span><span class="w"> </span><span class="kt">float64</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">degrees</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">20</span>
+<span class="kd">var</span><span class="w"> </span><span class="nx">temperature</span><span class="w"> </span><span class="nx">celsius</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nx">degrees</span><span class="w"> </span><span class="nx">temperature</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mi">10</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>虽然 <code class="docutils literal notranslate"><span class="pre">celsius</span></code> 类型跟它的底层类型 <code class="docutils literal notranslate"><span class="pre">float64</span></code> 具有相同的行为，
+但因为是一种独特的类型而非第 9 章中提到的类型别名，
+所以尝试把 <code class="docutils literal notranslate"><span class="pre">celsius</span></code> 和 <code class="docutils literal notranslate"><span class="pre">float64</span></code> 放在一起使用将引发类型不匹配错误:</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kd">var</span><span class="w"> </span><span class="nx">warmUp</span><span class="w"> </span><span class="kt">float64</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">10</span>
+<span class="nx">temperature</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="nx">warmUp</span><span class="w">    </span><span class="c1">// 无效操作：类型不匹配</span>
+</pre></div>
+</div>
+<p>加上 <code class="docutils literal notranslate"><span class="pre">warmUp</span></code> 之前，
+程序必须先将它转换为 <code class="docutils literal notranslate"><span class="pre">celsius</span></code> 类型，
+这样加法运算才能够正常执行:</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kd">var</span><span class="w"> </span><span class="nx">warmUp</span><span class="w"> </span><span class="kt">float64</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">10</span>
+<span class="nx">temperature</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="nx">celsius</span><span class="p">(</span><span class="nx">warmUp</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>通过自定义新类型能够极大地提高代码的可读性和可靠性。
+正如代码清单 13-3 所示，
+因为 <code class="docutils literal notranslate"><span class="pre">celsius</span></code> 和 <code class="docutils literal notranslate"><span class="pre">fahrenheit</span></code> 是两种不同的类型，
+所以它们是无法一起执行比较操作和加法运算的。</p>
+<hr class="docutils" />
+<p>代码清单 13-3 不同类型是无法混用的</p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kd">type</span><span class="w"> </span><span class="nx">celsius</span><span class="w"> </span><span class="kt">float64</span>
+<span class="kd">type</span><span class="w"> </span><span class="nx">fahrenheit</span><span class="w"> </span><span class="kt">float64</span>
+
+<span class="kd">var</span><span class="w"> </span><span class="nx">c</span><span class="w"> </span><span class="nx">celsius</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">20</span>
+<span class="kd">var</span><span class="w"> </span><span class="nx">f</span><span class="w"> </span><span class="nx">fahrenheit</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">20</span>
+
+<span class="k">if</span><span class="w"> </span><span class="nx">c</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nx">f</span><span class="w"> </span><span class="p">{</span><span class="w">     </span><span class="c1">// 无效操作:celsius 和 fahrenheit 类型不匹配</span>
+<span class="p">}</span>
+
+<span class="nx">c</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="nx">f</span><span class="w">     </span><span class="c1">// 无效操作:celsius 和 fahrenheit 类型不匹配</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>本文摘录自《Go语言趣学指南》第 13 章，
+你可以通过访问 <a class="reference external" href="http://gpwgcn.com">gpwgcn.com</a>  来获得该书的更多信息。</p>
+<a class="reference internal image-reference" href="../_images/gpwgcn1.jpg"><img alt="../_images/gpwgcn1.jpg" src="../_images/gpwgcn1.jpg" style="width: 149.6px; height: 188.0px;" /></a>
+</div>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

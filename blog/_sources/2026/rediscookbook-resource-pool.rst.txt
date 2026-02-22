@@ -1,0 +1,46 @@
+《Redis应用实例》书摘（15）：资源池
+===========================================
+
+计算机系统中存在各式各样不同的资源：在硬件层面，资源可以是CPU时间、内存容量、硬盘空间或带宽等，而在软件层面，资源可以是文件、线程、进程又或者负责处理任务的客户端等。
+
+如何管理资源一直是计算机系统最常遇到的问题之一，解决这个问题的其中一种常见方法，就是将同类的资源都关联到一个资源池中，并在需要使用资源时向资源池发送请求以获取资源，最后再在资源使用完毕之后将其归还至资源池。
+
+考虑到资源池实际上就是一个记录资源的集合，所以我们使用Redis集合来实现它：其中将资源关联（或者说添加）到资源池的工作可以通过\ ``SADD``\ 命令来实现，而从资源池中取消关联（或者说移除）资源的工作则可以通过\ ``SREM``\ 命令来实现。
+
+代码清单 CODE_RESOURCE_POOL 展示了基于上述原理实现的资源池程序。
+
+--------------
+
+代码清单 CODE_RESOURCE_POOL 资源池程序 ``resource_pool.py``
+
+.. literalinclude:: code/resource_pool.py
+   :lines: 1-89
+
+--------------
+
+作为例子，以下代码展示了如何使用这个资源池程序的各项功能：
+
+.. code:: python
+
+        >>> from redis import Redis
+        >>> from resource_pool import ResourcePool
+        >>> client = Redis(decode_responses=True)
+        >>> pool = ResourcePool(client, "Workers")
+        >>> for i in range(1, 6):  # 在资源池中关联5个工作进程
+        ...   pool.associate("Worker{}".format(i))
+        ...
+        True
+        # ...
+        True
+        >>> pool.acquire()  # 获取3个工作进程
+        'Worker4'
+        >>> pool.acquire()
+        'Worker2'
+        >>> pool.acquire()
+        'Worker3'
+        >>> pool.release("Worker3")  # 释放1个工作进程
+        True
+        >>> pool.disassociate("Worker1")  # 解除对Worker1的关联
+        True
+
+.. include:: rediscookbook-promote.rst

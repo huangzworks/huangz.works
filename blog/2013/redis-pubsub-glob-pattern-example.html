@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Redis 发布与订阅模式匹配符示例 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Redis 处理和修复不合法 AOF 文件的方法" href="how-redis-fix-invalid-aof-file.html" />
+    <link rel="prev" title="[草稿]在 Redis 中构造可靠的发布与订阅系统" href="reliable_pubsub_in_redis.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Redis 发布与订阅模式匹配符示例</a><ul>
+<li><a class="reference internal" href="#id3"><code class="docutils literal notranslate"><span class="pre">*</span></code> 匹配符</a></li>
+<li><a class="reference internal" href="#id4"><code class="docutils literal notranslate"><span class="pre">?</span></code> 匹配符</a></li>
+<li><a class="reference internal" href="#id5"><code class="docutils literal notranslate"><span class="pre">[...]</span></code> 匹配符</a></li>
+<li><a class="reference internal" href="#id7">任意组合多个匹配符</a></li>
+<li><a class="reference internal" href="#id8">总结</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="reliable_pubsub_in_redis.html" title="Previous Chapter: [草稿]在 Redis 中构造可靠的发布与订阅系统"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; [草稿]在 Redis 中...</span>
+    </a>
+  </li>
+  <li>
+    <a href="how-redis-fix-invalid-aof-file.html" title="Next Chapter: Redis 处理和修复不合法 AOF 文件的方法"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">Redis 处理和修复不合... &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="redis">
+<h1>Redis 发布与订阅模式匹配符示例<a class="headerlink" href="#redis" title="Link to this heading">¶</a></h1>
+<p>一直以来，
+我对 Redis 的订阅与发布功能都有一个误解：
+因为 Redis 在文档中总是使用带 <code class="docutils literal notranslate"><span class="pre">*</span></code> 符号的模式来做示例，
+我一直错误地认为 Redis 的模式只能使用 <code class="docutils literal notranslate"><span class="pre">*</span></code> 符号来做匹配符。</p>
+<p>直到前几天，
+因为翻译 Redis <a class="reference external" href="http://redis.readthedocs.org/en/latest/topic/pubsub.html">订阅与发布功能文档</a> 的缘故，
+我看了一下负责对模式进行匹配的 <code class="docutils literal notranslate"><span class="pre">stringmatchlen</span></code> 函数的 <a class="reference external" href="https://github.com/antirez/redis/blob/unstable/src/util.c#L43">代码</a> ，
+这时才发现，
+原来 Redis 的模式名中不仅可以包含 <code class="docutils literal notranslate"><span class="pre">*</span></code> 符号，
+还可以使用其他 <code class="docutils literal notranslate"><span class="pre">glob</span></code> 风格的匹配符，
+比如 <code class="docutils literal notranslate"><span class="pre">?</span></code> 和 <code class="docutils literal notranslate"><span class="pre">[...]</span></code> 。</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p><code class="docutils literal notranslate"><span class="pre">glob</span></code> 程序的文档可以通过 <code class="docutils literal notranslate"><span class="pre">man</span> <span class="pre">7</span> <span class="pre">glob</span></code> 命令查看，
+其中的 Wildcard Matching 小节记录了各个匹配符的用法。</p>
+</div>
+<p>因为 Redis 的文档里并没有对除 <code class="docutils literal notranslate"><span class="pre">*</span></code> 符号之外的其他匹配符进行介绍，
+所以我想如果有一篇专门介绍 Redis 发布与订阅模式的文章应该也会对其他人有帮助，
+这就是本文的写作目的。</p>
+<p>在接下来的小节里，
+每个小节将介绍一种 Redis 模式可以使用的匹配符。</p>
+<section id="id3">
+<h2><code class="docutils literal notranslate"><span class="pre">*</span></code> 匹配符<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">*</span></code> 匹配符可以匹配任意的字符串，
+包括空字符串。</p>
+<p>比如说，
+模式 <code class="docutils literal notranslate"><span class="pre">*news</span></code> 可以匹配 <code class="docutils literal notranslate"><span class="pre">sport</span> <span class="pre">news</span></code> 、 <code class="docutils literal notranslate"><span class="pre">breaking</span> <span class="pre">news</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span> <span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">PSUBSCRIBE</span> <span class="o">*</span><span class="n">news</span>
+<span class="n">Reading</span> <span class="n">messages</span><span class="o">...</span> <span class="p">(</span><span class="n">press</span> <span class="n">Ctrl</span><span class="o">-</span><span class="n">C</span> <span class="n">to</span> <span class="n">quit</span><span class="p">)</span>
+
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;psubscribe&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;*news&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;pmessage&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;*news&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;sport news&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;hello world from sport news&quot;</span>
+
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;pmessage&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;*news&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;breaking news&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;hello world from breaking news&quot;</span>
+</pre></div>
+</div>
+<p>或者正好是字符串 <code class="docutils literal notranslate"><span class="pre">news</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;pmessage&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;*news&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;news&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;hello world&quot;</span>
+</pre></div>
+</div>
+<p>等等。</p>
+</section>
+<section id="id4">
+<h2><code class="docutils literal notranslate"><span class="pre">?</span></code> 匹配符<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">?</span></code> 匹配符可以匹配任意一个字符。</p>
+<p>比如说，
+<code class="docutils literal notranslate"><span class="pre">Re?is</span></code> 可以匹配 <code class="docutils literal notranslate"><span class="pre">Redis</span></code> 、 <code class="docutils literal notranslate"><span class="pre">ReDis</span></code> 、 <code class="docutils literal notranslate"><span class="pre">Regis</span></code> 、 <code class="docutils literal notranslate"><span class="pre">Re-is</span></code> 等等。</p>
+<p>以下是一个订阅 <code class="docutils literal notranslate"><span class="pre">Re?is</span></code> 模式的客户端：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>redis 127.0.0.1:6379&gt; PSUBSCRIBE Re?is
+Reading messages... (press Ctrl-C to quit)
+
+1) &quot;psubscribe&quot;
+2) &quot;Re?is&quot;
+3) (integer) 1
+</pre></div>
+</div>
+<p>当有信息发送到 <code class="docutils literal notranslate"><span class="pre">Redis</span></code> 频道的时候，
+它将接收到以下信息：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;pmessage&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;Re?is&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;Redis&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;hello from channel Redis&quot;</span>
+</pre></div>
+</div>
+<p>另外，
+因为 <code class="docutils literal notranslate"><span class="pre">ReDis</span></code> 和 <code class="docutils literal notranslate"><span class="pre">Re-is</span></code> 等频道也和 <code class="docutils literal notranslate"><span class="pre">Re?is</span></code> 模式匹配，
+所以当有信息发送到这些频道的时候，
+订阅 <code class="docutils literal notranslate"><span class="pre">Re?is</span></code> 模式的客户端也会收到信息：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;pmessage&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;Re?is&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;ReDis&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;hello from channel ReDis&quot;</span>
+
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;pmessage&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;Re?is&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;Re-is&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;hello from channel Re-is&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id5">
+<h2><code class="docutils literal notranslate"><span class="pre">[...]</span></code> 匹配符<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">[...]</span></code> 匹配符可以匹配给定范围内的单个字符，
+其中，
+<code class="docutils literal notranslate"><span class="pre">[</span></code> 和 <code class="docutils literal notranslate"><span class="pre">]</span></code> 包围的内容指定了这个字符可能的值。</p>
+<p>比如说，
+如果我们想匹配 <code class="docutils literal notranslate"><span class="pre">Redis</span></code> 、 <code class="docutils literal notranslate"><span class="pre">Tedis</span></code> 和 <code class="docutils literal notranslate"><span class="pre">Uedis</span></code> 三个频道的信息，
+那么可以订阅模式 <code class="docutils literal notranslate"><span class="pre">[RTU]edis</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span> <span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">PSUBSCRIBE</span> <span class="p">[</span><span class="n">RTU</span><span class="p">]</span><span class="n">edis</span>
+<span class="n">Reading</span> <span class="n">messages</span><span class="o">...</span> <span class="p">(</span><span class="n">press</span> <span class="n">Ctrl</span><span class="o">-</span><span class="n">C</span> <span class="n">to</span> <span class="n">quit</span><span class="p">)</span>
+
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;psubscribe&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;[RTU]edis&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>当有信息发送给 <code class="docutils literal notranslate"><span class="pre">Redis</span></code> 、 <code class="docutils literal notranslate"><span class="pre">Tedis</span></code> 或 <code class="docutils literal notranslate"><span class="pre">Uedis</span></code> 中的任意一个时，
+订阅客户端都会收到信息：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;pmessage&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;[RTU]edis&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;Redis&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;hello from Redis&quot;</span>
+
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;pmessage&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;[RTU]edis&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;Tedis&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;hello from Tedis&quot;</span>
+
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;pmessage&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;[RTU]edis&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;Uedis&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;hello from Uedis&quot;</span>
+</pre></div>
+</div>
+<p>和 <code class="docutils literal notranslate"><span class="pre">glob</span></code> 程序一样，
+Redis 的 <code class="docutils literal notranslate"><span class="pre">[...]</span></code> 匹配符里面也可以使用 <code class="docutils literal notranslate"><span class="pre">-</span></code> 符号（横杠）来指定范围。</p>
+<p>比如说，
+要匹配频道 <code class="docutils literal notranslate"><span class="pre">iPhone4</span></code> 、 <code class="docutils literal notranslate"><span class="pre">iPhone5</span></code> 和 <code class="docutils literal notranslate"><span class="pre">iPhone6</span></code> ，
+可以订阅模式 <code class="docutils literal notranslate"><span class="pre">iPhone[4-6]</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span> <span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">PSUBSCRIBE</span> <span class="n">iPhone</span><span class="p">[</span><span class="mi">4</span><span class="o">-</span><span class="mi">6</span><span class="p">]</span>
+<span class="n">Reading</span> <span class="n">messages</span><span class="o">...</span> <span class="p">(</span><span class="n">press</span> <span class="n">Ctrl</span><span class="o">-</span><span class="n">C</span> <span class="n">to</span> <span class="n">quit</span><span class="p">)</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;psubscribe&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;iPhone[4-6]&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;pmessage&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;iPhone[4-6]&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;iPhone4&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;...&quot;</span>
+
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;pmessage&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;iPhone[4-6]&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;iPhone5&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;...&quot;</span>
+
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;pmessage&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;iPhone[4-6]&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;iPhone6&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;...&quot;</span>
+</pre></div>
+</div>
+<p>另外，
+要匹配 <code class="docutils literal notranslate"><span class="pre">Aedis</span></code> 、 <code class="docutils literal notranslate"><span class="pre">Bedis</span></code> 、 <code class="docutils literal notranslate"><span class="pre">Cedis</span></code> 一直到 <code class="docutils literal notranslate"><span class="pre">Zedis</span></code> 频道，
+可以订阅 <code class="docutils literal notranslate"><span class="pre">[A-Z]edis</span></code> 模式：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span> <span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">PSUBSCRIBE</span> <span class="p">[</span><span class="n">A</span><span class="o">-</span><span class="n">Z</span><span class="p">]</span><span class="n">edis</span>
+<span class="n">Reading</span> <span class="n">messages</span><span class="o">...</span> <span class="p">(</span><span class="n">press</span> <span class="n">Ctrl</span><span class="o">-</span><span class="n">C</span> <span class="n">to</span> <span class="n">quit</span><span class="p">)</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;psubscribe&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;[A-Z]edis&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;pmessage&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;[A-Z]edis&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;Aedis&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;...&quot;</span>
+
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;pmessage&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;[A-Z]edis&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;Redis&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;...&quot;</span>
+
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;pmessage&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;[A-Z]edis&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;Zedis&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;...&quot;</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>因为 Redis 的 <span class="xref std std-ref">SUBSCRIBE 命令</span> 可以同时订阅多个频道，
+所以实际上使用 <code class="docutils literal notranslate"><span class="pre">-</span></code> 符号来指定范围并不是十分必要的。</p>
+<p>比如说，
+命令 <code class="docutils literal notranslate"><span class="pre">PSUBSCRIBE</span> <span class="pre">iPhone[4-6]</span></code> 和命令 <code class="docutils literal notranslate"><span class="pre">SUBSCRIBE</span> <span class="pre">iPhone4</span> <span class="pre">iPhone5</span> <span class="pre">iPhone6</span></code> 的效果是一样的，
+它们之间的唯一不同之处是前者订阅的是模式，
+而后者订阅的是频道。</p>
+<p>从目前的频道和模式的实现来看，
+使用频道的效率要比模式高（具体请参考《Redis 设计与实现》的《<a class="reference external" href="http://www.redisbook.com/en/latest/feature/pubsub.html">发布与订阅</a>》章节），
+因此，
+如果可以的话，
+应该尽量使用频道而不是模式。</p>
+</div>
+</section>
+<section id="id7">
+<h2>任意组合多个匹配符<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
+<p>上面介绍了 <code class="docutils literal notranslate"><span class="pre">*</span></code> 、 <code class="docutils literal notranslate"><span class="pre">?</span></code> 和 <code class="docutils literal notranslate"><span class="pre">[...]</span></code> 三个匹配符，
+要进一步扩大模式的匹配能力，
+可以组合使用多个匹配符：
+Redis 允许一个模式中包含多个匹配符，
+并且每个匹配符的数量没有限制。</p>
+<p>比如说，
+模式 <code class="docutils literal notranslate"><span class="pre">[ig]Phone*</span></code> 可以匹配 <code class="docutils literal notranslate"><span class="pre">iPhone</span></code> 、 <code class="docutils literal notranslate"><span class="pre">gPhone</span></code> 、 <code class="docutils literal notranslate"><span class="pre">iPhone</span> <span class="pre">news</span></code> 、 <code class="docutils literal notranslate"><span class="pre">gPhone</span> <span class="pre">7</span></code> 等任意频道：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span> <span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">PSUBSCRIBE</span> <span class="p">[</span><span class="n">ig</span><span class="p">]</span><span class="n">Phone</span><span class="o">*</span>
+<span class="n">Reading</span> <span class="n">messages</span><span class="o">...</span> <span class="p">(</span><span class="n">press</span> <span class="n">Ctrl</span><span class="o">-</span><span class="n">C</span> <span class="n">to</span> <span class="n">quit</span><span class="p">)</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;psubscribe&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;[ig]Phone*&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;pmessage&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;[ig]Phone*&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;iPhone&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;...&quot;</span>
+
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;pmessage&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;[ig]Phone*&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;gPhone&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;...&quot;</span>
+
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;pmessage&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;[ig]Phone*&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;iPhone news&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;...&quot;</span>
+
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;pmessage&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;[ig]Phone*&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;gPhone 7&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;...&quot;</span>
+</pre></div>
+</div>
+<p>而模式 <code class="docutils literal notranslate"><span class="pre">*news*</span></code> 则可以匹配任何包含 <code class="docutils literal notranslate"><span class="pre">news</span></code> 这一字符串的频道，
+比如 <code class="docutils literal notranslate"><span class="pre">news</span></code> 、 <code class="docutils literal notranslate"><span class="pre">release</span> <span class="pre">news</span> <span class="pre">of</span> <span class="pre">Redis</span></code> 、 <code class="docutils literal notranslate"><span class="pre">lastes</span> <span class="pre">news</span></code> ，
+诸如此类：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span> <span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">PSUBSCRIBE</span> <span class="o">*</span><span class="n">news</span><span class="o">*</span>
+<span class="n">Reading</span> <span class="n">messages</span><span class="o">...</span> <span class="p">(</span><span class="n">press</span> <span class="n">Ctrl</span><span class="o">-</span><span class="n">C</span> <span class="n">to</span> <span class="n">quit</span><span class="p">)</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;psubscribe&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;*news*&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;pmessage&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;*news*&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;news&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;...&quot;</span>
+
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;pmessage&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;*news*&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;release news of Redis&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;...&quot;</span>
+
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;pmessage&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;*news*&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;lastes news&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;...&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id8">
+<h2>总结<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<p>以上就是本文的全部内容了。</p>
+<p>本文对 Redis <span class="xref std std-ref">PSUBSCRIBE 命令</span> 支持的各个匹配符进行了简单的介绍，
+希望各位可以从这些简单的例子中获得启发，
+创作出更多更强大的模式，
+并将它们应用到程序中去。</p>
+<div class="line-block">
+<div class="line">huangz</div>
+<div class="line">2013.5.13</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

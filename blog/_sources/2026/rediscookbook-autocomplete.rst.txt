@@ -1,0 +1,39 @@
+《Redis应用实例》书摘（25）：自动补全
+===============================================
+
+自动补全经常出现在搜索引擎或者应用的搜索框中，比如当我们在搜索引擎的搜索框中输入字母“re”的时候，搜索引擎就会通过自动补全提示我们是否要选择“reddit”、“redis”、“react”或者“reuters”等建议的其中一个，而在输入“redis”的时候，搜索引擎则会提示“redis命令”、“redisson”、“redisinsight”或者“redis desktop manager”等建议以供选择。
+
+代码清单 CODE_AUTO_COMPLETE 展示了自动补全程序的具体实现代码。
+
+--------------
+
+代码清单 CODE_AUTO_COMPLETE 自动补全程序 ``auto_complete.py``
+
+.. literalinclude:: code/auto_complete.py
+   :lines: 1-2, 4-56
+
+--------------
+
+作为示例，以下代码演示了如何使用这个自动补全程序：
+
+.. code:: python
+
+        >>> from redis import Redis
+        >>> from auto_complete import AutoComplete
+        >>> client = Redis(decode_responses=True)
+        >>> ac = AutoComplete(client, "search")
+        >>> for i in range(5):  # 模拟用户输入
+        ...   ac.feed("banana")
+        ...
+        >>> for i in range(2):
+        ...   ac.feed("banquet")
+        ...
+        >>> for i in range(3):
+        ...   ac.feed("band")
+        ...
+        >>> ac.hint("ban")  # 模拟用户获取建议
+        ['banana', 'band', 'banquet']
+
+这段代码通过多次调用\ ``feed()``\ 来模拟用户输入多个单词：其中\ ``"banana"``\ 输入了五次，\ ``"band"``\ 输入了三次，而\ ``"banquet"``\ 只输入了两次，所以在针对输入\ ``"ban"``\ 获取建议的时候，自动补完程序将按照输入次数从多到少分别获取上述三个单词作为建议项。
+
+.. include:: rediscookbook-promote.rst

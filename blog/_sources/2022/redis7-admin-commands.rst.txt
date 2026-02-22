@@ -1,0 +1,332 @@
+Redis 7.0 新增管理命令简介
+==========================
+
+最近推出的 Redis 7.0
+（RC1和RC2）新增/修改了不少命令，其中当然也包括一些管理相关的命令，本文将对这些管理相关的新命令做相应的介绍。
+
+``COMMAND DOCS`` 命令
+---------------------
+
+``COMMAND DOCS [command-name [command-name ...]]``
+
+这个新增的子命令会以数组方式，返回给定任意多个命令的文档。如果不指定命令，那么返回所有命令的文档。
+
+以下代码展示了如何获取 ``INFO`` 命令的文档：
+
+::
+
+   127.0.0.1:6379> COMMAND DOCS INFO
+   1) "info"
+   2)  1) "summary"
+       2) "Get information and statistics about the server"
+       3) "since"
+       4) "1.0.0"
+       5) "group"
+       6) "server"
+       7) "complexity"
+       8) "O(1)"
+       9) "history"
+      10) 1) 1) "7.0.0"
+             2) "Added support for taking multiple section arguments."
+      11) "arguments"
+      12) 1) 1) "name"
+             2) "section"
+             3) "type"
+             4) "string"
+             5) "flags"
+             6) 1) optional
+                2) multiple
+
+对于子命令，如果我们想要获取它们的文档，那么就需要用 ``|``
+作为命令和子命令之间的分隔符。
+
+比如说，以下代码展示了如何获取 ``ACL CAT`` 子命令的文档：
+
+::
+
+   127.0.0.1:6379> COMMAND DOCS ACL|CAT
+   1) "acl|cat"
+   2)  1) "summary"
+       2) "List the ACL categories or the commands inside a category"
+       3) "since"
+       4) "6.0.0"
+       5) "group"
+       6) "server"
+       7) "complexity"
+       8) "O(1) since the categories and commands are a fixed set."
+       9) "arguments"
+      10) 1) 1) "name"
+             2) "categoryname"
+             3) "type"
+             4) "string"
+             5) "flags"
+             6) 1) optional
+
+``COMMAND DOCS`` 命令的更多信息可以参考它的文档：
+https://redis.io/commands/command-docs
+
+``COMMAND LIST`` 命令
+---------------------
+
+``COMMAND LIST [FILTERBY MODULE module-name|ACLCAT category|PATTERN pattern]``
+
+跟 ``COMMAND DOCS`` 类似，这个子命令是 7.0
+新增的，它可以列出服务器的所有命令。通过给定可选的 ``FILTERBY``
+参数，可以让命令只返回符合过滤条件的命令。
+
+列出所有命令：
+
+::
+
+   127.0.0.1:6379> COMMAND LIST
+     1) "zmpop"
+     2) "client"
+     3) "client|help"
+     4) "client|getredir"
+    ...
+    362) "unsubscribe"
+    363) "bzmpop"
+    364) "georadiusbymember"
+
+列出 ACL 分类中的 ``geo`` 命令：
+
+::
+
+   127.0.0.1:6379> COMMAND LIST FILTERBY ACLCAT geo
+    1) "geopos"
+    2) "geodist"
+    3) "georadius"
+    ...
+    9) "geosearch"
+   10) "georadiusbymember"
+
+``COMMAND LIST`` 命令的更多信息可以参考它的文档：
+https://redis.io/commands/command-list
+
+``COMMAND INFO`` 命令
+---------------------
+
+``COMMAND INFO [command-name [command-name ...]]``
+
+这个也是新增的子命令，它会以数组形式返回给定的任意多个命令的细节信息。如果不给定命令，那么返回所有命令的细节信息。
+
+以下代码展示了如何获取 ``INFO`` 命令的细节信息：
+
+::
+
+   127.0.0.1:6379> COMMAND INFO INFO
+   1)  1) "info"
+       2) (integer) -1
+       3) 1) loading
+          2) stale
+       4) (integer) 0
+       5) (integer) 0
+       6) (integer) 0
+       7) 1) @slow
+          2) @dangerous
+       8) 1) "nondeterministic_output"
+          2) "request_policy:all_shards"
+          3) "response_policy:special"
+       9) (empty array)
+      10) (empty array)
+
+``COMMAND INFO``
+命令的更多信息可以参考它的文档：https://redis.io/commands/command-info
+
+``LATENCY HISTOGRAM`` 命令
+--------------------------
+
+``LATENCY HISTOGRAM [command [command ...]]``
+
+这个 7.0
+新增子命令会以直方图形式报告每个指定命令的累积分布延迟。如果不指定命令那么所有包含延时信息的命令都会被返回。
+
+每个报告的直方图包含以下字段：
+
+-  命令名称
+-  命令的总调用次数
+-  一个由时间桶构成的映射
+-  每个桶代表一个延时范围
+-  每个桶覆盖前一个桶的两倍范围
+-  空桶不会被打印
+-  追踪的延迟介于 1 微妙和大约 1 秒钟之间
+-  超过 1 秒钟的延迟都会被认为是 +Inf
+-  最大会有 ``log2(1000000000)=30`` 个桶
+-  这个命令需要启用扩展延迟监测功能（默认情况下是启用的）。如果你需要启用它，请使用
+   ``CONFIG SET latency-tracking yes`` 。
+
+以下是该命令的执行示例：
+
+::
+
+   127.0.0.1:6379> LATENCY HISTOGRAM
+   1) "command|info"
+   2) 1) "calls"
+      2) (integer) 3
+      3) "histogram_usec"
+      4) 1) (integer) 16
+         2) (integer) 1
+         3) (integer) 66
+         4) (integer) 2
+         5) (integer) 2113
+         6) (integer) 3
+   3) "command|docs"
+   4) 1) "calls"
+      2) (integer) 13
+      3) "histogram_usec"
+      4) 1) (integer) 16
+         2) (integer) 4
+         3) (integer) 33
+         4) (integer) 7
+         5) (integer) 1056
+         6) (integer) 11
+         7) (integer) 2113
+         8) (integer) 13
+   5) "command|list"
+   6) 1) "calls"
+      2) (integer) 2
+      3) "histogram_usec"
+      4) 1) (integer) 33
+         2) (integer) 1
+         3) (integer) 132
+         4) (integer) 2
+
+命令的详细信息请参考文档： https://redis.io/commands/latency-histogra
+
+``CLUSTER LINKS`` 命令
+----------------------
+
+``CLUSTER LINKS``
+
+这个新增的子命令以数组形式，输出每个集群节点的具体信息，其中每个数组元素都是一个映射，映射中包含了每个独立连接的属性以及与之对应的值。
+
+::
+
+   > CLUSTER LINKS
+   1)  1) "direction"
+       2) "to"
+       3) "node"
+       4) "8149d745fa551e40764fecaf7cab9dbdf6b659ae"
+       5) "create-time"
+       6) (integer) 1639442739375
+       7) "events"
+       8) "rw"
+       9) "send-buffer-allocated"
+      10) (integer) 4512
+      11) "send-buffer-used"
+      12) (integer) 0
+   2)  1) "direction"
+       2) "from"
+       3) "node"
+       4) "8149d745fa551e40764fecaf7cab9dbdf6b659ae"
+       5) "create-time"
+       6) (integer) 1639442739411
+       7) "events"
+       8) "r"
+       9) "send-buffer-allocated"
+      10) (integer) 0
+      11) "send-buffer-used"
+      12) (integer) 0
+
+命令的详细信息请参考文档： https://redis.io/commands/cluster-links
+
+``CLUSTER ADDSLOTSRANGE`` 和 ``CLUSTER DELSLOTSRANGE`` 命令
+-----------------------------------------------------------
+
+过去只能用 ``ADDSLOT`` 命令和 ``DELSLOT`` 命令一个个地添加/删除槽，在
+7.0 新增以下两个子命令之后，现在可以直接添加/删除槽范围了：
+
+::
+
+   CLUSTER ADDSLOTSRANGE start-slot end-slot [start-slot end-slot ...]
+   CLUSTER DELSLOTSRANGE start-slot end-slot [start-slot end-slot ...]
+
+比如说，过去的：
+
+::
+
+   > CLUSTER ADDSLOTS 1 2 3 4 5
+   OK
+
+相当于现在的：
+
+::
+
+   > CLUSTER ADDSLOTSRANGE 1 5
+   OK
+
+命令的详细信息请参考文档：https://redis.io/commands/cluster-addslotsrange
+和 https://redis.io/commands/cluster-delslotsrange
+
+``CLIENT NO-EVICT``
+-------------------
+
+::
+
+   CLIENT NO-EVICT ON|OFF
+
+这个新增的子命令用于设置客户端的驱逐模式：
+
+-  当它处于打开状态时，即使这个客户端高于配置好的驱逐阈值，它也不会被驱逐。
+
+-  当它处于关闭状态时，这个客户端将被重新放进潜在的被驱逐客户端池里面。
+
+命令的详细信息请参考文档：https://redis.io/commands/client-no-evict
+
+``ACL DRYRUN``
+--------------
+
+::
+
+   ACL DRYRUN username command [arg [arg ...]]
+
+这个新增的子命令可以在不实际执行命令的情况下，判断指定用户能否执行给定的命令。
+
+一个用于检测用户权限的命令。
+
+例子：
+
+::
+
+   > ACL SETUSER VIRGINIA +SET ~*
+   "OK"
+   > ACL DRYRUN VIRGINIA SET foo bar
+   "OK"
+   > ACL DRYRUN VIRGINIA GET foo bar
+   "This user has no permissions to run the 'GET' command"
+
+命令的详细信息请参考文档： https://redis.io/commands/acl-dryrun
+
+``SLOWLOG GET``
+---------------
+
+``SLOWLOG GET [count]``
+
+这个命令之前的版本已经存在，7.0 让这个命令可以通过接受 ``-1``
+为参数，以此来获取所有条目。
+
+示例：
+
+::
+
+   127.0.0.1:6379> SLOWLOG GET -1
+   1) 1) (integer) 2
+      2) (integer) 1646980811
+      3) (integer) 5
+      4) 1) "GET"
+         2) "msg"
+      5) "127.0.0.1:50082"
+      6) ""
+   2) 1) (integer) 1
+      2) (integer) 1646980809
+      3) (integer) 5
+      4) 1) "SET"
+         2) "msg"
+         3) "hello"
+      5) "127.0.0.1:50082"
+      6) ""
+
+命令的详细信息请参考文档：https://redis.io/commands/slowlog-get
+
+| 对管理命令其实不太感兴趣但又不得不了解的黄健宏
+| 2022.3.11

@@ -1,0 +1,97 @@
+Valkey源码剖析（20）：客户端表示
+================================
+
+Valkey使用\ ``server.h/client``\ 结构表示与服务器连接的每个客户端，该结构包含了客户端的ID、网络连接信息、客户端正在执行的命令及其参数、参数个数等多项信息：
+
+.. code:: c
+
+   typedef struct client {
+       /* Basic client information and connection. */
+       // 自动递增的客户端唯一ID
+       uint64_t id; /* Client incremental unique ID. */
+       // 网络连接
+       connection *conn;
+       /* Input buffer and command parsing fields */
+       // 查询缓冲区
+       sds querybuf;        /* Buffer we use to accumulate client queries. */
+       // 已读取查询缓冲区的偏移量
+       size_t qb_pos;       /* The position we have read in querybuf. */
+       // 命令参数
+       robj **argv;         /* Arguments of current command. */
+       // 命令参数数量
+       int argc;            /* Num of arguments of current command. */
+
+       // ...
+
+   } client;
+
+当Valkey服务器接收到客户端的网络连接请求时，\ ``networking.c/acceptCommonHandler()``\ 函数就会被调用，并继而调用\ ``networking.c/createClient()``\ 函数，从而为客户端创建出相应的\ ``client``\ 结构：
+
+.. code:: c
+
+   void acceptCommonHandler(connection *conn, struct ClientFlags flags, char *ip) {
+
+       client *c;
+
+       // ...
+
+       // 为连接创建客户端
+       if ((c = createClient(conn)) == NULL) {
+           serverLog(LL_WARNING, "Error registering fd event for the new client connection: %s (addr=%s laddr=%s)",
+                     connGetLastError(conn), addr, laddr);
+           connClose(conn); /* May be already closed, just ignore errors */
+           return;
+       }
+
+       // ...
+   }
+
+.. code:: c
+
+   // 创建并初始化一个空白的客户端
+   client *createClient(connection *conn) {
+       client *c = zmalloc(sizeof(client));
+
+       // 连接可以为NULL，用于在Lua脚本等环境中执行命令（因为Redis执行命令必须在客户端上下文中）
+       if (conn) {
+           // 绑定查询读取处理器
+           connSetReadHandler(conn, readQueryFromClient);
+           // 设置私有数据
+           connSetPrivateData(conn, c);
+           // 设置状态
+           conn->flags |= CONN_FLAG_ALLOW_ACCEPT_OFFLOAD;
+       }
+       // 分配输出缓冲区空间
+       c->buf = zmalloc_usable(PROTO_REPLY_CHUNK_BYTES, &c->buf_usable_size);
+       // 选择数据库
+       selectDb(c, 0);
+       // 分配客户端ID
+       uint64_t client_id = atomic_fetch_add_explicit(&server.next_client_id, 1, memory_order_relaxed);
+       // 设置客户端ID
+       c->id = client_id;
+       // 设置使用的RESP版本
+   #ifdef LOG_REQ_RES
+       reqresReset(c, 0);
+       c->resp = server.client_default_resp;
+   #else
+       c->resp = 2;
+   #endif
+       // 绑定连接
+       c->conn = conn;
+       // 初始化其他属性……
+       c->name = NULL;
+       c->lib_name = NULL;
+       c->lib_ver = NULL;
+       c->bufpos = 0;
+       // ...
+       // 将当前客户端添加到服务器全局客户端链表中
+       if (conn) linkClient(c);
+       // ...
+
+       return c;
+   }
+
+在为客户端创建对应的\ ``client``\ 结构之后，服务器就可以使用这个结构来存储客户端执行命令时的上下文，比如命令请求、命令回复和当前正在执行的命令等等，具体的内容将在接下来的文章中进行介绍。
+
+| 黄健宏
+| 2026.1.26

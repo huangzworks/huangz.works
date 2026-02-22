@@ -1,0 +1,29 @@
+《Redis应用实例》书摘（2）：通过JSON序列化缓存多项数据
+=================================================================
+
+在复杂的系统中，单项数据往往只占少数，更多的是由多个项组成的复杂数据。
+
+代码清单 CODE_JSON_CACHE 展示了使用JSON缓存多项数据的方法，这个程序要做的就是在设置缓存之前把Python数据编码为JSON数据，并在获取缓存之后将JSON数据解码为Python数据。
+
+--------------
+
+代码清单 CODE_JSON_CACHE JSON版本的多项数据缓存程序 ``json_cache.py``
+
+.. literalinclude:: code/json_cache.py
+
+--------------
+
+作为例子，以下这段代码展示了如何使用这个程序来缓存前面展示的用户信息：
+
+.. code:: python
+
+        >>> from redis import Redis
+        >>> from json_cache import JsonCache
+        >>> client = Redis(decode_responses=True)
+        >>> cache = JsonCache(client)  # 创建缓存对象
+        >>> data = {"id":10086, "name": "Peter", "gender": "male", "age": 56}
+        >>> cache.set("User:10086", data)  # 缓存数据
+        >>> cache.get("User:10086")  # 获取缓存
+        {'id': 10086, 'name': 'Peter', 'gender': 'male', 'age': 56}
+
+.. include:: rediscookbook-promote.rst

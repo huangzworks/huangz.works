@@ -1,0 +1,144 @@
+Redis 8.4 RC1 新增字符串命令介绍（DIGEST、DELEX、MSETEX）
+===============================================================
+
+在最近发布的\ `Redis 8.4
+RC1版本 <https://github.com/redis/redis/releases/tag/8.4-rc1>`__\ 中，新增了\ ``DIGEST``\ 、\ ``DELEX``\ 、\ ``MSETEX``\ 三个命令，并为\ ``SET``\ 命令添加了\ ``IFEQ``\ 、\ ``IFNE``\ 等多个选项，本文将对此进行介绍。
+
+DIGEST
+------
+
+``DIGEST``\ 命令可以获取给定字符串键值的哈希值，并以十六进制字符串的形式返回它：
+
+::
+
+   DIGEST key
+
+比如以下代码就展示了如何使用\ ``DIGEST``\ 命令获取\ ``msg``\ 键的值的哈希值：
+
+::
+
+   127.0.0.1:6379> SET msg "hello"
+   OK
+   127.0.0.1:6379> DIGEST msg
+   "9555e8555c62dcfd"
+
+命令计算哈希值时使用的是\ `xxHash哈希算法 <https://xxhash.com/>`__\ 。
+
+DELEX
+-----
+
+``DELEX``\ 命令会根据给定的条件以及给定键的值，决定是否删除给定键：
+
+::
+
+   DELEX key [IFEQ match-value | IFNE match-value | IFDEQ match-digest | IFDNE match-digest]
+
+以下是四个可选条件以及它们的作用：
+
+-  ``IFEQ match-value``\ ，如果给定值与键值相等，那么删除给定键
+-  ``IFNE match-value``\ ，如果给定值与键值不相等，那么删除给定键
+-  ``IFDEQ match-digest``\ ，如果给定哈希值与键值的哈希值相等，那么删除给定键
+-  ``IFDNE match-digest``\ ，如果给定哈希值与键值的哈希值不相等，那么删除给定键
+
+在以下示例中，由于键值与给定值并不相等，所以第一个\ ``DELEX``\ 命令未能删除给定键，而第二个\ ``DELEX``\ 命令则成功删除了：
+
+::
+
+   127.0.0.1:6379> SET msg "hello"
+   OK
+   127.0.0.1:6379> DELEX msg IFEQ "good"
+   (integer) 0
+   127.0.0.1:6379> DELEX msg IFEQ "hello"
+   (integer) 1
+
+以下示例也是类似——第一次\ ``DELEX``\ 命令由于给定哈希值不相等而未删除给定键，而第二个命令则成功删除了：
+
+::
+
+   127.0.0.1:6379> SET msg "hello"
+   OK
+   127.0.0.1:6379> DIGEST msg
+   "9555e8555c62dcfd"
+   127.0.0.1:6379> DELEX msg IFDEQ "ffffffffffffffff"
+   (integer) 0
+   127.0.0.1:6379> DELEX msg IFDEQ "9555e8555c62dcfd"
+   (integer) 1
+
+SET命令新选项
+-------------
+
+在添加\ ``DELEX``\ 命令之后，\ ``SET``\ 命令也新增了与该命令类似的\ ``IFEQ``\ 、\ ``IFNE``\ 等选项：
+
+::
+
+   SET key value [NX | XX | IFEQ match-value | IFNE match-value | IFDEQ match-digest | IFDNE match-digest] 
+                 [GET] 
+                 [EX seconds | PX milliseconds | EXAT unix-time-seconds | PXAT unix-time-milliseconds | KEEPTTL]
+
+以下是四个新增选项的作用：
+
+-  ``IFEQ match-value``\ ，只在键值与给定值相等的情况下执行设置
+-  ``IFNE match-value``\ ，只在键值与给定值不相等的情况下执行设置
+-  ``IFDEQ match-digest``\ ，只在键值的哈希值与给定哈希值相等的情况下执行设置
+-  ``IFDNE match-digest``\ ，只在键值的哈希值与给定哈希值不相等的情况下执行设置
+
+在以下示例中，由于第一次给定的\ ``IFEQ``\ 条件不满足，所以设置未执行，而第二次满足条件的设置则成功执行了：
+
+::
+
+   127.0.0.1:6379> SET msg "hello"
+   OK
+   127.0.0.1:6379> SET msg "hello redis!" IFEQ "hi"
+   (nil)
+   127.0.0.1:6379> SET msg "hello redis!" IFEQ "hello"
+   OK
+
+MSETEX
+------
+
+``MSETEX``\ 命令可以同时为多个字符串键设置同一个过期时间，它的出现应该是受到了\ ``HSETEX``\ 等命令的影响：
+
+::
+
+   MSETEX numkeys key value [key value …] 
+                  [XX | NX] 
+                  [EX seconds | PX milliseconds | EXAT unix-time-seconds | PXAT unix-time-milliseconds | KEEPTTL]
+
+比如以下示例就使用\ ``MSETEX``\ 命令同时为\ ``k1``\ 、\ ``k2``\ 、\ ``k3``\ 三个字符串键设置了值，并将它们的过期时间都设置为3600秒：
+
+::
+
+   127.0.0.1:6379> MSETEX 3 k1 "v1" k2 "v2" k3 "v3" EX 3600
+   (integer) 1
+
+以下两个命令确认了键值设置成功和过期时间设置成功：
+
+::
+
+   127.0.0.1:6379> MGET k1 k2 k3
+   1) "v1"
+   2) "v2"
+   3) "v3"
+   127.0.0.1:6379> MULTI
+   OK
+   127.0.0.1:6379(TX)> TTL k1
+   QUEUED
+   127.0.0.1:6379(TX)> TTL k2
+   QUEUED
+   127.0.0.1:6379(TX)> TTL k3
+   QUEUED
+   127.0.0.1:6379(TX)> EXEC
+   1) (integer) 3564
+   2) (integer) 3564
+   3) (integer) 3564
+
+结语
+----
+
+好的，关于Redis 8.4 RC1
+新增字符串命令的相关介绍到这里就结束，感谢您的阅读！
+
+对Redis感兴趣的朋友可以多关注本博客或者\ `本人的社交媒体 <https://huangz.works/>`__\ 以获取更多相关信息。
+
+| 黄健宏
+| 2025.11.11

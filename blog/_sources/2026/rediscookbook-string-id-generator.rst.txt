@@ -1,0 +1,37 @@
+《Redis应用实例》书摘（7）：自动递增数字ID生成器（字符串实现）
+=========================================================================
+
+传统SQL数据库可以使用\ ``SERIAL``\ 等类型创建连续的自动递增数字ID，并将其用作检索数据或是连接数据时的标识符。但由于Redis直接使用键名作为检索数据的标识符，而且每个应用程序的键名通常都各不相同，所以Redis并未内置自动的数字序列ID生成机制。
+
+尽管如此，数字ID作为通用的数据标识手段仍然非常常见，对于很多使用Redis的应用程序来说也是不可或缺的。为此，我们可以通过Redis的字符串或是哈希数据结构来创建自动递增的数字ID，具体的方法将在接下来的内容中介绍。
+
+代码清单 CODE_ID_GENERATOR 展示了基于字符串键实现的自增数字ID序列生成器。
+
+--------------
+
+代码清单 CODE_ID_GENERATOR 使用字符串键实现的ID生成器 ``id_generator.py``
+
+.. literalinclude:: code/id_generator.py
+
+--------------
+
+作为例子，以下代码展示了如何使用这个程序保留前一百万个ID，并在之后生成连续的数字ID：
+
+.. code:: python
+
+        >>> from redis import Redis
+        >>> from id_generator import IdGenerator
+        >>> client = Redis(decode_responses=True)
+        >>> gen = IdGenerator(client, "UserID")
+        >>> gen.reserve(1000000)  # 保留前一百万个ID
+        True
+        >>> gen.produce()  # 生成后续ID
+        1000001
+        >>> gen.produce()
+        1000002
+        >>> gen.produce()
+        1000003
+        >>> gen.reserve(9999)  # 这个方法无法在生成ID之后调用
+        False
+
+.. include:: rediscookbook-promote.rst

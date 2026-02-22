@@ -1,0 +1,155 @@
+Valkey源码剖析（2）：服务器状态表示
+===========================================
+
+Valkey服务器使用server.h/valkeyServer结构表示自身状态，这个结构包含了大量属性：
+
+.. code:: c
+
+   struct valkeyServer {
+       // ...
+   }
+
+Valkey根据各项属性的作用使用注释把它们分割成了多个部分，比如通用部分：
+
+.. code:: c
+
+       /* General */
+       pid_t pid;                /* Main process pid. */
+       pthread_t main_thread_id; /* Main thread id */
+       char *configfile;         /* Absolute config file path, or NULL */
+       char *executable;         /* Absolute executable file path. */
+       char **exec_argv;         /* Executable argv vector (copy). */
+       mode_t umask;             /* The umask value of the process on startup */
+       int hz;                   /* serverCron() calls frequency in hertz */
+       // ...
+
+AOF持久化部分：
+
+.. code:: c
+
+       /* AOF persistence */
+       int aof_enabled;                    /* AOF configuration */
+       int aof_state;                      /* AOF_(ON|OFF|WAIT_REWRITE) */
+       int aof_fsync;                      /* Kind of fsync() policy */
+       char *aof_filename;                 /* Basename of the AOF file and manifest file */
+       char *aof_dirname;                  /* Name of the AOF directory */
+       // ...
+
+RDB持久化部分：
+
+.. code:: c
+
+       /* RDB persistence */
+       long long dirty;                      /* Changes to DB from the last save */
+       long long dirty_before_bgsave;        /* Used to restore dirty on failed BGSAVE */
+       long long rdb_last_load_keys_expired; /* number of expired keys when loading RDB */
+       long long rdb_last_load_keys_loaded;  /* number of loaded keys when loading RDB */
+       struct saveparam *saveparams;         /* Save points array for RDB */
+       // ...
+
+集群部分：
+
+.. code:: c
+
+       /* Cluster */
+       int cluster_enabled;                                   /* Is cluster enabled? */
+       int cluster_port;                                      /* Set the cluster port for a node. */
+       mstime_t cluster_node_timeout;                         /* Cluster node timeout. */
+       mstime_t cluster_ping_interval;                        /* A debug configuration for setting how often cluster nodes send ping messages. */
+       char *cluster_configfile;                              /* Cluster auto-generated config file name. */
+       struct clusterState *cluster;                          /* State of the cluster */
+       // ...
+
+等等。
+
+初始化常量属性
+--------------
+
+Valkey服务器使用server.c/initServerConfig()函数对valkeyServer结构中的常量属性进行初始化：
+
+.. code:: c
+
+   void initServerConfig(void) {
+       int j;
+       char *default_bindaddr[CONFIG_DEFAULT_BINDADDR_COUNT] = CONFIG_DEFAULT_BINDADDR;
+
+       // 使用默认值初始化配置
+       initConfigValues();
+       updateCachedTime(1);
+       server.cmd_time_snapshot = server.mstime;
+       getRandomHexChars(server.runid, CONFIG_RUN_ID_SIZE);
+       server.runid[CONFIG_RUN_ID_SIZE] = '\0';
+       changeReplicationId();
+       clearReplicationId2();
+       server.hz = CONFIG_DEFAULT_HZ;   /* Initialize it ASAP, even if it may get
+                                           updated later after loading the config.
+                                           This value may be used before the server
+                                           is initialized. */
+       server.timezone = getTimeZone(); /* Initialized by tzset(). */
+       server.configfile = NULL;
+       server.executable = NULL;
+       server.arch_bits = (sizeof(long) == 8) ? 64 : 32;
+       server.bindaddr_count = CONFIG_DEFAULT_BINDADDR_COUNT;
+       for (j = 0; j < CONFIG_DEFAULT_BINDADDR_COUNT; j++) server.bindaddr[j] = zstrdup(default_bindaddr[j]);
+       memset(server.listeners, 0x00, sizeof(server.listeners));
+       server.active_expire_enabled = 1;
+       server.lazy_expire_disabled = 0;
+       server.skip_checksum_validation = 0;
+       // ...
+   }
+
+可以看到，这个函数的主要作用就是对valkeyServer结构实例server变量的各项常量属性设置默认值。
+
+初始化数据结构
+--------------
+
+在初始化服务器状态结构的常量属性，并载入启动服务器时给定的配置选项之后，服务器会调用server.c/initServer()函数，对服务器状态结构进行进一步的初始化，比如创建服务器所需的各项数据结构、创建服务器的输入和输出缓冲区、创建数据库数据结构等等：
+
+.. code:: c
+
+   void initServer(void) {
+       signal(SIGHUP, SIG_IGN);
+       signal(SIGPIPE, SIG_IGN);
+       setupSignalHandlers();
+       ThreadsManager_init();
+       makeThreadKillable();
+
+       // ...
+       
+       /* Initialization after setting defaults from the config system. */
+       server.aof_state = server.aof_enabled ? AOF_ON : AOF_OFF;
+       server.fsynced_reploff = server.aof_enabled ? 0 : -1;
+       server.in_fork_child = CHILD_TYPE_NONE;
+       // ...
+       server.clients = listCreate();
+       server.clients_index = raxNew();
+       server.clients_to_close = listCreate();
+       server.replicas = listCreate();
+       server.monitors = listCreate();
+       server.replicas_waiting_psync = raxNew();
+       server.wait_before_rdb_client_free = DEFAULT_WAIT_BEFORE_RDB_CLIENT_FREE;
+       // ...
+       
+       // 创建共享对象
+       createSharedObjects();
+       adjustOpenFilesLimit();
+       const char *clk_msg = monotonicInit();
+       serverLog(LL_NOTICE, "monotonic clock: %s", clk_msg);
+       
+       // 创建服务器事件主循环状态
+       server.el = aeCreateEventLoop(server.maxclients + CONFIG_FDSET_INCR);
+       if (server.el == NULL) {
+           serverLog(LL_WARNING, "Failed creating the event loop. Error message: '%s'", strerror(errno));
+           exit(1);
+       }
+
+       // 创建数据库
+       server.dbnum = server.cluster_enabled ? server.config_databases_cluster : server.config_databases;
+       server.db = zcalloc(sizeof(serverDb *) * server.dbnum);
+       createDatabaseIfNeeded(0); /* The default database should always exist */
+
+       // ...
+   }
+
+| 黄健宏
+| 2025.12.23

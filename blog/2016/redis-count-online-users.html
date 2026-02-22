@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>使用 Redis 统计在线用户人数 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="使用 redis-py 储存地理位置数据" href="redis-py-geo-support.html" />
+    <link rel="prev" title="清远飞来湖湿地公园游记" href="visiting-feilai-lake-park.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">使用 Redis 统计在线用户人数</a><ul>
+<li><a class="reference internal" href="#id1">方案 1 ：使用有序集合</a></li>
+<li><a class="reference internal" href="#id2">方案 2 ：使用集合</a></li>
+<li><a class="reference internal" href="#hyperloglog">方案 3 ：使用 HyperLogLog</a></li>
+<li><a class="reference internal" href="#bitmap">方案 4 ：使用位图（bitmap）</a></li>
+<li><a class="reference internal" href="#id3">总结</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="visiting-feilai-lake-park.html" title="Previous Chapter: 清远飞来湖湿地公园游记"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; 清远飞来湖湿地公园游记</span>
+    </a>
+  </li>
+  <li>
+    <a href="redis-py-geo-support.html" title="Next Chapter: 使用 redis-py 储存地理位置数据"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">使用 redis-py 储存地理位置数据 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="redis">
+<h1>使用 Redis 统计在线用户人数<a class="headerlink" href="#redis" title="Link to this heading">¶</a></h1>
+<p>在构建应用的时候，
+我们经常需要对用户的一举一动进行记录，
+而其中一个比较重要的操作，
+就是对在线的用户进行记录。</p>
+<p>本文将介绍四种使用 Redis 对在线用户进行记录的方案，
+这些方案虽然都可以对在线用户的数量进行统计，
+但每个方案都有一些自己特有的操作，
+并且各个方案的性能特征以及资源消耗也各有不同。</p>
+<img alt="../_images/online_users.png" src="../_images/online_users.png" />
+<section id="id1">
+<h2>方案 1 ：使用有序集合<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>每当一个用户上线时，
+我们就执行 <a class="reference external" href="http://redisdoc.com/sorted_set/zadd.html">ZADD</a> 命令，
+将这个用户以及它的在线时间添加到指定的有序集合中：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ZADD</span> <span class="s2">&quot;online_users&quot;</span> <span class="o">&lt;</span><span class="n">user_id</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">current_timestamp</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>通过使用 <a class="reference external" href="http://redisdoc.com/sorted_set/zscore.html">ZSCORE</a> 命令检查指定的用户 ID 在有序集合中是否有相关联的分值，
+我们可以知道该用户是否在线：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ZSCORE</span> <span class="s2">&quot;online_users&quot;</span> <span class="o">&lt;</span><span class="n">user_id</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>而通过执行 <a class="reference external" href="http://redisdoc.com/sorted_set/zcard.html">ZCARD</a> 命令，
+我们可以知道总共有多用户在线：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ZCARD</span> <span class="s2">&quot;online_users&quot;</span>
+</pre></div>
+</div>
+<p>使用有序集合储存在线用户的强大之处在于，
+它是本文介绍的所有方案当中，
+能够执行最多聚合操作的一个方案，
+原因在于，
+这一方案既可以通过有序集合的成员（也即是用户的 ID）进行聚合操作，
+也可以根据有序集合的分值（也即是用户的登录时间）进行聚合操作。</p>
+<p>首先，
+通过 <a class="reference external" href="http://redisdoc.com/sorted_set/zinterstore.html">ZINTERSTORE</a> 和 <a class="reference external" href="http://redisdoc.com/sorted_set/zunionstore.html">ZUNIONSTORE</a> 命令，
+我们可以对多个记录了在线用户的有序集合进行聚合计算：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># 计算出 7 天之内都有上线的用户，并将它储存到 7_days_both_online_users 有序集合当中</span>
+<span class="n">ZINTERSTORE</span> <span class="mi">7</span><span class="n">_days_both_online_users</span> <span class="mi">7</span> <span class="s2">&quot;day_1_online_users&quot;</span> <span class="s2">&quot;day_2_online_users&quot;</span> <span class="o">...</span> <span class="s2">&quot;day_7_online_users&quot;</span>
+
+<span class="c1"># 计算出 7 天之内总共有多少人上线了</span>
+<span class="n">ZUNIONSTORE</span> <span class="mi">7</span><span class="n">_days_total_online_users</span> <span class="mi">7</span> <span class="s2">&quot;day_1_online_users&quot;</span> <span class="o">...</span> <span class="s2">&quot;day_7_online_users&quot;</span>
+</pre></div>
+</div>
+<p>此外，
+通过 <a class="reference external" href="http://redisdoc.com/sorted_set/zcount.html">ZCOUNT</a> 命令，
+我们可以统计出在指定的时间段之内有多少用户在线，
+而 <a class="reference external" href="http://redisdoc.com/sorted_set/zrangebyscore.html">ZRANGEBYSCORE</a> 命令则可以让我们获取到这些用户的名单：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># 统计指定时间段内上线的用户数量</span>
+<span class="n">ZCOUNT</span> <span class="s2">&quot;online_users&quot;</span> <span class="o">&lt;</span><span class="n">start_timestamp</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">end_timestamp</span><span class="o">&gt;</span>
+
+<span class="c1"># 获取指定时间段内上线的用户名单</span>
+<span class="n">ZRANGEBYSCORE</span> <span class="s2">&quot;online_users&quot;</span> <span class="o">&lt;</span><span class="n">start_timestamp</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">end_timestamp</span><span class="o">&gt;</span> <span class="n">WITHSCORES</span>
+</pre></div>
+</div>
+<p>通过这一方法，
+我们可以知道网站在不同时间段的上线人数以及上线用户名单，
+比如说，
+我们可以用这个方法来分别获知网站在早晨、上午、中午、下午和夜晚的上线人数。</p>
+</section>
+<section id="id2">
+<h2>方案 2 ：使用集合<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>正如上一节所说，
+使用有序集合能够同时储存在线用户的名单以及各个用户的上线时间，
+但如果我们只想要记录在线用户的名单，
+而不想要储存用户的上线时间，
+那么也可以使用集合来代替有序集合，
+对在线的用户进行记录。</p>
+<p>在这种情况下，
+每当一个用户上线时，
+我们就执行以下 <a class="reference external" href="http://redisdoc.com/set/sadd.html">SADD</a> 命令，
+将它添加到在线用户名单当中：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SADD</span> <span class="s2">&quot;online_users&quot;</span> <span class="o">&lt;</span><span class="n">user_id</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>通过使用 <a class="reference external" href="http://redisdoc.com/set/sismember.html">SISMEMBER</a> 命令，
+我们可以检查一个指定的用户当前是否在线：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SISMEMBER</span> <span class="s2">&quot;online_users&quot;</span> <span class="o">&lt;</span><span class="n">user_id</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>而统计在线人数的工作则可以通过执行 <a class="reference external" href="http://redisdoc.com/set/scard.html">SCARD</a> 命令来完成：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SCARD</span> <span class="s2">&quot;online_users&quot;</span>
+</pre></div>
+</div>
+<p>通过集合运算操作，
+我们可以像有序集合方案一样，
+对不同时间段或者日期的在线用户名单进行聚合计算。
+比如说，
+通过 <a class="reference external" href="http://redisdoc.com/set/sinter.html">SINTER</a> 或者 <a class="reference external" href="http://redisdoc.com/set/sinterstore.html">SINTERSTORE</a> 命令，
+我们可以计算出一周都有在线的用户：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SINTER</span> <span class="s2">&quot;day_1_online_users&quot;</span> <span class="s2">&quot;day_2_online_users&quot;</span> <span class="o">...</span> <span class="s2">&quot;day_7_online_users&quot;</span>
+</pre></div>
+</div>
+<p>此外，
+通过 <a class="reference external" href="http://redisdoc.com/set/sunion.html">SUNION</a> 命令或者 <a class="reference external" href="http://redisdoc.com/set/sunionstore.html">SUNIONSTORE</a> 命令，
+我们可以计算出一周内在线用户的总数量：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SUNION</span> <span class="s2">&quot;day_1_online_users&quot;</span> <span class="s2">&quot;day_2_online_users&quot;</span> <span class="o">...</span> <span class="s2">&quot;day_7_online_users&quot;</span>
+</pre></div>
+</div>
+<p>而通过执行 <a class="reference external" href="http://redisdoc.com/set/sdiff.html">SDIFF</a> 命令或者 <a class="reference external" href="http://redisdoc.com/set/sdiffstore.html">SDIFFSTORE</a> 命令，
+我们可以知道哪些用户今天上线了，
+但是昨天没有上线：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SDIFF</span> <span class="s2">&quot;today_online_users&quot;</span> <span class="s2">&quot;yesterday_online_users&quot;</span>
+</pre></div>
+</div>
+<p>又或者工作日上线了，
+但是假日没有上线：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># 计算工作日上线名单</span>
+<span class="n">SINTERSTORE</span> <span class="s2">&quot;weekday_online_users&quot;</span> <span class="s2">&quot;monday_online_users&quot;</span> <span class="s2">&quot;tuesday_online_users&quot;</span> <span class="o">...</span> <span class="s2">&quot;friday_online_users&quot;</span>
+<span class="c1"># 计算假日上线名单</span>
+<span class="n">SINTERSTORE</span> <span class="s2">&quot;holiday_online_users&quot;</span> <span class="s2">&quot;saturday_online_users&quot;</span> <span class="s2">&quot;sunday_online_users&quot;</span>
+<span class="c1"># 计算工作日上线但是假日未上线的名单</span>
+<span class="n">SDIFF</span> <span class="s2">&quot;weekday_online_users&quot;</span> <span class="s2">&quot;holiday_online_users&quot;</span>
+</pre></div>
+</div>
+<p>诸如此类。</p>
+</section>
+<section id="hyperloglog">
+<h2>方案 3 ：使用 HyperLogLog<a class="headerlink" href="#hyperloglog" title="Link to this heading">¶</a></h2>
+<p>虽然使用有序集合和集合能够很好地完成记录在线人数的工作，
+但以上这两个方案都有一个明显的缺点，
+那就是，
+这两个方案耗费的内存会随着被统计用户数量的增多而增多：
+如果你的网站用户数量比较多，
+又或者你需要记录多天/多个时段的在线用户名单并进行聚合计算，
+那么这两个方案可能会消耗你大量内存。</p>
+<p>另一方面，
+在有些情况下，
+我们只想要知道在线用户的人数，
+而不需要知道具体的在线用户名单，
+这时有序集合和集合储存的信息就会显得多余了。</p>
+<p>在需要尽可能地节约内存并且只需要知道在线用户数量的情况下，
+我们可以使用 HyperLogLog 来对在线用户进行统计：
+HyperLogLog 是一个概率算法，
+它可以对元素的基数进行估算，
+并且每个 HyperLogLog 只需要耗费 12 KB 内存，
+对于用户数量非常多但是内存却非常紧张的系统，
+这一方案无疑是最佳之选。</p>
+<p>在这一方案下，
+我们使用 <a class="reference external" href="http://redisdoc.com/hyperloglog/pfadd.html">PFADD</a> 命令去记录在线的用户：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">PFADD</span> <span class="s2">&quot;online_users&quot;</span> <span class="o">&lt;</span><span class="n">user_id</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>使用 <a class="reference external" href="http://redisdoc.com/hyperloglog/pfcount.html">PFCOUNT</a> 命令获取在线人数：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">PFCOUNT</span> <span class="s2">&quot;online_users&quot;</span>
+</pre></div>
+</div>
+<p>因为 HyperLogLog 也提供了计算交集的 <a class="reference external" href="http://redisdoc.com/hyperloglog/pfmerge.html">PFMERGE</a> 命令，
+所以我们也可以用这个命令计算出多个给定时间段或日期之内，
+上线的总人数：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># 统计 7 天之内总共有多少人上线了</span>
+<span class="n">PFMERGE</span> <span class="s2">&quot;7_days_both_online_users&quot;</span> <span class="s2">&quot;day_1_online_users&quot;</span> <span class="s2">&quot;day_2_online_users&quot;</span> <span class="o">...</span> <span class="s2">&quot;day_7_online_users&quot;</span>
+<span class="n">PFCOUNT</span> <span class="s2">&quot;7_days_both_online_users&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="bitmap">
+<h2>方案 4 ：使用位图（bitmap）<a class="headerlink" href="#bitmap" title="Link to this heading">¶</a></h2>
+<p>回顾上面介绍的三个方案，
+我们可以得出以上结论：</p>
+<ul class="simple">
+<li><p>使用有序集合或者集合能够储存具体的在线用户名单，
+但是却需要消耗大量的内存；</p></li>
+<li><p>而使用 HyperLogLog 虽然能够有效地减少统计在线用户所需的内存，
+但是它却没办法准确地记录具体的在线用户名单。</p></li>
+</ul>
+<p>那么是否存在一种既能够获得在线用户名单，
+又可以尽量减少内存消耗的方法存在呢？
+这种方法的确存在 ——
+使用 Redis 的位图就可以办到。</p>
+<p>Redis 的位图就是一个由二进制位组成的数组，
+通过将数组中的每个二进制位与用户 ID 进行一一对应，
+我们可以使用位图去记录每个用户是否在线。</p>
+<p>当一个用户上线时，
+我们就使用 <a class="reference external" href="http://redisdoc.com/string/setbit.html">SETBIT</a> 命令，
+将这个用户对应的二进制位设置为 1 ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># 此处的 user_id 必须为数字，因为它会被用作索引</span>
+<span class="n">SETBIT</span> <span class="s2">&quot;online_users&quot;</span> <span class="o">&lt;</span><span class="n">user_id</span><span class="o">&gt;</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>通过使用 <a class="reference external" href="http://redisdoc.com/string/getbit.html">GETBIT</a> 命令去检查一个二进制位的值是否为 1 ，
+我们可以知道指定的用户是否在线：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">GETBIT</span> <span class="s2">&quot;online_users&quot;</span> <span class="o">&lt;</span><span class="n">user_id</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>而通过 <a class="reference external" href="http://redisdoc.com/string/bitcount.html">BITCOUNT</a> 命令，
+我们可以统计出位图中有多少个二进制位被设置成了 1 ，
+也即是有多少个用户在线：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">BITCOUNT</span> <span class="s2">&quot;online_users&quot;</span>
+</pre></div>
+</div>
+<p>跟集合一样，
+用户也能够对多个位图进行聚合计算 ——
+通过 <a class="reference external" href="http://redisdoc.com/string/bitop.html">BITOP</a> 命令，
+用户可以对一个或多个位图执行逻辑并、逻辑或、逻辑异或或者逻辑非操作：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># 计算出 7 天都在线的用户</span>
+<span class="n">BITOP</span> <span class="s2">&quot;AND&quot;</span> <span class="s2">&quot;7_days_both_online_users&quot;</span> <span class="s2">&quot;day_1_online_users&quot;</span> <span class="s2">&quot;day_2_online_users&quot;</span> <span class="o">...</span> <span class="s2">&quot;day_7_online_users&quot;</span>
+
+<span class="c1"># 计算出 7 在的在线用户总人数</span>
+<span class="n">BITOP</span> <span class="s2">&quot;OR&quot;</span> <span class="s2">&quot;7_days_total_online_users&quot;</span> <span class="s2">&quot;day_1_online_users&quot;</span> <span class="s2">&quot;day_2_online_users&quot;</span> <span class="o">...</span> <span class="s2">&quot;day_7_online_users&quot;</span>
+
+<span class="c1"># 计算出两天当中只有其中一天在线的用户</span>
+<span class="n">BITOP</span> <span class="s2">&quot;XOR&quot;</span> <span class="s2">&quot;only_one_day_online&quot;</span> <span class="s2">&quot;day_1_online_users&quot;</span> <span class="s2">&quot;day_2_online_users&quot;</span>
+</pre></div>
+</div>
+<p>HyperLogLog 方案记录一个用户是否在线需要花费 1 个二进制位，
+对于用户数为 100 万的网站来说，
+使用这一方案只需要耗费 125 KB 内存，
+而对于用户数为 1000 万的网站来说，
+使用这一方案也只需要花费 1.25 MB 内存。</p>
+<p>虽然位图节约内存的效果不及 HyperLogLog 那么显著，
+但是使用位图可以准确地判断一个用户是否上线，
+并且能够像集合和有序集合一样，
+对在线用户名单进行聚合计算。
+因此对于想要尽量节约内存，
+但又需要准确地知道用户是否在线，
+又或者需要对用户的在线名单进行聚合计算的应用来说，
+使用位图可以说是最佳之选。</p>
+</section>
+<section id="id3">
+<h2>总结<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>以下表格总结了以上四个方案的特点：</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>方案</p></th>
+<th class="head"><p>特点</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>有序集合</p></td>
+<td><p>能够同时储存在线用户的名单以及用户的上线时间，能够执行非常多的聚合计算操作，但是耗费的内存也非常多。</p></td>
+</tr>
+<tr class="row-odd"><td><p>集合</p></td>
+<td><p>能够储存在线用户的名单，也能够执行聚合计算，消耗的内存比有序集合少，但是跟有序集合一样，这个方案消耗的内存也会随着用户数量的增多而增多。</p></td>
+</tr>
+<tr class="row-even"><td><p>HyperLogLog</p></td>
+<td><p>无论需要统计的用户有多少，只需要耗费 12 KB 内存，但由于概率算法的特性，只能给出在线人数的估算值，并且也无法获取准确的在线用户名单。</p></td>
+</tr>
+<tr class="row-odd"><td><p>位图</p></td>
+<td><p>在尽可能节约内存的情况下，记录在线用户的名单，并且能够对这些名单执行聚合操作。</p></td>
+</tr>
+</tbody>
+</table>
+<p>因为 Redis 同时支持多种数据结构，
+所以一个问题常常可以在 Redis 里面找多种不同的解法，
+并且每种解法都有各自的优点和缺点，
+本文介绍的问题就是一个很好的例子。</p>
+<p>关于统计在线用户的方法就介绍到这里，
+希望这些方案会给大家带来帮助和启发。</p>
+<p>想要知道更多有趣和实用的 Redis 用法，
+请关注我的新书《Redis使用教程》（<a class="reference external" href="http://RedisGuide.com">RedisGuide.com</a>）。</p>
+<div class="line-block">
+<div class="line">黄健宏（huangz）</div>
+<div class="line">2016.8.20</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

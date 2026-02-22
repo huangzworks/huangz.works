@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Redis 5 新功能介绍：ZPOPMAX、ZPOPMIN 以及它们的阻塞变种 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="2017" href="../2017/index.html" />
+    <link rel="prev" title="如何精简一本书" href="how-to-shrink-a-book.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Redis 5 新功能介绍：ZPOPMAX、ZPOPMIN 以及它们的阻塞变种</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="how-to-shrink-a-book.html" title="Previous Chapter: 如何精简一本书"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; 如何精简一本书</span>
+    </a>
+  </li>
+  <li>
+    <a href="../2017/index.html" title="Next Chapter: 2017"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">2017 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="redis-5-zpopmaxzpopmin">
+<h1>Redis 5 新功能介绍：ZPOPMAX、ZPOPMIN 以及它们的阻塞变种<a class="headerlink" href="#redis-5-zpopmaxzpopmin" title="Link to this heading">¶</a></h1>
+<p>有序集合（SortedSet又称zset）是 Redis 的老牌数据结构之一，
+它的 API 一直以来都是很稳定的，
+基本上没有发生过变化，
+但随着 Redis 5 的到来，
+新版本 Redis 也给它加上了四个新的命令，
+这些命令分别是：</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://redis.io/commands/bzpopmax">ZPOPMAX</a></p></li>
+<li><p><a class="reference external" href="https://redis.io/commands/zpopmin">ZPOPMIN</a></p></li>
+<li><p><a class="reference external" href="https://redis.io/commands/bzpopmax">BZPOPMAX</a></p></li>
+<li><p><a class="reference external" href="https://redis.io/commands/bzpopmin">BZPOPMIN</a></p></li>
+</ul>
+<p>其中，
+<code class="docutils literal notranslate"><span class="pre">ZPOPMAX</span></code> 命令用于移除并弹出有序集合中分值最大的 <code class="docutils literal notranslate"><span class="pre">count</span></code> 个元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ZPOPMAX</span> <span class="n">key</span> <span class="p">[</span><span class="n">count</span><span class="p">]</span>
+<span class="n">summary</span><span class="p">:</span> <span class="n">Remove</span> <span class="ow">and</span> <span class="k">return</span> <span class="n">members</span> <span class="k">with</span> <span class="n">the</span> <span class="n">highest</span> <span class="n">scores</span> <span class="ow">in</span> <span class="n">a</span> <span class="nb">sorted</span> <span class="nb">set</span>
+<span class="n">since</span><span class="p">:</span> <span class="mf">5.0.0</span>
+<span class="n">group</span><span class="p">:</span> <span class="n">sorted_set</span>
+</pre></div>
+</div>
+<p>而 <code class="docutils literal notranslate"><span class="pre">ZPOPMIN</span></code> 命令则用于移除并弹出有序集合中分值最小的 <code class="docutils literal notranslate"><span class="pre">count</span></code> 个元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ZPOPMIN</span> <span class="n">key</span> <span class="p">[</span><span class="n">count</span><span class="p">]</span>
+<span class="n">summary</span><span class="p">:</span> <span class="n">Remove</span> <span class="ow">and</span> <span class="k">return</span> <span class="n">members</span> <span class="k">with</span> <span class="n">the</span> <span class="n">lowest</span> <span class="n">scores</span> <span class="ow">in</span> <span class="n">a</span> <span class="nb">sorted</span> <span class="nb">set</span>
+<span class="n">since</span><span class="p">:</span> <span class="mf">5.0.0</span>
+<span class="n">group</span><span class="p">:</span> <span class="n">sorted_set</span>
+</pre></div>
+</div>
+<p>如果用户没有显式地为 <code class="docutils literal notranslate"><span class="pre">count</span></code> 参数指定值，
+那么命令默认将移除并弹出一个元素。</p>
+<p>以下是这两个命令的使用示例：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">ZADD</span> <span class="n">zset</span> <span class="mf">1.0</span> <span class="s2">&quot;one&quot;</span> <span class="mf">2.0</span> <span class="s2">&quot;two&quot;</span> <span class="mf">3.0</span> <span class="s2">&quot;three&quot;</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">ZPOPMAX</span> <span class="n">zset</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;three&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;3&quot;</span>
+
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">ZPOPMIN</span> <span class="n">zset</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;one&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;1&quot;</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">BZPOPMAX</span></code> 和 <code class="docutils literal notranslate"><span class="pre">BZPOPMIN</span></code> 是上述两个命令的阻塞变种，
+这两个命令每次只能弹出单个元素，
+但可以接受多个键作为被弹出的对象，
+并且需要使用 <code class="docutils literal notranslate"><span class="pre">timeout</span></code> 参数去指定命令的最长阻塞时间：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">BZPOPMAX</span> <span class="n">key</span> <span class="p">[</span><span class="n">key</span> <span class="o">...</span><span class="p">]</span> <span class="n">timeout</span>
+<span class="n">summary</span><span class="p">:</span> <span class="n">Remove</span> <span class="ow">and</span> <span class="k">return</span> <span class="n">the</span> <span class="n">member</span> <span class="k">with</span> <span class="n">the</span> <span class="n">highest</span> <span class="n">score</span> <span class="kn">from</span> <span class="nn">one</span> <span class="ow">or</span> <span class="n">more</span> <span class="nb">sorted</span> <span class="n">sets</span><span class="p">,</span> <span class="ow">or</span> <span class="n">block</span> <span class="n">until</span> <span class="n">one</span> <span class="ow">is</span> <span class="n">available</span>
+<span class="n">since</span><span class="p">:</span> <span class="mf">5.0.0</span>
+<span class="n">group</span><span class="p">:</span> <span class="n">sorted_set</span>
+
+<span class="n">BZPOPMIN</span> <span class="n">key</span> <span class="p">[</span><span class="n">key</span> <span class="o">...</span><span class="p">]</span> <span class="n">timeout</span>
+<span class="n">summary</span><span class="p">:</span> <span class="n">Remove</span> <span class="ow">and</span> <span class="k">return</span> <span class="n">the</span> <span class="n">member</span> <span class="k">with</span> <span class="n">the</span> <span class="n">lowest</span> <span class="n">score</span> <span class="kn">from</span> <span class="nn">one</span> <span class="ow">or</span> <span class="n">more</span> <span class="nb">sorted</span> <span class="n">sets</span><span class="p">,</span> <span class="ow">or</span> <span class="n">block</span> <span class="n">until</span> <span class="n">one</span> <span class="ow">is</span> <span class="n">available</span>
+<span class="n">since</span><span class="p">:</span> <span class="mf">5.0.0</span>
+<span class="n">group</span><span class="p">:</span> <span class="n">sorted_set</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">BZPOPMAX</span></code> 命令和 <code class="docutils literal notranslate"><span class="pre">BZPOPMIN</span></code> 命令的行为跟 <code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 、 <code class="docutils literal notranslate"><span class="pre">BRPOP</span></code> 等命令的语义非常相似，
+熟悉上述两个命令的读者应该不会对这两个新命令感到陌生。</p>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2018.6.15</div>
+</div>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>对比 Redis 的字符串和散列 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">对比 Redis 的字符串和散列</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="redis">
+<h1>对比 Redis 的字符串和散列<a class="headerlink" href="#redis" title="Link to this heading">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>本文摘录自即将出版的《Redis使用手册》，
+详情请见： <a class="reference external" href="http://RedisGuide.com">RedisGuide.com</a> 。</p>
+</div>
+<p>本章从开头到现在，
+陆续介绍了 HSET 、 HSETNX 、 HGET 、 HINCRBY 和 HINCRBYFLOAT 等多个散列命令，
+如果读者对上一章介绍过的字符串命令还有印象的话，
+那么应该会记得，
+字符串也有类似的 SET 、 SETNX 、 GET 、 INCRBY 和 INCRBYFLOAT 命令。
+这种相似并不是巧合，
+正如表 3-1 所示，
+散列的确拥有很多与字符串命令功能相似的命令。</p>
+<hr class="docutils" />
+<p>表 3-1 字符串命令与类似的散列命令</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>字符串</p></th>
+<th class="head"><p>散列</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SET</span></code> —— 为一个字符串键设置值。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HSET</span></code> —— 为散列的给定字段设置值。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SETNX</span></code> —— 仅在字符串键不存在的情况下为它设置值。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HSETNX</span></code> —— 仅在散列不包含指定字段的情况下，为它设置值。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GET</span></code> —— 获取字符串键的值。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HGET</span></code> —— 从散列里面获取给定字段的值。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">STRLEN</span></code> —— 获取字符串值的字节长度。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HSTRLEN</span></code> —— 获取给定字段值的字节长度。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">INCRBY</span></code> —— 对字符串键储存的数字值执行整数加法操作。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HINCRBY</span></code> —— 对字段储存的数字值执行整数加法操作。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code> —— 对字符串键储存的数字值执行浮点数加法操作。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HINCRBYFLOAT</span></code> —— 对字段储存的数字值执行浮点数加法操作。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">MSET</span></code> —— 一次为多个字符串键设置值。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HMSET</span></code> —— 一次为散列的多个字段设置值。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">MGET</span></code> —— 一次获取多个字符串键的值。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HMGET</span></code> —— 一次获取散列中多个字段的值。</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">EXISTS</span></code> —— 检查给定的键是否存在于数据库当中，
+这个命令可以用于包括字符串键在内的所有数据库键，
+本书稍后将在《数据库》一章对这个命令进行详细的介绍。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HEXISTS</span></code> —— 检查给定字段是否存在于散列当中。</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">DEL</span></code> —— 从数据库里面删除指定的键，
+这个命令可以用于包括字符串键在内的所有数据库键，
+本书稍后将在《数据库》一章对这个命令进行详细的介绍。</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HDEL</span></code> —— 从散列中删除给定字段，以及它的值。</p></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<p>对于表中列出的字符串命令和散列命令来说，
+它们之间的最大区别就是前者处理的是字符串键，
+而后者处理的则是散列键，
+除此之外，
+这些命令要做的事情几乎都是相同的。</p>
+<p>Redis 之所以会选择同时提供字符串键和散列键这两种数据结构，
+原因在于它们虽然在操作上非常相似，
+但是各自却又拥有不同的优点，
+这使得它们在某些场合无法被对方替代。</p>
+<p>表 3-2 从资源占用、支持的操作以及过期时间三个方面对比了字符串键和散列键的优缺点。</p>
+<hr class="docutils" />
+<p>表 3-2 对比字符串键和散列键</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>比较的范畴</p></th>
+<th class="head"><p>结果</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>资源占用</p></td>
+<td><p>字符串键在数量较多的情况下，将占用大量的内存和 CPU 时间。
+与此相反，将多个数据项储存到同一个散列里面可以有效地减少内存和 CPU 消耗。</p></td>
+</tr>
+<tr class="row-odd"><td><p>支持的操作</p></td>
+<td><p>散列键支持的所有命令，几乎都有相应的字符串键版本，但字符串键支持的 <code class="docutils literal notranslate"><span class="pre">SETRANGE</span></code> 、 <code class="docutils literal notranslate"><span class="pre">GETRANGE</span></code> 等操作散列键并不具备。</p></td>
+</tr>
+<tr class="row-even"><td><p>过期时间</p></td>
+<td><p>字符串键可以为每个键单独设置过期时间，独立删除某个数据项；而散列一旦到期，它包含的所有字段和值都会被删除。</p></td>
+</tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<p>既然字符串键和散列键各有优点，
+那么我们在构建应用程序的时候，
+什么时候应该使用字符串键，
+而什么时候又应该使用散列键呢？
+对于这个问题，
+以下总结了一些选择的条件和方法：</p>
+<ol class="arabic simple">
+<li><p>如果程序需要为每个数据项单独设置过期时间，
+那么使用字符串键。</p></li>
+<li><p>如果程序需要对数据项执行诸如 <code class="docutils literal notranslate"><span class="pre">SETRANGE</span></code> 、 <code class="docutils literal notranslate"><span class="pre">GETRANGE</span></code> 或者 <code class="docutils literal notranslate"><span class="pre">APPEND</span></code> 等操作，
+那么优先考虑使用字符串键。
+当然，
+用户也可以选择把数据储存在散列里面，
+然后将类似 <code class="docutils literal notranslate"><span class="pre">SETRANGE</span></code> 、 <code class="docutils literal notranslate"><span class="pre">GETRANGE</span></code> 这样的操作交给客户端执行。</p></li>
+<li><p>如果程序需要储存的数据项比较多，
+并且你希望尽可能地减少储存数据所需的内存，
+那么就应该优先考虑使用散列键。</p></li>
+<li><p>如果多个数据项在逻辑上属于同一组或者同一类，
+那么应该优先考虑使用散列键。</p></li>
+</ol>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

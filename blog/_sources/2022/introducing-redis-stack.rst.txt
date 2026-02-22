@@ -1,0 +1,105 @@
+Redis Stack 简介
+================
+
+.. note::
+
+	本文由黄健宏翻译自 https://redis.com/blog/introducing-redis-stack/ ，有删改。
+
+今天，我们很高兴地向大家宣布 Redis Stack ，
+它将多个领先的 Redis 模块集成为单个产品，
+使得用户可以更轻松地利用基于 Redis 构建的搜索、文档存储、图数据和时间序列能力！
+
+Redis Stack 是一个由三个组件组成的套件：
+
+1. **Redis Stack 服务器**\ 将开源的 Redis 和 RedisSearch 、 RedisJSON 、
+   RedisGraph 、 RedisTimeSeries 和 RedisBloom 结合起来。
+2. **RedisInsight** 是一个强大的工具，用于可视化和优化 Redis
+   数据，使实时应用开发比以前更容易、更有趣。
+3. **Redis Stack 客户端 SDK** 包含领先的 Java 、 JavaScript 和 Python
+   官方客户端以及我们新推出的对象映射库套件 Redis OM（支持 .Net 、
+   Node.js 、Java 和
+   Python），后者提供了对开发者友好的抽象，使用户只需要几行代码就能够提高工作效率，并且能够更容易地集成
+   Spring 、 ASP.NET Core 、 FastAPI 和 Express 等主要应用框架。
+
+.. figure:: https://redis.com/wp-content/uploads/2022/03/redis-stack-tools-blog-1024x432.png?&auto=webp&quality=85,75&width=800
+   :alt: three redis stack icons
+
+
+上手 Redis Stack
+----------------
+
+Redis Stack 现在为 Redis 6.2 提供 GA 版本，此外也为 Redis 7.0 提供 RC
+版本。
+
+以下有几种方法可以快速获得 Redis Stack ：
+
+-  直接从 redis.io 下载 Redis Stack 。
+-  使用你喜欢的包管理器又或者启动 Redis Stack docker 镜像来安装
+-  通过 Redis Enterprise Cloud
+   创建一个免费的数据库或者使用一个固定价格方案，在云中部署 Redis Stack
+   。我们还为 Redis Enterprise Software
+   中所有自行管理或者内部部署的人提供 Redis Stack 功能。
+
+在拥有并运行 Redis Stack 服务器之后，你可以立即使用 RedisInsight
+来可视化、分析和优化你的 Redis 数据。RedisInsight
+包括了一系列的指南，可以指导你完成几个完整的 Redis Stack 使用案例。
+
+在客户端方面，我们在几个领先的 Redis 客户端中支持 Redis Stack
+，其中包括： Jedis（java）、redis-py （Python） 和 node-redis
+（JavaScript）以及我们新推出的对象映射库（redis-om-spring、redis-om-python、redis-om-node
+和 redis-om-dotnet）。
+你可以通过克隆每种语言的示例代码库来开始构建你的新数据库。
+
+
+Redis 和 Redis Stack
+--------------------
+
+我们对 Redis Stack 所带来的实时应用世界感到兴奋，并相信 Redis Stack
+将使之成为可能，但 Redis Stack 并不是 Redis 的替代品。
+
+Redis 是核心的开源技术，我们聚焦于它的持续发展这一点没有产生任何变化。
+你总是可以随时下载、构建、安装和运行开源的 Redis 。
+
+当你准备好运行 Redis Stack 时，你可以使用 Redis 复制机制或者通过加载你的
+RDB 或 AOF 文件轻松迁移你的数据。
+
+.. figure:: https://redis.com/wp-content/uploads/2022/03/redis-stack-illustration-blog-1024x323.png?&auto=webp&quality=85,75&width=800
+   :alt: redis stack illustration
+
+
+许可
+----
+
+Redis Stack 的所有代码库组件都是开放的，可以供大家自由使用。
+
+以下时 Redis Stack 的具体许可模式：
+
+-  Redis Stack 服务器是根据 Redis Source Available
+   License（RSAL）提供的（与我们的 Redis 模块使用的许可相同）。
+-  我们根据现有的服务器端公共许可证（SSPL）提供 RedisInsight 。
+-  领先的 Redis 客户端和我们的对象映射库已在开源的 MIT 许可下发布。
+
+.. figure:: https://redis.com/wp-content/uploads/2022/03/redis-stack-licensing-blog-1024x435.png?&auto=webp&quality=85,75&width=800
+   :alt: redis stack licensing icons
+
+
+总结
+----
+
+我们致力于继续将 Redis
+作为一个开源项目来开发，支持地球上最大的开发者社区之一，并与越来越多的活跃的项目贡献者合作。
+
+我们将继续增加 Redis Stack 的功能，使开发者能够快速、轻松地开发完全基于
+Redis 的实时时代（real-time era）的现代应用。
+
+要了解有关 Redis Stack 及其提供的功能的更多信息，请收听我们在 RedisDays
+活动中提供的有关 Redis Stack 的深入探讨，现在可通过点播进行。
+
+我们还把对预期问题的快速回答放在了简短的 FAQ 部分。 最后，我们希望得到你对
+Redis Stack 的反馈。请在 Redis 邮件列表中给我们发信息，或者加入 Redis
+Discord 服务器，让我们知道你的想法。
+
+----
+
+| 觉得新瓶装旧酒纯属商业宣传行为的黄健宏
+| 2022.3.24

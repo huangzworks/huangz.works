@@ -1,0 +1,43 @@
+Redis 8.0发布首个预览版，新增多种数据结构以及查询引擎
+=====================================================
+
+Redis在上月中旬发布了\ `Redis
+8.0的首个里程碑版本M01 <https://redis.io/blog/redis-8-0-m01-released-one-redis-for-every-use-case/>`__\ ：他们表示\ `里程碑版本是功能不完整的预览版 <https://github.com/redis/redis/releases/tag/8.0-m01>`__\ ，并且会在之后继续发布预览版，直到功能完备之后再发布RC版本。
+
+这次的预览版引入了7种新的数据结构，其中包括：
+
+-  `JSON <https://redis.io/docs/latest/develop/data-types/json/>`__
+-  `时间序列 <https://redis.io/docs/latest/develop/data-types/timeseries/>`__
+
+和五种概率数据类型：
+
+-  `布隆过滤器 <https://redis.io/docs/latest/develop/data-types/probabilistic/bloom-filter/>`__\ （Bloom
+   filter）
+-  `布谷鸟过滤器 <https://redis.io/docs/latest/develop/data-types/probabilistic/cuckoo-filter/>`__\ （Cuckoo
+   filter）
+-  `Count-min
+   sketch <https://redis.io/docs/latest/develop/data-types/probabilistic/count-min-sketch/>`__
+-  `Top-k <https://redis.io/docs/latest/develop/data-types/probabilistic/top-k/>`__
+-  `t-digest <https://redis.io/docs/latest/develop/data-types/probabilistic/t-digest/>`__
+
+除此之外还有\ `Redis查询引擎 <https://redis.io/docs/latest/develop/interact/search-and-query/>`__\ （query
+engine），它可以让用户对存储在Redis数据库中的数据进行检索和查询，就像使用关系数据库时使用SQL语句对数据进行检索和查询一样。
+
+这些数据结构和功能之前都属于Redis公司为Redis开发的功能增强包\ `RedisStack <https://redis.io/about/about-stack/>`__\ ，而随着Redis
+8.0版本的出现，它们都将被合并至Redis中，而\ `RedisStack也将被废弃 <https://redis.io/blog/redis-adopts-dual-source-available-licensing/>`__\ 。无论是新增的数据结构还是新出现的查询引擎，无疑都将极大地扩展Redis的功能，使得它能够适用于更多不同的场景。
+
+对Redis 8.0-M01感兴趣的朋友现在只需要通过Docker
+Hub即可获取该版本的二进制发行版并试用上面提到的新特性：https://hub.docker.com/\_/redis。
+
+.. warning::
+
+        新特性的相关代码当前并未推送到\ `Redis公开源码的源码库 <https://github.com/redis/redis>`__\ 中，用户无法通过自行编译源码的方式来试用带有最新特性的Redis 8.0-M01版本。
+        因此如果你想试用上面提到的新特性的话，那么只能使用Docker Hub上提供的二进制版本。
+
+需要注意的是，由于增加了大量新数据结构以及查询引擎，\ **Redis内置命令的数量也从7.4版本时的250个激增到了现在8.0-M01版本的428个**\ ，如何有效地使用和学习那么多新特性和新命令对于Redis使用者和学习者来说无疑是一个非常大的挑战。
+
+在接下来的文章和视频中，我将详细地向大家介绍和讲解Redis
+8.0-M01新增数据结构及功能的使用方法，感兴趣的朋友请务必记得关注我的\ `各个社交网站以及哔站 <https://huangz.works/>`__\ ，有新消息我会第一时间跟大家分享。
+
+| 黄健宏
+| 2024.10.22

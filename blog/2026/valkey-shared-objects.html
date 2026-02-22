@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Valkey源码剖析（19）：共享对象 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Valkey源码剖析（20）：客户端表示" href="valkey-client-struct.html" />
+    <link rel="prev" title="Valkey源码剖析（18）：对象引用计数" href="valkey-object-refcount.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Valkey源码剖析（19）：共享对象</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="valkey-object-refcount.html" title="Previous Chapter: Valkey源码剖析（18）：对象引用计数"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; Valkey源码剖析（18）：对象引用计数</span>
+    </a>
+  </li>
+  <li>
+    <a href="valkey-client-struct.html" title="Next Chapter: Valkey源码剖析（20）：客户端表示"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">Valkey源码剖析（20）：客户端表示 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="valkey-19">
+<h1>Valkey源码剖析（19）：共享对象<a class="headerlink" href="#valkey-19" title="Link to this heading">¶</a></h1>
+<p>Valkey服务器在运行的过程中经常需要返回一些相同的回复：比如说，很多命令的回复都是<code class="docutils literal notranslate"><span class="pre">&quot;OK&quot;</span></code>，又或者很小的数字，又或者是一些常见的错误。</p>
+<p>在处理这些体积很小但又反复出现的对象时，如果在每次用到它们的时候才创建相应的对象，那么反复执行的内存分配操作不仅会耗费大量处理时间，而且还可能会产生大量内存碎片。</p>
+<p>为了避免上述问题，Valkey服务器在启动时会调用<code class="docutils literal notranslate"><span class="pre">server.c/createSharedObjects()</span></code>函数以创建一些常见的对象，并将其存储在全局变量<code class="docutils literal notranslate"><span class="pre">server.c/shared</span></code>中：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">sharedObjectsStruct</span><span class="w"> </span><span class="n">shared</span><span class="p">;</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">createSharedObjects</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">j</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* Shared command responses */</span>
+<span class="w">    </span><span class="c1">// 常用命令回复</span>
+<span class="w">    </span><span class="n">shared</span><span class="p">.</span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">createSharedString</span><span class="p">(</span><span class="s">&quot;+OK</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">shared</span><span class="p">.</span><span class="n">emptybulk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">createSharedString</span><span class="p">(</span><span class="s">&quot;$0</span><span class="se">\r\n\r\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">shared</span><span class="p">.</span><span class="n">czero</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">createSharedString</span><span class="p">(</span><span class="s">&quot;:0</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">shared</span><span class="p">.</span><span class="n">cone</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">createSharedString</span><span class="p">(</span><span class="s">&quot;:1</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">shared</span><span class="p">.</span><span class="n">emptyarray</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">createSharedString</span><span class="p">(</span><span class="s">&quot;*0</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">shared</span><span class="p">.</span><span class="n">pong</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">createSharedString</span><span class="p">(</span><span class="s">&quot;+PONG</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">shared</span><span class="p">.</span><span class="n">queued</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">createSharedString</span><span class="p">(</span><span class="s">&quot;+QUEUED</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">shared</span><span class="p">.</span><span class="n">emptyscan</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">createSharedString</span><span class="p">(</span><span class="s">&quot;*2</span><span class="se">\r\n</span><span class="s">$1</span><span class="se">\r\n</span><span class="s">0</span><span class="se">\r\n</span><span class="s">*0</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">shared</span><span class="p">.</span><span class="n">space</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">createSharedString</span><span class="p">(</span><span class="s">&quot; &quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">shared</span><span class="p">.</span><span class="n">plus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">createSharedString</span><span class="p">(</span><span class="s">&quot;+&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">createSharedObjects()</span></code>函数创建的对象包括：</p>
+<ul class="simple">
+<li><p>常用的命令回复，比如<code class="docutils literal notranslate"><span class="pre">&quot;OK&quot;</span></code>、<code class="docutils literal notranslate"><span class="pre">&quot;PONG&quot;</span></code>、<code class="docutils literal notranslate"><span class="pre">&quot;QUEUED&quot;</span></code>等；</p></li>
+<li><p>常用的命令错误回复，比如<code class="docutils literal notranslate"><span class="pre">&quot;ERR&quot;</span></code>、<code class="docutils literal notranslate"><span class="pre">&quot;ERR</span> <span class="pre">no</span> <span class="pre">such</span> <span class="pre">key&quot;</span></code>等等；</p></li>
+<li><p>不同版本协议的NULL对象；</p></li>
+<li><p>常用命令名的对象版本；</p></li>
+<li><p>常用命令参数的对象版本；</p></li>
+<li><p>常用整数的对象版本，比如值为0~9999的对象；</p></li>
+</ul>
+<p>等等。</p>
+<p>Valkey把这些对象称之为“共享对象”，它们会被整个服务器的所有调用者使用，并且其引用计数会被设置为特殊值，从而避免不必要的引用计数操作：所有共享对象只会在服务器启动时被创建一次，并在服务器关闭时被销毁，它们不需要进行对象引用计数。</p>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2026.1.12</div>
+</div>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

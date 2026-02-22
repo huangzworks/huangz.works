@@ -1,0 +1,108 @@
+在 Go 语言中定义新类型
+============================
+
+.. highlight:: go
+
+Go 声明了许多类型，
+我们在第 2 单元已经看到过其中的相当一部分，
+但是这些类型有时候并不能充分地描述我们想要持有的值。
+声明新类型不仅能够让代码变得更加清晰，
+还可以有效地预防错误。
+
+例如，
+温度作为一种度量值，
+它的单位应该是摄氏、华氏或者开尔文。
+程序虽然可以使用 ``float64`` 类型作为温度的底层表示，
+但是直接把 ``float64`` 类型看作等同于温度并不是一个好主意。
+
+正如代码清单 13-1 所示，
+关键字 ``type`` 可以通过一个名字和一个底层类型来声明新的类型。
+
+----
+
+代码清单 13-1 摄氏类型: ``celsius.go``
+
+::
+
+    type celsius float64    //  底层类型为 float64
+    var temperature celsius = 20 
+    fmt.Println(temperature)    //  打印出“20”
+
+----
+
+因为数字字面量 20 跟其他数字字面量一样都是无类型常量，
+所以无论是 ``int`` 类型、 ``float64`` 类型或者其他任何数字类型的变量，
+都可以被赋予这个字面量。
+与此同时，
+虽然 ``celsius`` 类型是一种全新的数字类型，
+但是由于它与 ``float64`` 具有相同的行为和表示， 
+因此代码清单 13-1 中的赋值操作能够顺利执行。
+
+正如代码清单 13-2 所示，
+除赋值之外，
+我们还可以对温度执行加法运算，
+并把它当作 ``float64`` 值那样使用。
+
+----
+
+代码清单 13-2 与 ``float64`` 具有相同行为的摄氏类型: ``celsius-addition.go``
+
+::
+
+    type celsius float64
+    const degrees = 20
+    var temperature celsius = degrees temperature += 10
+
+----
+
+虽然 ``celsius`` 类型跟它的底层类型 ``float64`` 具有相同的行为，
+但因为是一种独特的类型而非第 9 章中提到的类型别名，
+所以尝试把 ``celsius`` 和 ``float64`` 放在一起使用将引发类型不匹配错误:
+
+::
+
+    var warmUp float64 = 10 
+    temperature += warmUp    // 无效操作：类型不匹配
+
+加上 ``warmUp`` 之前，
+程序必须先将它转换为 ``celsius`` 类型，
+这样加法运算才能够正常执行:
+
+::
+
+    var warmUp float64 = 10
+    temperature += celsius(warmUp)
+
+通过自定义新类型能够极大地提高代码的可读性和可靠性。
+正如代码清单 13-3 所示， 
+因为 ``celsius`` 和 ``fahrenheit`` 是两种不同的类型，
+所以它们是无法一起执行比较操作和加法运算的。
+
+----
+
+代码清单 13-3 不同类型是无法混用的 
+
+::
+
+    type celsius float64
+    type fahrenheit float64
+
+    var c celsius = 20 
+    var f fahrenheit = 20
+
+    if c == f {     // 无效操作:celsius 和 fahrenheit 类型不匹配
+    }
+
+    c += f     // 无效操作:celsius 和 fahrenheit 类型不匹配
+
+----
+
+.. note::
+
+    本文摘录自《Go语言趣学指南》第 13 章，
+    你可以通过访问 `gpwgcn.com <http://gpwgcn.com>`_  来获得该书的更多信息。
+
+    .. image:: image/gpwgcn.jpg
+       :scale: 80%
+
+

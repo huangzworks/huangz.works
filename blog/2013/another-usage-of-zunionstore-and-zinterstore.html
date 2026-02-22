@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Redis 的 ZUNIONSTORE 命令和 ZINTERSTORE 命令的另一种用法 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="怎么样写出更好、也更简短的源码分析书" href="how-to-write-a-better-and-shorter-code-analysis-book.html" />
+    <link rel="prev" title="编写《Redis 设计与实现》时用到的工具" href="tools-for-writing-redisbook.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Redis 的 ZUNIONSTORE 命令和 ZINTERSTORE 命令的另一种用法</a><ul>
+<li><a class="reference internal" href="#zunionstore-zinterstore">例子：使用 ZUNIONSTORE 和 ZINTERSTORE 计算爱好水果的并集和交集</a></li>
+<li><a class="reference internal" href="#id1">实例：使用集合和 ZUNIONSTORE 实现签到功能</a><ul>
+<li><a class="reference internal" href="#id2">什么是签到？</a></li>
+<li><a class="reference internal" href="#id4">签到功能的实现</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id6">关于这个技巧的说明</a></li>
+<li><a class="reference internal" href="#id10">底层实现</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="tools-for-writing-redisbook.html" title="Previous Chapter: 编写《Redis 设计与实现》时用到的工具"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; 编写《Redis 设计与实现》时用到的工具</span>
+    </a>
+  </li>
+  <li>
+    <a href="how-to-write-a-better-and-shorter-code-analysis-book.html" title="Next Chapter: 怎么样写出更好、也更简短的源码分析书"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">怎么样写出更好、也更简短的源码分析书 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="redis-zunionstore-zinterstore">
+<h1>Redis 的 ZUNIONSTORE 命令和 ZINTERSTORE 命令的另一种用法<a class="headerlink" href="#redis-zunionstore-zinterstore" title="Link to this heading">¶</a></h1>
+<p><a class="reference external" href="http://redis.readthedocs.org/en/latest/sorted_set/zunionstore.html">ZUNIONSTORE</a> 和 <a class="reference external" href="http://redis.readthedocs.org/en/latest/sorted_set/zinterstore.html">ZINTERSTORE</a> 是用于有序集（sorted set）的聚合命令。</p>
+<p>根据文档的说明：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ZUNIONSTORE</span></code> 用于计算给定的一个或多个有序集的并集。</p></li>
+<li><p>而 <code class="docutils literal notranslate"><span class="pre">ZINTERSTORE</span></code> 则用于计算给定的一个或多个有序集的交集。</p></li>
+</ul>
+<p>除此之外，
+这两个命令还有一种没有记载于文档的用法，
+那就是 ——
+这两个命令除了可以用于有序集之外，还可以用于集合（set）。</p>
+<section id="zunionstore-zinterstore">
+<h2>例子：使用 ZUNIONSTORE 和 ZINTERSTORE 计算爱好水果的并集和交集<a class="headerlink" href="#zunionstore-zinterstore" title="Link to this heading">¶</a></h2>
+<p>作为例子，
+下文展示了怎样用 <code class="docutils literal notranslate"><span class="pre">ZUNIONSTORE</span></code> 和 <code class="docutils literal notranslate"><span class="pre">ZINTERSTORE</span></code> 命令计算爱好水果的并集和交集。</p>
+<p>首先，输入一些测试数据（注意，输入的三个键都是集合，并非有序集）：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SADD</span> <span class="n">huangz</span> <span class="n">orange</span> <span class="n">banana</span> <span class="n">tomato</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SADD</span> <span class="n">peter</span> <span class="n">apple</span> <span class="n">strawberry</span> <span class="n">orange</span> <span class="n">banana</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">4</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">SADD</span> <span class="n">john</span> <span class="n">lemon</span> <span class="n">tomato</span> <span class="n">orange</span> <span class="n">apple</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">4</span>
+</pre></div>
+</div>
+<p>接着，用 <code class="docutils literal notranslate"><span class="pre">ZUNIONSTORE</span></code> 命令计算三人爱好水果的并集：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">ZUNIONSTORE</span> <span class="n">favorite</span><span class="o">-</span><span class="n">fruits</span><span class="o">-</span><span class="n">union</span> <span class="mi">3</span> <span class="n">huangz</span> <span class="n">peter</span> <span class="n">john</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">6</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">ZRANGE</span> <span class="n">favorite</span><span class="o">-</span><span class="n">fruits</span><span class="o">-</span><span class="n">union</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span> <span class="n">WITHSCORES</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;lemon&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;1&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;strawberry&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;1&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;apple&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;2&quot;</span>
+<span class="mi">7</span><span class="p">)</span> <span class="s2">&quot;banana&quot;</span>
+<span class="mi">8</span><span class="p">)</span> <span class="s2">&quot;2&quot;</span>
+<span class="mi">9</span><span class="p">)</span> <span class="s2">&quot;tomato&quot;</span>
+<span class="mi">10</span><span class="p">)</span> <span class="s2">&quot;2&quot;</span>
+<span class="mi">11</span><span class="p">)</span> <span class="s2">&quot;orange&quot;</span>
+<span class="mi">12</span><span class="p">)</span> <span class="s2">&quot;3&quot;</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">ZUNIONSTORE</span></code> 的计算结果非常有用，它清晰地展示了输入的三个集合中，不同的水果出现了多少次。</p>
+<p>相比之下， <a class="reference external" href="http://redis.readthedocs.org/en/latest/set/sunion.html">SUNION</a> 命令的结果就显得单薄很多了：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SUNION</span> <span class="n">huangz</span> <span class="n">peter</span> <span class="n">john</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;tomato&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;banana&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;apple&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;orange&quot;</span>
+<span class="mi">5</span><span class="p">)</span> <span class="s2">&quot;lemon&quot;</span>
+<span class="mi">6</span><span class="p">)</span> <span class="s2">&quot;strawberry&quot;</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">SUNION</span></code> 的结果只显示计算并集所得的元素，但并不显示元素在输入集合中出现了多少次。</p>
+<p>从 <code class="docutils literal notranslate"><span class="pre">ZUNIONSTORE</span></code> 和 <code class="docutils literal notranslate"><span class="pre">SUNION</span></code> 两个命令的对比中可以看出：</p>
+<ul class="simple">
+<li><p>如果只是处理集合之间的关系，那么 <code class="docutils literal notranslate"><span class="pre">SUNION</span></code> 已经足够。</p></li>
+<li><p>另一方面，如果不仅要处理集合之间的关系，还需要对集合元素进行聚合计算，那么就必须使用 <code class="docutils literal notranslate"><span class="pre">ZUNIONSTORE</span></code> 。</p></li>
+</ul>
+<p>三人爱好水果的并集可以通过 <code class="docutils literal notranslate"><span class="pre">ZINTERSTORE</span></code> 命令来计算：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">ZINTERSTORE</span> <span class="n">favorite</span><span class="o">-</span><span class="n">fruits</span><span class="o">-</span><span class="n">inter</span> <span class="mi">3</span> <span class="n">huangz</span> <span class="n">peter</span> <span class="n">john</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+
+<span class="n">redis</span><span class="o">&gt;</span> <span class="n">ZRANGE</span> <span class="n">favorite</span><span class="o">-</span><span class="n">fruits</span><span class="o">-</span><span class="n">inter</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span> <span class="n">WITHSCORES</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;orange&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;3&quot;</span>
+</pre></div>
+</div>
+<p>可以看出，
+<code class="docutils literal notranslate"><span class="pre">ZINTERSTORE</span></code> 的用处并不如 <code class="docutils literal notranslate"><span class="pre">ZUNIONSTORE</span></code> 那么大 ——
+因为只计算并集的话，
+记录元素出现的次数是没有用的（并集元素出现的次数必然等于输入集合的个数），
+所以计算并集实际上只使用 <a class="reference external" href="http://redis.readthedocs.org/en/latest/set/sinter.html">SINTER</a> 或者 <a class="reference external" href="http://redis.readthedocs.org/en/latest/set/sinterstore.html">SINTERSTORE</a> 就可以了：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">redis</span><span class="o">&gt;</span> <span class="n">SINTER</span> <span class="n">huangz</span> <span class="n">peter</span> <span class="n">john</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;orange&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id1">
+<h2>实例：使用集合和 ZUNIONSTORE 实现签到功能<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>上面展示的计算爱好水果的例子非常有趣，
+而且也非常实用 —— 将水果换成物品、商品、书籍、等等，
+就可以衍生出更多玩法，
+应用到各种不同的应用中。</p>
+<p>作为一个更详细的例子，让我们用集合和 <code class="docutils literal notranslate"><span class="pre">ZUNIONSTORE</span></code> 命令来实现一个签到功能。</p>
+<section id="id2">
+<h3>什么是签到？<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<p>签到在很多网站都有不同的叫法，比如出勤、打卡，等等，
+有些是由用户自己操作的，
+而另一些则是由网站后台自动记录的，
+不管如何，
+签到功能都有以下共同特性：</p>
+<ul class="simple">
+<li><p>记录用户的某一行为（通常是登录，或者完成某项任务），并进行计数。</p></li>
+<li><p>为用户提供签到次数统计，比如说，用户界面会显示“你已经签到了 xx 次”，诸如此类。</p></li>
+<li><p>对所有用户的签到进行统计，并进行签到次数排名。</p></li>
+</ul>
+<p>以下是 <a class="reference external" href="http://www.shanbay.com/checkin/top/">扇贝网</a> 上的一个签到排名示例：</p>
+<img alt="../_images/top-checkin.png" src="../_images/top-checkin.png" />
+</section>
+<section id="id4">
+<h3>签到功能的实现<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<p>以下 Python 代码实现了一些基本的签到功能，
+其中用到了前面提到的，
+将 <code class="docutils literal notranslate"><span class="pre">ZUNIONSTORE</span></code> 应用到集合上的技巧，
+并且也用到了集合本身的命令，
+比如 <code class="docutils literal notranslate"><span class="pre">SINTERSTORE</span></code> ：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">#coding: utf-8</span>
+
+<span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+
+<span class="n">r</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">()</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">key maker</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="k">def</span> <span class="nf">_sign_key</span><span class="p">(</span><span class="n">date</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    生成签到日期的键，例如 2013-4-13::signed</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">::signed&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">date</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_sign_count_key</span><span class="p">(</span><span class="n">user</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    生成用户签到计数器的键，例如 tom::sign_count</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">::sign_count&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">api implement</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="k">def</span> <span class="nf">sign</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="n">date</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    用户在指定日期签到</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># 注意，为了保持示例实现的简单性</span>
+    <span class="c1"># 目前的这个实现不能防止一个用户在同一天多次签到</span>
+    <span class="c1"># 解决这个问题需要使用事务或者 Lua 脚本</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">incr</span><span class="p">(</span><span class="n">_sign_count_key</span><span class="p">(</span><span class="n">user</span><span class="p">))</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">sadd</span><span class="p">(</span><span class="n">_sign_key</span><span class="p">(</span><span class="n">date</span><span class="p">),</span> <span class="n">user</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">signed</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="n">date</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    用户在指定日期已经签到了吗？</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">r</span><span class="o">.</span><span class="n">sismember</span><span class="p">(</span><span class="n">_sign_key</span><span class="p">(</span><span class="n">date</span><span class="p">),</span> <span class="n">user</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">sign_count_of</span><span class="p">(</span><span class="n">user</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    返回给定用户的签到次数</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_sign_count_key</span><span class="p">(</span><span class="n">user</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">count</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">top_sign</span><span class="p">(</span><span class="n">top_sign_name</span><span class="p">,</span> <span class="o">*</span><span class="n">dates</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    将给定日期内的签到排名保存到 top_sign_name 键中，</span>
+<span class="sd">    并从高到低返回排名结果。</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">date_keys</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">_sign_key</span><span class="p">,</span> <span class="n">dates</span><span class="p">)</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">zunionstore</span><span class="p">(</span><span class="n">top_sign_name</span><span class="p">,</span> <span class="n">date_keys</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">r</span><span class="o">.</span><span class="n">zrevrange</span><span class="p">(</span><span class="n">top_sign_name</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">withscores</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">full_sign</span><span class="p">(</span><span class="n">full_sign_name</span><span class="p">,</span> <span class="o">*</span><span class="n">dates</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    将给定日期内的全勤记录保存到 full_sign_name 键中，</span>
+<span class="sd">    并返回全勤记录。</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">date_keys</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">_sign_key</span><span class="p">,</span> <span class="n">dates</span><span class="p">)</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">sinterstore</span><span class="p">(</span><span class="n">full_sign_name</span><span class="p">,</span> <span class="n">date_keys</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">r</span><span class="o">.</span><span class="n">smembers</span><span class="p">(</span><span class="n">full_sign_name</span><span class="p">)</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">test</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+
+    <span class="n">r</span><span class="o">.</span><span class="n">flushdb</span><span class="p">()</span>
+
+
+    <span class="c1"># test sign() and signed()</span>
+
+    <span class="k">assert</span><span class="p">(</span>
+        <span class="ow">not</span> <span class="n">signed</span><span class="p">(</span><span class="s2">&quot;tom&quot;</span><span class="p">,</span> <span class="s2">&quot;2013-4-13&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">sign</span><span class="p">(</span><span class="s2">&quot;tom&quot;</span><span class="p">,</span> <span class="s2">&quot;2013-4-13&quot;</span><span class="p">)</span>
+
+    <span class="k">assert</span><span class="p">(</span>
+        <span class="n">signed</span><span class="p">(</span><span class="s2">&quot;tom&quot;</span><span class="p">,</span> <span class="s2">&quot;2013-4-13&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">r</span><span class="o">.</span><span class="n">flushdb</span><span class="p">()</span>
+
+
+    <span class="c1"># test sign_count_of()</span>
+
+    <span class="k">assert</span><span class="p">(</span>
+        <span class="n">sign_count_of</span><span class="p">(</span><span class="s2">&quot;tom&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+    <span class="p">)</span>
+
+    <span class="n">sign</span><span class="p">(</span><span class="s2">&quot;tom&quot;</span><span class="p">,</span> <span class="s2">&quot;2013-4-13&quot;</span><span class="p">)</span>
+
+    <span class="k">assert</span><span class="p">(</span>
+        <span class="n">sign_count_of</span><span class="p">(</span><span class="s2">&quot;tom&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="p">)</span>
+
+    <span class="n">sign</span><span class="p">(</span><span class="s2">&quot;tom&quot;</span><span class="p">,</span> <span class="s2">&quot;2013-4-14&quot;</span><span class="p">)</span>
+
+    <span class="k">assert</span><span class="p">(</span>
+        <span class="n">sign_count_of</span><span class="p">(</span><span class="s2">&quot;tom&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+    <span class="p">)</span>
+
+    <span class="n">r</span><span class="o">.</span><span class="n">flushdb</span><span class="p">()</span>
+
+
+    <span class="c1"># test top_sign() and full_sign()</span>
+
+    <span class="n">days</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;2013-4-13&quot;</span><span class="p">,</span> <span class="s2">&quot;2013-4-14&quot;</span><span class="p">,</span> <span class="s2">&quot;2013-4-15&quot;</span><span class="p">]</span>
+
+    <span class="n">sign</span><span class="p">(</span><span class="s2">&quot;tom&quot;</span><span class="p">,</span> <span class="n">days</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">sign</span><span class="p">(</span><span class="s2">&quot;peter&quot;</span><span class="p">,</span> <span class="n">days</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">sign</span><span class="p">(</span><span class="s2">&quot;john&quot;</span><span class="p">,</span> <span class="n">days</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">sign</span><span class="p">(</span><span class="s2">&quot;peter&quot;</span><span class="p">,</span> <span class="n">days</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">sign</span><span class="p">(</span><span class="s2">&quot;john&quot;</span><span class="p">,</span> <span class="n">days</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    
+    <span class="n">sign</span><span class="p">(</span><span class="s2">&quot;peter&quot;</span><span class="p">,</span> <span class="n">days</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+    <span class="n">ts</span> <span class="o">=</span> <span class="n">top_sign</span><span class="p">(</span><span class="s2">&quot;2013-4-13 to 2013-4-15 top sign&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">days</span><span class="p">)</span>
+    <span class="k">assert</span><span class="p">(</span>
+        <span class="n">ts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="p">(</span><span class="s2">&quot;peter&quot;</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">)</span> <span class="ow">and</span>
+        <span class="n">ts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="p">(</span><span class="s2">&quot;john&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>  <span class="ow">and</span>
+        <span class="n">ts</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="p">(</span><span class="s2">&quot;tom&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">assert</span><span class="p">(</span>
+        <span class="n">full_sign</span><span class="p">(</span><span class="s2">&quot;2013-4-13 to 2013-4-15 full sign&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">days</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">([</span><span class="s2">&quot;peter&quot;</span><span class="p">])</span>
+    <span class="p">)</span>
+
+    <span class="n">r</span><span class="o">.</span><span class="n">flushdb</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>多得 <code class="docutils literal notranslate"><span class="pre">ZUNIONSTORE</span></code> 可以直接用于集合，
+不然实现这个签到功能就没有那么简单了：</p>
+<ul class="simple">
+<li><p>因为如果单纯使用集合命令，那么签到排名的实现就会非常复杂、而且低效。</p></li>
+<li><p>而如果直接使用有序集而不是集合来记录签到信息，又会浪费不少额外的空间：因为每个有序集元素都必须保存一个值为 <code class="docutils literal notranslate"><span class="pre">1.0</span></code> 的 <code class="docutils literal notranslate"><span class="pre">double</span></code> 分值，更不必说 <a class="reference external" href="http://www.redisbook.com/en/latest/datatype/sorted_set.html">有序集消耗的空间本来就比集合消耗的空间要多</a> 了。</p></li>
+</ul>
+</section>
+</section>
+<section id="id6">
+<h2>关于这个技巧的说明<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<p>好的，
+看过前面的两个例子
+我想你已经熟悉 <code class="docutils literal notranslate"><span class="pre">ZUNIONSTORE</span></code> 和 <code class="docutils literal notranslate"><span class="pre">ZINTERSTORE</span></code> 处理集合这一用法了，
+不过还有两件事要说明一下。</p>
+<p>首先， <code class="docutils literal notranslate"><span class="pre">ZUNIONSTORE</span></code> 和 <code class="docutils literal notranslate"><span class="pre">ZINTERSTORE</span></code> 在处理集合时的功能和处理有序集时完全一样。</p>
+<p>也即是说，
+<code class="docutils literal notranslate"><span class="pre">ZUNIONSTORE</span></code> 和 <code class="docutils literal notranslate"><span class="pre">ZINTERSTORE</span></code> 两个命令的各个选项，
+比如 <code class="docutils literal notranslate"><span class="pre">WEIGHTS</span></code> 和 <code class="docutils literal notranslate"><span class="pre">AGGREGATE</span></code> ，
+在处理集合时都是可以正常使用的。</p>
+<p>关于这些选项的具体信息请参考 <a class="reference external" href="http://redis.readthedocs.org/en/latest/sorted_set/zunionstore.html">ZUNIONSTORE 的文档</a> 和 <a class="reference external" href="http://redis.readthedocs.org/en/latest/sorted_set/zinterstore.html">ZINTERSTORE 的文档</a></p>
+<p>其次，使用 <code class="docutils literal notranslate"><span class="pre">ZUNIONSTORE</span></code> 和 <code class="docutils literal notranslate"><span class="pre">ZINTERSTORE</span></code> 处理集合的这个技巧只是 <a class="reference external" href="https://groups.google.com/forum/?fromgroups=#!topic/redis-db/kgoNgevlWzs">一个未写入文档的特性</a> ，
+它并不是一个废弃特性，
+所以可以放心使用。</p>
+<p>至少在目前的 2.6 、 2.8 和 3.0 （unstable）三个版本中，这个特性都是可以正常使用的。</p>
+</section>
+<section id="id10">
+<h2>底层实现<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h2>
+<p>最后，
+是时候揭晓谜题了 ——
+为什么 <code class="docutils literal notranslate"><span class="pre">ZUNIONSTORE</span></code> 和 <code class="docutils literal notranslate"><span class="pre">ZINTERSTORE</span></code> 既可以对有序集进行处理，
+又可以对集合进行处理？</p>
+<p>原理是这样的：
+<code class="docutils literal notranslate"><span class="pre">ZUNIONSTORE</span></code> 和 <code class="docutils literal notranslate"><span class="pre">ZINTERSTORE</span></code> 两个命令在执行时，
+都会对一个迭代器（iterator）进行处理，
+而这个迭代器是一个多态迭代器：</p>
+<ul class="simple">
+<li><p>当输入的键是集合时，它就迭代集合。</p></li>
+<li><p>当如何的键是有序集时，它就迭代有序集。</p></li>
+</ul>
+<img alt="../_images/iterator.png" src="../_images/iterator.png" />
+<p>如果在迭代集合的时候，
+用户没有通过 <code class="docutils literal notranslate"><span class="pre">WEIGHTS</span></code> 命令设置集合元素的分值（score），
+那么 <code class="docutils literal notranslate"><span class="pre">ZUNIONSTORE</span></code> 和 <code class="docutils literal notranslate"><span class="pre">ZINTERSTORE</span></code> 就将集合元素的分值当作 <code class="docutils literal notranslate"><span class="pre">1.0</span></code> 。</p>
+<p>也即是说，
+当不使用 <code class="docutils literal notranslate"><span class="pre">WEIGHTS</span></code> 参数调用 <code class="docutils literal notranslate"><span class="pre">ZUNIONSTORE</span></code> 或者 <code class="docutils literal notranslate"><span class="pre">ZINTERSTORE</span></code> 两个命令时，
+它们将集合输入当作分值都是 <code class="docutils literal notranslate"><span class="pre">1.0</span></code> 的有序集来看待。</p>
+<p>以上就是 <code class="docutils literal notranslate"><span class="pre">ZUNIONSTORE</span></code> 和 <code class="docutils literal notranslate"><span class="pre">ZINTERSTORE</span></code> 既可以处理有序集，又可以处理集合的原因，
+有兴趣知道完整信息的话，
+可以参考 <code class="docutils literal notranslate"><span class="pre">ZUNIONSTORE</span></code> 和 <code class="docutils literal notranslate"><span class="pre">ZINTERSTORE</span></code> 的 <a class="reference external" href="https://github.com/huangz1990/annotated_redis_source/blob/unstable/src/t_zset.c#L1652">实现源码</a> 。</p>
+<div class="line-block">
+<div class="line">huangz</div>
+<div class="line">2013.4.13</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

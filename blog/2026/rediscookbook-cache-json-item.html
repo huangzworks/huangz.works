@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>《Redis应用实例》书摘（2）：通过JSON序列化缓存多项数据 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="《Redis应用实例》书摘（3）：使用哈希键缓存多项数据" href="rediscookbook-cache-multi-items.html" />
+    <link rel="prev" title="《Redis应用实例》书摘（1）：缓存单项数据" href="rediscookbook-cache-single-item.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">《Redis应用实例》书摘（2）：通过JSON序列化缓存多项数据</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="rediscookbook-cache-single-item.html" title="Previous Chapter: 《Redis应用实例》书摘（1）：缓存单项数据"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; 《Redis应用实例》书摘...</span>
+    </a>
+  </li>
+  <li>
+    <a href="rediscookbook-cache-multi-items.html" title="Next Chapter: 《Redis应用实例》书摘（3）：使用哈希键缓存多项数据"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">《Redis应用实例》书摘... &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="redis-2-json">
+<h1>《Redis应用实例》书摘（2）：通过JSON序列化缓存多项数据<a class="headerlink" href="#redis-2-json" title="Link to this heading">¶</a></h1>
+<p>在复杂的系统中，单项数据往往只占少数，更多的是由多个项组成的复杂数据。</p>
+<p>代码清单 CODE_JSON_CACHE 展示了使用JSON缓存多项数据的方法，这个程序要做的就是在设置缓存之前把Python数据编码为JSON数据，并在获取缓存之后将JSON数据解码为Python数据。</p>
+<hr class="docutils" />
+<p>代码清单 CODE_JSON_CACHE JSON版本的多项数据缓存程序 <code class="docutils literal notranslate"><span class="pre">json_cache.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">cache</span> <span class="kn">import</span> <span class="n">Cache</span>
+
+<span class="k">class</span> <span class="nc">JsonCache</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">Cache</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">ttl</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        为指定名字的缓存设置内容。</span>
+<span class="sd">        可选的ttl参数用于设置缓存的生存时间。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">json_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">json_data</span><span class="p">,</span> <span class="n">ttl</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        尝试获取指定名字的缓存内容，若缓存不存在则返回None。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">json_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">json_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json_data</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>作为例子，以下这段代码展示了如何使用这个程序来缓存前面展示的用户信息：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">json_cache</span> <span class="kn">import</span> <span class="n">JsonCache</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cache</span> <span class="o">=</span> <span class="n">JsonCache</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>  <span class="c1"># 创建缓存对象</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span><span class="mi">10086</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Peter&quot;</span><span class="p">,</span> <span class="s2">&quot;gender&quot;</span><span class="p">:</span> <span class="s2">&quot;male&quot;</span><span class="p">,</span> <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="mi">56</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;User:10086&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>  <span class="c1"># 缓存数据</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;User:10086&quot;</span><span class="p">)</span>  <span class="c1"># 获取缓存</span>
+<span class="go">{&#39;id&#39;: 10086, &#39;name&#39;: &#39;Peter&#39;, &#39;gender&#39;: &#39;male&#39;, &#39;age&#39;: 56}</span>
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<div class="line-block">
+<div class="line">本文摘录自《Redis应用实例》一书。</div>
+<div class="line">欢迎访问书本主页以了解更多Redis使用案例：<a class="reference external" href="https://huangz.works/rediscookbook/">huangz.works/rediscookbook/</a></div>
+</div>
+<img alt="../_images/rediscookbook-banner.png" src="../_images/rediscookbook-banner.png" />
+</div>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

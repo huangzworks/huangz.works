@@ -1,0 +1,34 @@
+Valkey源码剖析（15）：对象编码
+==============================
+
+Valkey中的每个对象都拥有相应的编码，编码决定了对象所使用的数据结构，而数据结构又决定了对象底层存储和表示数据的方式。
+
+Valkey目前共有12种编码方式，都定义在\ ``server.h``\ 中：
+
+.. code:: c
+
+   #define OBJ_ENCODING_RAW 0        /* Raw representation */
+   #define OBJ_ENCODING_INT 1        /* Encoded as integer */
+   #define OBJ_ENCODING_HASHTABLE 2  /* Encoded as a hashtable */
+   #define OBJ_ENCODING_ZIPMAP 3     /* No longer used: old hash encoding. */
+   #define OBJ_ENCODING_LINKEDLIST 4 /* No longer used: old list encoding. */
+   #define OBJ_ENCODING_ZIPLIST 5    /* No longer used: old list/hash/zset encoding. */
+   #define OBJ_ENCODING_INTSET 6     /* Encoded as intset */
+   #define OBJ_ENCODING_SKIPLIST 7   /* Encoded as skiplist */
+   #define OBJ_ENCODING_EMBSTR 8     /* Embedded sds string encoding */
+   #define OBJ_ENCODING_QUICKLIST 9  /* Encoded as linked list of listpacks */
+   #define OBJ_ENCODING_STREAM 10    /* Encoded as a radix tree of listpacks */
+   #define OBJ_ENCODING_LISTPACK 11  /* Encoded as a listpack */
+
+目前来说，Valkey中每种类型的对象通常拥有一种至三种编码方式，这些编码方式又可以归为两类：
+
+1. 紧凑编码——为了节约内存而采取的编码方式，这种编码通常用于存储受限制的、特定类型或者特定大小的数据，并且它们能够支持的操作也相对较少。
+2. 通用编码——跟紧凑编码相比，通用编码能够容纳更多和更大的数据，并且支持更丰富的操作，但也会带来更多额外的内存消耗。
+
+以集合对象为例，它拥有INTSET、LISTPACK和HASHTABLE三种编码方式：
+
+-  其中INTSET和LISTPACK都为紧凑编码，前者只能存储可以被解析为整数的元素，而后者可以存储数字和字符串元素，但这两种编码包含的元素数量都不能超过指定的阈值。
+-  至于HASHTABLE编码则为通用编码，它可以存储非常多的数字和字符串元素，并且其支持的集合操作也比前面两种编码要多，当然HASHTABLE编码消耗的额外内存也比前面两种编码要多得多。
+
+| 黄健宏
+| 2026.1.12

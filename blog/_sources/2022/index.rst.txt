@@ -1,0 +1,13 @@
+2022
+===========
+
+.. toctree::
+   :maxdepth: 2
+
+   go-in-google
+   introducing-redis-stack
+   go-generic-release-note
+   install-nvidia-driver
+   redis7-rc2
+   redis7-admin-commands
+   redis7-rc1

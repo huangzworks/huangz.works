@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>《Go Web 编程》翻译手稿集 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="QQ 群聊天记录 001 号：关于盗版书的讨论" href="qq-group-log-001.html" />
+    <link rel="prev" title="《Go Web 编程》翻译记事" href="memories-of-gwpcn-translation.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">《Go Web 编程》翻译手稿集</a><ul>
+<li><a class="reference internal" href="#id3">手稿样张</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="memories-of-gwpcn-translation.html" title="Previous Chapter: 《Go Web 编程》翻译记事"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; 《Go Web 编程》翻译记事</span>
+    </a>
+  </li>
+  <li>
+    <a href="qq-group-log-001.html" title="Next Chapter: QQ 群聊天记录 001 号：关于盗版书的讨论"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">QQ 群聊天记录 001 ... &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="go-web">
+<h1>《Go Web 编程》翻译手稿集<a class="headerlink" href="#go-web" title="Link to this heading">¶</a></h1>
+<p>对<a class="reference external" href="http://blog.huangz.me/diary/2014/translation-method.html">我的翻译方式</a>有所了解的朋友应该会知道，
+我在开始翻译之前，
+都会先通读一遍原稿，
+并在原稿上添加相应的笔记和注释，
+然后才开始进行翻译。</p>
+<p>这次在翻译<a class="reference external" href="http://gwpcn.com/">《Go Web 编程》</a>的时候，
+我也是先把整本书的稿子打印了出来，
+边阅读边在稿子上进行注释，
+并因此产生了一系列手稿。</p>
+<p>虽然之前曾经以拍照的方式展示过自己的翻译手稿，
+但我想如果能够把这些手稿以扫描的形式展现在大家的面前，
+对于那些对《Go Web 编程》的翻译过程感兴趣的读者，
+以及那些对翻译工作的幕后过程感兴趣的人来说，
+应该都会是一件有趣的事情。</p>
+<p>为此，
+我选取了这次《Go Web 编程》的其中一部分手稿，
+使用扫描仪将它们扫描了下来。
+为了让大家可以尽可能地了解到真实的翻译过程，
+这次展示的所有手稿图片都是高清格式的，
+并且手稿在扫描之前没有经过任何人为的改动。</p>
+<p>本文只展示了其中几张手稿样张，
+公开的全部九张手稿可以在以下代码库里面看到：
+<a class="reference external" href="https://github.com/huangz1990/gwpcn-translation-manuscript">https://github.com/huangz1990/gwpcn-translation-manuscript</a></p>
+<p>顺带一提，
+手稿中一些常见标记的作用分别为：</p>
+<ul class="simple">
+<li><p>逗号 —— 用于将长句分割为多个短句。</p></li>
+<li><p>直线 —— 用于将多个短句拼接成长句。</p></li>
+<li><p>波浪线 —— 用于标识重点词句。</p></li>
+<li><p>指向某个句子的箭头 —— 用于记录句子的翻译或者句子的注释。</p></li>
+<li><p>前置 —— 用于调转句子之间的关系，比如将“&lt;a&gt; because &lt;b&gt;”翻译为“因为 &lt;b&gt; ，所以 &lt;a&gt;”。</p></li>
+</ul>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2017.8.24</div>
+</div>
+<section id="id3">
+<h2>手稿样张<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<img alt="https://github.com/huangz1990/gwpcn-translation-manuscript/blob/master/page155.jpeg?raw=true" src="https://github.com/huangz1990/gwpcn-translation-manuscript/blob/master/page155.jpeg?raw=true" />
+<img alt="https://github.com/huangz1990/gwpcn-translation-manuscript/blob/master/page156.jpeg?raw=true" src="https://github.com/huangz1990/gwpcn-translation-manuscript/blob/master/page156.jpeg?raw=true" />
+<img alt="https://github.com/huangz1990/gwpcn-translation-manuscript/blob/master/page157.jpeg?raw=true" src="https://github.com/huangz1990/gwpcn-translation-manuscript/blob/master/page157.jpeg?raw=true" />
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

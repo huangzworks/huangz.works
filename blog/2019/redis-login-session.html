@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>使用 Redis 实现登录会话 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">使用 Redis 实现登录会话</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="redis">
+<h1>使用 Redis 实现登录会话<a class="headerlink" href="#redis" title="Link to this heading">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>本文摘录自即将出版的《Redis使用手册》，
+详情请见： <a class="reference external" href="http://RedisGuide.com">RedisGuide.com</a> 。</p>
+</div>
+<p>为了方便用户，
+网站一般都会为已登录的用户生成一个加密令牌，
+然后把这个令牌分别储存在服务器端和客户端，
+之后每当用户再次访问该网站的时候，
+网站就可以通过验证客户端提交的令牌来确认用户的身份，
+从而使得用户不必重复地执行登录操作。</p>
+<p>另一方面，
+为了防止用户因为长时间不输入密码而导致遗忘密码，
+并且为了保证令牌的安全性，
+网站一般都会为令牌设置一个过期期限（比如一个月），
+当期限到达之后，
+用户的会话就会过时，
+而网站则会要求用户重新登录。</p>
+<p>上面描述的这种使用令牌来避免重复登录的机制一般被称为登录会话（login session），
+通过使用 Redis 的散列，
+我们可以构建出代码清单 3-4 所示的登录会话程序。</p>
+<hr class="docutils" />
+<p>代码清单 3-4 使用散列实现的登录会话程序：<code class="docutils literal notranslate"><span class="pre">/hash/login_session.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>  <span class="c1"># 获取浮点数格式的 unix 时间戳</span>
+<span class="kn">from</span> <span class="nn">hashlib</span> <span class="kn">import</span> <span class="n">sha256</span>
+
+<span class="c1"># 会话的默认过期时间</span>
+<span class="n">DEFAULT_TIMEOUT</span> <span class="o">=</span> <span class="mi">3600</span><span class="o">*</span><span class="mi">24</span><span class="o">*</span><span class="mi">30</span>    <span class="c1"># 一个月</span>
+
+<span class="c1"># 储存会话令牌以及会话过期时间戳的散列</span>
+<span class="n">SESSION_TOKEN_HASH</span> <span class="o">=</span> <span class="s2">&quot;session::token&quot;</span>
+<span class="n">SESSION_EXPIRE_TS_HASH</span> <span class="o">=</span> <span class="s2">&quot;session::expire_timestamp&quot;</span>
+
+<span class="c1"># 会话状态</span>
+<span class="n">SESSION_NOT_LOGIN</span> <span class="o">=</span> <span class="s2">&quot;SESSION_NOT_LOGIN&quot;</span>
+<span class="n">SESSION_EXPIRED</span> <span class="o">=</span> <span class="s2">&quot;SESSION_EXPIRED&quot;</span>
+<span class="n">SESSION_TOKEN_CORRECT</span> <span class="o">=</span> <span class="s2">&quot;SESSION_TOKEN_CORRECT&quot;</span>
+<span class="n">SESSION_TOKEN_INCORRECT</span> <span class="o">=</span> <span class="s2">&quot;SESSION_TOKEN_INCORRECT&quot;</span>
+
+<span class="k">def</span> <span class="nf">generate_token</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    生成一个随机的会话令牌。</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">random_string</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">getrandbits</span><span class="p">(</span><span class="mi">256</span><span class="p">))</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sha256</span><span class="p">(</span><span class="n">random_string</span><span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">LoginSession</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">user_id</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user_id</span> <span class="o">=</span> <span class="n">user_id</span>
+
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">DEFAULT_TIMEOUT</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        创建新的登录会话并返回会话令牌，</span>
+<span class="sd">        可选的 timeout 参数用于指定会话的过期时间（以秒为单位）。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 生成会话令牌</span>
+        <span class="n">user_token</span> <span class="o">=</span> <span class="n">generate_token</span><span class="p">()</span>
+        <span class="c1"># 计算会话到期时间戳</span>
+        <span class="n">expire_timestamp</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span><span class="o">+</span><span class="n">timeout</span>
+        <span class="c1"># 以用户 ID 为字段，将令牌和到期时间戳分别储存到两个散列里面</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hset</span><span class="p">(</span><span class="n">SESSION_TOKEN_HASH</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_id</span><span class="p">,</span> <span class="n">user_token</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hset</span><span class="p">(</span><span class="n">SESSION_EXPIRE_TS_HASH</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_id</span><span class="p">,</span> <span class="n">expire_timestamp</span><span class="p">)</span>
+        <span class="c1"># 将会话令牌返回给用户</span>
+        <span class="k">return</span> <span class="n">user_token</span>
+
+    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_token</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        根据给定的令牌验证用户身份。</span>
+<span class="sd">        这个方法有四个可能的返回值，分别对应四种不同情况：</span>
+<span class="sd">        1. SESSION_NOT_LOGIN —— 用户尚未登录</span>
+<span class="sd">        2. SESSION_EXPIRED —— 会话已过期</span>
+<span class="sd">        3. SESSION_TOKEN_CORRECT —— 用户已登录，并且给定令牌与用户令牌相匹配</span>
+<span class="sd">        4. SESSION_TOKEN_INCORRECT —— 用户已登录，但给定令牌与用户令牌不匹配</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 尝试从两个散列里面取出用户的会话令牌以及会话的过期时间戳</span>
+        <span class="n">user_token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hget</span><span class="p">(</span><span class="n">SESSION_TOKEN_HASH</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_id</span><span class="p">)</span>
+        <span class="n">expire_timestamp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hget</span><span class="p">(</span><span class="n">SESSION_EXPIRE_TS_HASH</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_id</span><span class="p">)</span>
+
+        <span class="c1"># 如果会话令牌或者过期时间戳不存在，那么说明用户尚未登录</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">user_token</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">expire_timestamp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">SESSION_NOT_LOGIN</span>
+
+        <span class="c1"># 将当前时间戳与会话的过期时间戳进行对比，检查会话是否已过期</span>
+        <span class="c1"># 因为 HGET 命令返回的过期时间戳是字符串格式的</span>
+        <span class="c1"># 所以在进行对比之前要先将它转换成原来的浮点数格式</span>
+        <span class="k">if</span> <span class="n">time</span><span class="p">()</span> <span class="o">&gt;</span> <span class="nb">float</span><span class="p">(</span><span class="n">expire_timestamp</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">SESSION_EXPIRED</span>
+
+        <span class="c1"># 用户令牌存在并且未过期，那么检查它与给定令牌是否一致</span>
+        <span class="k">if</span> <span class="n">input_token</span> <span class="o">==</span> <span class="n">user_token</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">SESSION_TOKEN_CORRECT</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">SESSION_TOKEN_INCORRECT</span>
+
+    <span class="k">def</span> <span class="nf">destroy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        销毁会话。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 从两个散列里面分别删除用户的会话令牌以及会话的过期时间戳</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hdel</span><span class="p">(</span><span class="n">SESSION_TOKEN_HASH</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">hdel</span><span class="p">(</span><span class="n">SESSION_EXPIRE_TS_HASH</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_id</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p><code class="docutils literal notranslate"><span class="pre">LoginSession</span></code> 的 <code class="docutils literal notranslate"><span class="pre">create()</span></code> 方法首先会计算出随机的会话令牌以及会话的过期时间戳，
+然后使用用户 ID 作为字段，
+将令牌和过期时间戳分别储存到两个散列里面。</p>
+<p>在此之后，
+每当客户端向服务器发送请求并提交令牌的时候，
+程序就会使用 <code class="docutils literal notranslate"><span class="pre">validate()</span></code> 方法验证被提交令牌的正确性：
+<code class="docutils literal notranslate"><span class="pre">validate()</span></code> 方法会根据用户的 ID ，
+从两个散列里面分别取出用户的会话令牌以及会话的过期时间戳，
+然后通过一系列检查判断令牌是否正确以及会话是否过期。</p>
+<p>最后，
+<code class="docutils literal notranslate"><span class="pre">destroy()</span></code> 方法可以在用户手动登出（logout）时调用，
+它可以删除用户的会话令牌以及会话的过期时间戳，
+让用户重新回到未登录状态。</p>
+<p>在拥有 <code class="docutils literal notranslate"><span class="pre">LoginSession</span></code> 程序之后，
+我们可以通过执行以下代码，
+为用户 peter 创建出相应的会话令牌：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">login_session</span> <span class="kn">import</span> <span class="n">LoginSession</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">session</span> <span class="o">=</span> <span class="n">LoginSession</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;peter&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">token</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">token</span>
+<span class="go">&#39;3b000071e59fcdcaa46b900bb5c484f653de67055fde622f34c255a65bd9a561&#39;</span>
+</pre></div>
+</div>
+<p>并通过以下代码，
+验证给定令牌的正确性：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">session</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="s2">&quot;wrong_token&quot;</span><span class="p">)</span>
+<span class="go">&#39;SESSION_TOKEN_INCORRECT&#39;</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">session</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+<span class="go">&#39;SESSION_TOKEN_CORRECT&#39;</span>
+</pre></div>
+</div>
+<p>然后在会话使用完毕之后，
+通过执行以下代码来销毁会话：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">session</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">session</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+<span class="go">&#39;SESSION_NOT_LOGIN&#39;</span>
+</pre></div>
+</div>
+<p>图 3-16 展示了使用 <code class="docutils literal notranslate"><span class="pre">LoginSession</span></code> 程序在数据库里面创建多个会话时的样子。</p>
+<hr class="docutils" />
+<p>图 3-16 登录会话程序数据结构示意图</p>
+<img alt="../_images/IMAGE_SESSION_HASHS.png" src="../_images/IMAGE_SESSION_HASHS.png" />
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

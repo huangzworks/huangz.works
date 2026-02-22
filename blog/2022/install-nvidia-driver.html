@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>在 Ubuntu 上安装 Nvidia 专有驱动 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Redis 7.0 RC2 释出报告" href="redis7-rc2.html" />
+    <link rel="prev" title="Go 1.18 关于泛型特性的说明" href="go-generic-release-note.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">在 Ubuntu 上安装 Nvidia 专有驱动</a><ul>
+<li><a class="reference internal" href="#id1">查看可用驱动</a></li>
+<li><a class="reference internal" href="#id2">安装驱动</a></li>
+<li><a class="reference internal" href="#id3">查看显卡信息</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="go-generic-release-note.html" title="Previous Chapter: Go 1.18 关于泛型特性的说明"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; Go 1.18 关于泛型特性的说明</span>
+    </a>
+  </li>
+  <li>
+    <a href="redis7-rc2.html" title="Next Chapter: Redis 7.0 RC2 释出报告"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">Redis 7.0 RC2 释出报告 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="ubuntu-nvidia">
+<h1>在 Ubuntu 上安装 Nvidia 专有驱动<a class="headerlink" href="#ubuntu-nvidia" title="Link to this heading">¶</a></h1>
+<img alt="../_images/nvidia.png" src="../_images/nvidia.png" />
+<p>昨天正在用的 Ubuntu 20.04
+在休眠之后出现无法唤醒，又或者在唤醒之后出现桌面卡死/卡顿的情况。</p>
+<p>查了日志之后发现系统使用的开源显卡驱动一直在报错，感觉是驱动出问题。</p>
+<p>之前早有耳闻说 Nvidia
+的显卡用开源驱动不太行，看来这次是真碰上了，为了正常使用只能选择使用闭源的专有驱动了。</p>
+<p>以下展示的是安装专有驱动的具体方法。</p>
+<section id="id1">
+<h2>查看可用驱动<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>执行以下命令可以查看系统正在使用的显卡以及它当前可用的驱动：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ ubuntu-drivers devices
+
+== /sys/devices/pci0000:00/0000:00:03.1/0000:26:00.0 ==
+modalias : pci:v000010DEd00001E81sv00001462sd0000C728bc03sc00i00
+vendor   : NVIDIA Corporation
+model    : TU104 [GeForce RTX 2080 SUPER]
+manual_install: True
+driver   : nvidia-driver-450-server - distro non-free
+driver   : nvidia-driver-470-server - distro non-free
+driver   : nvidia-driver-510 - distro non-free recommended
+driver   : nvidia-driver-470 - distro non-free
+driver   : xserver-xorg-video-nouveau - distro free builtin
+</pre></div>
+</div>
+</section>
+<section id="id2">
+<h2>安装驱动<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>从结果显示 <code class="docutils literal notranslate"><span class="pre">nvidia-driver-510</span></code>
+是当前推荐使用的驱动（recommended），于是执行以下命令安装该驱动：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ sudo apt install nvidia-driver-510
+[sudo] huangz 的密码：
+正在读取软件包列表... 完成
+正在分析软件包的依赖关系树
+正在读取状态信息... 完成
+将会同时安装下列软件：
+  libatomic1:i386 libbsd0:i386 libc6:i386 libcrypt1:i386 libdrm-amdgpu1:i386 libdrm-intel1:i386
+  ...
+建议安装：
+  glibc-doc:i386 locales:i386 lm-sensors:i386
+下列【新】软件包将被安装：
+  libatomic1:i386 libbsd0:i386 libc6:i386 libcrypt1:i386 libdrm-amdgpu1:i386 libdrm-intel1:i386
+  ...
+升级了 0 个软件包，新安装了 69 个软件包，要卸载 0 个软件包，有 0 个软件包未被升级。
+需要下载 296 MB 的归档。
+解压缩后会消耗 1,160 MB 的额外空间。
+您希望继续执行吗？ [Y/n] y
+</pre></div>
+</div>
+</section>
+<section id="id3">
+<h2>查看显卡信息<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>在安装驱动完毕并重新启动电脑之后，可以通过执行以下命令获取显卡信息：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ nvidia-smi
+Wed Mar 16 01:53:42 2022
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 510.47.03    Driver Version: 510.47.03    CUDA Version: 11.6     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  NVIDIA GeForce ...  Off  | 00000000:26:00.0  On |                  N/A |
+| 26%   34C    P8    16W / 250W |    759MiB /  8192MiB |      1%      Default |
+|                               |                      |                  N/A |
++-------------------------------+----------------------+----------------------+
+
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|    0   N/A  N/A      1072      G   /usr/lib/xorg/Xorg                 71MiB |
+|    0   N/A  N/A      1684      G   /usr/lib/xorg/Xorg                248MiB |
+|    0   N/A  N/A      1811      G   /usr/bin/gnome-shell               88MiB |
+|    0   N/A  N/A      2289      G   ...708579723149425879,131072      333MiB |
++-----------------------------------------------------------------------------+
+</pre></div>
+</div>
+<p>命令打印的表格显示了目前使用的显卡、显卡驱动以及显卡目前的一些状态信息、资源消耗情况等等。</p>
+<div class="line-block">
+<div class="line">想对 Nvidia 说 fuck you 的黄健宏</div>
+<div class="line">2022.3.16</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

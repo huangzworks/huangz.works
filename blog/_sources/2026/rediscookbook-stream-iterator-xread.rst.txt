@@ -1,0 +1,33 @@
+《Redis应用实例》书摘（19）：流迭代器（使用XREAD实现）
+================================================================
+
+除了使用\ ``XRANGE``\ 命令之外，还可以使用\ ``XREAD``\ 命令对流进行迭代，并实现相应的迭代器。
+
+代码清单 CODE_XREAD_ITERATOR 展示了一个使用\ ``XREAD``\ 命令实现的流迭代器程序。
+
+----
+
+代码清单 CODE_XREAD_ITERATOR 使用\ ``XREAD``\ 命令实现的流迭代器 ``xread_iterator.py``
+
+.. literalinclude:: code/xread_iterator.py
+
+----
+
+除了支持可选的\ ``block``\ 参数之外，这个迭代器的使用方式跟前一个迭代器完全一样：
+
+::
+
+        >>> from redis import Redis
+        >>> from xread_iterator import StreamIterator
+        >>> client = Redis(decode_responses=True)
+        >>> iterator = StreamIterator(client, "stream")
+        >>> iterator.next(3)  # 开始迭代
+        [{'id': '10086-0', 'msg': {'': ''}}, {'id': '10087-0', 'msg': {'': ''}}, {'id': '10088-0', 'msg': {'': ''}}]
+        >>> iterator.next(3)  
+        [{'id': '10089-0', 'msg': {'': ''}}, {'id': '10090-0', 'msg': {'': ''}}, {'id': '10091-0', 'msg': {'': ''}}]
+        >>> iterator.next(3)  # 迭代完毕
+        []
+        >>> iterator.next(3, block=10000)  # 阻塞并等待新元素
+        [{'id': '10092-0', 'msg': {'': ''}}]
+
+.. include:: rediscookbook-promote.rst

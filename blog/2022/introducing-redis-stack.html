@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Redis Stack 简介 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Go 1.18 关于泛型特性的说明" href="go-generic-release-note.html" />
+    <link rel="prev" title="Go 语言在 Google 中的应用" href="go-in-google.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Redis Stack 简介</a><ul>
+<li><a class="reference internal" href="#id1">上手 Redis Stack</a></li>
+<li><a class="reference internal" href="#redis-redis-stack">Redis 和 Redis Stack</a></li>
+<li><a class="reference internal" href="#id2">许可</a></li>
+<li><a class="reference internal" href="#id3">总结</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="go-in-google.html" title="Previous Chapter: Go 语言在 Google 中的应用"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; Go 语言在 Google 中的应用</span>
+    </a>
+  </li>
+  <li>
+    <a href="go-generic-release-note.html" title="Next Chapter: Go 1.18 关于泛型特性的说明"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">Go 1.18 关于泛型特性的说明 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="redis-stack">
+<h1>Redis Stack 简介<a class="headerlink" href="#redis-stack" title="Link to this heading">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>本文由黄健宏翻译自 <a class="reference external" href="https://redis.com/blog/introducing-redis-stack/">https://redis.com/blog/introducing-redis-stack/</a> ，有删改。</p>
+</div>
+<p>今天，我们很高兴地向大家宣布 Redis Stack ，
+它将多个领先的 Redis 模块集成为单个产品，
+使得用户可以更轻松地利用基于 Redis 构建的搜索、文档存储、图数据和时间序列能力！</p>
+<p>Redis Stack 是一个由三个组件组成的套件：</p>
+<ol class="arabic simple">
+<li><p><strong>Redis Stack 服务器</strong>将开源的 Redis 和 RedisSearch 、 RedisJSON 、
+RedisGraph 、 RedisTimeSeries 和 RedisBloom 结合起来。</p></li>
+<li><p><strong>RedisInsight</strong> 是一个强大的工具，用于可视化和优化 Redis
+数据，使实时应用开发比以前更容易、更有趣。</p></li>
+<li><p><strong>Redis Stack 客户端 SDK</strong> 包含领先的 Java 、 JavaScript 和 Python
+官方客户端以及我们新推出的对象映射库套件 Redis OM（支持 .Net 、
+Node.js 、Java 和
+Python），后者提供了对开发者友好的抽象，使用户只需要几行代码就能够提高工作效率，并且能够更容易地集成
+Spring 、 ASP.NET Core 、 FastAPI 和 Express 等主要应用框架。</p></li>
+</ol>
+<figure class="align-default">
+<img alt="three redis stack icons" src="https://redis.com/wp-content/uploads/2022/03/redis-stack-tools-blog-1024x432.png?&amp;auto=webp&amp;quality=85,75&amp;width=800" />
+</figure>
+<section id="id1">
+<h2>上手 Redis Stack<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>Redis Stack 现在为 Redis 6.2 提供 GA 版本，此外也为 Redis 7.0 提供 RC
+版本。</p>
+<p>以下有几种方法可以快速获得 Redis Stack ：</p>
+<ul class="simple">
+<li><p>直接从 redis.io 下载 Redis Stack 。</p></li>
+<li><p>使用你喜欢的包管理器又或者启动 Redis Stack docker 镜像来安装</p></li>
+<li><p>通过 Redis Enterprise Cloud
+创建一个免费的数据库或者使用一个固定价格方案，在云中部署 Redis Stack
+。我们还为 Redis Enterprise Software
+中所有自行管理或者内部部署的人提供 Redis Stack 功能。</p></li>
+</ul>
+<p>在拥有并运行 Redis Stack 服务器之后，你可以立即使用 RedisInsight
+来可视化、分析和优化你的 Redis 数据。RedisInsight
+包括了一系列的指南，可以指导你完成几个完整的 Redis Stack 使用案例。</p>
+<p>在客户端方面，我们在几个领先的 Redis 客户端中支持 Redis Stack
+，其中包括： Jedis（java）、redis-py （Python） 和 node-redis
+（JavaScript）以及我们新推出的对象映射库（redis-om-spring、redis-om-python、redis-om-node
+和 redis-om-dotnet）。
+你可以通过克隆每种语言的示例代码库来开始构建你的新数据库。</p>
+</section>
+<section id="redis-redis-stack">
+<h2>Redis 和 Redis Stack<a class="headerlink" href="#redis-redis-stack" title="Link to this heading">¶</a></h2>
+<p>我们对 Redis Stack 所带来的实时应用世界感到兴奋，并相信 Redis Stack
+将使之成为可能，但 Redis Stack 并不是 Redis 的替代品。</p>
+<p>Redis 是核心的开源技术，我们聚焦于它的持续发展这一点没有产生任何变化。
+你总是可以随时下载、构建、安装和运行开源的 Redis 。</p>
+<p>当你准备好运行 Redis Stack 时，你可以使用 Redis 复制机制或者通过加载你的
+RDB 或 AOF 文件轻松迁移你的数据。</p>
+<figure class="align-default">
+<img alt="redis stack illustration" src="https://redis.com/wp-content/uploads/2022/03/redis-stack-illustration-blog-1024x323.png?&amp;auto=webp&amp;quality=85,75&amp;width=800" />
+</figure>
+</section>
+<section id="id2">
+<h2>许可<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>Redis Stack 的所有代码库组件都是开放的，可以供大家自由使用。</p>
+<p>以下时 Redis Stack 的具体许可模式：</p>
+<ul class="simple">
+<li><p>Redis Stack 服务器是根据 Redis Source Available
+License（RSAL）提供的（与我们的 Redis 模块使用的许可相同）。</p></li>
+<li><p>我们根据现有的服务器端公共许可证（SSPL）提供 RedisInsight 。</p></li>
+<li><p>领先的 Redis 客户端和我们的对象映射库已在开源的 MIT 许可下发布。</p></li>
+</ul>
+<figure class="align-default">
+<img alt="redis stack licensing icons" src="https://redis.com/wp-content/uploads/2022/03/redis-stack-licensing-blog-1024x435.png?&amp;auto=webp&amp;quality=85,75&amp;width=800" />
+</figure>
+</section>
+<section id="id3">
+<h2>总结<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>我们致力于继续将 Redis
+作为一个开源项目来开发，支持地球上最大的开发者社区之一，并与越来越多的活跃的项目贡献者合作。</p>
+<p>我们将继续增加 Redis Stack 的功能，使开发者能够快速、轻松地开发完全基于
+Redis 的实时时代（real-time era）的现代应用。</p>
+<p>要了解有关 Redis Stack 及其提供的功能的更多信息，请收听我们在 RedisDays
+活动中提供的有关 Redis Stack 的深入探讨，现在可通过点播进行。</p>
+<p>我们还把对预期问题的快速回答放在了简短的 FAQ 部分。 最后，我们希望得到你对
+Redis Stack 的反馈。请在 Redis 邮件列表中给我们发信息，或者加入 Redis
+Discord 服务器，让我们知道你的想法。</p>
+<hr class="docutils" />
+<div class="line-block">
+<div class="line">觉得新瓶装旧酒纯属商业宣传行为的黄健宏</div>
+<div class="line">2022.3.24</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

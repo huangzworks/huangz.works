@@ -1,0 +1,69 @@
+监控 Mac 的硬件温度
+==================================
+
+因为每次看直播的时候 MBP 的风扇都转得挺起劲的，
+所以就想看看机器内部的硬件温度到底几何，
+搜索了一下发现了 Fanny 和 iStats 这两个不错的软件，
+借这篇文章跟大家分享下。
+
+
+Fanny
+--------------
+
+`Fanny <https://fannywidget.com/>`_ 是一个免费插件，
+它可以实时监视 Mac 的处理器（CPU）温度、显卡（GPU）温度和风扇转速，
+并在菜单栏里面显示他们。
+
+----
+
+.. figure:: image/fanny.jpg
+
+   Fanny 的执行示意图
+
+----
+
+Fanny 的设置里面还提供了刷新间隔、温度单位、菜单栏内容和温度探针等选项，
+其中最有趣的就是 “Menu Bar”（菜单栏内容）选项。
+通过这个选项，
+我们可以让 Fanny 直接在菜单栏显示 CPU 温度又或者 GPU 温度，
+唯一遗憾的是 Fanny 并没有提供同时显示这两种温度的选项。
+
+----
+
+.. figure:: image/fanny-setting.jpg
+
+   Fanny 的设置
+
+----
+
+.. figure:: image/temp-in-bar.png
+
+   在菜单栏中直接显示 CPU 温度
+
+----
+
+
+iStats
+-------------
+
+至于 iStats 则是一个 Ruby Gem ，
+通过执行以下命令即可安装：
+
+::
+
+    gem install iStats
+
+iStats 的使用方法同样简单，
+只要执行 ``istats`` 命令即可：
+
+.. image:: image/istats.png
+
+iStats 默认只会打印出上述的 CPU 温度、风扇转速和电池状态。
+如果你想要查看更多硬件数据，
+那么可以执行 ``istats scan`` 命令：
+
+.. image:: image/istats-scan.png
+
+
+| 每次看直播都感觉 MBP 要起飞的黄健宏
+| 2020.7.13

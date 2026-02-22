@@ -1,0 +1,41 @@
+《Redis应用实例》书摘（20）：先进先出队列
+=============================================
+
+先进先出队列是一种非常常见的数据结构，它允许用户有序地将多个元素推入至队列，然后在有需要的时候再以相反的顺序依次从队列中弹出相应的元素。
+
+在Redis中实现先进先出队列最简单的方法就是使用列表：程序只需要向列表的一端推入元素，并从列表的另一端弹出元素，那么列表自然就会形成一个先进先出队列。
+
+代码清单 CODE_FIFO 展示了使用上述原理实现的先进先出队列。
+
+--------------
+
+代码清单 CODE_FIFO 先进先出队列 ``fifo_queue.py``
+
+.. literalinclude:: code/fifo_queue.py
+
+--------------
+
+以下代码展示了上述先进先出队列程序的具体用法：
+
+.. code:: python
+
+        >>> from redis import Redis
+        >>> from fifo_queue import FifoQueue
+        >>> client = Redis(decode_responses=True)
+        >>> queue = FifoQueue(client, "FifoQueue")
+        >>> queue.enqueue("a")  # 元素入队
+        1
+        >>> queue.enqueue("b")
+        2
+        >>> queue.enqueue("c")
+        3
+        >>> queue.dequeue()  # 元素出队
+        'a'
+        >>> queue.dequeue()
+        'b'
+        >>> queue.dequeue()
+        'c'
+        >>> queue.dequeue()  # 队列已空
+        >>>
+
+.. include:: rediscookbook-promote.rst

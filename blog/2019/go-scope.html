@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Go 的变量作用域 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Go 的变量作用域</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="go">
+<h1>Go 的变量作用域<a class="headerlink" href="#go" title="Link to this heading">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>本文摘录自即将出版的《Go语言趣学指南》，
+请访问 <a class="reference external" href="http://gpwgcn.com">gpwgcn.com</a>  以获取更多相关信息。</p>
+<a class="reference internal image-reference" href="../_images/gpwgcn.jpg"><img alt="../_images/gpwgcn.jpg" src="../_images/gpwgcn.jpg" style="width: 149.6px; height: 188.0px;" /></a>
+</div>
+<p>变量从声明之时开始就处于<em>作用域</em>当中，换句话来说变量就是从那时开始变为可见的（visible）。
+只要变量仍然存在于作用域当中，程序就可以随时访问它，然而变量一旦离开作用域，尝试继续访问它将引发错误。</p>
+<p>变量作用域的其中一个好处是让我们可以为不同的变量重用相同的名字。
+因为除了极少数小型程序之外，程序的变量几乎不可能不出现重名。</p>
+<p>除此之外，变量作用域还能够帮助我们更好地阅读代码，让我们无需在脑海里记住所有变量。
+毕竟一旦某个变量离开了作用域，我们就不必再关心它了。</p>
+<img alt="../_images/watch.jpg" class="align-right" src="../_images/watch.jpg" />
+<p>Go 的作用域通常会随着大括号 <code class="docutils literal notranslate"><span class="pre">{}</span></code> 的出现而开启和结束。
+在接下来展示的代码清单 4-1 中，<code class="docutils literal notranslate"><span class="pre">main</span></code> 函数开启了一个作用域，而
+<code class="docutils literal notranslate"><span class="pre">for</span></code> 循环则开启了一个嵌套作用域。</p>
+<hr class="docutils" />
+<p>代码清单 4-1 作用域规则： <code class="docutils literal notranslate"><span class="pre">scope.go</span></code></p>
+<div class="highlight-go notranslate"><div class="highlight"><pre><span></span><span class="kn">package</span><span class="w"> </span><span class="nx">main</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="s">&quot;fmt&quot;</span>
+<span class="w">    </span><span class="s">&quot;math/rand&quot;</span>
+<span class="p">)</span>
+
+<span class="kd">func</span><span class="w"> </span><span class="nx">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">var</span><span class="w"> </span><span class="nx">count</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">0</span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="nx">count</span><span class="w"> </span><span class="p">&lt;</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="p">{</span><span class="w">    </span><span class="c1">// 开启新的作用域</span>
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="nx">num</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nx">rand</span><span class="p">.</span><span class="nx">Intn</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">        </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Println</span><span class="p">(</span><span class="nx">num</span><span class="p">)</span>
+
+<span class="w">        </span><span class="nx">count</span><span class="o">++</span>
+<span class="w">    </span><span class="p">}</span><span class="w">   </span><span class="c1">// 作用域结束</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>因为 <code class="docutils literal notranslate"><span class="pre">count</span></code> 变量的声明位于 <code class="docutils literal notranslate"><span class="pre">main</span></code>
+函数的<em>函数作用域</em>之内，所以它在 <code class="docutils literal notranslate"><span class="pre">main</span></code> 函数结束之前将一直可见。
+反观 <code class="docutils literal notranslate"><span class="pre">num</span></code> 变量，因为它的声明位于 <code class="docutils literal notranslate"><span class="pre">for</span></code>
+循环的作用域之内，所以它在循环结束之后便不再可见。</p>
+<p>尝试在循环结束之后访问 <code class="docutils literal notranslate"><span class="pre">num</span></code> 变量将引发 Go 编译器报错。
+与之相对的是，因为 <code class="docutils literal notranslate"><span class="pre">count</span></code> 变量的声明位于 <code class="docutils literal notranslate"><span class="pre">for</span></code>
+循环之外，所以即使在循环结束之后，程序也可以在有需要的时候继续访问
+<code class="docutils literal notranslate"><span class="pre">count</span></code> 变量。 另一方面，如果我们想要把 <code class="docutils literal notranslate"><span class="pre">count</span></code>
+变量也限制在循环的作用域之内，那么就需要用到在 Go
+中声明变量的另一种方式。</p>
+<blockquote>
+<div><p>{速查 4-1}</p>
+<ol class="arabic simple">
+<li><p>变量作用域对我们有什么好处？</p></li>
+<li><p>变量在脱离作用域之后会发生什么事情？ 请修改代码清单 4-1 ，
+尝试在循环结束之后访问 <code class="docutils literal notranslate"><span class="pre">num</span></code> 变量， 看看会什么发生什么事情？</p></li>
+</ol>
+</div></blockquote>
+<blockquote>
+<div><p>{速查 4-1 答案}</p>
+<ol class="arabic simple">
+<li><p>作用域可以让我们在多个不同的地方使用相同的变量名而不会引发任何冲突，
+并且在编程的时候只需要考虑位于当前作用域之内的变量即可。</p></li>
+<li><p>脱离作用域的变量将变得不可见并且无法访问。 尝试在 <code class="docutils literal notranslate"><span class="pre">num</span></code>
+变量的作用域之外访问它将导致 Go
+编译器报告以下错误：<code class="docutils literal notranslate"><span class="pre">undefined:</span> <span class="pre">num</span></code> 。</p></li>
+</ol>
+</div></blockquote>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

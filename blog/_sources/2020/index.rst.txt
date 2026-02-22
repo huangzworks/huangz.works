@@ -1,0 +1,19 @@
+2020
+===========
+
+.. toctree::
+   :maxdepth: 2
+
+   monitor-macbook-temperature
+   beyond-the-cache-with-python
+   the-end-of-the-redis-adventure
+   redisraft
+   hhkb
+   ts3plus
+   create-ubuntu-usb-stick
+   upended-the-database-market
+   unprofessional-translator
+   docker-on-linux
+   across-the-wall
+   windows-subsystem-for-linux
+   change-ubuntu-software-source.rst

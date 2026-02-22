@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Redis 4.0 新功能简介：RDB-AOF 混合持久化 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="《Redis 命令速查表》开放免费下载" href="release-redis-cheatsheet-as-free.html" />
+    <link rel="prev" title="2017" href="index.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Redis 4.0 新功能简介：RDB-AOF 混合持久化</a><ul>
+<li><a class="reference internal" href="#aof">创建包含混合持久化内容的 AOF 文件</a></li>
+<li><a class="reference internal" href="#rdb-aof">启用 RDB-AOF 混合持久化</a></li>
+<li><a class="reference internal" href="#id1">结语</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="index.html" title="Previous Chapter: 2017"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; 2017</span>
+    </a>
+  </li>
+  <li>
+    <a href="release-redis-cheatsheet-as-free.html" title="Next Chapter: 《Redis 命令速查表》开放免费下载"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">《Redis 命令速查表》开放免费下载 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="redis-4-0-rdb-aof">
+<h1>Redis 4.0 新功能简介：RDB-AOF 混合持久化<a class="headerlink" href="#redis-4-0-rdb-aof" title="Link to this heading">¶</a></h1>
+<p>在过去，
+Redis 用户通常会因为 RDB 持久化和 AOF 持久化之间不同的优缺点而陷入两难的选择当中：</p>
+<ul class="simple">
+<li><p>RDB 持久化能够快速地储存和恢复数据，
+但是在服务器停机时却会丢失大量数据；</p></li>
+<li><p>AOF 持久化能够有效地提高数据的安全性，
+但是在储存和恢复数据方面却要耗费大量的时间。</p></li>
+</ul>
+<p>为了让用户能够同时拥有上述两种持久化的优点，
+Redis 4.0 推出了一个能够“鱼和熊掌兼得”的持久化方案 ——
+RDB-AOF 混合持久化：
+这种持久化能够通过 AOF 重写操作创建出一个同时包含 RDB 数据和 AOF 数据的 AOF 文件，
+其中 RDB 数据位于 AOF 文件的开头，
+它们储存了服务器开始执行重写操作时的数据库状态：
+至于那些在重写操作执行之后执行的 Redis 命令，
+则会继续以 AOF 格式追加到 AOF 文件的末尾，
+也即是 RDB 数据之后。</p>
+<section id="aof">
+<h2>创建包含混合持久化内容的 AOF 文件<a class="headerlink" href="#aof" title="Link to this heading">¶</a></h2>
+<p>在启用了 RDB-AOF 混合持久化功能的情况下，
+如果我们执行以下命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">K1</span> <span class="s2">&quot;V1&quot;</span>
+<span class="n">OK</span>
+
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">K2</span> <span class="s2">&quot;V2&quot;</span>
+<span class="n">OK</span>
+
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">BGREWRITEAOF</span>
+<span class="n">Background</span> <span class="n">append</span> <span class="n">only</span> <span class="n">file</span> <span class="n">rewriting</span> <span class="n">started</span>
+
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">K3</span> <span class="s2">&quot;V3&quot;</span>
+<span class="n">OK</span>
+
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">K4</span> <span class="s2">&quot;V4&quot;</span>
+<span class="n">OK</span>
+</pre></div>
+</div>
+<p>那么 Redis 服务器将创建出包含以下内容的 AOF 文件：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ od -c appendonly.aof
+0000000    R   E   D   I   S   0   0   0   8 372  \t   r   e   d   i   s
+0000020    -   v   e   r  \v   9   9   9   .   9   9   9   .   9   9   9
+0000040  372  \n   r   e   d   i   s   -   b   i   t   s 300   @ 372 005
+0000060    c   t   i   m   e 302   ~ 204 016   Z 372  \b   u   s   e   d
+0000100    -   m   e   m 302 300   z 017  \0 372  \f   a   o   f   -   p
+0000120    r   e   a   m   b   l   e 300 001 376  \0 373 002  \0  \0 002
+0000140    K   1 002   V   1  \0 002   K   2 002   V   2 377   9 214   H
+0000160  253 212   0   G 344   *   2  \r  \n   $   6  \r  \n   S   E   L
+0000200    E   C   T  \r  \n   $   1  \r  \n   0  \r  \n   *   3  \r  \n
+0000220    $   3  \r  \n   S   E   T  \r  \n   $   2  \r  \n   K   3  \r
+0000240   \n   $   2  \r  \n   V   3  \r  \n   *   3  \r  \n   $   3  \r
+0000260   \n   S   E   T  \r  \n   $   2  \r  \n   K   4  \r  \n   $   2
+0000300   \r  \n   V   4  \r  \n
+0000306
+</pre></div>
+</div>
+<p>从文件的内容可以看出，
+文件的前半部分储存的是 RDB 格式的数据，
+而后半部分储存的则是 AOF 格式的数据。</p>
+</section>
+<section id="rdb-aof">
+<h2>启用 RDB-AOF 混合持久化<a class="headerlink" href="#rdb-aof" title="Link to this heading">¶</a></h2>
+<p>在目前版本中，
+RDB-AOF 混合持久化功能默认是处于关闭状态的，
+为了启用该功能，
+用户不仅需要开启 AOF 持久化功能，
+还需要将 <code class="docutils literal notranslate"><span class="pre">aof-use-rdb-preamble</span></code> 选项的值设置为真，
+就像这样：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ cat redis.conf
+appendonly yes
+aof-use-rdb-preamble yes
+
+$ redis-server redis.conf
+9468:C 17 Nov 14:46:01.063 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+9468:C 17 Nov 14:46:01.064 # Redis version=999.999.999, bits=64, commit=1189d90d, modified=1, pid=9468, just started
+9468:C 17 Nov 14:46:01.064 # Configuration loaded
+9468:M 17 Nov 14:46:01.065 * Increased maximum number of open files to 10032 (it was originally set to 256).
+                _._
+           _.-``__ &#39;&#39;-._
+      _.-``    `.  `_.  &#39;&#39;-._           Redis 999.999.999 (1189d90d/1) 64 bit
+  .-`` .-```.  ```\/    _.,_ &#39;&#39;-._
+ (    &#39;      ,       .-`  | `,    )     Running in standalone mode
+ |`-._`-...-` __...-.``-._|&#39;` _.-&#39;|     Port: 6379
+ |    `-._   `._    /     _.-&#39;    |     PID: 9468
+  `-._    `-._  `-./  _.-&#39;    _.-&#39;
+ |`-._`-._    `-.__.-&#39;    _.-&#39;_.-&#39;|
+ |    `-._`-._        _.-&#39;_.-&#39;    |           http://redis.io
+  `-._    `-._`-.__.-&#39;_.-&#39;    _.-&#39;
+ |`-._`-._    `-.__.-&#39;    _.-&#39;_.-&#39;|
+ |    `-._`-._        _.-&#39;_.-&#39;    |
+  `-._    `-._`-.__.-&#39;_.-&#39;    _.-&#39;
+      `-._    `-.__.-&#39;    _.-&#39;
+          `-._        _.-&#39;
+              `-.__.-&#39;
+
+9468:M 17 Nov 14:46:01.066 # Server initialized
+9468:M 17 Nov 14:46:01.066 * Reading RDB preamble from AOF file...
+9468:M 17 Nov 14:46:01.066 * Reading the remaining AOF tail...
+9468:M 17 Nov 14:46:01.066 * DB loaded from append only file: 0.000 seconds
+9468:M 17 Nov 14:46:01.066 * Ready to accept connections
+</pre></div>
+</div>
+</section>
+<section id="id1">
+<h2>结语<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>好的，
+关于 RDB-AOF 混合持久化功能的介绍到此就结束了，
+希望这篇文章能够帮助大家更好地了解 Redis 4.0 的新功能，
+我将在接下来的更多文章中继续向大家介绍更多 Redis 4.0 的新功能。</p>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2017.11.17</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

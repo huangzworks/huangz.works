@@ -1,0 +1,42 @@
+《Redis应用实例》书摘（16）：紧凑字符串
+==============================================
+
+一般来说，当需要在Redis里面存储大量字符串的时候，常见的做法就是为每个字符串分别创建一个字符串键。
+为了减少存储大量字符串时的内存占用，我们可以选择另一种变通的存储方式：
+
+- 使用\ ``APPEND``\ 命令，将大量字符串以追加的形式存储在同一个字符串键里面，这样就避免了使用多个字符串键或多个列表项带来的内存消耗。
+
+- 在每次向字符串键执行追加操作之前，向被追加的新字符串末尾添加一个特殊的分隔符作为标识，比如换行符\ ``\n``\ 。
+
+- 当有需要的时候，从字符串键里面取出指定大小的数据块，然后基于分隔符将它们逐一还原为字符串。
+
+代码清单 CODE_COMPACT_LOG 展示了基于上一节介绍的原理实现的紧凑字符串程序。
+
+----
+
+代码清单 CODE_COMPACT_LOG 紧凑字符串程序\ ``compact_string.py``\
+
+.. literalinclude:: code/compact_string.py
+
+--------------
+
+作为例子，以下代码演示了这个紧凑字符串程序的使用方法：
+
+::
+
+        >>> from redis import Redis
+        >>> from compact_string import CompactString
+        >>> client = Redis(decode_responses=True)
+        >>> logs = CompactString(client, "CompactLogs")
+        >>> logs.append("HTTP/1.1 200 OK")  # 添加字符串
+        16
+        >>> logs.append("Server: nginx/1.16.1")
+        37
+        >>> logs.append("Date: Fri, 05 Jun 2024 14:40:07 GMT")
+        73
+        >>> logs.get_bytes()  # 获取所有字符串
+        ['HTTP/1.1 200 OK', 'Server: nginx/1.16.1', 'Date: Fri, 05 Jun 2024 14:40:07 GMT']
+        >>> logs.get_bytes(0, 20)  # 获取前20字节的字符串内容
+        ['HTTP/1.1 200 OK', 'Serve']
+
+.. include:: rediscookbook-promote.rst

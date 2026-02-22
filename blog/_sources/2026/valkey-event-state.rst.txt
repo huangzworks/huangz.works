@@ -1,0 +1,76 @@
+Valkey源码剖析（4）：事件状态
+=================================
+
+前面说过，Valkey服务器在启动的时候会调用\ ``ae.c/aeMain()``\ 函数以启动服务器的事件主循环：
+
+.. code:: c
+
+   /* Main is marked as weak so that unit tests can use their own main function. */
+   __attribute__((weak)) int main(int argc, char **argv) {
+       // ...
+       aeMain(server.el);
+       // ...
+   }
+
+这里传入至\ ``aeMain()``\ 函数的\ ``server.el``\ 就是服务器事件主循环状态结构\ ``ae.h/aeEventLoop``\ 的实例，该实例在稍早前由\ ``server.c/initServer()``\ 函数通过调用\ ``ae.c/aeCreateEventLoop()``\ 函数创建：
+
+.. code:: c
+
+   void initServer(void) {
+       // ...
+       // 初始化服务器事件主循环状态
+       server.el = aeCreateEventLoop(server.maxclients + CONFIG_FDSET_INCR);
+       if (server.el == NULL) {
+           serverLog(LL_WARNING, "Failed creating the event loop. Error message: '%s'", strerror(errno));
+           exit(1);
+       }   
+       // ...
+   }
+
+``aeEventLoop``\ 结构记录了服务器与事件相关的所有信息，比如正在监听的事件以及已就绪的事件等等，以下是它的完整定义：
+
+.. code:: c
+
+   typedef struct aeEventLoop {
+       // 当前已监听的最大文件描述符
+       int maxfd;   /* highest file descriptor currently registered */
+       // 可监听的文件描述符最大数量
+       int setsize; /* max number of file descriptors tracked */
+       // 生成时间事件ID的计数器
+       long long timeEventNextId;
+       // 正在监听的文件事件
+       aeFileEvent *events; /* Registered events */
+       // 已就绪的文件事件
+       aeFiredEvent *fired; /* Fired events */
+       // 时间事件链表
+       aeTimeEvent *timeEventHead;
+       // 决定是否继续循环的状态标识
+       int stop;
+       // 底层多路复用API库数据
+       void *apidata; /* This is used for polling API specific data */
+       // 休眠前置函数（休眠之前调用）
+       aeBeforeSleepProc *beforesleep;
+       // 休眠后置函数（休眠之后调用）
+       aeAfterSleepProc *aftersleep;
+       // 可选的定制poll()函数
+       aeCustomPollProc *custompoll;
+       // 线程互斥锁
+       pthread_mutex_t poll_mutex;
+       // 循环状态标识
+       int flags;
+   } aeEventLoop;
+
+从\ ``aeEventLoop``\ 结构的定义可以看到，Valkey服务器的事件可以分为两类：
+
+1. 文件事件
+2. 时间事件
+
+而这两种事件又可以分为两种状态：
+
+1. 正在监听
+2. 已就绪
+
+接下来的文章将分别介绍这两种事件以及它们在不同状态中的处理方式。
+
+| 黄健宏
+| 2026.12.26

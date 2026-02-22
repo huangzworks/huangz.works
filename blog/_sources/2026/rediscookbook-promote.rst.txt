@@ -1,0 +1,6 @@
+.. tip::
+
+    | 本文摘录自《Redis应用实例》一书。
+    | 欢迎访问书本主页以了解更多Redis使用案例：\ `huangz.works/rediscookbook/ <https://huangz.works/rediscookbook/>`_
+
+    .. image:: images/rediscookbook-banner.png

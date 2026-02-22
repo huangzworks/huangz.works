@@ -1,0 +1,104 @@
+Go 语言中的字符串
+=======================
+
+.. highlight:: go
+
+我们从最初的 ``"Hello, playground"`` 开始就已经在程序里使用文本了。
+在 Go 程序中，
+独立的字母、数字和符号被统称为字符，
+而通过拼接多个字符并使用双引号包围起来，
+我们就得到了字符串字面量。
+
+因为 Go 语言会把用双引号包围的字面值推断为 ``string`` 类型，
+所以以下 3 行代码的作用是相同的:
+
+::
+
+    peace := "peace"
+    var peace = "peace"
+    var peace string = "peace"
+
+如果你声明了一个变量但是没有为它赋值，
+那么 Go 语言将使用变量类型的零值对其进行初始化，
+而 ``string`` 类型的零值就是空字符串 ``""`` :
+
+::
+
+    var blank string
+
+
+原始字符串字面量
+---------------------
+
+字符串字面量可以包含转义字符，
+如第 2 章提到的 ``\n`` 。
+如果你想要的是字符 ``\n`` 本身而不是一个新的文本行，
+那么你可以像代码清单 9-1 所示的那样，
+使用反引号(\ `````\ )而不是双引号(\ ``"``\ )来包围文本。
+使用反引号包围的字符串被称为原始字符串字面量。
+
+----
+
+代码清单 9-1 原始字符串字面量: ``raw.go``
+
+::
+
+    fmt.Println("peace be upon you\nupon you be peace")
+    fmt.Println(`strings can span multiple lines with the \n escape sequence`)
+
+----
+
+执行这段代码将产生以下输出:
+
+::
+
+    peace be upon you
+    upon you be peace
+    strings can span multiple lines with the \n escape sequence
+
+跟普通字符串字面量不同的是，
+原始字符串字面量可以在代码里面跨越多个文本行，
+就像代码清单 9-2 所示的那样。
+
+----
+
+代码清单 9-2 跨越多行的原始字符串字面量: ``raw-lines.go``
+
+::
+
+    fmt.Println(`
+        peace be upon you 
+        upon you be peace`)
+
+执行这段代码将产生以下输出，并且字符串中用于缩进的制表符也被正确地打印了出来:
+
+.. code-block:: txt
+   :dedent: 0
+
+        peace be upon you
+        upon you be peace
+
+正如代码清单 9-3 所示，
+无论是字符串字面量还是原始字符串字面量，
+最终都将变成字符串。
+
+----
+
+代码清单 9-3 字符串类型: ``raw-type.go``
+
+::
+
+    fmt.Printf("%v is a %[1]T\n", "literal string")    // 打印出 “literal string is a string”
+    fmt.Printf("%v is a %[1]T\n", `raw string literal`)    //  打印出 “raw string literal is a string”
+
+----
+
+.. note::
+
+    本文摘录自《Go语言趣学指南》第 9 章，
+    请访问 `gpwgcn.com <http://gpwgcn.com>`_  以获取更多相关信息。
+
+    .. image:: image/gpwgcn.jpg
+       :scale: 80%
+
+

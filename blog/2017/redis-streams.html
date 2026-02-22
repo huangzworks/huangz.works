@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Redis Streams（流）数据结构简介 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="《Go Web 编程》社区合作计划" href="gwpcn-community-cooperation.html" />
+    <link rel="prev" title="《Redis 命令速查表》开放免费下载" href="release-redis-cheatsheet-as-free.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Redis Streams（流）数据结构简介</a><ul>
+<li><a class="reference internal" href="#id1">向流中添加新元素</a></li>
+<li><a class="reference internal" href="#id">从流中获取指定 ID 范围内的元素</a></li>
+<li><a class="reference internal" href="#id2">以阻塞方式获取流中元素</a></li>
+<li><a class="reference internal" href="#id3">结语</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="release-redis-cheatsheet-as-free.html" title="Previous Chapter: 《Redis 命令速查表》开放免费下载"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; 《Redis 命令速查表》开放免费下载</span>
+    </a>
+  </li>
+  <li>
+    <a href="gwpcn-community-cooperation.html" title="Next Chapter: 《Go Web 编程》社区合作计划"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">《Go Web 编程》社区合作计划 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="redis-streams">
+<h1>Redis Streams（流）数据结构简介<a class="headerlink" href="#redis-streams" title="Link to this heading">¶</a></h1>
+<p>Redis 的 Streams （流）是即将要添加到 Redis 4.x 版本的一种新的数据结构，
+该结构是为了抹平 List 、SortedSet 和 Pub/Sub 之间的空隙，
+以便更好地实现时间序列、消息的流式传递等应用而出现的。</p>
+<p>目前来说，
+用户只需要获取 <a class="reference external" href="https://github.com/antirez/redis">https://github.com/antirez/redis</a> 的 <code class="docutils literal notranslate"><span class="pre">streams</span></code> 分支，
+就可以看到流结构的具体实现代码。</p>
+<p>在 Redis 中，
+所有流命令都是以 <code class="docutils literal notranslate"><span class="pre">X</span></code> 为开头的，
+比如 <code class="docutils literal notranslate"><span class="pre">XADD</span></code> 、 <code class="docutils literal notranslate"><span class="pre">XRANGE</span></code> 和 <code class="docutils literal notranslate"><span class="pre">XREAD</span></code> ，
+本文接下来将对这三个元素进行介绍。</p>
+<section id="id1">
+<h2>向流中添加新元素<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>向流中添加信息可以通过使用 <code class="docutils literal notranslate"><span class="pre">XADD</span></code> 命令来完成。</p>
+<p>比如以下命令就向流 <code class="docutils literal notranslate"><span class="pre">user-timeline</span></code> 添加了一个拥有两个字段的元素，
+这两个字段为 <code class="docutils literal notranslate"><span class="pre">user</span></code> 和 <code class="docutils literal notranslate"><span class="pre">message</span></code> ，
+它们的值分别为 <code class="docutils literal notranslate"><span class="pre">huangz</span></code> 和 <code class="docutils literal notranslate"><span class="pre">hello</span> <span class="pre">world!</span></code> ：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&gt;</span> <span class="n">XADD</span> <span class="n">user</span><span class="o">-</span><span class="n">timeline</span> <span class="o">*</span> <span class="n">user</span> <span class="s2">&quot;huangz&quot;</span> <span class="n">message</span> <span class="s2">&quot;hello world!&quot;</span>
+<span class="mf">1508829813213.0</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">XADD</span></code> 命令的第二个参数用于设置元素的 ID ，
+使用 <code class="docutils literal notranslate"><span class="pre">*</span></code> 为值则表示让 Redis 自行为该元素设置 ID 。
+对于上面执行的 <code class="docutils literal notranslate"><span class="pre">XADD</span></code> 命令来说，
+命令返回的 <code class="docutils literal notranslate"><span class="pre">1508829813213.0</span></code> 就是新添加元素的 ID 。</p>
+<p>每个流元素的 ID 都可以由两个 64 位无符号整数组成。
+对于 Redis 自动生成的 ID 来说，
+点号 <code class="docutils literal notranslate"><span class="pre">.</span></code> 之前的数字为添加元素时的毫秒精度的时间戳，
+而点号之后的数字则是一个从 0 开始自增的数字，
+用于却别同一毫秒内出现的多个不同元素。</p>
+</section>
+<section id="id">
+<h2>从流中获取指定 ID 范围内的元素<a class="headerlink" href="#id" title="Link to this heading">¶</a></h2>
+<p>通过使用 <code class="docutils literal notranslate"><span class="pre">XRANGE</span></code> 命令，
+用户可以获取指定 ID 范围内的元素。
+跟有序集合命令一样，
+ID 范围可以使用 <code class="docutils literal notranslate"><span class="pre">-</span></code> 或者 <code class="docutils literal notranslate"><span class="pre">+</span></code> 来表示负无穷和正无穷。</p>
+<p>比如说，
+通过执行以下命令，
+我们可以获取流中 ID 大于等于 <code class="docutils literal notranslate"><span class="pre">1508829813213.0</span></code> 的所有元素：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&gt;</span> <span class="n">XRANGE</span> <span class="n">user</span><span class="o">-</span><span class="n">timeline</span> <span class="mf">1508829813213.0</span> <span class="o">+</span>
+<span class="mi">1</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="mf">1508829813213.0</span>
+<span class="mi">2</span><span class="p">)</span> <span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;user&quot;</span>
+   <span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;huangz&quot;</span>
+   <span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;message&quot;</span>
+   <span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;hello world!&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="id2">
+<h2>以阻塞方式获取流中元素<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>跟列表一样，
+流也支持阻塞式的获取操作。</p>
+<p>比如说，
+通过执行以下命令：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>XREAD BLOCK 5000 STREAMS user-timeline $
+</pre></div>
+</div>
+<p>用户可以在一个时间最长为 5000 毫秒的阻塞操作中，
+等待 <code class="docutils literal notranslate"><span class="pre">user-timeline</span></code> 流最新添加的一个元素：
+如果 <code class="docutils literal notranslate"><span class="pre">user-timeline</span></code> 流在指定时间内都没有出现新添加的元素，
+那么 <code class="docutils literal notranslate"><span class="pre">XREAD</span></code> 命令将返回一个空值；
+否则，
+<code class="docutils literal notranslate"><span class="pre">XREAD</span></code> 命令将返回流新添加的元素。</p>
+</section>
+<section id="id3">
+<h2>结语<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>除了上述提到的功能之外，
+流还支持定长功能（限制流最多只能包含指定数量的元素），
+并且将来还会支持组发送功能（类似于Pub/Sub，将一个元素分发给指定的一组客户端），
+有兴趣的朋友可以关注 Redis 的 <code class="docutils literal notranslate"><span class="pre">Streams</span></code> 分支和作者的博客，
+我也会继续和大家分享更多这方面的知识。</p>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2017.10.24</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

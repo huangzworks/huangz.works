@@ -1,0 +1,84 @@
+Valkey源码剖析（12）：查找命令
+==============================
+
+前面的文章介绍了Valkey服务器如何通过\ ``populateCommandTable()``\ 函数构建起将命令名映射至命令结构的命令表。下面来看看，在客户端向服务器发送命令请求的时候，Valkey服务器是如何根据请求查找对应命令的。
+
+当Valkey服务器接收到客户端发送的命令请求之后，它会对请求进行解析，然后将请求想要执行的命令参数以及命令参数的个数记录到客户端对应的\ ``server.h/client``\ 结构中：
+
+.. code:: c
+
+   typedef struct client {
+
+       // ...
+
+       // 命令参数
+       robj **argv;         /* Arguments of current command. */
+       // 命令参数数量
+       int argc;            /* Num of arguments of current command. */
+
+       // ...
+
+   } client;
+
+举个例子，当Valkey服务器接收到客户端发送的以下命令时：
+
+.. code:: bash
+
+   SET msg "hello"
+
+服务器将把该客户端对应\ ``client``\ 结构的\ ``argv``\ 属性设置为包含\ ``"SET"``\ 、\ ``"msg"``\ 、\ ``"hello"``\ 三个参数的数组，并将\ ``argc``\ 属性的值设置为3。
+
+之后，服务器会调用\ ``server.c/lookupCommand()``\ 函数，并将客户端的\ ``argv``\ 、\ ``argc``\ 属性传递给该函数以查找命令对应的命令结构，并在找到之后将其记录在\ ``client``\ 结构的\ ``cmd``\ 属性中：
+
+.. code:: c
+
+   struct serverCommand *lookupCommand(robj **argv, int argc) {
+       return lookupCommandLogic(server.commands, argv, argc, 0);
+   }
+
+   struct serverCommand *lookupCommandLogic(hashtable *commands, robj **argv, int argc, int strict) {
+       void *entry = NULL;
+       // 查找命令并回报结果
+       bool found_command = hashtableFind(commands, argv[0]->ptr, &entry);
+       struct serverCommand *base_cmd = entry;
+       bool has_subcommands = found_command && base_cmd->subcommands_ht;
+       if (argc == 1 || !has_subcommands) {
+           if (strict && argc != 1) return NULL;
+           /* Note: It is possible that base_cmd->proc==NULL (e.g. CONFIG) */
+           // 返回找到的命令实现函数
+           return base_cmd;
+       } else { /* argc > 1 && has_subcommands */
+           if (strict && argc != 2) return NULL;
+           /* Note: Currently we support just one level of subcommands */
+           // 按需进一步查找子命令
+           return lookupSubcommand(base_cmd, argv[1]->ptr);
+       }
+   }
+
+从上面展示的代码可以看到，\ ``lookupSubcommand()``\ 函数将调用\ ``server.c/lookupCommandLogic()``\ 函数，而后者会继续调用\ ``hashtable.c/hashtableFind()``\ 函数，并根据给定的命令名，从传入的命令表\ ``server.commands``\ 中查找与给定命令名对应的命令结构：
+
+-  如果找到了对应的命令结构，那么返回它，并在之后将其设置至客户端的\ ``client->cmd``\ 属性中；
+
+-  如果传入的命令还包含子命令，那么调用\ ``server.c/lookupSubcommand()``\ 函数进一步查找子命令对应的命令结构；
+
+-  最后，如果未能找到对应的命令结构，那么返回\ ``NULL``\ 。
+
+以\ ``SET``\ 命令为例，当服务器接收到客户端想要执行\ ``SET``\ 命令的请求时，它会根据\ ``"SET"``\ 字符串在命令表中查找与之对应的命令结构，然后把它设置到客户端\ ``client``\ 结构的\ ``cmd``\ 属性中：
+
+.. code:: c
+
+   typedef struct client {
+
+       // ...
+
+       // 正在执行的命令
+       struct serverCommand *cmd;        /* Current command. */
+
+       // ...
+
+   } client;
+
+在找到对应的命令结构之后，服务器接下来就要执行被请求的命令了，具体的流程将在下一篇文章中进行介绍。
+
+| 黄健宏
+| 2026.1.4

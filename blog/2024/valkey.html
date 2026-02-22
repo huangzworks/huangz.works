@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Linux基金会宣布推出Valkey作为Redis的开源替代方案 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="欢迎进入后Redis时代——关于Redis修改许可之后的问题、现状和未来" href="post-redis-era.html" />
+    <link rel="prev" title="Valkey 发布 7.2.5 正式版，今后将与Redis分道扬镳" href="valkey-ga-release.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Linux基金会宣布推出Valkey作为Redis的开源替代方案</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="valkey-ga-release.html" title="Previous Chapter: Valkey 发布 7.2.5 正式版，今后将与Redis分道扬镳"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; Valkey 发布 7.2...</span>
+    </a>
+  </li>
+  <li>
+    <a href="post-redis-era.html" title="Next Chapter: 欢迎进入后Redis时代——关于Redis修改许可之后的问题、现状和未来"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">欢迎进入后Redis时代—... &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="linuxvalkeyredis">
+<h1>Linux基金会宣布推出Valkey作为Redis的开源替代方案<a class="headerlink" href="#linuxvalkeyredis" title="Link to this heading">¶</a></h1>
+<img alt="../_images/valkey.png" src="../_images/valkey.png" />
+<blockquote>
+<div><p>本文编译自：<a class="reference external" href="https://www.linuxfoundation.org/press/linux-foundation-launches-open-source-valkey-community">Linux基金会网站</a></p>
+</div></blockquote>
+<p>今天，
+Linux 基金会宣布了组建 <a class="reference external" href="https://github.com/madolson/placeholderkv">Valkey</a>的计划，
+它是Redis这一内存数据库兼NoSQL数据存储的开源替代方案。
+项目贡献者迅速聚集了维护者、社区和企业的支持，
+以响应 Redis 公司最近宣布的<a class="reference external" href="https://redis.com/blog/redis-adopts-dual-source-available-licensing/">许可证变更</a>，
+Valkey 将继续在 Redis 7.2.4 上进行开发，
+并将保持该项目在开源 BSD 三条款许可下使用和分发。</p>
+<p>自 Redis 项目于 2009 年成立以来，
+数以千计的开源开发人员为其发展和成功做出了重大贡献。
+还有更多开发人员将它用作缓存以及低延迟、高吞吐量的数据存储替代方案，
+将其应用于实时数据分析、会话存储、消息代理和许多其他用例。
+在 <a class="reference external" href="https://survey.stackoverflow.co/2023/#most-popular-technologies-database-prof">2023 年 Stack Overflow</a> 开发者调查中，
+Redis 被开发人员列为第六大最常用的数据库，
+并且跻身最受推崇数据库的前三名。</p>
+<p>为了继续改进这项重要技术并允许不受限制地分发项目，
+社区创建了 Valkey，
+这是一个开源高性能键值存储。
+Valkey 支持 Linux、macOS、OpenBSD、NetBSD 和 FreeBSD 平台。
+此外，
+社区将继续致力于其现有路线图，
+包括新功能，
+例如更可靠的插槽迁移、集群系统的显着可扩展性和稳定性改进、多线程性能改进、触发器、新命令、矢量搜索支持等。</p>
+<p>包括 Amazon Web Services （AWS）、Google Cloud、Oracle、Ericsson 和 Snap 公司在内的行业参与者都在支持 Valkey。
+他们专注于为项目的长期健康和可行性做出贡献，
+以便每个人都能从中受益。</p>
+<blockquote>
+<div><p>“我为开源 Redis 工作了六年，
+其中四年作为核心团队成员推动 Redis 开源，
+直至 7.2 版。
+我非常关心开源软件，
+并希望继续做出贡献。
+通过组建 Valkey，
+贡献者可以继续我们之前的工作，
+继续为充满活力的开源社区做出贡献，”
+前 Redis 维护者、Valkey 联合创始人兼 AWS 首席工程师 Madelyn Olson 说到。</p>
+</div></blockquote>
+<blockquote>
+<div><p>“我很高兴看到 Valkey 项目齐心协力继续真正的开源开发。
+社区的韧性和对项目的承诺意味着我们可以继续进行用户所钦佩和依赖的创新工作。”
+前 Redis 贡献者和 Google Cloud 软件工程师 Ping Xie 说到。</p>
+</div></blockquote>
+<blockquote>
+<div><p>“过去几年，
+我一直是该项目的积极贡献者。
+我很高兴看到 Valkey 在开放治理下走到一起，
+继续 Redis 开源社区开始的工作。
+通过真正的开放合作，
+该技术将继续发展并为所有用户提供价值。
+我很自豪能够成为 Valkey 的维护者之一，
+并希望尽我所能为社区服务，”
+Valkey 联合维护者、爱立信软件技术高级开源开发人员 Viktor Söderqvist 说到。</p>
+</div></blockquote>
+<p>在 Linux 基金会，
+Valkey 将遵循开放的治理模式，
+保持社区驱动并欢迎所有用户和贡献者。
+该项目已经组建了一个由几位前 Redis 贡献者组成的技术领导委员会，
+还有数百名社区成员表达了他们支持 Valkey 的意图。
+要了解有关 Valkey 的更多信息，
+请访问 GitHub 上的项目页面：<a class="reference external" href="https://github.com/valkey-io/valkey">https://github.com/valkey-io/valkey</a> 。</p>
+<div class="line-block">
+<div class="line">见证Redis再次成为开源项目的黄健宏</div>
+<div class="line">2024.3.29</div>
+</div>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

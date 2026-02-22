@@ -1,0 +1,47 @@
+Valkey 8.0发布，性能比之前提高三倍！
+======================================
+
+.. note::
+
+   本文是同名视频的文字版，你可以在\ `哔站 <https://www.bilibili.com/video/BV1wCCXYqEgB/>`_\ 、\ `抖音 <https://www.douyin.com/video/7427325104419376393>`_\ 、\ `YouTube <https://youtu.be/pKrI0Jmm85w>`_\ 观看视频。
+
+.. image:: ./images/valkey8/1.png
+
+Valkey团队在9月中旬释出了Valkey
+8.0正式版（\ `通告文章 <https://valkey.io/blog/valkey-8-ga/>`__\ 、\ `具体特性 <https://valkey.io/blog/valkey-8-0-0-rc1>`__\ ），这是他们分叉Redis以来发布的首个主要版本，该版本与Redis
+7.2.4版本完全兼容。
+
+.. image:: ./images/valkey8/2.png
+
+.. image:: ./images/valkey8/3.png
+
+在保证兼容的前提下，Valkey团队对Redis原有的开源代码进行了大量修改和增强，比如实现异步I/O线程、优化单机及集群的数据结构表示等（详见博客文章\ `一 <https://valkey.io/blog/valkey-memory-efficiency-8-0/>`__\ 、\ `二 <https://valkey.io/blog/unlock-one-million-rps/>`__\ 、\ `三 <https://valkey.io/blog/unlock-one-million-rps-part2/>`__\ ），使得Valkey
+8.0在性能和内存占用上获得了长足的进步：\ **根据他们的基准测试结果显示，Valkey
+8.0与Valkey 7.2.5相比，内存占用量下降了约20%，吞吐量增加了约230%，而平均延迟减少约70%。**
+
+.. image:: ./images/valkey8/4.png
+
+简单来说，正如Valkey团队在他们博客标题里所说的那样：
+**如果你是Valkey 7.2或者Redis 7.2的用户，那么只要使用Valkey 8.0来代替之前的版本，你就能立即获得相当于原来三倍的性能提升！**
+显著的性能提升带来的一个直接影响是，Valkey项目的其中一个主要合作伙伴——AWS，已经开始在它们自家的内存存储产品中\ `推荐使用Valkey引擎来代替原有的Redis引擎 <https://www.lastweekinaws.com/blog/aws-valkey-play-when-a-fork-becomes-a-price-cut>`__\ ，而更换引擎之后的费用将比之前降低1/3。这对于用户来说是非常有吸引力的：他们不仅节约了费用，还获得了更高的性能！
+
+.. image:: ./images/valkey8/5.png
+
+除此之外，随着Ubuntu最新版本\ `Ubuntu
+24.10释出 <https://ubuntu.com/blog/canonical-releases-ubuntu-24-10-oracular-oriole>`__\ ，\ `Valkey已正式进入Ubuntu标准软件库 <https://ubuntu.com/blog/valkey-ubuntu>`__\ 。现在Ubuntu
+24.10和24.04 LTS版本的用户只需要执行以下命令：
+
+::
+
+   sudo apt install valkey-server
+
+就能轻松地将Valkey安装至他们的系统中，这对于很多想要尝试或者使用Valkey的Ubuntu用户来说无疑是十分方便的。
+
+.. image:: ./images/valkey8/6.png
+
+顺利发布首个主要新版本、大幅提升性能、开始被云服务提供商选用并陆续进入各个Linux发行版的标准软件库——尽管\ `Valkey项目启动 <https://www.linuxfoundation.org/press/linux-foundation-launches-open-source-valkey-community>`__\ 至今不过半年左右的时间，但目前来看，他们的每一步都走得相当坚实，祝贺他们！
+
+今后我将继续关注Valkey项目，了解他们接下来如何向前迈进以及如何与Redis进行竞争，同样关心Valkey的朋友别忘了在\ `微博 <https://weibo.com/u/3219474004>`__\ 、\ `推特 <https://x.com/huangzworks>`__\ 和\ `哔站 <https://space.bilibili.com/240200009>`__\ 关注我，有新消息的话我会第一时间跟大家分享！
+
+| 黄健宏 
+| 2024.10.21

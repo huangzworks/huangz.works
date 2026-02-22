@@ -1,0 +1,22 @@
+Valkey 发布 7.2.5 正式版，今后将与Redis分道扬镳
+===============================================
+
+.. image:: images/happy.png
+
+.. tip:: 本文为以下视频的文字稿，欢迎观看：\ `B站 <https://www.bilibili.com/video/BV1Ym41117oH/>`_\  、\ `抖音 <https://www.douyin.com/user/self?modal_id=7362764394079522063>`_\ 
+
+`Valkey <https://valkey.io/>`__——由Linux基金会支持的Redis开源分支，最近释出了他们的7.2.5版本：https://github.com/valkey-io/valkey/releases/tag/7.2.5。
+
+Valkey 7.2.5版本在功能上完全兼容开源的Redis
+7.2.4版本，并在这个基础上修复了几个小bug。但据该项目的核心成员透露，\ **该版本将是它们最初也是最后一个完全兼容Redis的版本，之后的Valkey将不再遵循Redis的开发路线图**\ ，而会有自己不同的开发路线。
+
+这样一来，Valkey和Redis在未来很可能会出现特性差异，并且Valkey项目组还打算\ `在今年内发布下个主要版本 <https://github.com/orgs/valkey-io/discussions/361>`__\ （目前暂定为8.0版本）。考虑到Redis之前也公布了\ `未来Redis
+8.0版本的开发计划 <https://redis.io/blog/the-future-of-redis>`__\ ，两个项目之间的对比和竞争应该会非常有趣。
+
+此外，继亚马逊云、谷歌云、甲骨文、爱立信和Snap之后，阿里云、华为、Aiven、Chainguard、Heroku、Percona
+和Verizon也\ `加入了对Valkey项目的支持 <https://www.linuxfoundation.org/press/valkey-community-announces-release-candidate-amid-growing-support-for-open-source-data-store>`__\ 。考虑到来自腾讯云的开发者也加入到了\ `Valkey项目的核心成员团队 <https://github.com/orgs/valkey-io/people>`__\ 里面，腾讯云公开对Valkey的支持应该也是早晚的事情了。
+
+综合来看，今后的情况应该就是上述厂商协作开发Valkey，Redis公司独立开发Redis了。到底是具有雄厚积累的Redis继续保持优势，还是新挑战者Valkey会更受大家欢迎呢？无论如何，祝福这两个项目都有光明的未来吧！
+
+| 仿佛听见Redis大声呐喊说“Valkey你一定要幸福啊！”的黄健宏
+| 2024.4.28

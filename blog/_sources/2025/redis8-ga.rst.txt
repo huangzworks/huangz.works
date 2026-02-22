@@ -1,0 +1,24 @@
+Redis 8 正式版更新摘要
+=========================
+
+.. image:: images/redis8-ga.jpg
+
+Redis公司在5月1日发布了Redis
+8正式版，这个版本是Redis有史以来新特性和改动最多的一个版本，以下是这个版本的更新摘要：
+
+-  将之前的Redis（核心）和Redis Stack合二为一，变成现在的Redis开源版（之前又叫社区版）
+-  根据AGPLv3协议重新开源，现在用户可以从RSAL、SSPL和AGPL三种协议中选择一种进行许可
+-  新增向量集、JSON、时间序列三种数据结构
+-  新增布隆过滤器、布谷鸟过滤器、最小计数草图、Top-K、t-digest五种概率数据结构
+-  新增Redis查询引擎，它可以对存储在哈希或JSON文档中的数据进行检索
+-  为哈希数据结构的自动过期特性新增了3个命令
+-  通过全新的I/O线程实现以及多项针对命令的更新和优化，大幅提升系统整体的吞吐量，并显著提高单个命令的执行效率
+-  通过新的复制同步机制，有效地减少复制时所需的缓冲区大小，并且缩短了同步所需的总体时间
+-  多种主要编程语言的客户端也已同步更新至兼容Redis 8
+
+更详细的信息请见Redis的官方博客文章：\ `Redis 8 is now GA, loaded with
+new features and more than 30 performance
+improvements <https://redis.io/blog/redis-8-ga/>`__
+
+| 黄健宏 
+| 2025.5.2

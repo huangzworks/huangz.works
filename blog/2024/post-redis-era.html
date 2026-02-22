@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>欢迎进入后Redis时代——关于Redis修改许可之后的问题、现状和未来 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="我随时接受你的挑战" href="challenge-me.html" />
+    <link rel="prev" title="Linux基金会宣布推出Valkey作为Redis的开源替代方案" href="valkey.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">欢迎进入后Redis时代——关于Redis修改许可之后的问题、现状和未来</a><ul>
+<li><a class="reference internal" href="#redis">Redis闭源了吗？</a></li>
+<li><a class="reference internal" href="#id1">新许可跟旧许可有什么不同？</a></li>
+<li><a class="reference internal" href="#id2">那新许可对个人或非云服务公司有影响吗？</a></li>
+<li><a class="reference internal" href="#id3">但为什么有人反对Redis公司这一做法呢？</a></li>
+<li><a class="reference internal" href="#id4">Redis社区是否会分裂出新的分叉项目？</a></li>
+<li><a class="reference internal" href="#id5">Redis未来的新版本会怎么样？</a></li>
+<li><a class="reference internal" href="#id6">Redis的未来会如何？</a></li>
+<li><a class="reference internal" href="#id7">我个人作品相关的信息</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="valkey.html" title="Previous Chapter: Linux基金会宣布推出Valkey作为Redis的开源替代方案"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; Linux基金会宣布推出V...</span>
+    </a>
+  </li>
+  <li>
+    <a href="challenge-me.html" title="Next Chapter: 我随时接受你的挑战"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">我随时接受你的挑战 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="redisredis">
+<h1>欢迎进入后Redis时代——关于Redis修改许可之后的问题、现状和未来<a class="headerlink" href="#redisredis" title="Link to this heading">¶</a></h1>
+<blockquote>
+<div><p>本文是同名视频的文字稿，欢迎观看：<a class="reference external" href="https://www.bilibili.com/video/BV1rx421S7CT/">https://www.bilibili.com/video/BV1rx421S7CT/</a></p>
+</div></blockquote>
+<section id="redis">
+<h2>Redis闭源了吗？<a class="headerlink" href="#redis" title="Link to this heading">¶</a></h2>
+<p>没有，只是修改了软件的许可协议，从原来的BSD三条款许可改成了<a class="reference external" href="https://redis.com/legal/rsalv2-agreement/">RSALv2</a>或<a class="reference external" href="https://redis.com/legal/server-side-public-license-sspl/">SSPLv1</a>的双重许可。</p>
+<p>Redis软件和源代码现在仍然可以从<a class="reference external" href="https://redis.io/download/">官方网站</a>或<a class="reference external" href="https://github.com/redis/redis">GitHub资源库</a>上获取，跟之前没有任何变化。</p>
+<p>但是由于今后Redis将不再根据传统的开源协议进行许可使用，所以尽管它的源码是公开的，但是却不能被称为传统的“开源软件”，因此今后Redis公开源码的版本将被称为“社区版”而不是“开源版”，类似于现在MySQL和MongoDB。</p>
+</section>
+<section id="id1">
+<h2>新许可跟旧许可有什么不同？<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>新许可对云服务供应商提出了限制，要求他们在使用Redis提供商业服务的时候，要么向Redis公司付费，要么就公开与Redis相关的全部源代码。</p>
+<p>Redis公司之所以这样做，是认为自己和社区免费开发了开源版的Redis，但是云服务供应商却拿着免费的Redis去提供收费服务，并且没有向Redis提供贡献或回馈，又或者说Redis认为这种贡献或回馈跟云服务供应商的收入不成正比，所以最终决定修改许可协议，强制要求云服务供应商付费或者开源他们的代码。</p>
+</section>
+<section id="id2">
+<h2>那新许可对个人或非云服务公司有影响吗？<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>没影响，个人或公司仍然可以免费使用Redis和Redis源码，不会受到任何限制。</p>
+<p>比如像我这种学习和使用Redis的人，仍然可以通过使用Redis和研究Redis代码来写书。</p>
+<p>至于使用Redis储存数据的公司也可以继续使用，反正只要不利用Redis向第三方提供云服务就行了。</p>
+<p>不过现在对于“Redis”这个名字和Redis的LOGO有更严格的限制，不能随便在商业场合上使用他们。</p>
+</section>
+<section id="id3">
+<h2>但为什么有人反对Redis公司这一做法呢？<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>首先，Redis项目之前一直是开源软件，这种由多人协作产生的协作项目，是大家共同努力的结果，Redis公司现在单方面宣布将它归为己有并且修改许可协议是很不厚道的。</p>
+<p>此外，虽然Redis项目主要由包括Redis原作者antirez在内的Redis公司的员工主导和开发，但诸如AWS和Aliyun在内的云服务供应商的雇员同样也作为贡献者甚至核心贡献者深度参与到了这个项目中，此外还有数以千计的独立开源开发者也参与了这个项目。</p>
+<p>现在Redis公司公然掀桌子想独占整个Redis项目，<a class="reference external" href="https://github.com/redis/redis/pull/13157">大家自然也会有很大的意见</a>，这是很正常的，我个人也支持他们利用一切手段追求自己的合法权益。</p>
+</section>
+<section id="id4">
+<h2>Redis社区是否会分裂出新的分叉项目？<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>很有可能，实际上，现在之前提到的AWS和Aliyun的核心开发者，已经分叉出了一个当前版本的分支，并准备对该分支继续进行开发以实现一个<a class="reference external" href="https://github.com/placeholderkv/placeholderkv">全新的开源的Redis</a>。</p>
+<p>虽然我个人精神上支持这种开源项目，但是出于实际考虑，我还是比较担心这种新出现的分叉能否坚持下去的。毕竟Redis项目之前还是由Redis公司主导开发的，现在如果脱离了Redis公司，这种独立的新分支该如何往前走，之后由谁领导，新版本新特性该如何抉择，是继续兼容Redis还是自己开发新的特性集，从而走出一条新路……总而言之，要考虑的事情太多了，我个人觉得还是静观其变吧。</p>
+</section>
+<section id="id5">
+<h2>Redis未来的新版本会怎么样？<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>Redis公司肯定想到社区会推出新的开源分叉版本来跟自己抗衡的，所以他在宣布该许可的同时也发布了雄心勃勃的新版本计划。</p>
+<p>其中最重要的一点就是在未来的Redis
+8.0版本中，将现在开源的Redis核心部分和Redis
+Stack部分合并在一起，提供更多数据类型和处理引擎，并且通过<a class="reference external" href="https://weibo.com/3219474004/O65Hbt4Op">集成最近收购的Speedb</a>，大幅提升Redis速度。</p>
+<p>可以预见的是，全新的Redis 8.0将会非常强大，我个人是非常期待的。</p>
+</section>
+<section id="id6">
+<h2>Redis的未来会如何？<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<p>很可能会像MySQL那样，Redis公司维护一个版本，而开源社区维护一个版本。</p>
+<p>不过我觉得百家争鸣的情况对于整个Redis生态来说并不一定是坏事，甚至可能会是有利的。</p>
+<p>比如说，Redis公司为了保持Redis项目的竞争力，肯定会把Redis新版本做好，而开源社区的Redis分叉也会为了争夺Redis用户而使出浑身解数的。</p>
+<p>从某种程度上来说，我觉得接下来的Redis会比前两年更有趣，自从antirez退居二线之后，我好像很久没觉得Redis那么有趣过了。</p>
+</section>
+<section id="id7">
+<h2>我个人作品相关的信息<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
+<p>目前计划的2024年出3本Redis书的计划还是没有变化。</p>
+<p>其中第一本《Redis经典应用实例》马上交稿了，就这一两周，因为距离8.0出来还有一段时间，并且应用方面的改动不会受到太大影响，所以这本会如常出版。</p>
+<p>但之后的两本会根据Redis
+8.0的出版时间来决定具体何时出版，如果8.0出来晚的话，就如期在下半年出，如果出来早，比如今年下半年或者明年年初，那就顺延到和8.0一起出。</p>
+<div class="line-block">
+<div class="line">想起“天下大势，分久必合，合久必分”的黄健宏</div>
+<div class="line">2024.3.27</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

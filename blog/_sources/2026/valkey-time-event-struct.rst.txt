@@ -1,0 +1,105 @@
+Valkey源码剖析（6）：时间事件的表示
+=======================================
+
+Valkey的时间事件使用\ ``ae.h/aeTimeEvent``\ 结构表示：
+
+.. code:: c
+
+   typedef struct aeTimeEvent {
+       // 标识符
+       long long id; /* time event identifier. */
+       // 就绪时间
+       monotime when;
+       // 事件处理函数
+       aeTimeProc *timeProc;
+       // 事件收尾函数
+       aeEventFinalizerProc *finalizerProc;
+       // 客户端数据
+       void *clientData;
+       // 用于将多个时间事件串联起来形成链表的前置指针和后置指针
+       struct aeTimeEvent *prev;
+       struct aeTimeEvent *next;
+       // 引用计数
+       int refcount; /* refcount to prevent timer events from being
+                      * freed in recursive time event calls. */
+   } aeTimeEvent;
+
+结构中的\ ``id``\ 属性用于标识时间事件，\ ``when``\ 属性用于记录事件的就绪事件，\ ``timeProc``\ 函数和\ ``finalizerProc``\ 函数分别用于处理和收尾事件，而\ ``prev``\ 和\ ``next``\ 则用于串联起多个时间事件从而形成链表。
+
+Valkey服务器在启动时，会通过\ ``server.c/initServer()``\ 调用\ ``ae.c/aeCreateTimeEvent()``\ 函数，创建两个时间事件：
+
+.. code:: c
+
+   void initServer(void) {
+       // ...
+       
+       /* Create the timer callback, this is our way to process many background
+        * operations incrementally, like eviction of unaccessed expired keys, etc. */
+       // 创建定时器回调，以便处理后台的渐进式操作，比如废弃无需访问的过期键等。
+       if (aeCreateTimeEvent(server.el, 1, serverCron, NULL, NULL) == AE_ERR) {
+           serverPanic("Can't create serverCron timer.");
+           exit(1);
+       }
+       /* A separate timer for client maintenance.  Runs at a variable speed depending
+        * on the client count. */
+       // 独立的客户端维护定时器，其运行速度会随着客户端的数量而变化
+       if (aeCreateTimeEvent(server.el, 1, clientsTimeProc, NULL, NULL) == AE_ERR) {
+           serverPanic("Can't create event clientsTimeProc timer.");
+           exit(1);
+       }
+       
+       // ...
+   }
+
+第一个时间事件\ ``server.c/serverCron()``\ 是服务器的定时任务（cron
+job）函数，用于定期维护和清理与服务器相关的各项资源，并按需触发各种后台操作：
+
+.. code:: c
+
+   long long serverCron(struct aeEventLoop *eventLoop, long long id, void *clientData) {
+       // ...
+   }
+
+以下是\ ``serverCron()``\ 函数需要完成的一些工作：
+
+-  主动收集数据库中已过期的键
+-  检测并更新服务器状态、统计数据等
+-  推进对数据库哈希表的渐进式更新
+-  触发\ ``BGSAVE``\ 、\ ``BGREWRITEAOF``\ 等操作，并处理由此引发的子进程
+-  重新连接已断开的复制节点
+
+等等。
+
+第二个时间事件\ ``server.c/clientsTimeProc()``\ 函数是\ ``server.c/clientsCron()``\ 函数的包装器，前者会根据服务器目前已连接客户端的数量等因素来决定后者每次调用时需要处理的客户端数量：
+
+.. code:: c
+
+   long long clientsTimeProc(struct aeEventLoop *eventLoop, long long id, void *clientData) {
+       // ...
+       
+       // 处理指定数量的客户端
+       clientsCron(clients_this_cycle);
+       
+       // ...
+   }
+
+``clientsCron()``\ 是服务器的客户端维护定时任务函数，用于定期维护和清理与客户端相关的各项资源：
+
+.. code:: c
+
+   static void clientsCron(int clients_this_cycle) {
+       // ...
+   }
+
+``clientsCron()``\ 函数会根据传入的\ ``clients_this_cycle``\ 参数，检查指定数量的客户端，并在有需要时执行以下操作：
+
+-  取消已超时的被阻塞客户端
+-  调整客户端的查询缓冲区大小
+-  调整客户端的回复缓冲区大小
+-  记录内存占用较高的客户端
+-  释放内存占用超限的客户端
+
+好的，关于时间事件的表示就介绍到这里，接下来的文章将会介绍Valkey处理事件的流程。
+
+| 黄健宏
+| 2025.12.28

@@ -1,0 +1,31 @@
+《Redis应用实例》书摘（8）：自动递增数字ID生成器（哈希实现）
+========================================================================
+
+跟字符串键实现的ID生成器相比，使用哈希键实现ID生成器的好处是可以将多个相关的ID生成器放到同一个键里面进行管理。
+
+代码清单 CODE_HASH_ID_GENERATOR 展示了基于哈希键实现的自增数字ID序列生成器。
+
+----
+
+代码清单 CODE_HASH_ID_GENERATOR 使用哈希键实现的ID生成器\ ``hash_id_generator.py``
+
+.. literalinclude:: code/hash_id_generator.py
+
+----
+
+作为例子，以下这段代码展示了这个ID生成器程序的具体用法：
+
+.. code:: python
+
+   >>> from redis import Redis
+   >>> from hash_id_generator import HashIdGenerator
+   >>> client = Redis(decode_responses=True)
+   >>> gen = HashIdGenerator(client, "UserID_Coll")
+   >>> gen.reserve("PostID", 1000000)
+   True
+   >>> gen.produce("PostID")
+   1000001
+   >>> gen.produce("PostID")
+   1000002
+
+.. include:: rediscookbook-promote.rst

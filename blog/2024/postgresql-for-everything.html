@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>使用PostgreSQL简化你的技术栈 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="如何选择合适的数据库（三）：对比MariaDB和MySQL" href="mariadb-vs-mysql.html" />
+    <link rel="prev" title="Redis 7.4 RC1发布，支持为哈希字段单独设置过期时间" href="hash-ttl.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">使用PostgreSQL简化你的技术栈</a><ul>
+<li><a class="reference internal" href="#id1">技术栈膨胀是如何产生的</a></li>
+<li><a class="reference internal" href="#id2">为什么技术栈膨胀会造成问题</a></li>
+<li><a class="reference internal" href="#id3">如何简化技术栈</a></li>
+<li><a class="reference internal" href="#id4">反方观点：为什么不用专门的工具来解决专门的问题？</a></li>
+<li><a class="reference internal" href="#id5">总结陈词</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="hash-ttl.html" title="Previous Chapter: Redis 7.4 RC1发布，支持为哈希字段单独设置过期时间"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; Redis 7.4 RC1...</span>
+    </a>
+  </li>
+  <li>
+    <a href="mariadb-vs-mysql.html" title="Next Chapter: 如何选择合适的数据库（三）：对比MariaDB和MySQL"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">如何选择合适的数据库（三）... &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="postgresql">
+<h1>使用PostgreSQL简化你的技术栈<a class="headerlink" href="#postgresql" title="Link to this heading">¶</a></h1>
+<img alt="../_images/pg-for-everything.png" src="../_images/pg-for-everything.png" />
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>本文编译自<a class="reference external" href="https://www.timescale.com/blog/how-to-collapse-your-stack-using-postgresql-for-everything/?utm_source=twitter&amp;utm_medium=social&amp;utm_campaign=pg-4-everything&amp;utm_content=collapse-your-stack">Timescale公司的技术博客</a>，略有删改。</p>
+</div>
+<p>最近PostgreSQL社区兴起了一股“<strong>使用PostgreSQL解决所有问题</strong>（PostgreSQL for everything）”的热潮，鼓励人们尽可能地使用PostgreSQL去解决自己遇到的问题。
+这样的想法其实并不新鲜，但随着PostgreSQL的不断普及，类似的行动正逐渐受到人们的关注。</p>
+<p>作为一个在职业生涯的大部分时间里都在部署各种数据库的人，下面是我对“使用PostgreSQL解决所有问题”这一想法的理解，以及它如何能够让你的世界重回简单。</p>
+<section id="id1">
+<h2>技术栈膨胀是如何产生的<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>假设你现在正着手开发一种新产品或者新特性。刚开始的时候，你的团队列出了需要解决的技术问题。其中有些解决方案需要由你们自己开发，这也是你们的秘密武器，而另一些则需要使用现有的技术来解决，其中可能至少需要用到一个数据库。</p>
+<p>除非你从事的是构建数据库的业务，否则自行开发数据库通常并不是一个好主意：这既复杂又颇具风险，而且需要非常专业的技能。因此，你最终可能会选择采用各种现有的数据库：比如使用PostgreSQL处理事务数据，使用Elastic处理全文搜索，使用Influx处理时间序列，使用Pinecone执行向量操作，甚至还会使用ClickHouse执行数据分析。</p>
+<p>突然之间，你的技术栈膨胀得巨大无比，感觉随时都会爆炸。</p>
+</section>
+<section id="id2">
+<h2>为什么技术栈膨胀会造成问题<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>技术栈每增加一个数据库，都会带来一系列挑战：你需要学习不同的语言，需要理解一致性模型，还有不容忽视的操作上的细微差别。这不仅增加了复杂性，还带来了我所说的“虚线”复杂性，即数据在每对系统之间流动时产生的额外开销。数据库越多，这种“虚线”就越多，也就越难推理出系统的整体状态。</p>
+<p>不断膨胀的数据库数量也会带来越来越多的问题。</p>
+</section>
+<section id="id3">
+<h2>如何简化技术栈<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>那么有别的路可走吗？在我看来，你能做的就是简化你的技术栈。如果你可以只用一个数据库来解决多个问题，那么自然就不需要用到那么多复杂的软件，因此也就避免了它们之间的“虚线”复杂性。这样你就可以更容易地在头脑中保持数据流的心智模型，并且更好地推理数据在不同时间中的一致性。你不必再把时间花在操作各式各样的数据库上面，而是可以专心致志地构建真正的特性。</p>
+<p>PostgreSQL非常适合用来简化技术栈，因为它同时具备通用性和专用性。它除了是一个出色的关系数据库之外，还能够通过先进的扩展架构广泛支持各种用例。它可以轻松地处理诸如全文搜索、时间序列数据、AI向量和数据分析等多种工作负载。</p>
+<p>PostgreSQL不仅用途广泛，而且稳健成熟。人们在生产中运行PostgreSQL已经有20多年的历史，采用PostgreSQL的例子正在变得越来越常见，并且这种趋势还在越演越烈。PostgreSQL的边际情况（edge
+case）已经被探明，其部署模式、恢复策略和高可用性都有良好的定义，而且在使用PostgreSQL的路上还有很多公司和支持者陪伴你一路同行。</p>
+<p>因此，我鼓励你使用PostgreSQL来解决尽可能多的问题，从而简化系统的技术栈，降低其复杂性，以便将更多时间专注于构建。</p>
+</section>
+<section id="id4">
+<h2>反方观点：为什么不用专门的工具来解决专门的问题？<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>有一种众所周知的说法——你应该选择“最适合当前任务的工具”，以避免“如果你只有一把锤子，那么所有东西看上去都像是钉子”的情况。但我认为“使用PostgreSQL解决所有问题”的原则与此并不矛盾，只要你确保从全局出发即可。</p>
+<p>如何定义“最适合任务的数据库”？它应该是速度最快的、最易用的、容错能力最强的，还是你会使用的、最能够与现有基础架构无缝集成的数据库？最佳选择通常介于这些标准之间。</p>
+<p>是选择速度快的X数据库，还是选择效率高的Y数据库，又或者选择云优化的Z数据库？如果历史悠久、久经考验并且易于扩展的PostgreSQL能够满足你现在的需求，那么使用PostgreSQL何尝不是一种最佳选择呢。这样一来，只有当PostgreSQL缺乏关键功能时，你才需要考虑添加其他数据库，并权衡其好处与管理多个系统所增加的复杂性。</p>
+<p>让我们考虑不同决策可能导致的未来：</p>
+<ol class="arabic simple">
+<li><p><strong>使用PostgreSQL解决所有问题</strong>：可能在多年以后，系统的工作负载将超过它设计时的能力。这时，PostgreSQL可能会在某些方面表现不佳，但这是个“好事情”——这是成功的标志，也是发展架构的提示。</p></li>
+<li><p><strong>同时使用多个数据库</strong>：尽管系统的架构可以处理巨大的规模，但系统本身却非常脆弱，充满各种边际情况，而且难以维护。这不仅具有挑战性，而且还会威胁到运营的稳定性。</p></li>
+</ol>
+<p>考虑到这些情况，以PostgreSQL为中心的系统在理论上面临的挑战，要比过早地选择多数据库架构带来的复杂性要好得多。</p>
+</section>
+<section id="id5">
+<h2>总结陈词<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>“使用PostgreSQL解决所有问题”并不是说永远不用其他数据库。老实说，它甚至不是说什么都要用PostgreSQL。这是一条反对过早设计解决方案的格言，也是简洁性优势的倡导者。对于世界上的大多数公司和应用程序来说，只要得到像Timescale这样的公司的帮助，就能够将PostgreSQL扩展至他们所需的规模。</p>
+<p>如果你也有扩展PostgreSQL方面的需求，那么请务必尝试使用Timescale。立即创建免费帐户，开始简化您的数据技术栈。</p>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2024.5.24</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

@@ -1,0 +1,471 @@
+Redis 7.0 RC1 释出报告
+============================
+
+.. note::
+
+    本文由黄健宏翻译自 https://groups.google.com/g/redis-db/c/TCvnO4Wu8Zg/m/nQv_rLqsBwAJ ，
+    有删改。
+
+近日，
+Redis 开发团队释出了 Redis 7.0 的首个候选版本（RC），
+该版本可以从 https://github.com/redis/redis/releases/tag/7.0-rc1 获取。
+
+Redis 7.0 包含数个全新的面向用户的功能，
+显著的性能优化以及其他改进。
+此外它还包含了一些可能导致以往版本无法兼容的一些问题，
+特别地，
+用户需要注意到以下变化：
+
+1. Redis 7 会将 AOF 数据储存在同一个文件夹的多个文件里面，
+   详见下面的”多部分AOF“介绍。
+
+2. Redis 7 使用了最新的第 10 版 RDB 文件，
+   该版本与以往版本不兼容。
+
+3. Redis 7 会在载入旧版 RDB 文件时自动将 ziplist 编码的键转换为 listpack 编码。
+   这种转换不仅会在从磁盘文件中载入数据时发生，
+   还会在从服务器复制主服务器时发生，
+   并且这种转换会轻微地增加载入时间。
+
+4. 请参见下面的”不兼容变化“部分以了解更多可能的兼容问题。
+
+
+新特性
+-------------
+
+- Redis 函数：
+  一种扩展 Redis 服务器端脚本的全新方法(#8693)。
+  详见：
+  https://redis.io/topics/functions-intro 。
+
+- ACL ：
+  基于秘钥的细粒度权限，
+  并允许用户使用支持带有多种选择器的命令规则组合(#9974)。
+  详见：
+  https://redis.io/topics/acl#key-permissions 以及
+  https://redis.io/topics/acl#selectors 。
+
+- 集群：基于节点的分片以及发布与订阅支持(#8621)。
+  详见：
+  https://redis.io/topics/pubsub#sharded-pubsub 。
+
+- 在 ACL 分类、INFO 命令数据统计等绝大多数上下文中，
+  以相当于普通命令的方式处理子命令(#9504, #10147)。
+
+- 命令元数据和文档(#10104)。
+  详见：
+  https://redis.io/commands/command-docs 和 https://redis.io/topics/command-tips 。
+
+- 命令键规范——一种让客户端更好地定位键参数和它们读写目的的方法(#8324, #10122, #10167)。
+  详见：
+  https://redis.io/topics/key-specs 。
+
+- 通过多部分 AOF 机制避免重写的过度消耗(#9788)。
+
+- 集群：现在支持为主机设置名字，而不仅仅是使用 IP 地址(#9530)。
+
+- 改善了网络缓冲区内存消耗的管理，
+  并且提供了一个选项以便在客户端的总内存超过限制时断开该客户端(#8687)。
+
+- 集群：
+  增加了一种断开集群总线连接的机制，
+  以避免不受控的缓冲区增长(#9774)。
+
+- AOF：
+  现在拥有时间戳注解并且支持时间点恢复(#9326)。
+
+- Lua：
+  支持在 EVAL 脚本中使用 Redis 函数标志(#10126)。
+  详见：
+  https://redis.io/topics/eval-intro#eval-flags 。
+
+- Lua：
+  为 Verbatim 和 Big-Number 类型提供 RESP3 回复支持(#9202)。
+
+- Lua：
+  支持通过 redis.REDIS_VERSION 和 redis.REDIS_VERSION_NUM (#10066) 获取 Redis 版本号。
+
+
+新用户命令和命令参数
+-----------------------
+
+- ZMPOP, BZMPOP 命令(#9484)。
+
+- LMPOP, BLMPOP 命令(#9373)。
+
+- SINTERCARD, ZINTERCARD 命令(#8946, #9425)。
+
+- SPUBLISH, SSUBSCRIBE, SUNSUBSCRIBE, PUBSUB SHARDCHANNELS/SHARDNUMSUB 命令(#8621)。
+
+- EXPIRETIME 和 PEXPIRETIME 命令(#8474)。
+
+- EXPIRE 命令群现在支持 NX/XX/GT/LT 等选项(#2795)。
+
+- SET 命令支持组合使用 NX 和 GET 标志(#8906)。
+
+- BITPOS, BITCOUNT 命令接受 BIT 索引(#9324)。
+
+- 在只读的从服务器上运行的 EVAL_RO, EVALSHA_RO 命令变种(#8820)。
+
+- 在只读的从服务器上运行的 SORT_RO (#9299)。
+
+- SHUTDOWN 命令的 NOW, FORCE, ABORT 参数(#9872)。
+
+- FUNCTION \*, FCALL, FCALL_RO 命令，详见：https://redis.io/commands/function-load 。
+
+- CONFIG SET/GET 可以在单次调用中自动处理多个配置选项(#9748, #9914)。
+
+- QUIT 被提升为普通命令，而 HOST 和 POST 则被降级(#9798)。
+
+- XADD 通过 -* 支持自动序列号码(#9217)。
+
+
+新管理命令和自省命令以及命令参数
+--------------------------------------
+
+- COMMAND DOCS 命令(#9656, #10056, #10104)。
+
+- COMMAND LIST 命令(#9504)。
+
+- COMMAND INFO 接受子命令作为参数，也可以不给定任何参数(#9504, #10056)。
+
+- LATENCY HISTOGRAM 命令(#9462)。
+
+- CLUSTER LINKS 命令(#9774)。
+
+- CLUSTER DELSLOTSRANGE 以及 CLUSTER ADDSLOTSRANGE 命令(#9445)。
+
+- CLIENT NO-EVICT 命令(#8687)。
+
+- ACL DRYRUN 命令(#9974)。
+
+- SLOWLOG GET 支持传递 -1 以便获取所有条目(#9018)。
+
+
+那些被扩展了回复的命令
+--------------------------------
+
+- COMMAND and COMMAND INFO extended with tips, key-specs and sub-commands
+  see https://redis.io/commands/command
+
+- ACL CAT, COMMAND LIST list sub-commands (#10127)
+
+- MODULE LIST reply includes path and args (#4848)
+
+- OBJECT ENCODING returns listpack instead of ziplist (#8887, #9366)
+
+- CLUSTER SLOTS hostname support (#9530)
+
+- COMMAND command: Added the blocking and module flags (#10104, #9656)
+
+
+潜在的不兼容修改
+------------------------
+
+
+- Modifying the bind parameter to a non-default value will no longer implicitly disable protected-mode (#9034)
+
+- Remove EVAL script verbatim replication, propagation, and deterministic execution logic (#9812)
+  This has been deprecated and off by default since Redis 6 and is no longer supported.
+
+- ACL: pub/sub channels are blocked by default (acl-pubsub-default=resetchannels) (#10181)
+
+- SCRIPT LOAD and SCRIPT FLUSH are no longer propagated to replicas / AOF (#9812)
+
+- ACL: Declarations of duplicate ACL users in startup files and command line arguments will result in an error, whereas previously the last declaration would overwrite the others. (#9330)
+
+- Replication: TTLs are always replicated as absolute (not relative) millisecond timestamps (#8474)
+
+- Fixes in handling multi-key commands with expired keys on writable replicas (#9572)
+
+- CONFIG SET maxmemory returns before starting eviction (#10019)
+
+- AOF: The new Multi-Part mechanism stores data as a set of multiple files in a designated folder (#9788)
+
+- Remove STRALGO command, preserve LCS a standalone command which only works on keys (#9799)
+
+- Remove gopher protocol support (#9057)
+
+- MODULE and DEBUG commands disabled (protected) by default, for better security (#9920)
+
+- Snapshot-creating and other admin commands in MULTI/EXEC transactions are now rejected (#10015)
+
+- PING is now rejected with -MASTERDOWN when replica-serve-stale-data=no (#9757)
+
+- ACL GETUSER reply now uses ACL syntax for keys and channels (#9974)
+
+- COMMAND reply drops random and sort-for-scripts flags, which are now part of command tips (#10104)
+
+- LPOP/RPOP with count against non-existing list return null array (#10095)
+
+- INFO commandstats now shows the stats per sub-command (#9504)
+
+- ZPOPMIN/ZPOPMAX used to produce wrong replies when count is 0 with non-zset (#9711)
+
+- LPOP/RPOP used to produce wrong replies when count is 0 (#9692)
+
+- CONFIG GET bind now returns the current value in effect, even if the implicit default is in use (#9034)
+
+- CONFIG REWRITE now rewrites the list of modules to load (#4848)
+
+- Config: repl-diskless-sync is now set to yes by default (#10092)
+
+- When shutting down, Redis can optionally wait for replicas to catch up on the replication link (#9872)
+
+- Most CONFIG SET, REWRITE, RESETSTAT commands are now allowed during loading (#9878)
+
+- READONLY and READWRITE commands are now allowed when loading and on stale replicas (#7425)
+
+- Fix ACL category for SELECT, WAIT, ROLE, LASTSAVE, READONLY, READWRITE, ASKING (#9208)
+
+- RESET is now allowed even when on unauthenticated connections (#9798)
+
+- SCRIPT LOAD is now allowed on stale replicas (#10126)
+
+
+安全性改进
+------------
+
+- Sensitive configs and commands blocked (protected) by default (#9920)
+
+- Improve bind and protected-mode config handling (#9034)
+
+- Sentinel: avoid logging auth-pass value (#9652)
+
+- redis-cli: sensitive commands bypass the history file (#8895)
+
+
+性能和资源应用改进
+-----------------------
+
+
+- Significant memory saving and latency improvements in cluster mode (#9356)
+
+- Significant memory savings in case of many hash or zset keys (#9228)
+
+- Replication backlog and replicas use one global shared replication buffer (#9166)
+
+- Significant reduction of copy-on-write memory overheads (#8974)
+
+- Free unused capacity in the cluster send buffer (#9255)
+
+- Memory efficiency, make full use of client struct memory for reply buffers (#8968)
+
+- Replace ziplist with listpack in Hash, List, Zset (#8887, #9366, #9740)
+
+- Add support for list type to store elements larger than 4GB (#9357)
+
+- Reuse temporary client objects for blocked clients by module (#9940)
+
+- Remove command argument count limit, dynamically grow argv buffer (#9528)
+
+- Optimize list type operations to seek from the nearest end (#9454)
+
+- Improvements in fsync to avoid large writes to disk (#9409)
+
+- BITSET and BITFIELD SET only propagated when the value actually changed (#9403)
+
+- Improve latency when a client is unblocked by module timer (#9593)
+
+
+其他通用改进
+----------------
+
+- Make partial sync possible after master reboot (#8015)
+
+- Always create a base AOF file when redis starts from empty (#10102)
+
+- Replica keep serving data during repl-diskless-load=swapdb for better availability (#9323)
+
+
+命令行工具的改变
+-------------------
+
+- redis-cli --json, and -2 options (#9954)
+
+- redis-cli --scan, add sleep interval option (#3751)
+
+- redis-cli --replica optimization, skip RDB generation (#10044)
+
+- redis-cli --functions-rdb, generate RDB with Functions only (#9968)
+
+- redis-cli -X, take an arbitrary arg from stdin, extend --cluster call take -x (#9980)
+
+- redis-benchmark -x takes an argument from stdin (#9130)
+
+- redis-benchmark, Added URI support (#9314)
+
+- redis-cli monitor and pubsub can be aborted with Ctrl+C, keeping the cli alive (#9347)
+
+
+平台/工具链支持的相关改进
+-------------------------------
+
+- Upgrade jemalloc 5.2.1 (#9623)
+
+- Fix RSS metrics on NetBSD and OpenBSD (#10116, #10149)
+
+- Check somaxconn system settings on macOS, FreeBSD and OpenBSD (#9972)
+
+- Better fsync on MacOS, improve power failure safety (#9545)
+
+
+新的配置选项
+--------------
+
+- CONFIG SET/GET can handle multiple configs in one call (#9748, #9914)
+
+- Support glob pattern matching for config include files (#8980)
+
+- appenddirname, folder where multi-part AOF files are stored (#9788)
+
+- shutdown-timeout, default 10 seconds (#9872)
+
+- maxmemory-clients, allows limiting the total memory usage by all clients (#8687)
+
+- cluster-port, can control the bind port of cluster bus (#9389)
+
+- bind-source-addr, configuration argument control IP of outgoing connections (#9142)
+
+- busy-reply-threshold, alias for the old lua-time-limit (#9963)
+
+- repl-diskless-sync-max-replicas, allows faster replication in some cases (#10092)
+
+- latency-tracking, enabled by default, and latency-tracking-info-percentiles (#9462)
+
+- cluster-announce-hostnameand cluster-preferred-endpoint-type (#9530)
+
+- cluster-allow-pubsublocal-when-down (#8621)
+
+- cluster-link-sendbuf-limit (#9774)
+
+- list-max-listpack-, hash-max-listpack-, zset-max-listpack-* as aliases for the old ziplist configs (#8887, #9366, #9740)
+
+
+INFO 命令的字段以及自省相关的修改
+--------------------------------------
+
+- INFO: latencystats section (#9462)
+
+- INFO: total_active_defrag_time and current_active_defrag_time (#9377)
+
+- INFO: total_eviction_exceeded_time and current_eviction_exceeded_time (#9031)
+
+- INFO: evicted_clients (#8687)
+
+- INFO: mem_cluster_links, total_cluster_links_buffer_limit_exceeded (#9774)
+
+- INFO: current_cow_peak (#8974)
+
+- INFO: Remove aof_rewrite_buffer_length (#9788)
+
+- MEMORY STATS: Report slot to keys map size in in cluster mode (#10017)
+
+- INFO MEMORY: changes to separate memory usage of Functions and EVAL (#9780)
+
+- INFO MEMORY: Add mem_total_replication_buffers, change meaning of mem_clients_slaves (#9166)
+
+- CLIENT LIST: tot-mem, multi-mem (#8687)
+
+- CLIENT LIST, INFO: Show RESP version (#9508)
+
+- SENTINEL INFO: tilt_mode_since (#9000)
+
+- LATENCY: Track module-acquire-GIL latency (#9608)
+
+
+模块 API 修改
+------------------
+
+- Add API for replying with RESP3 types (#8521, #9639, #9632)
+
+- Add API for parsing RESP3 replies from RM_Call (#9202)
+
+- Add RM_Call '0' and '3' flags to control RESP version to be used (#9202)
+
+- Add Support for validating ACL explicitly (#9309, #9974)
+
+- Add missing list type functionality APIs (#8439)
+
+- Add API for yielding to Redis events during long busy jobs (#9963)
+
+- Add API for registering other file descriptors to the Redis event loop (#10001)
+
+- Enhance mem_usage/free_effort/unlink/copy and IO callbacks to have key name and DB index (#8999)
+
+- Enhance mem_usage callback to get the requested sample size (#9612)
+
+- RM_GetContextFlags: CTX_FLAGS_ASYNC_LOADING, CTX_FLAGS_RESP3 (#9323, #9202)
+
+- Mark APIs as non-experimental (#9983)
+
+- RM_CreateSubcommand (#9504)
+
+- RM_KeyExists (#9600)
+
+- RM_TrimStringAllocation (#9540)
+
+- RM_LoadDataTypeFromStringEncver (#9537)
+
+- RM_MonotonicMicroseconds (#10101)
+
+- Add ReplAsyncLoad event and deprecate the ReplBackup event (#9323)
+
+- Add RM_SetModuleOptions OPTIONS_HANDLE_REPL_ASYNC_LOAD flag (#9323)
+
+
+BUG 修复
+------------
+
+- Fix COMMAND GETKEYS on EVAL without keys (#9733)
+
+- Improve MEMORY USAGE with allocator overheads (#9095)
+
+- Unpause clients after manual failover ends instead of waiting for timed (#9676)
+- Lua: fix crash on a script call with many arguments, a regression in v6.2.6 (#9809)
+- Lua: Use all characters to calculate string hash to prevent hash collisions (#9449)
+- Prevent LCS from allocating temp memory over proto-max-bulk-len (#9817)
+- Tracking: Make invalidation messages always after command's reply (#9422)
+- Cluster: Hide empty replicas from CLUSTER SLOTS responses (#9287)
+- CLIENT KILL killed all clients when used with ID of 0 (#9853)
+- Fix bugs around lists with list-compress-depth (#9849, #9779)
+- Fix one in a blue moon LRU bug in RESTORE, RDB loading, and module API (#9279)
+- Reset lazyfreed_objects info field with RESETSTAT, test for stream lazyfree (#8934)
+- Fix RDB and list node compression for handling values larger than 4GB (#9776)
+- Fix a crash when adding elements larger than 2GB to a Set or Hash (#9916)
+- Diskless replication could not count as a change and skip next database SAVE (#9323)
+- Fix excessive stream trimming due to an overflow (#10068)
+- Safe and organized exit when receiving SIGTERM while loading (#10003)
+- Improve EXPIRE TTL overflow detection (#9839)
+- Add missed error counting for INFO errorstats (#9646)
+- DECRBY LLONG_MIN caused negation overflow (#9577)
+- Delay discarding cached master when full synchronization (#9398)
+- Fix Stream keyspace notification and persistence triggers in consumer creation and deletion (#9263)
+- Fix rank overflow in zset with more than 2B entries (#9249)
+- Avoid starting in check-aof / check-rdb / sentinel modes if only the folder name contains that name (#9215, #9176)
+- create the log file only after done parsing the entire config file (#6741)
+- redis-cli: Fix SCAN sleep interval for --bigkeys, --memkeys, --hotkeys (#9624)
+- redis-cli: Fix prompt to show the right DB num and transaction state after RESET (#9096)
+- Module API: fix possible propagation bugs in case a module calls CONFIG SET maxmemory outside a command (#10019, #9890)
+- Module API: carry through client RESP version to module blocked clients (#9634)
+- Module API: release clients blocked on module commands in cluster resharding and down state (#9483)
+- Sentinel: Fix availability after master reboot (#9438)
+- Sentinel: Fix memory leak with TLS (#9753)
+- Sentinel: Fix possible failover due to duplicate zero-port (#9240)
+- Sentinel: Fix issues with hostname support (#10146)
+- Sentinel: Fix election failures on certain container environments (#10197)
+
+
+已知问题
+-----------
+
+This is a list of known issues that affect this release, and are planned to be
+fixed or completed before Redis 7 is officially released:
+
+- Module APIs for modules to provide additional command meta-data are still missing.
+- Module APIs for supporting the new ACL selectors are still missing.
+- ACL key access selectors do not yet apply to SORT with GET/BY does.
+- Multi-Part AOF support in redis-check-aof is still missing.
+
+| 干杯，
+| Redis 核心团队

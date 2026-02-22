@@ -1,0 +1,35 @@
+Valkey源码剖析（17）：对象的表示
+================================
+
+Valkey中的每个对象都由一个\ ``server.h/serverObject``\ 结构表示，该结构的完整定义如下：
+
+.. code:: c
+
+   struct serverObject {
+       // 类型
+       unsigned type : 4;
+       // 编码（实现方式）
+       unsigned encoding : 4;
+       unsigned lru : LRU_BITS; /* LRU time (relative to global lru_clock) or
+                                 * LFU data (least significant 8 bits frequency
+                                 * and most significant 16 bits access time). */
+       // 过期时间标识
+       unsigned hasexpire : 1;
+       // 内嵌键标识
+       unsigned hasembkey : 1;
+       // 引用计数
+       unsigned refcount : OBJ_REFCOUNT_BITS;
+       // 对象指针
+       void *ptr;
+   };
+
+这个结构中最重要的就是\ ``type``\ 、\ ``encoding``\ 和\ ``ptr``\ 三个属性，其中\ ``type``\ 和\ ``encoding``\ 分别用于记录对象的类型和编码，而\ ``ptr``\ 属性则指向对象的实体，比如说：
+
+-  当对象是一个字符串对象时，\ ``ptr``\ 属性指向的通常就是一个SDS实例；
+
+-  当对象是一个哈希对象时，\ ``ptr``\ 属性指向的通常就是一个哈希表实例；
+
+诸如此类。
+
+| 黄健宏
+| 2026.1.12

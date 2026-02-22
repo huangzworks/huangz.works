@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Redis 7.0 RC1 释出报告 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="2021" href="../2021/index.html" />
+    <link rel="prev" title="Redis 7.0 新增管理命令简介" href="redis7-admin-commands.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Redis 7.0 RC1 释出报告</a><ul>
+<li><a class="reference internal" href="#id1">新特性</a></li>
+<li><a class="reference internal" href="#id2">新用户命令和命令参数</a></li>
+<li><a class="reference internal" href="#id3">新管理命令和自省命令以及命令参数</a></li>
+<li><a class="reference internal" href="#id4">那些被扩展了回复的命令</a></li>
+<li><a class="reference internal" href="#id5">潜在的不兼容修改</a></li>
+<li><a class="reference internal" href="#id6">安全性改进</a></li>
+<li><a class="reference internal" href="#id7">性能和资源应用改进</a></li>
+<li><a class="reference internal" href="#id8">其他通用改进</a></li>
+<li><a class="reference internal" href="#id9">命令行工具的改变</a></li>
+<li><a class="reference internal" href="#id10">平台/工具链支持的相关改进</a></li>
+<li><a class="reference internal" href="#id11">新的配置选项</a></li>
+<li><a class="reference internal" href="#info">INFO 命令的字段以及自省相关的修改</a></li>
+<li><a class="reference internal" href="#api">模块 API 修改</a></li>
+<li><a class="reference internal" href="#bug">BUG 修复</a></li>
+<li><a class="reference internal" href="#id12">已知问题</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="redis7-admin-commands.html" title="Previous Chapter: Redis 7.0 新增管理命令简介"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; Redis 7.0 新增管理命令简介</span>
+    </a>
+  </li>
+  <li>
+    <a href="../2021/index.html" title="Next Chapter: 2021"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">2021 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="redis-7-0-rc1">
+<h1>Redis 7.0 RC1 释出报告<a class="headerlink" href="#redis-7-0-rc1" title="Link to this heading">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>本文由黄健宏翻译自 <a class="reference external" href="https://groups.google.com/g/redis-db/c/TCvnO4Wu8Zg/m/nQv_rLqsBwAJ">https://groups.google.com/g/redis-db/c/TCvnO4Wu8Zg/m/nQv_rLqsBwAJ</a> ，
+有删改。</p>
+</div>
+<p>近日，
+Redis 开发团队释出了 Redis 7.0 的首个候选版本（RC），
+该版本可以从 <a class="reference external" href="https://github.com/redis/redis/releases/tag/7.0-rc1">https://github.com/redis/redis/releases/tag/7.0-rc1</a> 获取。</p>
+<p>Redis 7.0 包含数个全新的面向用户的功能，
+显著的性能优化以及其他改进。
+此外它还包含了一些可能导致以往版本无法兼容的一些问题，
+特别地，
+用户需要注意到以下变化：</p>
+<ol class="arabic simple">
+<li><p>Redis 7 会将 AOF 数据储存在同一个文件夹的多个文件里面，
+详见下面的”多部分AOF“介绍。</p></li>
+<li><p>Redis 7 使用了最新的第 10 版 RDB 文件，
+该版本与以往版本不兼容。</p></li>
+<li><p>Redis 7 会在载入旧版 RDB 文件时自动将 ziplist 编码的键转换为 listpack 编码。
+这种转换不仅会在从磁盘文件中载入数据时发生，
+还会在从服务器复制主服务器时发生，
+并且这种转换会轻微地增加载入时间。</p></li>
+<li><p>请参见下面的”不兼容变化“部分以了解更多可能的兼容问题。</p></li>
+</ol>
+<section id="id1">
+<h2>新特性<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Redis 函数：
+一种扩展 Redis 服务器端脚本的全新方法(#8693)。
+详见：
+<a class="reference external" href="https://redis.io/topics/functions-intro">https://redis.io/topics/functions-intro</a> 。</p></li>
+<li><p>ACL ：
+基于秘钥的细粒度权限，
+并允许用户使用支持带有多种选择器的命令规则组合(#9974)。
+详见：
+<a class="reference external" href="https://redis.io/topics/acl#key-permissions">https://redis.io/topics/acl#key-permissions</a> 以及
+<a class="reference external" href="https://redis.io/topics/acl#selectors">https://redis.io/topics/acl#selectors</a> 。</p></li>
+<li><p>集群：基于节点的分片以及发布与订阅支持(#8621)。
+详见：
+<a class="reference external" href="https://redis.io/topics/pubsub#sharded-pubsub">https://redis.io/topics/pubsub#sharded-pubsub</a> 。</p></li>
+<li><p>在 ACL 分类、INFO 命令数据统计等绝大多数上下文中，
+以相当于普通命令的方式处理子命令(#9504, #10147)。</p></li>
+<li><p>命令元数据和文档(#10104)。
+详见：
+<a class="reference external" href="https://redis.io/commands/command-docs">https://redis.io/commands/command-docs</a> 和 <a class="reference external" href="https://redis.io/topics/command-tips">https://redis.io/topics/command-tips</a> 。</p></li>
+<li><p>命令键规范——一种让客户端更好地定位键参数和它们读写目的的方法(#8324, #10122, #10167)。
+详见：
+<a class="reference external" href="https://redis.io/topics/key-specs">https://redis.io/topics/key-specs</a> 。</p></li>
+<li><p>通过多部分 AOF 机制避免重写的过度消耗(#9788)。</p></li>
+<li><p>集群：现在支持为主机设置名字，而不仅仅是使用 IP 地址(#9530)。</p></li>
+<li><p>改善了网络缓冲区内存消耗的管理，
+并且提供了一个选项以便在客户端的总内存超过限制时断开该客户端(#8687)。</p></li>
+<li><p>集群：
+增加了一种断开集群总线连接的机制，
+以避免不受控的缓冲区增长(#9774)。</p></li>
+<li><p>AOF：
+现在拥有时间戳注解并且支持时间点恢复(#9326)。</p></li>
+<li><p>Lua：
+支持在 EVAL 脚本中使用 Redis 函数标志(#10126)。
+详见：
+<a class="reference external" href="https://redis.io/topics/eval-intro#eval-flags">https://redis.io/topics/eval-intro#eval-flags</a> 。</p></li>
+<li><p>Lua：
+为 Verbatim 和 Big-Number 类型提供 RESP3 回复支持(#9202)。</p></li>
+<li><p>Lua：
+支持通过 redis.REDIS_VERSION 和 redis.REDIS_VERSION_NUM (#10066) 获取 Redis 版本号。</p></li>
+</ul>
+</section>
+<section id="id2">
+<h2>新用户命令和命令参数<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>ZMPOP, BZMPOP 命令(#9484)。</p></li>
+<li><p>LMPOP, BLMPOP 命令(#9373)。</p></li>
+<li><p>SINTERCARD, ZINTERCARD 命令(#8946, #9425)。</p></li>
+<li><p>SPUBLISH, SSUBSCRIBE, SUNSUBSCRIBE, PUBSUB SHARDCHANNELS/SHARDNUMSUB 命令(#8621)。</p></li>
+<li><p>EXPIRETIME 和 PEXPIRETIME 命令(#8474)。</p></li>
+<li><p>EXPIRE 命令群现在支持 NX/XX/GT/LT 等选项(#2795)。</p></li>
+<li><p>SET 命令支持组合使用 NX 和 GET 标志(#8906)。</p></li>
+<li><p>BITPOS, BITCOUNT 命令接受 BIT 索引(#9324)。</p></li>
+<li><p>在只读的从服务器上运行的 EVAL_RO, EVALSHA_RO 命令变种(#8820)。</p></li>
+<li><p>在只读的从服务器上运行的 SORT_RO (#9299)。</p></li>
+<li><p>SHUTDOWN 命令的 NOW, FORCE, ABORT 参数(#9872)。</p></li>
+<li><p>FUNCTION *, FCALL, FCALL_RO 命令，详见：<a class="reference external" href="https://redis.io/commands/function-load">https://redis.io/commands/function-load</a> 。</p></li>
+<li><p>CONFIG SET/GET 可以在单次调用中自动处理多个配置选项(#9748, #9914)。</p></li>
+<li><p>QUIT 被提升为普通命令，而 HOST 和 POST 则被降级(#9798)。</p></li>
+<li><p>XADD 通过 -* 支持自动序列号码(#9217)。</p></li>
+</ul>
+</section>
+<section id="id3">
+<h2>新管理命令和自省命令以及命令参数<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>COMMAND DOCS 命令(#9656, #10056, #10104)。</p></li>
+<li><p>COMMAND LIST 命令(#9504)。</p></li>
+<li><p>COMMAND INFO 接受子命令作为参数，也可以不给定任何参数(#9504, #10056)。</p></li>
+<li><p>LATENCY HISTOGRAM 命令(#9462)。</p></li>
+<li><p>CLUSTER LINKS 命令(#9774)。</p></li>
+<li><p>CLUSTER DELSLOTSRANGE 以及 CLUSTER ADDSLOTSRANGE 命令(#9445)。</p></li>
+<li><p>CLIENT NO-EVICT 命令(#8687)。</p></li>
+<li><p>ACL DRYRUN 命令(#9974)。</p></li>
+<li><p>SLOWLOG GET 支持传递 -1 以便获取所有条目(#9018)。</p></li>
+</ul>
+</section>
+<section id="id4">
+<h2>那些被扩展了回复的命令<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>COMMAND and COMMAND INFO extended with tips, key-specs and sub-commands
+see <a class="reference external" href="https://redis.io/commands/command">https://redis.io/commands/command</a></p></li>
+<li><p>ACL CAT, COMMAND LIST list sub-commands (#10127)</p></li>
+<li><p>MODULE LIST reply includes path and args (#4848)</p></li>
+<li><p>OBJECT ENCODING returns listpack instead of ziplist (#8887, #9366)</p></li>
+<li><p>CLUSTER SLOTS hostname support (#9530)</p></li>
+<li><p>COMMAND command: Added the blocking and module flags (#10104, #9656)</p></li>
+</ul>
+</section>
+<section id="id5">
+<h2>潜在的不兼容修改<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Modifying the bind parameter to a non-default value will no longer implicitly disable protected-mode (#9034)</p></li>
+<li><p>Remove EVAL script verbatim replication, propagation, and deterministic execution logic (#9812)
+This has been deprecated and off by default since Redis 6 and is no longer supported.</p></li>
+<li><p>ACL: pub/sub channels are blocked by default (acl-pubsub-default=resetchannels) (#10181)</p></li>
+<li><p>SCRIPT LOAD and SCRIPT FLUSH are no longer propagated to replicas / AOF (#9812)</p></li>
+<li><p>ACL: Declarations of duplicate ACL users in startup files and command line arguments will result in an error, whereas previously the last declaration would overwrite the others. (#9330)</p></li>
+<li><p>Replication: TTLs are always replicated as absolute (not relative) millisecond timestamps (#8474)</p></li>
+<li><p>Fixes in handling multi-key commands with expired keys on writable replicas (#9572)</p></li>
+<li><p>CONFIG SET maxmemory returns before starting eviction (#10019)</p></li>
+<li><p>AOF: The new Multi-Part mechanism stores data as a set of multiple files in a designated folder (#9788)</p></li>
+<li><p>Remove STRALGO command, preserve LCS a standalone command which only works on keys (#9799)</p></li>
+<li><p>Remove gopher protocol support (#9057)</p></li>
+<li><p>MODULE and DEBUG commands disabled (protected) by default, for better security (#9920)</p></li>
+<li><p>Snapshot-creating and other admin commands in MULTI/EXEC transactions are now rejected (#10015)</p></li>
+<li><p>PING is now rejected with -MASTERDOWN when replica-serve-stale-data=no (#9757)</p></li>
+<li><p>ACL GETUSER reply now uses ACL syntax for keys and channels (#9974)</p></li>
+<li><p>COMMAND reply drops random and sort-for-scripts flags, which are now part of command tips (#10104)</p></li>
+<li><p>LPOP/RPOP with count against non-existing list return null array (#10095)</p></li>
+<li><p>INFO commandstats now shows the stats per sub-command (#9504)</p></li>
+<li><p>ZPOPMIN/ZPOPMAX used to produce wrong replies when count is 0 with non-zset (#9711)</p></li>
+<li><p>LPOP/RPOP used to produce wrong replies when count is 0 (#9692)</p></li>
+<li><p>CONFIG GET bind now returns the current value in effect, even if the implicit default is in use (#9034)</p></li>
+<li><p>CONFIG REWRITE now rewrites the list of modules to load (#4848)</p></li>
+<li><p>Config: repl-diskless-sync is now set to yes by default (#10092)</p></li>
+<li><p>When shutting down, Redis can optionally wait for replicas to catch up on the replication link (#9872)</p></li>
+<li><p>Most CONFIG SET, REWRITE, RESETSTAT commands are now allowed during loading (#9878)</p></li>
+<li><p>READONLY and READWRITE commands are now allowed when loading and on stale replicas (#7425)</p></li>
+<li><p>Fix ACL category for SELECT, WAIT, ROLE, LASTSAVE, READONLY, READWRITE, ASKING (#9208)</p></li>
+<li><p>RESET is now allowed even when on unauthenticated connections (#9798)</p></li>
+<li><p>SCRIPT LOAD is now allowed on stale replicas (#10126)</p></li>
+</ul>
+</section>
+<section id="id6">
+<h2>安全性改进<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Sensitive configs and commands blocked (protected) by default (#9920)</p></li>
+<li><p>Improve bind and protected-mode config handling (#9034)</p></li>
+<li><p>Sentinel: avoid logging auth-pass value (#9652)</p></li>
+<li><p>redis-cli: sensitive commands bypass the history file (#8895)</p></li>
+</ul>
+</section>
+<section id="id7">
+<h2>性能和资源应用改进<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Significant memory saving and latency improvements in cluster mode (#9356)</p></li>
+<li><p>Significant memory savings in case of many hash or zset keys (#9228)</p></li>
+<li><p>Replication backlog and replicas use one global shared replication buffer (#9166)</p></li>
+<li><p>Significant reduction of copy-on-write memory overheads (#8974)</p></li>
+<li><p>Free unused capacity in the cluster send buffer (#9255)</p></li>
+<li><p>Memory efficiency, make full use of client struct memory for reply buffers (#8968)</p></li>
+<li><p>Replace ziplist with listpack in Hash, List, Zset (#8887, #9366, #9740)</p></li>
+<li><p>Add support for list type to store elements larger than 4GB (#9357)</p></li>
+<li><p>Reuse temporary client objects for blocked clients by module (#9940)</p></li>
+<li><p>Remove command argument count limit, dynamically grow argv buffer (#9528)</p></li>
+<li><p>Optimize list type operations to seek from the nearest end (#9454)</p></li>
+<li><p>Improvements in fsync to avoid large writes to disk (#9409)</p></li>
+<li><p>BITSET and BITFIELD SET only propagated when the value actually changed (#9403)</p></li>
+<li><p>Improve latency when a client is unblocked by module timer (#9593)</p></li>
+</ul>
+</section>
+<section id="id8">
+<h2>其他通用改进<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Make partial sync possible after master reboot (#8015)</p></li>
+<li><p>Always create a base AOF file when redis starts from empty (#10102)</p></li>
+<li><p>Replica keep serving data during repl-diskless-load=swapdb for better availability (#9323)</p></li>
+</ul>
+</section>
+<section id="id9">
+<h2>命令行工具的改变<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>redis-cli –json, and -2 options (#9954)</p></li>
+<li><p>redis-cli –scan, add sleep interval option (#3751)</p></li>
+<li><p>redis-cli –replica optimization, skip RDB generation (#10044)</p></li>
+<li><p>redis-cli –functions-rdb, generate RDB with Functions only (#9968)</p></li>
+<li><p>redis-cli -X, take an arbitrary arg from stdin, extend –cluster call take -x (#9980)</p></li>
+<li><p>redis-benchmark -x takes an argument from stdin (#9130)</p></li>
+<li><p>redis-benchmark, Added URI support (#9314)</p></li>
+<li><p>redis-cli monitor and pubsub can be aborted with Ctrl+C, keeping the cli alive (#9347)</p></li>
+</ul>
+</section>
+<section id="id10">
+<h2>平台/工具链支持的相关改进<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Upgrade jemalloc 5.2.1 (#9623)</p></li>
+<li><p>Fix RSS metrics on NetBSD and OpenBSD (#10116, #10149)</p></li>
+<li><p>Check somaxconn system settings on macOS, FreeBSD and OpenBSD (#9972)</p></li>
+<li><p>Better fsync on MacOS, improve power failure safety (#9545)</p></li>
+</ul>
+</section>
+<section id="id11">
+<h2>新的配置选项<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>CONFIG SET/GET can handle multiple configs in one call (#9748, #9914)</p></li>
+<li><p>Support glob pattern matching for config include files (#8980)</p></li>
+<li><p>appenddirname, folder where multi-part AOF files are stored (#9788)</p></li>
+<li><p>shutdown-timeout, default 10 seconds (#9872)</p></li>
+<li><p>maxmemory-clients, allows limiting the total memory usage by all clients (#8687)</p></li>
+<li><p>cluster-port, can control the bind port of cluster bus (#9389)</p></li>
+<li><p>bind-source-addr, configuration argument control IP of outgoing connections (#9142)</p></li>
+<li><p>busy-reply-threshold, alias for the old lua-time-limit (#9963)</p></li>
+<li><p>repl-diskless-sync-max-replicas, allows faster replication in some cases (#10092)</p></li>
+<li><p>latency-tracking, enabled by default, and latency-tracking-info-percentiles (#9462)</p></li>
+<li><p>cluster-announce-hostnameand cluster-preferred-endpoint-type (#9530)</p></li>
+<li><p>cluster-allow-pubsublocal-when-down (#8621)</p></li>
+<li><p>cluster-link-sendbuf-limit (#9774)</p></li>
+<li><p>list-max-listpack-, hash-max-listpack-, zset-max-listpack-* as aliases for the old ziplist configs (#8887, #9366, #9740)</p></li>
+</ul>
+</section>
+<section id="info">
+<h2>INFO 命令的字段以及自省相关的修改<a class="headerlink" href="#info" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>INFO: latencystats section (#9462)</p></li>
+<li><p>INFO: total_active_defrag_time and current_active_defrag_time (#9377)</p></li>
+<li><p>INFO: total_eviction_exceeded_time and current_eviction_exceeded_time (#9031)</p></li>
+<li><p>INFO: evicted_clients (#8687)</p></li>
+<li><p>INFO: mem_cluster_links, total_cluster_links_buffer_limit_exceeded (#9774)</p></li>
+<li><p>INFO: current_cow_peak (#8974)</p></li>
+<li><p>INFO: Remove aof_rewrite_buffer_length (#9788)</p></li>
+<li><p>MEMORY STATS: Report slot to keys map size in in cluster mode (#10017)</p></li>
+<li><p>INFO MEMORY: changes to separate memory usage of Functions and EVAL (#9780)</p></li>
+<li><p>INFO MEMORY: Add mem_total_replication_buffers, change meaning of mem_clients_slaves (#9166)</p></li>
+<li><p>CLIENT LIST: tot-mem, multi-mem (#8687)</p></li>
+<li><p>CLIENT LIST, INFO: Show RESP version (#9508)</p></li>
+<li><p>SENTINEL INFO: tilt_mode_since (#9000)</p></li>
+<li><p>LATENCY: Track module-acquire-GIL latency (#9608)</p></li>
+</ul>
+</section>
+<section id="api">
+<h2>模块 API 修改<a class="headerlink" href="#api" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Add API for replying with RESP3 types (#8521, #9639, #9632)</p></li>
+<li><p>Add API for parsing RESP3 replies from RM_Call (#9202)</p></li>
+<li><p>Add RM_Call ‘0’ and ‘3’ flags to control RESP version to be used (#9202)</p></li>
+<li><p>Add Support for validating ACL explicitly (#9309, #9974)</p></li>
+<li><p>Add missing list type functionality APIs (#8439)</p></li>
+<li><p>Add API for yielding to Redis events during long busy jobs (#9963)</p></li>
+<li><p>Add API for registering other file descriptors to the Redis event loop (#10001)</p></li>
+<li><p>Enhance mem_usage/free_effort/unlink/copy and IO callbacks to have key name and DB index (#8999)</p></li>
+<li><p>Enhance mem_usage callback to get the requested sample size (#9612)</p></li>
+<li><p>RM_GetContextFlags: CTX_FLAGS_ASYNC_LOADING, CTX_FLAGS_RESP3 (#9323, #9202)</p></li>
+<li><p>Mark APIs as non-experimental (#9983)</p></li>
+<li><p>RM_CreateSubcommand (#9504)</p></li>
+<li><p>RM_KeyExists (#9600)</p></li>
+<li><p>RM_TrimStringAllocation (#9540)</p></li>
+<li><p>RM_LoadDataTypeFromStringEncver (#9537)</p></li>
+<li><p>RM_MonotonicMicroseconds (#10101)</p></li>
+<li><p>Add ReplAsyncLoad event and deprecate the ReplBackup event (#9323)</p></li>
+<li><p>Add RM_SetModuleOptions OPTIONS_HANDLE_REPL_ASYNC_LOAD flag (#9323)</p></li>
+</ul>
+</section>
+<section id="bug">
+<h2>BUG 修复<a class="headerlink" href="#bug" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Fix COMMAND GETKEYS on EVAL without keys (#9733)</p></li>
+<li><p>Improve MEMORY USAGE with allocator overheads (#9095)</p></li>
+<li><p>Unpause clients after manual failover ends instead of waiting for timed (#9676)</p></li>
+<li><p>Lua: fix crash on a script call with many arguments, a regression in v6.2.6 (#9809)</p></li>
+<li><p>Lua: Use all characters to calculate string hash to prevent hash collisions (#9449)</p></li>
+<li><p>Prevent LCS from allocating temp memory over proto-max-bulk-len (#9817)</p></li>
+<li><p>Tracking: Make invalidation messages always after command’s reply (#9422)</p></li>
+<li><p>Cluster: Hide empty replicas from CLUSTER SLOTS responses (#9287)</p></li>
+<li><p>CLIENT KILL killed all clients when used with ID of 0 (#9853)</p></li>
+<li><p>Fix bugs around lists with list-compress-depth (#9849, #9779)</p></li>
+<li><p>Fix one in a blue moon LRU bug in RESTORE, RDB loading, and module API (#9279)</p></li>
+<li><p>Reset lazyfreed_objects info field with RESETSTAT, test for stream lazyfree (#8934)</p></li>
+<li><p>Fix RDB and list node compression for handling values larger than 4GB (#9776)</p></li>
+<li><p>Fix a crash when adding elements larger than 2GB to a Set or Hash (#9916)</p></li>
+<li><p>Diskless replication could not count as a change and skip next database SAVE (#9323)</p></li>
+<li><p>Fix excessive stream trimming due to an overflow (#10068)</p></li>
+<li><p>Safe and organized exit when receiving SIGTERM while loading (#10003)</p></li>
+<li><p>Improve EXPIRE TTL overflow detection (#9839)</p></li>
+<li><p>Add missed error counting for INFO errorstats (#9646)</p></li>
+<li><p>DECRBY LLONG_MIN caused negation overflow (#9577)</p></li>
+<li><p>Delay discarding cached master when full synchronization (#9398)</p></li>
+<li><p>Fix Stream keyspace notification and persistence triggers in consumer creation and deletion (#9263)</p></li>
+<li><p>Fix rank overflow in zset with more than 2B entries (#9249)</p></li>
+<li><p>Avoid starting in check-aof / check-rdb / sentinel modes if only the folder name contains that name (#9215, #9176)</p></li>
+<li><p>create the log file only after done parsing the entire config file (#6741)</p></li>
+<li><p>redis-cli: Fix SCAN sleep interval for –bigkeys, –memkeys, –hotkeys (#9624)</p></li>
+<li><p>redis-cli: Fix prompt to show the right DB num and transaction state after RESET (#9096)</p></li>
+<li><p>Module API: fix possible propagation bugs in case a module calls CONFIG SET maxmemory outside a command (#10019, #9890)</p></li>
+<li><p>Module API: carry through client RESP version to module blocked clients (#9634)</p></li>
+<li><p>Module API: release clients blocked on module commands in cluster resharding and down state (#9483)</p></li>
+<li><p>Sentinel: Fix availability after master reboot (#9438)</p></li>
+<li><p>Sentinel: Fix memory leak with TLS (#9753)</p></li>
+<li><p>Sentinel: Fix possible failover due to duplicate zero-port (#9240)</p></li>
+<li><p>Sentinel: Fix issues with hostname support (#10146)</p></li>
+<li><p>Sentinel: Fix election failures on certain container environments (#10197)</p></li>
+</ul>
+</section>
+<section id="id12">
+<h2>已知问题<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h2>
+<p>This is a list of known issues that affect this release, and are planned to be
+fixed or completed before Redis 7 is officially released:</p>
+<ul class="simple">
+<li><p>Module APIs for modules to provide additional command meta-data are still missing.</p></li>
+<li><p>Module APIs for supporting the new ACL selectors are still missing.</p></li>
+<li><p>ACL key access selectors do not yet apply to SORT with GET/BY does.</p></li>
+<li><p>Multi-Part AOF support in redis-check-aof is still missing.</p></li>
+</ul>
+<div class="line-block">
+<div class="line">干杯，</div>
+<div class="line">Redis 核心团队</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

@@ -1,0 +1,71 @@
+如何系统地学习PostgreSQL
+========================
+
+.. image:: images/pglogo.jpg
+
+最近，有读者群的群友给我发消息，咨询我该如何系统地学习PostgreSQL。
+
+其实我本人认真学习SQL和PostgreSQL的时间并不长，这次正好借翻译\ `《SQL实战》 <https://huangz.works/sql/>`__\ 的机会才算是逐渐开始深入学习SQL和PostgreSQL，自觉在这方面还有很多需要完善的地方，远远没有达到可以很好地指点其他朋友如何学习的地步。
+
+因此这篇文章算是抛砖引玉，只是浅谈一下目前我认知的学习方式和方法，如果有不正确的地方请大家不吝指点。
+
+本文接下来的四个小节将分别介绍我觉得系统学习PostgreSQL应该遵循的四个步骤：
+
+1. 学习SQL
+2. 学习PostgreSQL
+3. 学习PostgreSQL扩展
+4. 学习PostgreSQL/RDBMS实现原理
+
+学习SQL
+-------
+
+SQL是操纵PostgreSQL的关键，也是基础中的基础，因此学习PostgreSQL首先需要学习的就是SQL语言。
+
+这方面的在线教程可以看w3schools的\ `《SQL
+Tutorial》 <https://www.w3schools.com/sql/>`__\ 或者GeeksforGeeks的\ `《SQL
+Tutorial》 <https://www.geeksforgeeks.org/sql-tutorial/>`__\ ，前者对初学者更友好，后者则更详尽和细致。
+
+这方面的图书我推荐的是\ `《SQL必知必会》 <https://item.jd.com/12937316.html>`__\ 和\ `《SQL基础教程》 <https://item.jd.com/12212242.html>`__\ ：
+
+-  前者言简意赅、重实践而非理论，所以它适合动手能力强的朋友边看边实践，跟着书上的代码完整跑一遍能够获得一个很好的基础了。
+-  后者在讲解SQL概念方面更详尽，并且附有丰富的表格和图示，所以它更适合没那么喜欢动手或者想尽量通过看书就把SQL弄懂的朋友。
+
+学习PostgreSQL
+--------------
+
+前面介绍的SQL资料虽然非常好，但它们教导的通常只是SQL中最常被使用的一部分特性，也即是多个关系数据库中一个公共的SQL特性子集。
+
+作为“The World’s Most Advanced Open Source Relational
+Database（世上最先进的开源关系数据库）”，PostgreSQL实现了很多其他关系数据库不具备的特性，而在学习基本的SQL知识之后，我们接下来要学习和了解的就是PostgreSQL支持的更强大的特性。
+
+对于了解PostgreSQL自身来说，没有比\ `官方文档 <https://www.postgresql.org/docs/current/index.html>`__\ 更好的资料了，在这个阶段，文档的《II. The SQL Language》、《III. Server Administration》、《V. Server Programming》和《VI. Reference》应该都是你经常翻阅的对象。
+
+至于图书我推荐的是\ `《PostgreSQL修炼之道》 <https://item.jd.com/12736201.html>`__\ ，这本书内容很全面，PostgreSQL的方方面面都有涉及，是我经常会查阅的PostgreSQL中文参考资料之一。
+
+学习PostgreSQL扩展
+------------------
+
+PostgreSQL之所以强大，不仅仅因为它是一个功能强劲的关系数据库，还有一个原因就是它拥有非常丰富的扩展可用：无论你是做AI、科学计算、数据分析、搜索引擎还是储存地理位置等等，都能找到相应的PostgreSQL扩展来完成任务。
+
+换句话来说，你不仅可以将PostgreSQL用作关系数据库管理器，还可以把它用作数据平台，在其上通过扩展提供近乎无限多的功能。
+
+`这个Gist列表 <https://gist.github.com/joelonsql/e5aa27f8cc9bd22b8999b7de8aee9d47>`__\ 列出了比较完整的PostgreSQL扩展，数量达1000多个，而Pigsty的\ `扩展列表 <https://pigsty.cc/zh/docs/reference/extension/>`__\ 也列出了比较常用的200多个扩展。大家可以按图索骥，寻找自己需要的扩展，并根据它们各自提供的文档进行学习。
+
+学习PostgreSQL/RDBMS实现原理
+----------------------------
+
+最后，在掌握了PostgreSQL自身及其支持的丰富的扩展之后，你可能还想更进一步，了解PostgreSQL自身的构成以及RDBMS（关系数据库管理系统）的实现方式，从而更好地理解PostgreSQL的运作原理，乃至开始对PostgreSQL自身进行修改等等。
+
+对于了解PostgreSQL的构造来说，官方文档的\ `《VII. Internals》 <https://www.postgresql.org/docs/current/internals.html>`__\ 是很好的起点。至于了解RDBMS的实现原理，可以推荐的图书是\ `《数据库系统概念》 <https://item.jd.com/13318646.html>`__\ 和\ `《数据库系统内幕》 <https://item.jd.com/12656779.html>`__\ ，前者理论内容丰富，讲解了整个数据库系统实现原理的方方面面，而后者则主要关注实现数据库的核心算法和数据结构。
+
+最后，为了构建强大的数据库系统，分布式知识是必不可少的，这方面我推荐的图书是\ `《分布式数据库原理、架构与实践》 <https://item.jd.com/13495948.html>`__\ 。这本书介绍了很多数据库相关的主流分布式模型的理论知识，是深入特定模型、研读特定论文之前的一本很好的前置阅读材料。
+
+结语
+----
+
+好的，关于“如何系统地学习PostgreSQL”这个问题，我的分享就到这里。
+
+如果大家觉得这篇文章对你有帮助的话，请记得帮我在社交网站上转发、点赞或者评论一下，谢谢各位~！
+
+| 坚定地认为PostgreSQL是世界上最好的关系数据库的黄健宏
+| 2024.5.11

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>使用 V2Ray 代理访问外网 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="通过 Linux 子系统在 Windows 10 上安装 Ubuntu" href="windows-subsystem-for-linux.html" />
+    <link rel="prev" title="在 Manjaro Linux 系统使用 Docker" href="docker-on-linux.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">使用 V2Ray 代理访问外网</a><ul>
+<li><a class="reference internal" href="#id1">步骤</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="docker-on-linux.html" title="Previous Chapter: 在 Manjaro Linux 系统使用 Docker"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; 在 Manjaro Lin...</span>
+    </a>
+  </li>
+  <li>
+    <a href="windows-subsystem-for-linux.html" title="Next Chapter: 通过 Linux 子系统在 Windows 10 上安装 Ubuntu"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">通过 Linux 子系统在... &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="v2ray">
+<h1>使用 V2Ray 代理访问外网<a class="headerlink" href="#v2ray" title="Link to this heading">¶</a></h1>
+<p>随着墙的更新与升级，
+之前一直使用的 Shadowsocks 代理最近开始无法访问，
+给日常的工作和生活带来了很大的麻烦。
+为了解决这个问题，
+近日将自己的网络代理从 Shadowsocks 换成了 V2Ray 。</p>
+<p>本文将简单地介绍在 Manjaro 系统上使用 V2Ray （图形界面为Qv2ray）代理访问外网的方法，
+此方法也适用于其他 Linux 发行版以及 Windows 、macOS 等系统。</p>
+<img alt="../_images/v2ray_logo.png" src="../_images/v2ray_logo.png" />
+<section id="id1">
+<h2>步骤<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<ol class="arabic">
+<li><p>访问 <a class="reference external" href="https://github.com/v2ray/v2ray-core/releases">https://github.com/v2ray/v2ray-core/releases</a> ，
+根据你使用的系统下载并解压相应的 v2ray-core （本例中为 <code class="docutils literal notranslate"><span class="pre">v2ray-linux-64.zip</span></code> ）。</p></li>
+<li><p>同样地，
+访问 <a class="reference external" href="https://github.com/Qv2ray/Qv2ray/releases">https://github.com/Qv2ray/Qv2ray/releases</a> ，
+根据你使用的系统下载并解压相应的 Qv2ray
+（本例中为 <code class="docutils literal notranslate"><span class="pre">Qv2ray.v2.1.2.linux-x64.qt5.13.2.AppImage</span></code> ）。</p></li>
+<li><p>执行命令 <code class="docutils literal notranslate"><span class="pre">chmod</span> <span class="pre">+x</span> <span class="pre">Qv2ray.v2.1.2.linux-x64.qt5.13.2.AppImage</span></code> ，
+为 Qv2ray 赋予执行权限。
+（macOS 和 Windows 可能也需要执行类似的操作，未测试，不确定。）</p></li>
+<li><p>运行 <code class="docutils literal notranslate"><span class="pre">Qv2ray.v2.1.2.linux-x64.qt5.13.2.AppImage</span></code> ，
+看到下图所示的界面，
+点击上方的“Preferences”按钮打开配置菜单。</p>
+<img alt="../_images/v2ray-main.png" src="../_images/v2ray-main.png" />
+</li>
+<li><p>在“General Setting”标签页的“V2ray Settings“设置中指定 v2ray-core 文件的路径及其目录，
+如下图所示（具体细节根据你的实际情况进行修改）。
+设置完毕之后请通过点击“Check V2ray Core Settings“按钮来检查设置是否成功。</p>
+<img alt="../_images/v2ray-general.png" src="../_images/v2ray-general.png" />
+</li>
+<li><p>在“Inbound Settings”标签页设置代理选项，
+如下图所示（具体细节根据你的实际情况进行修改）。</p>
+<img alt="../_images/v2ray-proxy.png" src="../_images/v2ray-proxy.png" />
+</li>
+<li><p>修改完配置之后，
+点击“OK”保存并回到主界面。</p></li>
+<li><p>点击主界面的“Subscriptions”按钮，
+在弹出界面的左下方点击“Add Subscription”，
+新建一个订阅。
+接着在右半边订阅界面的“Subscription Address”框中填入你的 V2Ray 服务商提供的订阅地址，
+然后点击下方的“Update Subscription Data”以取得最新的服务器地址。
+最后再次点击“OK”按钮，
+回到主界面。</p>
+<img alt="../_images/v2ray-sub-data.png" src="../_images/v2ray-sub-data.png" />
+</li>
+<li><p>在主界面的“Host List”中选择一个距离你较近的服务器，
+然后点击上方的“Connect”按钮来连接服务器
+（也可以右键点击服务器然后选择“Connect to this”）。</p>
+<img alt="../_images/v2ray-connect.png" src="../_images/v2ray-connect.png" />
+</li>
+<li><p>配置你的软件或者浏览器，
+让它们通过 V2Ray 而不是默认的网络来进行访问
+（比如为Chrome浏览器安装并设置SwitchyOmega插件）。</p></li>
+<li><p>大功告成！</p></li>
+</ol>
+<div class="line-block">
+<div class="line">因为无法正常访问GitHub.com而苦恼不已的黄健宏</div>
+<div class="line">2020.2.15</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

@@ -1,0 +1,35 @@
+《Redis应用实例》书摘（18）：流迭代器（使用XRANGE实现）
+================================================================
+
+虽然Redis提供了\ ``SCAN``\ 、\ ``HSCAN``\ 、\ ``SSCAN``\ 和\ ``ZSCAN``\ 命令来分别为数据库、散列、集合和有序集合提供迭代功能，但它并未为流数据结构提供对应的迭代命令。
+
+幸运的是，通过Redis目前提供的\ ``XREAD``\ 命令或是\ ``XRANGE``\ 命令，我们可以模仿并实现与上述命令类似的流元素迭代器。
+
+代码清单 CODE_XRANGE_ITERATOR 展示了使用\ ``XRANGE``\ 命令实现的流迭代器实现。
+
+----
+
+代码清单 CODE_XRANGE_ITERATOR 使用\ ``XRANGE``\ 命令实现的流迭代器 ``xrange_iterator.py``
+
+.. literalinclude:: code/xrange_iterator.py
+
+----
+
+作为例子，以下代码展示了如何使用这个迭代器来迭代上面提到的\ ``"stream"``\ 流：
+
+::
+
+        >>> from redis import Redis
+        >>> from xrange_iterator import StreamIterator
+        >>> client = Redis(decode_responses=True)
+        >>> iterator = StreamIterator(client, "stream")
+        >>> iterator.next(2)  # 每次迭代最多两个元素
+        [{'id': '10086-0', 'msg': {'': ''}}, {'id': '10087-0', 'msg': {'': ''}}]
+        >>> iterator.next(2)
+        [{'id': '10088-0', 'msg': {'': ''}}, {'id': '10089-0', 'msg': {'': ''}}]
+        >>> iterator.next(2)
+        [{'id': '10090-0', 'msg': {'': ''}}]  # 迭代完毕
+        >>> iterator.next(2)
+        []
+
+.. include:: rediscookbook-promote.rst

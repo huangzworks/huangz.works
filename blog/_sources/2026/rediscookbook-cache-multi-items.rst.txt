@@ -1,0 +1,49 @@
+《Redis应用实例》书摘（3）：使用哈希键缓存多项数据
+===========================================================
+
+除了将多项数据编码为JSON然后将其存储在字符串键里面，我们还可以直接将多项数据存储在Redis的哈希键中。为此，程序在设置缓存时需要用到\ ``HSET``\ 命令：
+
+::
+
+   HSET name field value [field value] [...]
+
+如果用户在设置缓存的同时还指定了缓存的生存时间，那么程序还需要使用\ ``EXPIRE``\ 命令为缓存哈希设置过期时间，并使用事务或者其他类似措施保证多个命令在执行时的安全性：
+
+::
+
+   MULTI
+   HSET name field value [field value] [...]
+   EXPIRE name ttl
+   EXEC
+
+与此相对，当程序需要获取被缓存的多项数据时，它只需要使用\ ``HGETALL``\ 命令获取所有数据即可：
+
+::
+
+   HGETALL name
+
+代码清单 CODE_HASH_CACHE 展示了基于上述原理实现的缓存程序。
+
+--------------
+
+代码清单 CODE_HASH_CACHE 使用哈希键实现的多项数据缓存程序 ``hash_cache.py``
+
+.. literalinclude:: code/hash_cache.py
+
+--------------
+
+作为例子，以下这段代码展示了如何使用这个缓存程序来缓存前面展示的用户信息：
+
+.. code:: python
+
+   >>> from redis import Redis
+   >>> from hash_cache import HashCache
+   >>> client = Redis(decode_responses=True)
+   >>> cache = HashCache(client)
+   >>> data = {"id":10086, "name": "Peter", "gender": "male", "age": 56}
+   >>> cache.set("User:10086", data)  # 缓存数据
+   >>> cache.get("User:10086")  # 获取缓存
+   {'id': '10086', 'name': 'Peter', 'gender': 'male', 'age': '56'}
+
+
+.. include:: rediscookbook-promote.rst

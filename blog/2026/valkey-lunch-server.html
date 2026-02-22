@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Valkey源码剖析（1）：启动服务器 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Valkey源码剖析（2）：服务器状态表示" href="valkey-server-struct.html" />
+    <link rel="prev" title="“Valkey源码剖析”系列文章【连载中：已更新20+篇】" href="valkey-series.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Valkey源码剖析（1）：启动服务器</a><ul>
+<li><a class="reference internal" href="#id1">初始化服务器</a></li>
+<li><a class="reference internal" href="#id2">载入配置选项</a></li>
+<li><a class="reference internal" href="#id3">根据配置选项进一步初始化服务器</a></li>
+<li><a class="reference internal" href="#id4">载入持久化数据</a></li>
+<li><a class="reference internal" href="#id5">初始化并分配网络连接监听器</a></li>
+<li><a class="reference internal" href="#id6">启动事件主循环</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="valkey-series.html" title="Previous Chapter: “Valkey源码剖析”系列文章【连载中：已更新20+篇】"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; “Valkey源码剖析”系...</span>
+    </a>
+  </li>
+  <li>
+    <a href="valkey-server-struct.html" title="Next Chapter: Valkey源码剖析（2）：服务器状态表示"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">Valkey源码剖析（2）：服务器状态表示 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="valkey-1">
+<h1>Valkey源码剖析（1）：启动服务器<a class="headerlink" href="#valkey-1" title="Link to this heading">¶</a></h1>
+<p>Valkey服务器的启动逻辑定义在server.c/main()函数中：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cm">/* Main is marked as weak so that unit tests can use their own main function. */</span>
+<span class="n">__attribute__</span><span class="p">((</span><span class="n">weak</span><span class="p">))</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">main</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>为了启动整个服务器，main()函数需要进行大量工作，根据执行顺序，其中比较重要的步骤包括：</p>
+<ul class="simple">
+<li><p>初始化服务器</p></li>
+<li><p>载入配置选项</p></li>
+<li><p>根据配置选项进一步初始化服务器</p></li>
+<li><p>载入持久化数据</p></li>
+<li><p>初始化并分配网络连接监听器</p></li>
+<li><p>启动事件主循环</p></li>
+</ul>
+<p>以下小节将分别介绍这些步骤。</p>
+<section id="id1">
+<h2>初始化服务器<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>Valkey服务器使用全局变量server.c/server记录自身状态：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">valkeyServer</span><span class="w"> </span><span class="n">server</span><span class="p">;</span><span class="w"> </span><span class="cm">/* Server global state */</span>
+</pre></div>
+</div>
+<p>该变量是server.h/valkeyServer结构的一个实例，valkeyServer结构记录了服务器运行相关的几乎全部信息。</p>
+<p>为了启动Valkey服务器，main()函数将调用server.c/initServerConfig()函数，使用默认值对valkeyServer结构的各项常量属性进行初始化：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">initServerConfig</span><span class="p">();</span>
+</pre></div>
+</div>
+</section>
+<section id="id2">
+<h2>载入配置选项<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>在对服务器状态结构进行了初步的初始化之后，main()函数将解析服务器启动时可能给定了的配置选项参数、标准输入以及配置选项文件，并通过调用config.c/loadServerConfig()函数载入它们：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">loadServerConfig</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">configfile</span><span class="p">,</span><span class="w"> </span><span class="n">config_from_stdin</span><span class="p">,</span><span class="w"> </span><span class="n">options</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>这个函数将从启动服务器时给定的配置文件、标准输入和附加参数中载入配置选项。</p>
+</section>
+<section id="id3">
+<h2>根据配置选项进一步初始化服务器<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>在载入配置选项之后，main()函数将调用server.c/initServer()函数，根据给定的配置选项进一步初始化服务器状态结构：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">initServer</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>跟之前initServerConfig()函数只设置服务器状态结构的常量值不一样，这次initServer()函数将根据各个给定的配置选项的值，为服务器状态结构创建各种相应的数据结构，其中的操作包括：</p>
+<ul class="simple">
+<li><p>初始化各项服务器线程</p></li>
+<li><p>初始化服务器的各种写入、写出缓冲区</p></li>
+<li><p>创建服务器的共享对象</p></li>
+<li><p>创建服务器事件主循环状态，并设置相关的事件回调</p></li>
+<li><p>创建数据库</p></li>
+<li><p>初始化服务器的各项统计信息</p></li>
+<li><p>创建服务器的脚本运行环境和服务器端函数运行环境</p></li>
+</ul>
+<p>等等。</p>
+</section>
+<section id="id4">
+<h2>载入持久化数据<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>在完成对服务器状态结构的初始化之后，main()函数将调用server.c/loadDataFromDisk()函数，从RDB文件或是AOF文件中，将之前持久化的数据重新载入至服务器当前的数据库中：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">loadDataFromDisk</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>如果服务器开启了AOF持久化功能，那么服务器还会调用server.c/aofOpenIfNeededOnServerStart()函数以创建并打开新的AOF文件，然后调用aof.c/aofDelHistoryFiles()函数以删除旧的AOF文件：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">aofOpenIfNeededOnServerStart</span><span class="p">();</span>
+<span class="n">aofDelHistoryFiles</span><span class="p">();</span>
+</pre></div>
+</div>
+</section>
+<section id="id5">
+<h2>初始化并分配网络连接监听器<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>在载入持久化数据之前，服务器会调用server.c/initListeners()函数以创建网络连接监听器，并在载入数据之后将各个监听器分配给服务器以供使用：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">CONN_TYPE_MAX</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">connListener</span><span class="w"> </span><span class="o">*</span><span class="n">listener</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">server</span><span class="p">.</span><span class="n">listeners</span><span class="p">[</span><span class="n">j</span><span class="p">];</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">listener</span><span class="o">-&gt;</span><span class="n">ct</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span><span class="w"> </span><span class="k">continue</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">serverLog</span><span class="p">(</span><span class="n">LL_NOTICE</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Ready to accept connections %s&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">getConnectionTypeName</span><span class="p">(</span><span class="n">listener</span><span class="o">-&gt;</span><span class="n">ct</span><span class="o">-&gt;</span><span class="n">get_type</span><span class="p">()));</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="id6">
+<h2>启动事件主循环<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<p>在初始化服务器、载入持久化数据并分配连接监听器之后，main()函数要做的就是调用ae.c/aeMain()函数以启动服务器事件主循环：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">aeMain</span><span class="p">(</span><span class="n">server</span><span class="p">.</span><span class="n">el</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>至此，服务器就算启动成功，接下来它就可以正常地接收并处理客户端发来的命令请求了。</p>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2025.12.23</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

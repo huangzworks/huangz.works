@@ -1,0 +1,41 @@
+《Redis应用实例》书摘（23）：消息队列
+=============================================
+
+消息队列是一种非常重要的数据结构，它既可以用于内部组件，也可以用于外部应用。
+
+代码清单 CODE_MESSAGE_QUEUE 展示了基于流实现的消息队列程序。
+
+----
+
+代码清单 CODE_MESSAGE_QUEUE 消息队列程序 ``message_queue.py``
+
+.. literalinclude:: code/message_queue.py
+
+.. literalinclude:: code/xread_iterator.py
+
+----
+
+这个程序复用了《流迭代器》一章中使用\ ``XREAD``\ 命令实现的流迭代器。通过这个迭代器，程序成功地将原本非常复杂的消息接收操作简化为一次针对\ ``StreamIterator.next()``\ 方法的调用，这也是这个消息队列程序能够保持简练的关键。
+
+作为例子，以下代码展示了这个消息队列程序的具体使用方式：
+
+::
+
+        >>> from redis import Redis
+        >>> from message_queue import MessageQueue
+        >>> client = Redis(decode_responses=True)
+        >>> mq = MessageQueue(client, "MessageQueue:10086")  # 创建消息队列对象
+        >>> mq.send({"uid": "Jack", "msg": "Hello!"})  # 发送消息
+        '1720847899374-0'
+        >>> mq.send({"uid": "Tom", "msg": "Hi!"})
+        '1720847912318-0'
+        >>> mq.receive()  # 接收消息
+        [{'id': '1720847899374-0', 'msg': {'uid': 'Jack', 'msg': 'Hello!'}}, 
+         {'id': '1720847912318-0', 'msg': {'uid': 'Tom', 'msg': 'Hi!'}}]
+        >>> mq.get("1720847899374-0")  # 获取特定消息
+        {'uid': 'Jack', 'msg': 'Hello!'}
+        >>> mq.length()  # 获取消息总数量
+        2
+
+
+.. include:: rediscookbook-promote.rst

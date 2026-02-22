@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>《Redis应用实例》书摘【连载中：已更新26篇】 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="《Redis应用实例》书摘（1）：缓存单项数据" href="rediscookbook-cache-single-item.html" />
+    <link rel="prev" title="2026" href="index.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">《Redis应用实例》书摘【连载中：已更新26篇】</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="index.html" title="Previous Chapter: 2026"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; 2026</span>
+    </a>
+  </li>
+  <li>
+    <a href="rediscookbook-cache-single-item.html" title="Next Chapter: 《Redis应用实例》书摘（1）：缓存单项数据"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">《Redis应用实例》书摘... &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="redis-26">
+<h1>《Redis应用实例》书摘【连载中：已更新26篇】<a class="headerlink" href="#redis-26" title="Link to this heading">¶</a></h1>
+<p>已更新文章：</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-cache-single-item.html">《Redis应用实例》书摘（1）：缓存单项数据</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-cache-json-item.html">《Redis应用实例》书摘（2）：通过JSON序列化缓存多项数据</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-cache-multi-items.html">《Redis应用实例》书摘（3）：使用哈希键缓存多项数据</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-binary-cache.html">《Redis应用实例》书摘（4）：缓存二进制数据</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-lock.html">《Redis应用实例》书摘（5）：锁</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-identity-lock.html">《Redis应用实例》书摘（6）：带密码保护功能的锁</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-string-id-generator.html">《Redis应用实例》书摘（7）：自动递增数字ID生成器（字符串实现）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-hash-id-generator.html">《Redis应用实例》书摘（8）：自动递增数字ID生成器（哈希实现）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-string-counter.html">《Redis应用实例》书摘（9）：计数器（使用字符串实现）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-hash-counter.html">《Redis应用实例》书摘（10）：计数器（使用哈希实现）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-set-unique-counter.html">《Redis应用实例》书摘（11）：唯一计数器（使用集合实现）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-hll-unique-counter.html">《Redis应用实例》书摘（12）：唯一计数器（使用HyperLogLog实现）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-rate-limiter.html">《Redis应用实例》书摘（13）：速率限制器</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-binary-recorder.html">《Redis应用实例》书摘（14）：二元操作记录器</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-resource-pool.html">《Redis应用实例》书摘（15）：资源池</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-compact-string.html">《Redis应用实例》书摘（16）：紧凑字符串</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-db-iterator.html">《Redis应用实例》书摘（17）：数据库迭代器</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-stream-iterator-xrange.html">《Redis应用实例》书摘（18）：流迭代器（使用XRANGE实现）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-stream-iterator-xread.html">《Redis应用实例》书摘（19）：流迭代器（使用XREAD实现）</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-fifo-queue.html">《Redis应用实例》书摘（20）：先进先出队列</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-priority-queue.html">《Redis应用实例》书摘（21）：优先队列</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-matrix.html">《Redis应用实例》书摘（22）：矩阵</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-message-queue.html">《Redis应用实例》书摘（23）：消息队列</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-tag.html">《Redis应用实例》书摘（24）：标签系统</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-autocomplete.html">《Redis应用实例》书摘（25）：自动补全</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rediscookbook-pagging.html">《Redis应用实例》书摘（26）：分页</a></li>
+</ul>
+</div>
+<p>待更新文章：</p>
+<ul class="simple">
+<li><p>《Redis应用实例》书摘（27）：定长队列和淘汰队列</p></li>
+<li><p>《Redis应用实例》书摘（28）：栈/后进先出队列</p></li>
+<li><p>《Redis应用实例》书摘（29）：循环队列</p></li>
+<li><p>《Redis应用实例》书摘（30）：逻辑矩阵</p></li>
+<li><p>《Redis应用实例》书摘（31）：抽奖</p></li>
+<li><p>《Redis应用实例》书摘（32）：社交关系</p></li>
+<li><p>《Redis应用实例》书摘（33）：登录会话</p></li>
+<li><p>《Redis应用实例》书摘（34）：短网址生成器</p></li>
+<li><p>《Redis应用实例》书摘（35）：投票</p></li>
+<li><p>《Redis应用实例》书摘（36）：排行榜</p></li>
+<li><p>《Redis应用实例》书摘（37）：时间线</p></li>
+<li><p>《Redis应用实例》书摘（38）：地理位置</p></li>
+</ul>
+<img alt="../_images/rediscookbook-banner.png" src="../_images/rediscookbook-banner.png" />
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

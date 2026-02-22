@@ -1,0 +1,37 @@
+《Redis应用实例》书摘（11）：唯一计数器（使用集合实现）
+===============================================================
+
+唯一计数器对于每个特定的对象或动作只会计数一次。具体到统计用户数量的场景，这种计数器只会对每个不同的用户进行计数，而重复出现的同一个用户则不会被重复计数。
+
+代码清单 CODE_UNIQUE_COUNTER 展示了基于集合键实现的唯一计数器程序。
+
+--------------
+
+代码清单 CODE_UNIQUE_COUNTER 使用集合实现的唯一计数器 ``unique_counter.py``
+
+.. literalinclude:: code/unique_counter.py
+   :lines: 1-26
+
+--------------
+
+作为例子，以下代码展示了这个唯一计数器程序的使用方式：
+
+.. code:: python
+
+   >>> from redis import Redis
+   >>> from unique_counter import UniqueCounter
+   >>> client = Redis(decode_responses=True)
+   >>> counter = UniqueCounter(client, "VisitCounter")
+   >>> counter.include("Peter")  # 对元素进行计数
+   True
+   >>> counter.include("Jack")
+   True
+   >>> counter.include("Tom")
+   True
+   >>> counter.include("Tom")  # 重复元素不会被计数
+   False
+   >>> counter.count()  # 查看当前计数结果
+   3
+
+
+.. include:: rediscookbook-promote.rst

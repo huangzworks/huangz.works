@@ -1,0 +1,38 @@
+《Redis应用实例》书摘（10）：计数器（使用哈希实现）
+============================================================
+
+除了字符串键之外，计数器还可以通过哈希键来实现。跟字符串键相比，使用哈希键实现计数器有两个优点：
+
+1. 哈希键实现的计数器可以将多个相关计数器放到同一个哈希里面进行管理。举个例子，如果应用需要为每个用户维护多个计数器，比如访问计数器、下载计数器、付费计数器等，那么程序可以考虑将这些计数器都放到同一个哈希里面（比如\ ``User:<id>:Counters``\ 键）。
+2. 此外，对于一些使用哈希键存储的文档数据，程序也可以使用接下来将要介绍的技术，为它们加上计数功能。比如说，一个存储文章信息的哈希键\ ``Post:<id>``\ 可能会包含文章的标题、正文、作者、发布日期等信息，这时比起使用别的字符串键存储文章的浏览量，更好的做法是把浏览量也包含在相同的哈希键里面，然后通过使用哈希键实现计数器的技术，在文章被阅读的同时更新它的浏览量。
+
+代码清单 CODE_HASH_COUNTER 展示了根据上述原理实现的计数器程序。
+
+--------------
+
+代码清单 CODE_HASH_COUNTER 使用哈希键实现的计数器程序 ``hash_counter.py``
+
+.. literalinclude:: code/hash_counter.py
+
+--------------
+
+作为例子，以下代码展示了这个计数器程序的具体使用方式：
+
+.. code:: python
+
+        >>> from redis import Redis
+        >>> from hash_counter import HashCounter
+        >>> client = Redis(decode_responses=True)
+        >>> counter = HashCounter(client, "User:10086:Counters", "login_counter")
+        >>> counter.increase()  # 增加计数
+        1
+        >>> counter.increase()
+        2
+        >>> counter.decrease()  # 减少计数
+        1
+        >>> counter.reset()  # 重置计数
+        1
+        >>> counter.get()  # 获取当前计数值
+        0
+
+.. include:: rediscookbook-promote.rst

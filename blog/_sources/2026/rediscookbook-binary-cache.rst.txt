@@ -1,0 +1,31 @@
+《Redis应用实例》书摘（4）：缓存二进制数据
+====================================================
+
+除了缓存文本数据之外，Redis还经常被用于缓存二进制数据，比如图片、视频、音频等。
+
+代码清单 CODE_BINARY_CACHE 展示了一个通用的二进制文件缓存程序：它接受二进制文件的路径作为参数，接着打开并读取该文件的内容，然后将其缓存到Redis中，而具体的缓存操作则是通过复用之前的缓存程序来实现。
+
+--------------
+
+代码清单 CODE_BINARY_CACHE 二进制文件缓存程序 ``binary_cache.py``
+
+.. literalinclude:: code/binary_cache.py
+
+.. literalinclude:: code/cache.py
+
+--------------
+
+作为例子，以下代码展示了如何使用这个程序缓存一个图片文件，然后再从缓存中取出该图片的数据并查看其中的前10个字节：
+
+.. code:: python
+
+   >>> from redis import Redis
+   >>> from binary_cache import BinaryCache
+   >>> client = Redis()
+   >>> cache = BinaryCache(client)
+   >>> cache.set("redis-logo", "./redis-logo.png")  # 缓存数据
+   True
+   >>> cache.get("redis-logo")[:10]  # 读取被缓存数据的前10个字节
+   b'\x89PNG\r\n\x1a\n\x00\x00'
+
+.. include:: rediscookbook-promote.rst

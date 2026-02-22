@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Redis 8.0-M04新增命令介绍（HGETDEL 、HSETEX和HGETEX） &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="“SQL的现在与未来”——对话《SQL实战》作者安东尼·德巴罗斯" href="sql-interview.html" />
+    <link rel="prev" title="Redis 8 正式版更新摘要" href="redis8-ga.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Redis 8.0-M04新增命令介绍（HGETDEL 、HSETEX和HGETEX）</a><ul>
+<li><a class="reference internal" href="#hgetdel">HGETDEL命令</a></li>
+<li><a class="reference internal" href="#hsetex">HSETEX命令</a></li>
+<li><a class="reference internal" href="#hgetex">HGETEX命令</a><ul>
+<li><a class="reference internal" href="#id2">结语</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="redis8-ga.html" title="Previous Chapter: Redis 8 正式版更新摘要"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; Redis 8 正式版更新摘要</span>
+    </a>
+  </li>
+  <li>
+    <a href="sql-interview.html" title="Next Chapter: “SQL的现在与未来”——对话《SQL实战》作者安东尼·德巴罗斯"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">“SQL的现在与未来”——... &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="redis-8-0-m04-hgetdel-hsetexhgetex">
+<h1>Redis 8.0-M04新增命令介绍（HGETDEL 、HSETEX和HGETEX）<a class="headerlink" href="#redis-8-0-m04-hgetdel-hsetexhgetex" title="Link to this heading">¶</a></h1>
+<p>Redis前天深夜释出了最新的<a class="reference external" href="https://github.com/redis/redis/releases/tag/8.0-m04">Redis 8预览版8.0 M04</a>，新增了<code class="docutils literal notranslate"><span class="pre">HGETDEL</span></code>、<code class="docutils literal notranslate"><span class="pre">HSETEX</span></code>和<code class="docutils literal notranslate"><span class="pre">HGETEX</span></code>三个命令。
+这些命令可以看作是Redis在7.4版本新增<a class="reference external" href="https://huangz.blog/2024/hash-ttl.html">哈希字段自动过期特性</a>之后，对哈希功能的进一步补充和完善。</p>
+<p>本文将对上述三个命令进行介绍。</p>
+<section id="hgetdel">
+<h2>HGETDEL命令<a class="headerlink" href="#hgetdel" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">HGETDEL</span></code>命令可以根据给定的一个或多个字段从哈希中取出与之对应的值，并在之后将所有给定字段从哈希中移除：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HGETDEL</span> <span class="o">&lt;</span><span class="n">key</span><span class="o">&gt;</span> <span class="n">FIELDS</span> <span class="o">&lt;</span><span class="n">numfields</span><span class="o">&gt;</span> <span class="n">field</span> <span class="p">[</span><span class="n">field</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>除了需要使用<code class="docutils literal notranslate"><span class="pre">FIELDS</span></code>选项指定字段数量之外，这个命令的参数跟获取多个字段值的<code class="docutils literal notranslate"><span class="pre">HMGET</span></code>命令没什么不同。<code class="docutils literal notranslate"><span class="pre">HGETDEL</span></code>命令将以列表形式返回每个给定字段的值；如果某个字段不存在则以<code class="docutils literal notranslate"><span class="pre">nil</span></code>值代替。</p>
+<p>以下是<code class="docutils literal notranslate"><span class="pre">HGETDEL</span></code>命令的使用示例：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">HMSET</span> <span class="nb">hash</span> <span class="n">f1</span> <span class="n">v1</span> <span class="n">f2</span> <span class="n">v2</span> <span class="n">f3</span> <span class="n">v3</span>
+<span class="n">OK</span>  <span class="o">--</span> <span class="n">创建一个包含三个字段的哈希</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">HGETDEL</span> <span class="nb">hash</span> <span class="n">FIELDS</span> <span class="mi">4</span> <span class="n">f1</span> <span class="n">f2</span> <span class="n">f3</span> <span class="n">f10086</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;v1&quot;</span>  <span class="o">--</span> <span class="n">给定字段的值</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;v2&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;v3&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="p">(</span><span class="n">nil</span><span class="p">)</span>  <span class="o">--</span> <span class="n">给定字段不存在</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">HGETALL</span> <span class="nb">hash</span>
+<span class="p">(</span><span class="n">empty</span> <span class="n">array</span><span class="p">)</span>  <span class="o">--</span> <span class="n">哈希中的三个字段已被删除</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>话说似乎没看出<code class="docutils literal notranslate"><span class="pre">HGETDEL</span></code>命令中<code class="docutils literal notranslate"><span class="pre">FIELDS</span></code>选项存在的必要性，像是这样：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HGETDEL</span> <span class="nb">hash</span> <span class="n">f1</span> <span class="n">f2</span> <span class="n">f3</span>
+</pre></div>
+</div>
+<p>不是会更简洁吗，难道只是为了跟其他哈希自动过期相关命令保持一致？</p>
+</div>
+</section>
+<section id="hsetex">
+<h2>HSETEX命令<a class="headerlink" href="#hsetex" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">HSETEX</span></code>命令可以为哈希中的一个或多个字段设置值以及（可选的）过期时间：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HSETEX</span> <span class="o">&lt;</span><span class="n">key</span><span class="o">&gt;</span>
+   <span class="p">[</span><span class="n">FNX</span> <span class="o">|</span> <span class="n">FXX</span><span class="p">]</span>
+   <span class="p">[</span><span class="n">EX</span> <span class="n">sec</span> <span class="o">|</span> <span class="n">PX</span> <span class="n">ms</span> <span class="o">|</span> <span class="n">EXAT</span> <span class="n">ts</span> <span class="o">|</span> <span class="n">PXAT</span> <span class="n">ts</span><span class="o">-</span><span class="ow">in</span><span class="o">-</span><span class="n">ms</span> <span class="o">|</span> <span class="n">KEEPTTL</span><span class="p">]</span>
+   <span class="n">FIELDS</span> <span class="o">&lt;</span><span class="n">numfields</span><span class="o">&gt;</span> <span class="n">field</span> <span class="n">value</span> <span class="p">[</span><span class="n">field</span> <span class="n">value</span><span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>这个命令带有多个可选项以供使用，其中：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">EX</span></code>、<code class="docutils literal notranslate"><span class="pre">PX</span></code>、<code class="docutils literal notranslate"><span class="pre">EXAT</span></code>、<code class="docutils literal notranslate"><span class="pre">PXAT</span></code>和<code class="docutils literal notranslate"><span class="pre">KEEPTTL</span></code>等选项的作用跟<code class="docutils literal notranslate"><span class="pre">SET</span></code>命令中同名选项的作用类似；</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FNX</span></code>选项表示仅在<strong>所有给定字段都不存在</strong>的情况下进行设置（类似于<code class="docutils literal notranslate"><span class="pre">SET</span></code>命令的<code class="docutils literal notranslate"><span class="pre">NX</span></code>选项），而<code class="docutils literal notranslate"><span class="pre">FXX</span></code>选项则表示仅在<strong>所有给定字段都已存在</strong>的情况下进行设置（类似于<code class="docutils literal notranslate"><span class="pre">SET</span></code>命令的<code class="docutils literal notranslate"><span class="pre">XX</span></code>选项）；</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">HSETEX</span></code>命令在所有字段均设置成功时返回<code class="docutils literal notranslate"><span class="pre">1</span></code>，没有任何字段被设置时返回<code class="docutils literal notranslate"><span class="pre">0</span></code>。</p>
+<p>以下是<code class="docutils literal notranslate"><span class="pre">HSETEX</span></code>命令的使用示例：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">HSETEX</span> <span class="nb">hash</span> <span class="n">EX</span> <span class="mi">300</span> <span class="n">FIELDS</span> <span class="mi">2</span> <span class="n">f1</span> <span class="n">v1</span> <span class="n">f2</span> <span class="n">v2</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>  <span class="o">--</span> <span class="n">设置两个字段并将它们的生存时间设置为300秒</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">HGETALL</span> <span class="nb">hash</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;f2&quot;</span>  <span class="o">--</span> <span class="n">查看哈希的设置情况</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;v2&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;f1&quot;</span>
+<span class="mi">4</span><span class="p">)</span> <span class="s2">&quot;v1&quot;</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">HTTL</span> <span class="nb">hash</span> <span class="n">FIELDS</span> <span class="mi">2</span> <span class="n">f1</span> <span class="n">f2</span>
+<span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">274</span>  <span class="o">--</span> <span class="n">查看两个字段的剩余生存时间</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">274</span>
+</pre></div>
+</div>
+</section>
+<section id="hgetex">
+<h2>HGETEX命令<a class="headerlink" href="#hgetex" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">HGETEX</span></code>命令可以在获取哈希中一个或多个字段值的同时，为字段设置过期时间：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HGETEX</span> <span class="o">&lt;</span><span class="n">key</span><span class="o">&gt;</span>
+   <span class="p">[</span><span class="n">EX</span> <span class="n">sec</span> <span class="o">|</span> <span class="n">PX</span> <span class="n">ms</span> <span class="o">|</span> <span class="n">EXAT</span> <span class="n">ts</span> <span class="o">|</span> <span class="n">PXAT</span> <span class="n">ts</span><span class="o">-</span><span class="ow">in</span><span class="o">-</span><span class="n">ms</span> <span class="o">|</span> <span class="n">PERSIST</span><span class="p">]</span>
+   <span class="n">FIELDS</span> <span class="o">&lt;</span><span class="n">numfields</span><span class="o">&gt;</span> <span class="n">field</span> <span class="p">[</span><span class="n">field</span> <span class="o">...</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>该命令所有可选项的意义都跟<code class="docutils literal notranslate"><span class="pre">HSETEX</span></code>命令的同名可选项一样，而<code class="docutils literal notranslate"><span class="pre">PERSIST</span></code>选项则用于移除给定字段的过期时间。<code class="docutils literal notranslate"><span class="pre">HGETEX</span></code>命令将以列表形式返回所有给定字段的值；如果某个字段不存在则以<code class="docutils literal notranslate"><span class="pre">nil</span></code>值代替。</p>
+<p>以下是<code class="docutils literal notranslate"><span class="pre">HGETEX</span></code>命令的使用示例：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">HMSET</span> <span class="nb">hash</span> <span class="n">f1</span> <span class="n">v1</span> <span class="n">f2</span> <span class="n">v2</span> <span class="n">f3</span> <span class="n">v3</span>
+<span class="n">OK</span>  <span class="o">--</span> <span class="n">创建一个包含三个字段的哈希</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">HGETEX</span> <span class="nb">hash</span> <span class="n">EX</span> <span class="mi">600</span> <span class="n">FIELDS</span> <span class="mi">3</span> <span class="n">f1</span> <span class="n">f2</span> <span class="n">f3</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;v1&quot;</span>  <span class="o">--</span> <span class="n">获取三个字段的值并为每个字段设置过期时间</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;v2&quot;</span>
+<span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;v3&quot;</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">HTTL</span> <span class="nb">hash</span> <span class="n">FIELDS</span> <span class="mi">3</span> <span class="n">f1</span> <span class="n">f2</span> <span class="n">f3</span>
+<span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">594</span>  <span class="o">--</span> <span class="n">查看三个字段的过期时间</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">594</span>
+<span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">594</span>
+</pre></div>
+</div>
+<section id="id2">
+<h3>结语<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<p>好的，关于这三个新命令的简单介绍就到这里结束。</p>
+<p>我会继续关注Redis
+8的最新动态，有新消息再跟大家分享，欢迎大家关注<a class="reference external" href="https://huangz.works/">我的博客和社交媒体</a>。</p>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2025.3.22</div>
+</div>
+</section>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

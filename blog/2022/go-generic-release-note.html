@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Go 1.18 关于泛型特性的说明 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="在 Ubuntu 上安装 Nvidia 专有驱动" href="install-nvidia-driver.html" />
+    <link rel="prev" title="Redis Stack 简介" href="introducing-redis-stack.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Go 1.18 关于泛型特性的说明</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="introducing-redis-stack.html" title="Previous Chapter: Redis Stack 简介"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; Redis Stack 简介</span>
+    </a>
+  </li>
+  <li>
+    <a href="install-nvidia-driver.html" title="Next Chapter: 在 Ubuntu 上安装 Nvidia 专有驱动"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">在 Ubuntu 上安装 ... &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="go-1-18">
+<h1>Go 1.18 关于泛型特性的说明<a class="headerlink" href="#go-1-18" title="Link to this heading">¶</a></h1>
+<img alt="../_images/flying-gopher.png" src="../_images/flying-gopher.png" />
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>本文由黄健宏翻译自 <a class="reference external" href="https://go.dev/doc/go1.18">《Go 1.18 Release Notes》</a> 。</p>
+</div>
+<p>Go 1.18
+实现了<a class="reference external" href="https://go.googlesource.com/proposal/+/refs/heads/master/design/43651-type-parameters.md">类型参数提案</a>中描述的泛型特性。
+这对 Go 语言来说是一个非常大的改动，但这些改动是完全向后兼容的。</p>
+<p>为了检验泛型对语言所作的修改，我们需要大量崭新的、经过良好测试的生产环境代码。
+然而由于现在使用泛型特性的人还不够多，我们暂时还无法做到这一点。
+我们相信泛型特性实现得很好，质量也很高，但是跟 Go
+的其他绝大部分不一样，这一特性尚未经过现实世界验证。
+因此我们鼓励你在有意义的地方使用泛型，但是如果你想要把泛型代码部署到生产环境，那么请务必小心谨慎进行。</p>
+<p>尽管我们相信新的语言特性设计得非常好，并且说明得也非常清楚，但我们还是有可能会犯错误。
+正如我们在<a class="reference external" href="https://go.dev/doc/go1compat">Go 1
+兼容性保证</a>中所说：“为了解决规范中的不一致或不完整，我们保留包括更新实现在内的解决问题的权利，即便这一行为可能会影响现有程序的意义或合法性”，以及：“如果编译器或者库的某个
+bug 违反了规范，那么当这个 bug 被修复时，依赖该 bug
+的程序可能会被破坏，但我们保留修复这种 bug 的权利”。</p>
+<p>换句话说，一些在 1.18 中能够使用的泛型代码可能会在之后的版本中无法使用。
+这并非我们有意为之，而是由于某些我们今天无法预见的原因，我们可能会在未来的版本中不得不破坏
+1.18 版本的程序。 我们会尽可能减少这种破坏，但并不保证这种破坏不会发生。</p>
+<p>以下是泛型特性带来的一些最为明显的变动。如果你想要知道更详细的介绍，那么可以参考<a class="reference external" href="https://go.googlesource.com/proposal/+/refs/heads/master/design/43651-type-parameters.md">泛型特性的提案</a>或者<a class="reference external" href="https://go.dev/ref/spec">语言规范</a>：</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://go.dev/ref/spec#Function_declarations">函数</a>和<a class="reference external" href="https://go.dev/ref/spec#Type_declarations">类型声明</a>的语法现在接受<a class="reference external" href="https://go.dev/ref/spec#Type_parameter_declarations">类型型参</a>.</p></li>
+<li><p>在参数化的函数和类型后面，可以通过用方括号包裹一系列类型参数来进行实例化</p></li>
+<li><p>新标记 <code class="docutils literal notranslate"><span class="pre">~</span></code>
+已经被添加到<a class="reference external" href="https://go.dev/ref/spec#Operators_and_punctuation">操作符和标点符号</a>集合中</p></li>
+<li><p><a class="reference external" href="https://go.dev/ref/spec#Interface_types">接口类型</a>的语法现在允许嵌入在任何类型里面（而不仅仅是类型名字），包括联合类型（union）和
+<code class="docutils literal notranslate"><span class="pre">~T</span></code> 类型。接口现在不仅定义方法也定义类型。</p></li>
+<li><p>新的<a class="reference external" href="https://go.dev/ref/spec#Predeclared_identifiers">预定义标志符</a>
+<code class="docutils literal notranslate"><span class="pre">any</span></code> 是空接口的别名（alias），它可以取代 <code class="docutils literal notranslate"><span class="pre">interface{}</span></code> 。</p></li>
+<li><p>新的<a class="reference external" href="https://go.dev/ref/spec#Predeclared_identifiers">预定义标志符</a>
+<code class="docutils literal notranslate"><span class="pre">comparable</span></code> 是一个接口，用于表示所有可以使用 <code class="docutils literal notranslate"><span class="pre">==</span></code> 或者 <code class="docutils literal notranslate"><span class="pre">!=</span></code>
+进行比较的类型。这一接口只能用作类型约束，又或者嵌入在类型约束当中。</p></li>
+</ul>
+<p>现在有三个包在试验性地使用泛型，这些包都被放置在 <code class="docutils literal notranslate"><span class="pre">x/exp</span></code>
+库当中。这些包的 API 不在 Go 1
+的保证范围之内，随着我们对泛型的经验积累，它们可能会发生变化：</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://pkg.go.dev/golang.org/x/exp/constraints">golang.org/x/exp/constraints</a>
+——
+对泛型代码有用的一些约束，比如 <a class="reference external" href="https://pkg.go.dev/golang.org/x/exp/constraints#Ordered">constraints.Ordered</a></p></li>
+<li><p><a class="reference external" href="https://pkg.go.dev/golang.org/x/exp/slices">golang.org/x/exp/slices</a>
+——
+对任何元素类型的切片进行操作的泛型函数集合</p></li>
+<li><p><a class="reference external" href="https://pkg.go.dev/golang.org/x/exp/maps">golang.org/x/exp/maps</a>
+——
+对键和值为任何类型的映射进行操作的泛型函数集合</p></li>
+</ul>
+<p>当前的泛型实现具有以下限制：</p>
+<ul class="simple">
+<li><p>Go 编译器无法处理泛型函数或方法之内的类型声明，我们期望在 Go 1.19
+提供这一特性。</p></li>
+<li><p>Go 编译器不支持为预定义函数 <code class="docutils literal notranslate"><span class="pre">real</span></code> 、 <code class="docutils literal notranslate"><span class="pre">imag</span></code> 和 <code class="docutils literal notranslate"><span class="pre">complex</span></code>
+的类型形参类型（type parameter type）设置实参（argument），我们期望在
+Go 1.19 移除这一限制。</p></li>
+<li><p>Go 编译器只有在类型形参类型 <code class="docutils literal notranslate"><span class="pre">P</span></code> 使用约束接口显式地声明了方法 <code class="docutils literal notranslate"><span class="pre">m</span></code>
+的情况下，才能调用类型为 <code class="docutils literal notranslate"><span class="pre">P</span></code> 的值 <code class="docutils literal notranslate"><span class="pre">x</span></code> 的方法 <code class="docutils literal notranslate"><span class="pre">m</span></code> 。
+与此类似，即使方法 <code class="docutils literal notranslate"><span class="pre">m</span></code> 已经事实上存在于所有实现了接口 <code class="docutils literal notranslate"><span class="pre">P</span></code>
+的类型中，方法 <code class="docutils literal notranslate"><span class="pre">x.m</span></code> 和方法表达式 <code class="docutils literal notranslate"><span class="pre">P.m</span></code> 也只能在 <code class="docutils literal notranslate"><span class="pre">P</span></code>
+显式地声明了它们的情况下使用。 我们期望在 Go 1.19 移除这一限制。</p></li>
+<li><p>Go 编译器不支持访问结构字段 <code class="docutils literal notranslate"><span class="pre">x.f</span></code> ， 当 <code class="docutils literal notranslate"><span class="pre">x</span></code>
+为类型形参类型时，即使类型形参类型集合的所有类型都拥有字段 <code class="docutils literal notranslate"><span class="pre">f</span></code> ，Go
+编译器也不支持访问结构字段 <code class="docutils literal notranslate"><span class="pre">x.f</span></code> 。我们期望在 Go 1.19
+移除这一限制。</p></li>
+<li><p>不能将类型形参或者指向类型形参的指针嵌入到结构类型中用作匿名字段。
+类似地，在接口类型中嵌入类型形参也是不允许的。
+目前尙不清楚何时会允许这些操作。</p></li>
+<li><p>拥有多种意义（term）的联合元素不能包含带有非空方法集合的接口类型。
+目前尚不清楚何时会允许这一操作。</p></li>
+</ul>
+<p>泛型还将对 Go 的生态系统产生巨大影响。
+尽管我们已经更新了几个核心工具以便让其支持泛型，但还有很多工作有待完成。
+我们还需要一些时间才能将语言的改变反映到余下的工具、文档和函数库里面。</p>
+<div class="line-block">
+<div class="line">觉得所有编程语言最终都难逃变成 C++ 命运的黄健宏</div>
+<div class="line">2022.3.19</div>
+</div>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

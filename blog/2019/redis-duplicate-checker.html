@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>使用 HyperLogLog 实现概率去重 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">使用 HyperLogLog 实现概率去重</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="hyperloglog">
+<h1>使用 HyperLogLog 实现概率去重<a class="headerlink" href="#hyperloglog" title="Link to this heading">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>本文摘录自《Redis使用手册》，
+详情请见： <a class="reference external" href="http://RedisGuide.com">RedisGuide.com</a> 。</p>
+</div>
+<p>在构建应用程序的过程中，
+我们经常需要与广告等垃圾信息做斗争。
+因为垃圾信息的发送者通常会使用不同的帐号、在不同的地方发送相同的垃圾信息，
+所以寻找垃圾信息的其中一种比较简单有效的手段就是找出那些重复的信息：
+如果两个不同的用户发送了完全相同的信息，
+又或者同一个用户重复地发送了多次完全相同的信息，
+那么这些信息很有可能就是垃圾信息。</p>
+<p>判断两段信息是否相同并不是一件容易的事情，
+如果使用一般的字符串比对函数（比如 <code class="docutils literal notranslate"><span class="pre">strcmp</span></code>）来完成这一操作，
+那么每当有用户尝试执行信息发布操作时，
+程序就需要执行复杂度为 O(N*M) 的比对操作，
+其中 N 为信息的长度，
+而 M 则为系统目前已有的信息数量。
+不难看出，
+随着系统储存的信息越来越多，
+这种比对操作将变得越来越慢，
+最终成为系统的瓶颈。</p>
+<p>为了降低鉴别重复信息所需的复杂度，
+我们可以使用 HyperLogLog 来记录所有已发送的信息 ——
+每当用户发送一条信息的时候，
+程序就使用 <code class="docutils literal notranslate"><span class="pre">PFADD</span></code> 命令将这条信息添加到 HyperLogLog 里面：</p>
+<ul class="simple">
+<li><p>如果命令返回 <code class="docutils literal notranslate"><span class="pre">1</span></code> ，
+那么这条信息就是未出现过的新信息；</p></li>
+<li><p>如果命令返回 <code class="docutils literal notranslate"><span class="pre">0</span></code> ，
+那么这条信息就是已经出现过的重复信息。</p></li>
+</ul>
+<p>因为 HyperLogLog 使用的是概率算法，
+所以即使信息的长度非常长，
+HyperLogLog 判断信息是否重复所需的时间也非常短；
+另外因为 HyperLogLog 并不会随着被计数信息的增多而变大，
+所以程序可以把所有需要检测的信息都记录到同一个 HyperLogLog 里面，
+这使得实现重复信息检测程序所需的空间极大地减少。
+代码 7-2 展示了这个使用 HyperLogLog 实现的重复信息检测程序。</p>
+<hr class="docutils" />
+<p>代码 7-2 使用 HyperLogLog 实现的重复信息检测程序：<code class="docutils literal notranslate"><span class="pre">/hyperloglog/duplicate_checker.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">DuplicateChecker</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">is_duplicated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        在信息重复时返回 True ，未重复时返回 False 。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">pfadd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">unique_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        返回检查器已经检查过的非重复信息数量。</span>
+<span class="sd">        &quot;&quot;&quot;</span> 
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">pfcount</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>以下代码展示了如何使用 <code class="docutils literal notranslate"><span class="pre">DuplicateChecker</span></code> 程序去检测并发现重复的信息：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">duplicate_checker</span> <span class="kn">import</span> <span class="n">DuplicateChecker</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">checker</span> <span class="o">=</span> <span class="n">DuplicateChecker</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s1">&#39;duplicate-message-checker&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">checker</span><span class="o">.</span><span class="n">is_duplicated</span><span class="p">(</span><span class="s2">&quot;hello world!&quot;</span><span class="p">)</span>  <span class="c1"># 输入一些非重复信息</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">checker</span><span class="o">.</span><span class="n">is_duplicated</span><span class="p">(</span><span class="s2">&quot;good morning!&quot;</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">checker</span><span class="o">.</span><span class="n">is_duplicated</span><span class="p">(</span><span class="s2">&quot;bye bye&quot;</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">checker</span><span class="o">.</span><span class="n">unique_count</span><span class="p">()</span>                 <span class="c1"># 查看目前非重复信息的数量</span>
+<span class="go">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">checker</span><span class="o">.</span><span class="n">is_duplicated</span><span class="p">(</span><span class="s2">&quot;hello world!&quot;</span><span class="p">)</span>  <span class="c1"># 发现重复信息</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>检测重复信息这个问题实际上就是算法中的“去重问题”，
+因此其他去重问题也可以使用 <code class="docutils literal notranslate"><span class="pre">DuplicateChecker</span></code> 程序中展示的方法来解决。</p>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

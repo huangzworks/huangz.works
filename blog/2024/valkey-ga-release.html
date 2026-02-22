@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Valkey 发布 7.2.5 正式版，今后将与Redis分道扬镳 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Linux基金会宣布推出Valkey作为Redis的开源替代方案" href="valkey.html" />
+    <link rel="prev" title="用文字构筑的迷宫" href="maze.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Valkey 发布 7.2.5 正式版，今后将与Redis分道扬镳</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="maze.html" title="Previous Chapter: 用文字构筑的迷宫"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; 用文字构筑的迷宫</span>
+    </a>
+  </li>
+  <li>
+    <a href="valkey.html" title="Next Chapter: Linux基金会宣布推出Valkey作为Redis的开源替代方案"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">Linux基金会宣布推出V... &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="valkey-7-2-5-redis">
+<h1>Valkey 发布 7.2.5 正式版，今后将与Redis分道扬镳<a class="headerlink" href="#valkey-7-2-5-redis" title="Link to this heading">¶</a></h1>
+<img alt="../_images/happy.png" src="../_images/happy.png" />
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>本文为以下视频的文字稿，欢迎观看：<a class="reference external" href="https://www.bilibili.com/video/BV1Ym41117oH/">B站</a> 、<a class="reference external" href="https://www.douyin.com/user/self?modal_id=7362764394079522063">抖音</a></p>
+</div>
+<p><a class="reference external" href="https://valkey.io/">Valkey</a>——由Linux基金会支持的Redis开源分支，最近释出了他们的7.2.5版本：<a class="reference external" href="https://github.com/valkey-io/valkey/releases/tag/7.2.5">https://github.com/valkey-io/valkey/releases/tag/7.2.5</a>。</p>
+<p>Valkey 7.2.5版本在功能上完全兼容开源的Redis
+7.2.4版本，并在这个基础上修复了几个小bug。但据该项目的核心成员透露，<strong>该版本将是它们最初也是最后一个完全兼容Redis的版本，之后的Valkey将不再遵循Redis的开发路线图</strong>，而会有自己不同的开发路线。</p>
+<p>这样一来，Valkey和Redis在未来很可能会出现特性差异，并且Valkey项目组还打算<a class="reference external" href="https://github.com/orgs/valkey-io/discussions/361">在今年内发布下个主要版本</a>（目前暂定为8.0版本）。考虑到Redis之前也公布了<a class="reference external" href="https://redis.io/blog/the-future-of-redis">未来Redis
+8.0版本的开发计划</a>，两个项目之间的对比和竞争应该会非常有趣。</p>
+<p>此外，继亚马逊云、谷歌云、甲骨文、爱立信和Snap之后，阿里云、华为、Aiven、Chainguard、Heroku、Percona
+和Verizon也<a class="reference external" href="https://www.linuxfoundation.org/press/valkey-community-announces-release-candidate-amid-growing-support-for-open-source-data-store">加入了对Valkey项目的支持</a>。考虑到来自腾讯云的开发者也加入到了<a class="reference external" href="https://github.com/orgs/valkey-io/people">Valkey项目的核心成员团队</a>里面，腾讯云公开对Valkey的支持应该也是早晚的事情了。</p>
+<p>综合来看，今后的情况应该就是上述厂商协作开发Valkey，Redis公司独立开发Redis了。到底是具有雄厚积累的Redis继续保持优势，还是新挑战者Valkey会更受大家欢迎呢？无论如何，祝福这两个项目都有光明的未来吧！</p>
+<div class="line-block">
+<div class="line">仿佛听见Redis大声呐喊说“Valkey你一定要幸福啊！”的黄健宏</div>
+<div class="line">2024.4.28</div>
+</div>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

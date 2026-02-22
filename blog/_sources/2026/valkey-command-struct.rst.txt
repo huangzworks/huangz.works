@@ -1,0 +1,62 @@
+Valkey源码剖析（10）：命令的表示
+================================
+
+Valkey中的每个命令都由一个\ ``server.h/serverCommand``\ 结构表示，以下是该结构的主要属性：
+
+.. code:: c
+
+   struct serverCommand {
+       // 命令名字（C字符串版本）
+       const char *declared_name;
+       // 命令所属分组
+       serverCommandGroup group;     /* Command group */
+       // 命令的实现函数
+       serverCommandProc *proc; /* Command implementation */
+       // 命令的参数数量
+       int arity;               /* Number of arguments, it is possible to use -N to say >= N */
+       // 命令标识
+       uint64_t flags;          /* Command flags, see CMD_*. */
+       // 命令的ACL分组
+       uint64_t acl_categories; /* ACl categories, see ACL_CATEGORY_*. */
+       // 参数数组的长度
+       int num_args; /* Length of args array. */
+       // 子命令数组（可为空）
+       struct serverCommand *subcommands;
+       // 参数数组（可为空）
+       struct serverCommandArg *args;
+   #ifdef LOG_REQ_RES
+       // 回复模式
+       struct jsonObject *reply_schema;
+   #endif
+
+       // 命令ID（用于实现ACL命令权限检测）
+       int id;
+       // 命令的原始名字（包含父命令的命令将以“parentcmd|childcmd”的形式存在）
+       sds fullname;
+       // 命令的当前名字（可以被修改为其他名字）
+       sds current_name;
+       // 子命令哈希表
+       // 该表的键为不包含父命令名的sds格式子命令名字，值为指向serverCommand结构的指针
+       hashtable *subcommands_ht;
+       // 父命令
+       struct serverCommand *parent;
+
+       // 其他属性...
+   };
+
+在这个结构中，最重要的属性包括：
+
+-  分别以C字符串和SDS格式表示的命令描述名\ ``declared_name``\ 、命令原名\ ``fullname``\ 和命令当前名\ ``current_name``
+
+-  记录命令参数数量的\ ``arity``\ 属性，记录命令具体参数的\ ``args``\ 属性，记录命令标识的\ ``flags``\ 属性
+
+-  记录命令分组的\ ``group``\ 属性，记录命令父命令的\ ``parent``\ 属性，记录命令子命令的\ ``subcommands_ht``\ 属性
+
+-  指向命令实现函数的\ ``proc``\ 属性
+
+等等。
+
+接下来的文章将介绍Valkey是如何为每个命令分别创建相应的\ ``serverCommand``\ 结构的。
+
+| 黄健宏
+| 2026.1.3

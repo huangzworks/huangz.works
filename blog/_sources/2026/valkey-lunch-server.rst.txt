@@ -1,0 +1,115 @@
+Valkey源码剖析（1）：启动服务器
+========================================
+
+Valkey服务器的启动逻辑定义在server.c/main()函数中：
+
+.. code:: c
+
+   /* Main is marked as weak so that unit tests can use their own main function. */
+   __attribute__((weak)) int main(int argc, char **argv) {
+       // ...
+   }
+
+为了启动整个服务器，main()函数需要进行大量工作，根据执行顺序，其中比较重要的步骤包括：
+
+-  初始化服务器
+-  载入配置选项
+-  根据配置选项进一步初始化服务器
+-  载入持久化数据
+-  初始化并分配网络连接监听器
+-  启动事件主循环
+
+以下小节将分别介绍这些步骤。
+
+初始化服务器
+------------
+
+Valkey服务器使用全局变量server.c/server记录自身状态：
+
+.. code:: c
+
+   struct valkeyServer server; /* Server global state */
+
+该变量是server.h/valkeyServer结构的一个实例，valkeyServer结构记录了服务器运行相关的几乎全部信息。
+
+为了启动Valkey服务器，main()函数将调用server.c/initServerConfig()函数，使用默认值对valkeyServer结构的各项常量属性进行初始化：
+
+.. code:: c
+
+   initServerConfig();
+
+载入配置选项
+------------
+
+在对服务器状态结构进行了初步的初始化之后，main()函数将解析服务器启动时可能给定了的配置选项参数、标准输入以及配置选项文件，并通过调用config.c/loadServerConfig()函数载入它们：
+
+.. code:: c
+
+   loadServerConfig(server.configfile, config_from_stdin, options);
+
+这个函数将从启动服务器时给定的配置文件、标准输入和附加参数中载入配置选项。
+
+根据配置选项进一步初始化服务器
+------------------------------
+
+在载入配置选项之后，main()函数将调用server.c/initServer()函数，根据给定的配置选项进一步初始化服务器状态结构：
+
+.. code:: c
+
+   initServer();
+
+跟之前initServerConfig()函数只设置服务器状态结构的常量值不一样，这次initServer()函数将根据各个给定的配置选项的值，为服务器状态结构创建各种相应的数据结构，其中的操作包括：
+
+-  初始化各项服务器线程
+-  初始化服务器的各种写入、写出缓冲区
+-  创建服务器的共享对象
+-  创建服务器事件主循环状态，并设置相关的事件回调
+-  创建数据库
+-  初始化服务器的各项统计信息
+-  创建服务器的脚本运行环境和服务器端函数运行环境
+
+等等。
+
+载入持久化数据
+--------------
+
+在完成对服务器状态结构的初始化之后，main()函数将调用server.c/loadDataFromDisk()函数，从RDB文件或是AOF文件中，将之前持久化的数据重新载入至服务器当前的数据库中：
+
+.. code:: c
+
+   loadDataFromDisk();
+
+如果服务器开启了AOF持久化功能，那么服务器还会调用server.c/aofOpenIfNeededOnServerStart()函数以创建并打开新的AOF文件，然后调用aof.c/aofDelHistoryFiles()函数以删除旧的AOF文件：
+
+.. code:: c
+
+   aofOpenIfNeededOnServerStart();
+   aofDelHistoryFiles();
+
+初始化并分配网络连接监听器
+--------------------------
+
+在载入持久化数据之前，服务器会调用server.c/initListeners()函数以创建网络连接监听器，并在载入数据之后将各个监听器分配给服务器以供使用：
+
+.. code:: c
+
+   for (j = 0; j < CONN_TYPE_MAX; j++) {
+       connListener *listener = &server.listeners[j];
+       if (listener->ct == NULL) continue;
+
+       serverLog(LL_NOTICE, "Ready to accept connections %s", getConnectionTypeName(listener->ct->get_type()));
+   }
+
+启动事件主循环
+--------------
+
+在初始化服务器、载入持久化数据并分配连接监听器之后，main()函数要做的就是调用ae.c/aeMain()函数以启动服务器事件主循环：
+
+.. code:: c
+
+   aeMain(server.el);
+
+至此，服务器就算启动成功，接下来它就可以正常地接收并处理客户端发来的命令请求了。
+
+| 黄健宏
+| 2025.12.23

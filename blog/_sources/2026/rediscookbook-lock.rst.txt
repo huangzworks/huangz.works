@@ -1,0 +1,36 @@
+《Redis应用实例》书摘（5）：锁
+===================================
+
+锁是计算机系统中经常会用到的一种重要的机制，它可以用来保证特定资源在任何时候最多只能有一个使用者。
+
+每个锁程序至少需要实现两个方法：
+
+- 上锁——尝试获得锁的独占权，在任何时候只能有最多一个客户端成功上锁，而除此以外的其他客户端则会失败。
+- 解锁——成功上锁的客户端可以通过解锁释放对锁的独占权，使得包括它自身在内的所有客户端能够重新获得上锁的机会。
+
+代码清单 CODE_BASIC_LOCK 展示了实现上述两个操作的锁程序。
+
+--------------
+
+代码清单 CODE_BASIC_LOCK 基本锁实现 ``lock.py``
+
+.. literalinclude:: code/lock.py
+
+--------------
+
+在\ ``acquire()``\ 方法中，程序通过检查\ ``SET``\ 命令的返回值是否为\ ``True``\ 来判断设置是否成功执行；而在\ ``release()``\ 方法中，程序则通过检查\ ``DEL``\ 命令返回的成功删除键数量是否为\ ``1``\ 来判断锁键是否已被成功删除。
+
+这个锁程序的具体使用方法如下：
+
+.. code:: python
+
+        >>> from redis import Redis
+        >>> from lock import Lock
+        >>> client = Redis(decode_responses=True)
+        >>> locker1 = Lock(client, "Lock:10086")
+        >>> locker1.acquire()  # 上锁
+        True
+        >>> locker1.release()  # 解锁
+        True
+
+.. include:: rediscookbook-promote.rst

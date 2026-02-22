@@ -1,0 +1,42 @@
+《Redis应用实例》书摘（24）：标签系统
+========================================
+
+很多用户生成内容（UGC）的网站和应用都允许用户为他们提供的内容打标签。
+
+举个例子，如果你在视频网站上传了一个Redis相关的视频，那么你可能会给这个视频加上“Redis”、“数据库”、“NoSQL”等标签，以便搜索这些标签的用户可以发现这个视频，而系统也可以基于标签将视频推荐给对这些标签感兴趣的用户。
+
+代码清单 CODE_TAG 展示了基于集合实现的标签系统程序。
+
+----
+
+代码清单 CODE_TAG 标签系统程序 ``tag.py``
+
+.. literalinclude:: code/tag.py
+   :lines: 3-13, 21-66
+
+----
+
+作为例子，以下代码演示了如何使用这个程序对Redis、MongoDB和MySQL这三个数据库添加标签，然后基于标签搜索对应的数据库：
+
+::
+
+        >>> from redis import Redis
+        >>> from tag import Tag
+        >>> client = Redis(decode_responses=True)
+        >>> tag = Tag(client)
+        >>> tag.add("Redis", {"Redis", "NoSQL", "Database"})  # 为数据库添加标签
+        3
+        >>> tag.add("MongoDB", {"MongoDB", "NoSQL", "Database"})
+        3
+        >>> tag.add("MySQL", {"MySQL", "SQL", "Database"})
+        3
+        >>> tag.get_tags_by_target("Redis")  # 根据数据库查找标签
+        {'Redis', 'Database', 'NoSQL'}
+        >>> tag.get_target_by_tags({"NoSQL"})  # 根据标签查找数据库
+        {'Redis', 'MongoDB'}
+        >>> tag.get_target_by_tags({"Database"})
+        {'Redis', 'MongoDB', 'MySQL'}
+        >>> tag.get_target_by_tags({"Database", "SQL"})  # 根据多个标签查找数据库
+        {'MySQL'}
+
+.. include:: rediscookbook-promote.rst

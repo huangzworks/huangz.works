@@ -1,0 +1,43 @@
+《Redis应用实例》书摘（21）：优先队列
+==============================================
+
+优先队列是一种常见的数据结构，这种队列中的每个元素都有一个优先级，而优先级则决定了元素在队列中的出队顺序。
+
+在Redis中实现优先队列最直接的方法就是使用有序集合——通过将优先队列元素映射为有序集合成员，并将元素的优先级映射为有序集合成员的分值，程序就可以通过操纵有序集合来操纵优先队列。
+
+代码清单 CODE_PRIORITY_QUEUE 展示了基于有序集合实现的优先队列程序。
+
+--------------
+
+代码清单 CODE_PRIORITY_QUEUE 优先队列 ``priority_queue.py``
+
+.. literalinclude:: code/priority_queue.py
+   :lines: 3-65
+
+--------------
+
+以下代码展示了上述优先队列程序的具体使用方式：
+
+.. code:: python
+
+        >>> from redis import Redis
+        >>> from priority_queue import PriorityQueue
+        >>> client = Redis(decode_responses=True)
+        >>> queue = PriorityQueue(client, "PriorityQueue")
+        >>> queue.insert("Job A", 100)  # 元素入队
+        >>> queue.insert("Job C", 200)
+        >>> queue.insert("Job B", 250)
+        >>> queue.insert("Job E", 280)
+        >>> queue.insert("Job D", 330)
+        >>> queue.length()  # 查看队列长度
+        5
+        >>> queue.max()  # 查看优先级最高的元素
+        {'Job D': 330.0}
+        >>> queue.min()  # 查看优先级最低的元素
+        {'Job A': 100.0}
+        >>> queue.pop_max()  # 弹出优先级最高的元素
+        {'Job D': 330.0}
+        >>> queue.pop_min()  # 弹出优先级最低的元素
+        {'Job A': 100.0}
+
+.. include:: rediscookbook-promote.rst

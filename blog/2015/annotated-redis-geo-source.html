@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Redis GEO 源码注释 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Redis GEO 特性简介" href="redis-geo.html" />
+    <link rel="prev" title="对比 Redis 与 Memcached" href="comparison-of-redis-and-memcached.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Redis GEO 源码注释</a><ul>
+<li><a class="reference internal" href="#geo-h"><code class="docutils literal notranslate"><span class="pre">geo.h</span></code></a></li>
+<li><a class="reference internal" href="#geo-c"><code class="docutils literal notranslate"><span class="pre">geo.c</span></code></a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="comparison-of-redis-and-memcached.html" title="Previous Chapter: 对比 Redis 与 Memcached"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; 对比 Redis 与 Memcached</span>
+    </a>
+  </li>
+  <li>
+    <a href="redis-geo.html" title="Next Chapter: Redis GEO 特性简介"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">Redis GEO 特性简介 &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="redis-geo">
+<h1>Redis GEO 源码注释<a class="headerlink" href="#redis-geo" title="Link to this heading">¶</a></h1>
+<p>Redis 的 GEO 特性主要由 <code class="docutils literal notranslate"><span class="pre">geo.h</span></code> 和 <code class="docutils literal notranslate"><span class="pre">geo.c</span></code> 两个文件实现，
+本文对这两个文件进行了详细的注释。</p>
+<section id="geo-h">
+<h2><code class="docutils literal notranslate"><span class="pre">geo.h</span></code><a class="headerlink" href="#geo-h" title="Link to this heading">¶</a></h2>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#ifndef __GEO_H__</span>
+<span class="cp">#define __GEO_H__</span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;server.h&quot;</span>
+
+<span class="cm">/* Structures used inside geo.c in order to represent points and array of</span>
+<span class="cm"> * points on the earth. */</span>
+<span class="c1">// 表示地理位置的结构</span>
+<span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">geoPoint</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="c1">// 经度</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">longitude</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 纬度</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">latitude</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 这个经纬度与另一个点之间的距离</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">dist</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 解码出经纬度的分值</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">score</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 分值对应的有序集合成员</span>
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">member</span><span class="p">;</span>
+
+<span class="p">}</span><span class="w"> </span><span class="n">geoPoint</span><span class="p">;</span>
+
+<span class="c1">// 用于储存多个地理位置的数组</span>
+<span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">geoArray</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="c1">// 数组本身</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">geoPoint</span><span class="w"> </span><span class="o">*</span><span class="n">array</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 数组可用的项数量</span>
+<span class="w">    </span><span class="kt">size_t</span><span class="w"> </span><span class="n">buckets</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 数组目前已用的项数量</span>
+<span class="w">    </span><span class="kt">size_t</span><span class="w"> </span><span class="n">used</span><span class="p">;</span>
+
+<span class="p">}</span><span class="w"> </span><span class="n">geoArray</span><span class="p">;</span>
+
+<span class="cp">#endif</span>
+</pre></div>
+</div>
+</section>
+<section id="geo-c">
+<h2><code class="docutils literal notranslate"><span class="pre">geo.c</span></code><a class="headerlink" href="#geo-c" title="Link to this heading">¶</a></h2>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cm">/*</span>
+<span class="cm"> * Copyright (c) 2014, Matt Stancliff &lt;matt@genges.com&gt;.</span>
+<span class="cm"> * Copyright (c) 2015, Salvatore Sanfilippo &lt;antirez@gmail.com&gt;.</span>
+<span class="cm"> * All rights reserved.</span>
+<span class="cm"> *</span>
+<span class="cm"> * Redistribution and use in source and binary forms, with or without</span>
+<span class="cm"> * modification, are permitted provided that the following conditions are met:</span>
+<span class="cm"> *</span>
+<span class="cm"> *   * Redistributions of source code must retain the above copyright notice,</span>
+<span class="cm"> *     this list of conditions and the following disclaimer.</span>
+<span class="cm"> *   * Redistributions in binary form must reproduce the above copyright</span>
+<span class="cm"> *     notice, this list of conditions and the following disclaimer in the</span>
+<span class="cm"> *     documentation and/or other materials provided with the distribution.</span>
+<span class="cm"> *   * Neither the name of Redis nor the names of its contributors may be used</span>
+<span class="cm"> *     to endorse or promote products derived from this software without</span>
+<span class="cm"> *     specific prior written permission.</span>
+<span class="cm"> *</span>
+<span class="cm"> * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;</span>
+<span class="cm"> * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE</span>
+<span class="cm"> * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE</span>
+<span class="cm"> * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE</span>
+<span class="cm"> * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR</span>
+<span class="cm"> * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF</span>
+<span class="cm"> * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS</span>
+<span class="cm"> * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN</span>
+<span class="cm"> * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)</span>
+<span class="cm"> * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE</span>
+<span class="cm"> * POSSIBILITY OF SUCH DAMAGE.</span>
+<span class="cm"> */</span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;geo.h&quot;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;geohash_helper.h&quot;</span>
+
+<span class="cm">/* Things exported from t_zset.c only for geo.c, since it is the only other</span>
+<span class="cm"> * part of Redis that requires close zset introspection. */</span>
+<span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="nf">zzlFirstInRange</span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">zl</span><span class="p">,</span><span class="w"> </span><span class="n">zrangespec</span><span class="w"> </span><span class="o">*</span><span class="n">range</span><span class="p">);</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">zslValueLteMax</span><span class="p">(</span><span class="kt">double</span><span class="w"> </span><span class="n">value</span><span class="p">,</span><span class="w"> </span><span class="n">zrangespec</span><span class="w"> </span><span class="o">*</span><span class="n">spec</span><span class="p">);</span>
+
+<span class="cm">/* ====================================================================</span>
+<span class="cm"> * This file implements the following commands:</span>
+<span class="cm"> *</span>
+<span class="cm"> *   - geoadd - add coordinates for value to geoset</span>
+<span class="cm"> *   - georadius - search radius by coordinates in geoset</span>
+<span class="cm"> *   - georadiusbymember - search radius based on geoset member position</span>
+<span class="cm"> * ==================================================================== */</span>
+
+<span class="cm">/* ====================================================================</span>
+<span class="cm"> * geoArray implementation</span>
+<span class="cm"> * ==================================================================== */</span>
+
+<span class="cm">/* Create a new array of geoPoints. */</span>
+<span class="n">geoArray</span><span class="w"> </span><span class="o">*</span><span class="nf">geoArrayCreate</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="n">geoArray</span><span class="w"> </span><span class="o">*</span><span class="n">ga</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">zmalloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">ga</span><span class="p">));</span>
+
+<span class="w">    </span><span class="cm">/* It gets allocated on first geoArrayAppend() call. */</span>
+<span class="w">    </span><span class="c1">// 这个函数只创建一个空的数组，等到添加第一个项的时候再进行初始化</span>
+<span class="w">    </span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">array</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">buckets</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">used</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">ga</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* Add a new entry and return its pointer so that the caller can populate</span>
+<span class="cm"> * it with data. */</span>
+<span class="n">geoPoint</span><span class="w"> </span><span class="o">*</span><span class="nf">geoArrayAppend</span><span class="p">(</span><span class="n">geoArray</span><span class="w"> </span><span class="o">*</span><span class="n">ga</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="c1">// 在数组空间已经用尽时，对数组进行扩展</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">used</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">buckets</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 空数组会分配 8 个项的空间</span>
+<span class="w">        </span><span class="c1">// 而已有的数组则会分配目前多一倍空间</span>
+<span class="w">        </span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">buckets</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">buckets</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">8</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">buckets</span><span class="o">*</span><span class="mi">2</span><span class="p">;</span>
+<span class="w">        </span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">array</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">zrealloc</span><span class="p">(</span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">array</span><span class="p">,</span><span class="k">sizeof</span><span class="p">(</span><span class="n">geoPoint</span><span class="p">)</span><span class="o">*</span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">buckets</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 移动指针，指向下一个可用项</span>
+<span class="w">    </span><span class="n">geoPoint</span><span class="w"> </span><span class="o">*</span><span class="n">gp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">array</span><span class="o">+</span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">used</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">used</span><span class="o">++</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">gp</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* Destroy a geoArray created with geoArrayCreate(). */</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">geoArrayFree</span><span class="p">(</span><span class="n">geoArray</span><span class="w"> </span><span class="o">*</span><span class="n">ga</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="p">;</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">used</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="n">sdsfree</span><span class="p">(</span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">array</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">member</span><span class="p">);</span>
+<span class="w">    </span><span class="n">zfree</span><span class="p">(</span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">array</span><span class="p">);</span>
+<span class="w">    </span><span class="n">zfree</span><span class="p">(</span><span class="n">ga</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="cm">/* ====================================================================</span>
+<span class="cm"> * Helpers</span>
+<span class="cm"> * ==================================================================== */</span>
+
+<span class="c1">// 从 bit 参数这个 geohash 里面解码出经度和纬度</span>
+<span class="c1">// 然后分别将它们储存到 xy[0] 和 xy[1] 里面</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">decodeGeohash</span><span class="p">(</span><span class="kt">double</span><span class="w"> </span><span class="n">bits</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">xy</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">GeoHashBits</span><span class="w"> </span><span class="n">hash</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">.</span><span class="n">bits</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">uint64_t</span><span class="p">)</span><span class="n">bits</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">step</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">GEO_STEP_MAX</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">geohashDecodeToLongLatWGS84</span><span class="p">(</span><span class="n">hash</span><span class="p">,</span><span class="w"> </span><span class="n">xy</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="cm">/* Input Argument Helper */</span>
+<span class="cm">/* Take a pointer to the latitude arg then use the next arg for longitude.</span>
+<span class="cm"> * On parse error C_ERR is returned, otherwise C_OK. */</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">extractLongLatOrReply</span><span class="p">(</span><span class="n">client</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">robj</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="p">,</span>
+<span class="w">                                        </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">xy</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="c1">// 进行两次循环，第一次循环取出经度，第二次循环取出纬度</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">        </span><span class="c1">// 获取 double 格式的经度或者纬度</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">getDoubleFromObjectOrReply</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">argv</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">xy</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span><span class="w"> </span><span class="o">!=</span>
+<span class="w">            </span><span class="n">C_OK</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="c1">// 检查经纬度是否处于合法的范围之内</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">xy</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">GEO_LONG_MIN</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">xy</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">GEO_LONG_MAX</span><span class="w"> </span><span class="o">||</span>
+<span class="w">            </span><span class="n">xy</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">GEO_LAT_MIN</span><span class="w">  </span><span class="o">||</span><span class="w"> </span><span class="n">xy</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">GEO_LAT_MAX</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">addReplySds</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">sdscatprintf</span><span class="p">(</span><span class="n">sdsempty</span><span class="p">(),</span>
+<span class="w">                </span><span class="s">&quot;-ERR invalid longitude,latitude pair %f,%f</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">,</span><span class="n">xy</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">xy</span><span class="p">[</span><span class="mi">1</span><span class="p">]));</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">C_OK</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* Input Argument Helper */</span>
+<span class="cm">/* Decode lat/long from a zset member&#39;s score.</span>
+<span class="cm"> * Returns C_OK on successful decoding, otherwise C_ERR is returned. */</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">longLatFromMember</span><span class="p">(</span><span class="n">robj</span><span class="w"> </span><span class="o">*</span><span class="n">zobj</span><span class="p">,</span><span class="w"> </span><span class="n">robj</span><span class="w"> </span><span class="o">*</span><span class="n">member</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">xy</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">score</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 从有序集合里面获取指定 member 对应的 score</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">zsetScore</span><span class="p">(</span><span class="n">zobj</span><span class="p">,</span><span class="w"> </span><span class="n">member</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">score</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 从这个 score 里面解码出经度和纬度</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">decodeGeohash</span><span class="p">(</span><span class="n">score</span><span class="p">,</span><span class="w"> </span><span class="n">xy</span><span class="p">))</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">C_OK</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* Check that the unit argument matches one of the known units, and returns</span>
+<span class="cm"> * the conversion factor to meters (you need to divide meters by the conversion</span>
+<span class="cm"> * factor to convert to the right unit).</span>
+<span class="cm"> *</span>
+<span class="cm"> * If the unit is not valid, an error is reported to the client, and a value</span>
+<span class="cm"> * less than zero is returned. */</span>
+<span class="c1">// 获取用户指定的单位，并根据单位决定进行单位转换所需的乘法因子</span>
+<span class="kt">double</span><span class="w"> </span><span class="nf">extractUnitOrReply</span><span class="p">(</span><span class="n">client</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">robj</span><span class="w"> </span><span class="o">*</span><span class="n">unit</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">u</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">unit</span><span class="o">-&gt;</span><span class="n">ptr</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">strcmp</span><span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;m&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">strcmp</span><span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;km&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1000</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">strcmp</span><span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;ft&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mf">0.3048</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">strcmp</span><span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;mi&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mf">1609.34</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">addReplyError</span><span class="p">(</span><span class="n">c</span><span class="p">,</span>
+<span class="w">            </span><span class="s">&quot;unsupported unit provided. please use m, km, ft, mi&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">-1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="cm">/* Input Argument Helper.</span>
+<span class="cm"> * Extract the dinstance from the specified two arguments starting at &#39;argv&#39;</span>
+<span class="cm"> * that shouldbe in the form: &lt;number&gt; &lt;unit&gt; and return the dinstance in the</span>
+<span class="cm"> * specified unit on success. *conversino is populated with the coefficient</span>
+<span class="cm"> * to use in order to convert meters to the unit.</span>
+<span class="cm"> *</span>
+<span class="cm"> * On error a value less than zero is returned. */</span>
+<span class="c1">// 从输入里面获取用户指定的范围值以及范围值的单位</span>
+<span class="kt">double</span><span class="w"> </span><span class="nf">extractDistanceOrReply</span><span class="p">(</span><span class="n">client</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">robj</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="p">,</span>
+<span class="w">                                     </span><span class="kt">double</span><span class="w"> </span><span class="o">*</span><span class="n">conversion</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="c1">// 取出范围值</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">distance</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">getDoubleFromObjectOrReply</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="o">&amp;</span><span class="n">distance</span><span class="p">,</span>
+<span class="w">                                   </span><span class="s">&quot;need numeric radius&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">C_OK</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">-1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 取出单位</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">to_meters</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">extractUnitOrReply</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">to_meters</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">-1</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 单位默认为米，根据用户给定的单位对范围值进行转换</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">conversion</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="n">conversion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">to_meters</span><span class="p">;</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">distance</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">to_meters</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* The defailt addReplyDouble has too much accuracy.  We use this</span>
+<span class="cm"> * for returning location distances. &quot;5.2145 meters away&quot; is nicer</span>
+<span class="cm"> * than &quot;5.2144992818115 meters away.&quot; We provide 4 digits after the dot</span>
+<span class="cm"> * so that the returned value is decently accurate even when the unit is</span>
+<span class="cm"> * the kilometer. */</span>
+<span class="c1">// 向用户返回距离</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">addReplyDoubleDistance</span><span class="p">(</span><span class="n">client</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">d</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="n">dbuf</span><span class="p">[</span><span class="mi">128</span><span class="p">];</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">dlen</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">snprintf</span><span class="p">(</span><span class="n">dbuf</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">dbuf</span><span class="p">),</span><span class="w"> </span><span class="s">&quot;%.4f&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">d</span><span class="p">);</span>
+<span class="w">    </span><span class="n">addReplyBulkCBuffer</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">dbuf</span><span class="p">,</span><span class="w"> </span><span class="n">dlen</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="cm">/* Helper function for geoGetPointsInRange(): given a sorted set score</span>
+<span class="cm"> * representing a point, and another point (the center of our search) and</span>
+<span class="cm"> * a radius, appends this entry as a geoPoint into the specified geoArray</span>
+<span class="cm"> * only if the point is within the search area.</span>
+<span class="cm"> *</span>
+<span class="cm"> * returns C_OK if the point is included, or REIDS_ERR if it is outside. */</span>
+<span class="c1">// 从给定的有序集合 score 中解码出一个经纬度</span>
+<span class="c1">// 如果这个经纬度处于用户通过经纬度 lon 、lat 以及范围 radius 指定的范围之内</span>
+<span class="c1">// 那么将这个经纬度、解码出经纬度的分值、分值对应的元素记录到 geoPoint 结构里面</span>
+<span class="c1">// 然后将这个结构追加到数组的末尾</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">geoAppendIfWithinRadius</span><span class="p">(</span><span class="n">geoArray</span><span class="w"> </span><span class="o">*</span><span class="n">ga</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">lon</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">lat</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">radius</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">score</span><span class="p">,</span><span class="w"> </span><span class="n">sds</span><span class="w"> </span><span class="n">member</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">distance</span><span class="p">,</span><span class="w"> </span><span class="n">xy</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+
+<span class="w">    </span><span class="c1">// 根据分值解码出经纬度</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">decodeGeohash</span><span class="p">(</span><span class="n">score</span><span class="p">,</span><span class="n">xy</span><span class="p">))</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">;</span><span class="w"> </span><span class="cm">/* Can&#39;t decode. */</span>
+
+<span class="w">    </span><span class="cm">/* Note that geohashGetDistanceIfInRadiusWGS84() takes arguments in</span>
+<span class="cm">     * reverse order: longitude first, latitude later. */</span>
+<span class="w">    </span><span class="c1">// 如果 xy[2] 记录的经纬度处于 lon 、lat 以及 radius 所指定的范围之内</span>
+<span class="w">    </span><span class="c1">// 那么将距离记录到 distance 里面</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">geohashGetDistanceIfInRadiusWGS84</span><span class="p">(</span><span class="n">lon</span><span class="p">,</span><span class="n">lat</span><span class="p">,</span><span class="w"> </span><span class="n">xy</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="n">xy</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+<span class="w">                                           </span><span class="n">radius</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">distance</span><span class="p">))</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* Append the new element. */</span>
+<span class="w">    </span><span class="c1">// 将处于范围内的经纬度信息记录到 geoPoint 结构</span>
+<span class="w">    </span><span class="c1">// 并将结构追加到数组的末尾</span>
+<span class="w">    </span><span class="n">geoPoint</span><span class="w"> </span><span class="o">*</span><span class="n">gp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">geoArrayAppend</span><span class="p">(</span><span class="n">ga</span><span class="p">);</span>
+<span class="w">    </span><span class="n">gp</span><span class="o">-&gt;</span><span class="n">longitude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">xy</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+<span class="w">    </span><span class="n">gp</span><span class="o">-&gt;</span><span class="n">latitude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">xy</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+<span class="w">    </span><span class="n">gp</span><span class="o">-&gt;</span><span class="n">dist</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">distance</span><span class="p">;</span>
+<span class="w">    </span><span class="n">gp</span><span class="o">-&gt;</span><span class="n">member</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">member</span><span class="p">;</span>
+<span class="w">    </span><span class="n">gp</span><span class="o">-&gt;</span><span class="n">score</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">score</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">C_OK</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* Query a Redis sorted set to extract all the elements between &#39;min&#39; and</span>
+<span class="cm"> * &#39;max&#39;, appending them into the array of geoPoint structures &#39;gparray&#39;.</span>
+<span class="cm"> * The command returns the number of elements added to the array.</span>
+<span class="cm"> *</span>
+<span class="cm"> * 对有序集合进行查询，获取所有分值介于 min 和 max 之间的元素，</span>
+<span class="cm"> * 并将它们追加到由 geoPoint 结构组成的 gparray 数组里面。</span>
+<span class="cm"> * 这个函数返回数组的长度作为返回值。</span>
+<span class="cm"> *</span>
+<span class="cm"> * Elements which are farest than &#39;radius&#39; from the specified &#39;x&#39; and &#39;y&#39;</span>
+<span class="cm"> * coordinates are not included.</span>
+<span class="cm"> *</span>
+<span class="cm"> * 超出指定范围的元素不会被加入到数据里面，</span>
+<span class="cm"> * 范围由坐标 x 和 y 指定。</span>
+<span class="cm"> *</span>
+<span class="cm"> * The ability of this function to append to an existing set of points is</span>
+<span class="cm"> * important for good performances because querying by radius is performed</span>
+<span class="cm"> * using multiple queries to the sorted set, that we later need to sort</span>
+<span class="cm"> * via qsort. Similarly we need to be able to reject points outside the search</span>
+<span class="cm"> * radius area ASAP in order to allocate and process more points than needed. </span>
+<span class="cm"> *</span>
+<span class="cm"> * 为了提供良好的性能，这个函数提供了将坐标点添加到已有的坐标集合的功能，</span>
+<span class="cm"> * 这对于需要对有序集合进行多次查询并在之后对其进行排序的这个操作来说是非常重要的。</span>
+<span class="cm"> * 基于同样原因，这个函数会尽快地排除处于指定范围之外的元素，</span>
+<span class="cm"> * 从而尽可能地为处理和分配坐标点提供条件。</span>
+<span class="cm"> */</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">geoGetPointsInRange</span><span class="p">(</span><span class="n">robj</span><span class="w"> </span><span class="o">*</span><span class="n">zobj</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">min</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">max</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">lon</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">lat</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">radius</span><span class="p">,</span><span class="w"> </span><span class="n">geoArray</span><span class="w"> </span><span class="o">*</span><span class="n">ga</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="cm">/* minex 0 = include min in range; maxex 1 = exclude max in range */</span>
+<span class="w">    </span><span class="cm">/* That&#39;s: min &lt;= val &lt; max */</span>
+<span class="w">    </span><span class="n">zrangespec</span><span class="w"> </span><span class="n">range</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">.</span><span class="n">min</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">min</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">max</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">minex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">maxex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="c1">// 记录此处查询之间，ga 数组已有的项数量</span>
+<span class="w">    </span><span class="kt">size_t</span><span class="w"> </span><span class="n">origincount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">used</span><span class="p">;</span>
+<span class="w">    </span><span class="n">sds</span><span class="w"> </span><span class="n">member</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 在 ziplist 编码的有序集合里面进行查找</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">zobj</span><span class="o">-&gt;</span><span class="n">encoding</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OBJ_ENCODING_ZIPLIST</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">zl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">zobj</span><span class="o">-&gt;</span><span class="n">ptr</span><span class="p">;</span>
+<span class="w">        </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">eptr</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">sptr</span><span class="p">;</span>
+<span class="w">        </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">vstr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">        </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">vlen</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">        </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">vlong</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">score</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">((</span><span class="n">eptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">zzlFirstInRange</span><span class="p">(</span><span class="n">zl</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">range</span><span class="p">))</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="cm">/* Nothing exists starting at our min.  No results. */</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="c1">// 指向分值处于范围之内的第一个元素</span>
+<span class="w">        </span><span class="n">sptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ziplistNext</span><span class="p">(</span><span class="n">zl</span><span class="p">,</span><span class="w"> </span><span class="n">eptr</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// 遍历 ziplist ，查找所有分值位于范围之内的元素</span>
+<span class="w">        </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">eptr</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">            </span><span class="c1">// 取出分值</span>
+<span class="w">            </span><span class="n">score</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">zzlGetScore</span><span class="p">(</span><span class="n">sptr</span><span class="p">);</span>
+
+<span class="w">            </span><span class="cm">/* If we fell out of range, break. */</span>
+<span class="w">            </span><span class="c1">// 如果分值不再范围之内，那么跳出</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">zslValueLteMax</span><span class="p">(</span><span class="n">score</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">range</span><span class="p">))</span>
+<span class="w">                </span><span class="k">break</span><span class="p">;</span>
+
+<span class="w">            </span><span class="cm">/* We know the element exists. ziplistGet should always succeed */</span>
+<span class="w">            </span><span class="n">ziplistGet</span><span class="p">(</span><span class="n">eptr</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">vstr</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">vlen</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">vlong</span><span class="p">);</span>
+<span class="w">            </span><span class="n">member</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">vstr</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">sdsfromlonglong</span><span class="p">(</span><span class="n">vlong</span><span class="p">)</span><span class="w"> </span><span class="o">:</span>
+<span class="w">                                      </span><span class="n">sdsnewlen</span><span class="p">(</span><span class="n">vstr</span><span class="p">,</span><span class="n">vlen</span><span class="p">);</span>
+<span class="w">            </span>
+<span class="w">            </span><span class="c1">// 如果坐标位于范围之内，那么将它追加到数组 ga 的末尾</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">geoAppendIfWithinRadius</span><span class="p">(</span><span class="n">ga</span><span class="p">,</span><span class="n">lon</span><span class="p">,</span><span class="n">lat</span><span class="p">,</span><span class="n">radius</span><span class="p">,</span><span class="n">score</span><span class="p">,</span><span class="n">member</span><span class="p">)</span>
+<span class="w">                </span><span class="o">==</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">)</span><span class="w"> </span><span class="n">sdsfree</span><span class="p">(</span><span class="n">member</span><span class="p">);</span>
+
+<span class="w">            </span><span class="c1">// 移动指针，准备继续遍历下个元素</span>
+<span class="w">            </span><span class="n">zzlNext</span><span class="p">(</span><span class="n">zl</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">eptr</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">sptr</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 在跳跃表编码的有序集合里面进行查找</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">zobj</span><span class="o">-&gt;</span><span class="n">encoding</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OBJ_ENCODING_SKIPLIST</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">zset</span><span class="w"> </span><span class="o">*</span><span class="n">zs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">zobj</span><span class="o">-&gt;</span><span class="n">ptr</span><span class="p">;</span>
+<span class="w">        </span><span class="n">zskiplist</span><span class="w"> </span><span class="o">*</span><span class="n">zsl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">zs</span><span class="o">-&gt;</span><span class="n">zsl</span><span class="p">;</span>
+<span class="w">        </span><span class="n">zskiplistNode</span><span class="w"> </span><span class="o">*</span><span class="n">ln</span><span class="p">;</span>
+
+<span class="w">        </span><span class="c1">// 指向第一个位于范围之内的元素</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">((</span><span class="n">ln</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">zslFirstInRange</span><span class="p">(</span><span class="n">zsl</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">range</span><span class="p">))</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="cm">/* Nothing exists starting at our min.  No results. */</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">ln</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">robj</span><span class="w"> </span><span class="o">*</span><span class="n">o</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ln</span><span class="o">-&gt;</span><span class="n">obj</span><span class="p">;</span>
+<span class="w">            </span><span class="cm">/* Abort when the node is no longer in range. */</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">zslValueLteMax</span><span class="p">(</span><span class="n">ln</span><span class="o">-&gt;</span><span class="n">score</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">range</span><span class="p">))</span>
+<span class="w">                </span><span class="k">break</span><span class="p">;</span>
+
+<span class="w">            </span><span class="n">member</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">o</span><span class="o">-&gt;</span><span class="n">encoding</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OBJ_ENCODING_INT</span><span class="p">)</span><span class="w"> </span><span class="o">?</span>
+<span class="w">                        </span><span class="n">sdsfromlonglong</span><span class="p">((</span><span class="kt">long</span><span class="p">)</span><span class="n">o</span><span class="o">-&gt;</span><span class="n">ptr</span><span class="p">)</span><span class="w"> </span><span class="o">:</span>
+<span class="w">                        </span><span class="n">sdsdup</span><span class="p">(</span><span class="n">o</span><span class="o">-&gt;</span><span class="n">ptr</span><span class="p">);</span>
+
+<span class="w">            </span><span class="c1">// 如果坐标位于范围之内，那么将它追加到数组 ga 的末尾</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">geoAppendIfWithinRadius</span><span class="p">(</span><span class="n">ga</span><span class="p">,</span><span class="n">lon</span><span class="p">,</span><span class="n">lat</span><span class="p">,</span><span class="n">radius</span><span class="p">,</span><span class="n">ln</span><span class="o">-&gt;</span><span class="n">score</span><span class="p">,</span><span class="n">member</span><span class="p">)</span>
+<span class="w">                </span><span class="o">==</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">)</span><span class="w"> </span><span class="n">sdsfree</span><span class="p">(</span><span class="n">member</span><span class="p">);</span>
+
+<span class="w">            </span><span class="c1">// 移动指针，准备继续遍历下个元素</span>
+<span class="w">            </span><span class="n">ln</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ln</span><span class="o">-&gt;</span><span class="n">level</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">forward</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 计算本次查询新添加的 ga 数组项数量，也即是本次查询到的位于范围之内的坐标数量</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">used</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">origincount</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* Compute the sorted set scores min (inclusive), max (exclusive) we should</span>
+<span class="cm"> * query in order to retrieve all the elements inside the specified area</span>
+<span class="cm"> * &#39;hash&#39;. The two scores are returned by reference in *min and *max. */</span>
+<span class="c1">// 计算出从有序集合里面查找指定范围内的所有位置所需的 min 值和 max 值。</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">scoresOfGeoHashBox</span><span class="p">(</span><span class="n">GeoHashBits</span><span class="w"> </span><span class="n">hash</span><span class="p">,</span><span class="w"> </span><span class="n">GeoHashFix52Bits</span><span class="w"> </span><span class="o">*</span><span class="n">min</span><span class="p">,</span><span class="w"> </span><span class="n">GeoHashFix52Bits</span><span class="w"> </span><span class="o">*</span><span class="n">max</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="cm">/* We want to compute the sorted set scores that will include all the</span>
+<span class="cm">     * elements inside the specified Geohash &#39;hash&#39;, which has as many</span>
+<span class="cm">     * bits as specified by hash.step * 2.</span>
+<span class="cm">     *</span>
+<span class="cm">     * So if step is, for example, 3, and the hash value in binary</span>
+<span class="cm">     * is 101010, since our score is 52 bits we want every element which</span>
+<span class="cm">     * is in binary: 101010?????????????????????????????????????????????</span>
+<span class="cm">     * Where ? can be 0 or 1.</span>
+<span class="cm">     *</span>
+<span class="cm">     * To get the min score we just use the initial hash value left</span>
+<span class="cm">     * shifted enough to get the 52 bit value. Later we increment the</span>
+<span class="cm">     * 6 bit prefis (see the hash.bits++ statement), and get the new</span>
+<span class="cm">     * prefix: 101011, which we align again to 52 bits to get the maximum</span>
+<span class="cm">     * value (which is excluded from the search). So we get everything</span>
+<span class="cm">     * between the two following scores (represented in binary):</span>
+<span class="cm">     *</span>
+<span class="cm">     * 1010100000000000000000000000000000000000000000000000 (included)</span>
+<span class="cm">     * and</span>
+<span class="cm">     * 1010110000000000000000000000000000000000000000000000 (excluded).</span>
+<span class="cm">     */</span>
+<span class="w">    </span><span class="o">*</span><span class="n">min</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">geohashAlign52Bits</span><span class="p">(</span><span class="n">hash</span><span class="p">);</span>
+<span class="w">    </span><span class="n">hash</span><span class="p">.</span><span class="n">bits</span><span class="o">++</span><span class="p">;</span>
+<span class="w">    </span><span class="o">*</span><span class="n">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">geohashAlign52Bits</span><span class="p">(</span><span class="n">hash</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="cm">/* Obtain all members between the min/max of this geohash bounding box.</span>
+<span class="cm"> * Populate a geoArray of GeoPoints by calling geoGetPointsInRange().</span>
+<span class="cm"> * Return the number of points added to the array. */</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">membersOfGeoHashBox</span><span class="p">(</span><span class="n">robj</span><span class="w"> </span><span class="o">*</span><span class="n">zobj</span><span class="p">,</span><span class="w"> </span><span class="n">GeoHashBits</span><span class="w"> </span><span class="n">hash</span><span class="p">,</span><span class="w"> </span><span class="n">geoArray</span><span class="w"> </span><span class="o">*</span><span class="n">ga</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">lon</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">lat</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">radius</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">GeoHashFix52Bits</span><span class="w"> </span><span class="n">min</span><span class="p">,</span><span class="w"> </span><span class="n">max</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 计算出查找 hash 所指定范围内的所有位置所需的 min 值和 max 值</span>
+<span class="w">    </span><span class="n">scoresOfGeoHashBox</span><span class="p">(</span><span class="n">hash</span><span class="p">,</span><span class="o">&amp;</span><span class="n">min</span><span class="p">,</span><span class="o">&amp;</span><span class="n">max</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 根据 min 值和 max 值，在有序集合里面查找范围之内的元素</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">geoGetPointsInRange</span><span class="p">(</span><span class="n">zobj</span><span class="p">,</span><span class="w"> </span><span class="n">min</span><span class="p">,</span><span class="w"> </span><span class="n">max</span><span class="p">,</span><span class="w"> </span><span class="n">lon</span><span class="p">,</span><span class="w"> </span><span class="n">lat</span><span class="p">,</span><span class="w"> </span><span class="n">radius</span><span class="p">,</span><span class="w"> </span><span class="n">ga</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="cm">/* Search all eight neighbors + self geohash box */</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">membersOfAllNeighbors</span><span class="p">(</span><span class="n">robj</span><span class="w"> </span><span class="o">*</span><span class="n">zobj</span><span class="p">,</span><span class="w"> </span><span class="n">GeoHashRadius</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">lon</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">lat</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">radius</span><span class="p">,</span><span class="w"> </span><span class="n">geoArray</span><span class="w"> </span><span class="o">*</span><span class="n">ga</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">GeoHashBits</span><span class="w"> </span><span class="n">neighbors</span><span class="p">[</span><span class="mi">9</span><span class="p">];</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 中心点自身</span>
+<span class="w">    </span><span class="n">neighbors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">hash</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">// 中心点周围八个方向</span>
+<span class="w">    </span><span class="n">neighbors</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">neighbors</span><span class="p">.</span><span class="n">north</span><span class="p">;</span>
+<span class="w">    </span><span class="n">neighbors</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">neighbors</span><span class="p">.</span><span class="n">south</span><span class="p">;</span>
+<span class="w">    </span><span class="n">neighbors</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">neighbors</span><span class="p">.</span><span class="n">east</span><span class="p">;</span>
+<span class="w">    </span><span class="n">neighbors</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">neighbors</span><span class="p">.</span><span class="n">west</span><span class="p">;</span>
+<span class="w">    </span><span class="n">neighbors</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">neighbors</span><span class="p">.</span><span class="n">north_east</span><span class="p">;</span>
+<span class="w">    </span><span class="n">neighbors</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">neighbors</span><span class="p">.</span><span class="n">north_west</span><span class="p">;</span>
+<span class="w">    </span><span class="n">neighbors</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">neighbors</span><span class="p">.</span><span class="n">south_east</span><span class="p">;</span>
+<span class="w">    </span><span class="n">neighbors</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">neighbors</span><span class="p">.</span><span class="n">south_west</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* For each neighbor (*and* our own hashbox), get all the matching</span>
+<span class="cm">     * members and add them to the potential result list. */</span>
+<span class="w">    </span><span class="c1">// 遍历各个中心和各个方向，查找范围内的所有位置</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">neighbors</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">neighbors</span><span class="p">);</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">        </span><span class="c1">// 跳过空位置</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">HASHISZERO</span><span class="p">(</span><span class="n">neighbors</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+<span class="w">            </span><span class="k">continue</span><span class="p">;</span>
+
+<span class="w">        </span><span class="c1">// 查找范围内的元素，并统计匹配元素的数量</span>
+<span class="w">        </span><span class="n">count</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">membersOfGeoHashBox</span><span class="p">(</span><span class="n">zobj</span><span class="p">,</span><span class="w"> </span><span class="n">neighbors</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">ga</span><span class="p">,</span><span class="w"> </span><span class="n">lon</span><span class="p">,</span><span class="w"> </span><span class="n">lat</span><span class="p">,</span><span class="w"> </span><span class="n">radius</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">count</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* Sort comparators for qsort() */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">sort_gp_asc</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">geoPoint</span><span class="w"> </span><span class="o">*</span><span class="n">gpa</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">gpb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">b</span><span class="p">;</span>
+<span class="w">    </span><span class="cm">/* We can&#39;t do adist - bdist because they are doubles and</span>
+<span class="cm">     * the comparator returns an int. */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">gpa</span><span class="o">-&gt;</span><span class="n">dist</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">gpb</span><span class="o">-&gt;</span><span class="n">dist</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">gpa</span><span class="o">-&gt;</span><span class="n">dist</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">gpb</span><span class="o">-&gt;</span><span class="n">dist</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">else</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">-1</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">sort_gp_desc</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="o">-</span><span class="n">sort_gp_asc</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="cm">/* ====================================================================</span>
+<span class="cm"> * Commands</span>
+<span class="cm"> * ==================================================================== */</span>
+
+<span class="cm">/* GEOADD key long lat name [long2 lat2 name2 ... longN latN nameN] */</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">geoaddCommand</span><span class="p">(</span><span class="n">client</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="c1">// 参数合法性检查</span>
+<span class="w">    </span><span class="cm">/* Check arguments number for sanity. */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">((</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argc</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="cm">/* Need an odd number of arguments if we got this far... */</span>
+<span class="w">        </span><span class="n">addReplyError</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;syntax error. Try GEOADD key [x1] [y1] [name1] &quot;</span>
+<span class="w">                         </span><span class="s">&quot;[x2] [y2] [name2] ... &quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 提取用户输入的参数</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">elements</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argc</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="o">+</span><span class="n">elements</span><span class="o">*</span><span class="mi">2</span><span class="p">;</span><span class="w"> </span><span class="cm">/* ZADD key score ele ... */</span>
+<span class="w">    </span><span class="n">robj</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">zcalloc</span><span class="p">(</span><span class="n">argc</span><span class="o">*</span><span class="k">sizeof</span><span class="p">(</span><span class="n">robj</span><span class="o">*</span><span class="p">));</span>
+<span class="w">    </span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">createRawStringObject</span><span class="p">(</span><span class="s">&quot;zadd&quot;</span><span class="p">,</span><span class="mi">4</span><span class="p">);</span>
+<span class="w">    </span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span><span class="w"> </span><span class="cm">/* key */</span>
+<span class="w">    </span><span class="n">incrRefCount</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+
+<span class="w">    </span><span class="cm">/* Create the argument vector to call ZADD in order to add all</span>
+<span class="cm">     * the score,value pairs to the requested zset, where score is actually</span>
+<span class="cm">     * an encoded version of lat,long. */</span>
+<span class="w">    </span><span class="c1">// 遍历用户输入，创建出有序集合元素</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="p">;</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">elements</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">xy</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+
+<span class="w">        </span><span class="c1">// 提取用户输入的经度和纬度</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">extractLongLatOrReply</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argv</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span><span class="o">+</span><span class="p">(</span><span class="n">i</span><span class="o">*</span><span class="mi">3</span><span class="p">),</span><span class="n">xy</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">argc</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<span class="w">                </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="w"> </span><span class="n">decrRefCount</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<span class="w">            </span><span class="n">zfree</span><span class="p">(</span><span class="n">argv</span><span class="p">);</span>
+<span class="w">            </span><span class="k">return</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="cm">/* Turn the coordinates into the score of the element. */</span>
+<span class="w">        </span><span class="c1">// 根据坐标计算出 geohash 值</span>
+<span class="w">        </span><span class="n">GeoHashBits</span><span class="w"> </span><span class="n">hash</span><span class="p">;</span>
+<span class="w">        </span><span class="n">geohashEncodeWGS84</span><span class="p">(</span><span class="n">xy</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="n">xy</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">GEO_STEP_MAX</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">hash</span><span class="p">);</span>
+<span class="w">        </span><span class="c1">// 将 geohash 值放到 52 个位上面</span>
+<span class="w">        </span><span class="n">GeoHashFix52Bits</span><span class="w"> </span><span class="n">bits</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">geohashAlign52Bits</span><span class="p">(</span><span class="n">hash</span><span class="p">);</span>
+<span class="w">        </span><span class="c1">// 将 52 位 geohash 作为分值记录到元素里面</span>
+<span class="w">        </span><span class="n">robj</span><span class="w"> </span><span class="o">*</span><span class="n">score</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">createObject</span><span class="p">(</span><span class="n">OBJ_STRING</span><span class="p">,</span><span class="w"> </span><span class="n">sdsfromlonglong</span><span class="p">(</span><span class="n">bits</span><span class="p">));</span>
+<span class="w">        </span><span class="n">robj</span><span class="w"> </span><span class="o">*</span><span class="n">val</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span>
+<span class="w">        </span><span class="c1">// 设置有序集合元素的分值和名字</span>
+<span class="w">        </span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="o">+</span><span class="n">i</span><span class="o">*</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">score</span><span class="p">;</span>
+<span class="w">        </span><span class="n">argv</span><span class="p">[</span><span class="mi">3</span><span class="o">+</span><span class="n">i</span><span class="o">*</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">val</span><span class="p">;</span>
+<span class="w">        </span><span class="n">incrRefCount</span><span class="p">(</span><span class="n">val</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* Finally call ZADD that will do the work for us. */</span>
+<span class="w">    </span><span class="n">replaceClientCommandVector</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">argc</span><span class="p">,</span><span class="n">argv</span><span class="p">);</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="c1">// 将刚才创建的元素全部添加到有序集合里面</span>
+<span class="w">    </span><span class="n">zaddCommand</span><span class="p">(</span><span class="n">c</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// 指定范围查找时的排序方式</span>
+<span class="cp">#define SORT_NONE 0</span>
+<span class="cp">#define SORT_ASC 1</span>
+<span class="cp">#define SORT_DESC 2</span>
+
+<span class="c1">// 指定范围查找的类型</span>
+<span class="cp">#define RADIUS_COORDS 1</span>
+<span class="cp">#define RADIUS_MEMBER 2</span>
+
+<span class="cm">/* GEORADIUS key x y radius unit [WITHDIST] [WITHHASH] [WITHCOORD] [ASC|DESC]</span>
+<span class="cm"> *                               [COUNT count]</span>
+<span class="cm"> * GEORADIUSBYMEMBER key member radius unit ... options ... */</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">georadiusGeneric</span><span class="p">(</span><span class="n">client</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">type</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">robj</span><span class="w"> </span><span class="o">*</span><span class="n">key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+
+<span class="w">    </span><span class="cm">/* Look up the requested zset */</span>
+<span class="w">    </span><span class="c1">// 获取储存位置的有序集合</span>
+<span class="w">    </span><span class="n">robj</span><span class="w"> </span><span class="o">*</span><span class="n">zobj</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">((</span><span class="n">zobj</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lookupKeyReadOrReply</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">key</span><span class="p">,</span><span class="w"> </span><span class="n">shared</span><span class="p">.</span><span class="n">emptymultibulk</span><span class="p">))</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nb">NULL</span><span class="w"> </span><span class="o">||</span>
+<span class="w">        </span><span class="n">checkType</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">zobj</span><span class="p">,</span><span class="w"> </span><span class="n">OBJ_ZSET</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* Find long/lat to use for radius search based on inquiry type */</span>
+<span class="w">    </span><span class="c1">// 提取定义中心点的经纬度</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">base_args</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">xy</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">};</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">type</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">RADIUS_COORDS</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 使用用户输入的经纬度作为中心点</span>
+<span class="w">        </span><span class="n">base_args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">6</span><span class="p">;</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">extractLongLatOrReply</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argv</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="n">xy</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">)</span>
+<span class="w">            </span><span class="k">return</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">type</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">RADIUS_MEMBER</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 使用有序集合储存的经纬度作为中心点</span>
+<span class="w">        </span><span class="n">base_args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
+<span class="w">        </span><span class="n">robj</span><span class="w"> </span><span class="o">*</span><span class="n">member</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">longLatFromMember</span><span class="p">(</span><span class="n">zobj</span><span class="p">,</span><span class="w"> </span><span class="n">member</span><span class="p">,</span><span class="w"> </span><span class="n">xy</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">addReplyError</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;could not decode requested zset member&quot;</span><span class="p">);</span>
+<span class="w">            </span><span class="k">return</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">addReplyError</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;unknown georadius search type&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* Extract radius and units from arguments */</span>
+<span class="w">    </span><span class="c1">// 从参数中提取范围</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">radius_meters</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">conversion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">((</span><span class="n">radius_meters</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">extractDistanceOrReply</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argv</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">base_args</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">                                                </span><span class="o">&amp;</span><span class="n">conversion</span><span class="p">))</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* Discover and populate all optional parameters. */</span>
+<span class="w">    </span><span class="c1">// 提取所有可选参数</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">withdist</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">withhash</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">withcoords</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">sort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SORT_NONE</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argc</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">base_args</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="n">remaining</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argc</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">base_args</span><span class="p">;</span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">remaining</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">arg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argv</span><span class="p">[</span><span class="n">base_args</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">i</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">ptr</span><span class="p">;</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">strcasecmp</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;withdist&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">withdist</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">strcasecmp</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;withhash&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">withhash</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">strcasecmp</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;withcoord&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">withcoords</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">strcasecmp</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;asc&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">sort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SORT_ASC</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">strcasecmp</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;desc&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">sort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SORT_DESC</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">strcasecmp</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;count&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">remaining</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">getLongLongFromObjectOrReply</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argv</span><span class="p">[</span><span class="n">base_args</span><span class="o">+</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span>
+<span class="w">                    </span><span class="o">&amp;</span><span class="n">count</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">C_OK</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="p">;</span>
+<span class="w">                </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">count</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="n">addReplyError</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="s">&quot;COUNT must be &gt; 0&quot;</span><span class="p">);</span>
+<span class="w">                    </span><span class="k">return</span><span class="p">;</span>
+<span class="w">                </span><span class="p">}</span>
+<span class="w">                </span><span class="n">i</span><span class="o">++</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">addReply</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">shared</span><span class="p">.</span><span class="n">syntaxerr</span><span class="p">);</span>
+<span class="w">                </span><span class="k">return</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* COUNT without ordering does not make much sense, force ASC</span>
+<span class="cm">     * ordering if COUNT was specified but no sorting was requested. */</span>
+<span class="w">    </span><span class="c1">// 指定排序方式</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">count</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">sort</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">SORT_NONE</span><span class="p">)</span><span class="w"> </span><span class="n">sort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SORT_ASC</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* Get all neighbor geohash boxes for our radius search */</span>
+<span class="w">    </span><span class="c1">// 定位中心点所处的范围</span>
+<span class="w">    </span><span class="n">GeoHashRadius</span><span class="w"> </span><span class="n">georadius</span><span class="w"> </span><span class="o">=</span>
+<span class="w">        </span><span class="n">geohashGetAreasByRadiusWGS84</span><span class="p">(</span><span class="n">xy</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="n">xy</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">radius_meters</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* Search the zset for all matching points */</span>
+<span class="w">    </span><span class="n">geoArray</span><span class="w"> </span><span class="o">*</span><span class="n">ga</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">geoArrayCreate</span><span class="p">();</span>
+<span class="w">    </span><span class="c1">// 对中心点以及它的八个方向进行查找，找出所有范围内的元素</span>
+<span class="w">    </span><span class="n">membersOfAllNeighbors</span><span class="p">(</span><span class="n">zobj</span><span class="p">,</span><span class="w"> </span><span class="n">georadius</span><span class="p">,</span><span class="w"> </span><span class="n">xy</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="n">xy</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">radius_meters</span><span class="p">,</span><span class="w"> </span><span class="n">ga</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* If no matching results, the user gets an empty reply. */</span>
+<span class="w">    </span><span class="c1">// 没有匹配的位置，返回空列表</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">used</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">addReply</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">shared</span><span class="p">.</span><span class="n">emptymultibulk</span><span class="p">);</span>
+<span class="w">        </span><span class="n">geoArrayFree</span><span class="p">(</span><span class="n">ga</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 有匹配的位置，继续执行以下动作……</span>
+
+<span class="w">    </span><span class="kt">long</span><span class="w"> </span><span class="n">result_length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">used</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">long</span><span class="w"> </span><span class="n">option_length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* Our options are self-contained nested multibulk replies, so we</span>
+<span class="cm">     * only need to track how many of those nested replies we return. */</span>
+<span class="w">    </span><span class="c1">// 根据用户给定的可选项，计算数组中的每个子数组需要包含多少个项</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">withdist</span><span class="p">)</span>
+<span class="w">        </span><span class="n">option_length</span><span class="o">++</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">withcoords</span><span class="p">)</span>
+<span class="w">        </span><span class="n">option_length</span><span class="o">++</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">withhash</span><span class="p">)</span>
+<span class="w">        </span><span class="n">option_length</span><span class="o">++</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* The multibulk len we send is exactly result_length. The result is either</span>
+<span class="cm">     * all strings of just zset members  *or* a nested multi-bulk reply</span>
+<span class="cm">     * containing the zset member string _and_ all the additional options the</span>
+<span class="cm">     * user enabled for this request. */</span>
+<span class="w">    </span><span class="n">addReplyMultiBulkLen</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">count</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">result_length</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">count</span><span class="p">)</span><span class="w"> </span><span class="o">?</span>
+<span class="w">                            </span><span class="nl">result_length</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">count</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* Process [optional] requested sorting */</span>
+<span class="w">    </span><span class="c1">// 对结果进行排序</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">sort</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">SORT_ASC</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">qsort</span><span class="p">(</span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">array</span><span class="p">,</span><span class="w"> </span><span class="n">result_length</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">geoPoint</span><span class="p">),</span><span class="w"> </span><span class="n">sort_gp_asc</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">sort</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">SORT_DESC</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">qsort</span><span class="p">(</span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">array</span><span class="p">,</span><span class="w"> </span><span class="n">result_length</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">geoPoint</span><span class="p">),</span><span class="w"> </span><span class="n">sort_gp_desc</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* Finally send results back to the caller */</span>
+<span class="w">    </span><span class="c1">// 发送回复</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="p">;</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">result_length</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">geoPoint</span><span class="w"> </span><span class="o">*</span><span class="n">gp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ga</span><span class="o">-&gt;</span><span class="n">array</span><span class="o">+</span><span class="n">i</span><span class="p">;</span>
+<span class="w">        </span><span class="n">gp</span><span class="o">-&gt;</span><span class="n">dist</span><span class="w"> </span><span class="o">/=</span><span class="w"> </span><span class="n">conversion</span><span class="p">;</span><span class="w"> </span><span class="cm">/* Fix according to unit. */</span>
+
+<span class="w">        </span><span class="cm">/* If we have options in option_length, return each sub-result</span>
+<span class="cm">         * as a nested multi-bulk.  Add 1 to account for result value itself. */</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">option_length</span><span class="p">)</span>
+<span class="w">            </span><span class="n">addReplyMultiBulkLen</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">option_length</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+
+<span class="w">        </span><span class="n">addReplyBulkSds</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">gp</span><span class="o">-&gt;</span><span class="n">member</span><span class="p">);</span>
+<span class="w">        </span><span class="n">gp</span><span class="o">-&gt;</span><span class="n">member</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">withdist</span><span class="p">)</span>
+<span class="w">            </span><span class="n">addReplyDoubleDistance</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">gp</span><span class="o">-&gt;</span><span class="n">dist</span><span class="p">);</span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">withhash</span><span class="p">)</span>
+<span class="w">            </span><span class="n">addReplyLongLong</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">gp</span><span class="o">-&gt;</span><span class="n">score</span><span class="p">);</span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">withcoords</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">addReplyMultiBulkLen</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">);</span>
+<span class="w">            </span><span class="n">addReplyDouble</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">gp</span><span class="o">-&gt;</span><span class="n">longitude</span><span class="p">);</span>
+<span class="w">            </span><span class="n">addReplyDouble</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">gp</span><span class="o">-&gt;</span><span class="n">latitude</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="cm">/* Stop if COUNT was specified and we already provided the</span>
+<span class="cm">         * specified number of elements. */</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">count</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">count</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">break</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">geoArrayFree</span><span class="p">(</span><span class="n">ga</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="cm">/* GEORADIUS wrapper function. */</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">georadiusCommand</span><span class="p">(</span><span class="n">client</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">georadiusGeneric</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">RADIUS_COORDS</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="cm">/* GEORADIUSBYMEMBER wrapper function. */</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">georadiusByMemberCommand</span><span class="p">(</span><span class="n">client</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">georadiusGeneric</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">RADIUS_MEMBER</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="cm">/* GEOHASH key ele1 ele2 ... eleN</span>
+<span class="cm"> *</span>
+<span class="cm"> * Returns an array with an 11 characters geohash representation of the</span>
+<span class="cm"> * position of the specified elements. */</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">geohashCommand</span><span class="p">(</span><span class="n">client</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">geoalphabet</span><span class="o">=</span><span class="w"> </span><span class="s">&quot;0123456789bcdefghjkmnpqrstuvwxyz&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">j</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* Look up the requested zset */</span>
+<span class="w">    </span><span class="c1">// 获取储存位置的有序集合</span>
+<span class="w">    </span><span class="n">robj</span><span class="w"> </span><span class="o">*</span><span class="n">zobj</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">((</span><span class="n">zobj</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lookupKeyReadOrReply</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">shared</span><span class="p">.</span><span class="n">emptymultibulk</span><span class="p">))</span>
+<span class="w">        </span><span class="o">==</span><span class="w"> </span><span class="nb">NULL</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">checkType</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">zobj</span><span class="p">,</span><span class="w"> </span><span class="n">OBJ_ZSET</span><span class="p">))</span><span class="w"> </span><span class="k">return</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* Geohash elements one after the other, using a null bulk reply for</span>
+<span class="cm">     * missing elements. */</span>
+<span class="w">    </span><span class="n">addReplyMultiBulkLen</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argc</span><span class="mi">-2</span><span class="p">);</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argc</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">score</span><span class="p">;</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">zsetScore</span><span class="p">(</span><span class="n">zobj</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argv</span><span class="p">[</span><span class="n">j</span><span class="p">],</span><span class="w"> </span><span class="o">&amp;</span><span class="n">score</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="c1">// 位置不存在，直接返回空值</span>
+<span class="w">            </span><span class="n">addReply</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">shared</span><span class="p">.</span><span class="n">nullbulk</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="cm">/* The internal format we use for geocoding is a bit different</span>
+<span class="cm">             * than the standard, since we use as initial latitude range</span>
+<span class="cm">             * -85,85, while the normal geohashing algorithm uses -90,90.</span>
+<span class="cm">             * So we have to decode our position and re-encode using the</span>
+<span class="cm">             * standard ranges in order to output a valid geohash string. */</span>
+
+<span class="w">            </span><span class="cm">/* Decode... */</span>
+<span class="w">            </span><span class="c1">// 根据分值，解码出经度和纬度</span>
+<span class="w">            </span><span class="kt">double</span><span class="w"> </span><span class="n">xy</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">decodeGeohash</span><span class="p">(</span><span class="n">score</span><span class="p">,</span><span class="n">xy</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">addReply</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">shared</span><span class="p">.</span><span class="n">nullbulk</span><span class="p">);</span>
+<span class="w">                </span><span class="k">continue</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span>
+
+<span class="w">            </span><span class="cm">/* Re-encode */</span>
+<span class="w">            </span><span class="c1">// 重新编码出标准的 geohash</span>
+<span class="w">            </span><span class="n">GeoHashRange</span><span class="w"> </span><span class="n">r</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+<span class="w">            </span><span class="n">GeoHashBits</span><span class="w"> </span><span class="n">hash</span><span class="p">;</span>
+<span class="w">            </span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">min</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">-180</span><span class="p">;</span>
+<span class="w">            </span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">180</span><span class="p">;</span>
+<span class="w">            </span><span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">min</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">-90</span><span class="p">;</span>
+<span class="w">            </span><span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">90</span><span class="p">;</span>
+<span class="w">            </span><span class="n">geohashEncode</span><span class="p">(</span><span class="o">&amp;</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="o">&amp;</span><span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">xy</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">xy</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="mi">26</span><span class="p">,</span><span class="o">&amp;</span><span class="n">hash</span><span class="p">);</span>
+
+<span class="w">            </span><span class="kt">char</span><span class="w"> </span><span class="n">buf</span><span class="p">[</span><span class="mi">12</span><span class="p">];</span>
+<span class="w">            </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="p">;</span>
+<span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">11</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="kt">int</span><span class="w"> </span><span class="n">idx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">hash</span><span class="p">.</span><span class="n">bits</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">(</span><span class="mi">52</span><span class="o">-</span><span class="p">((</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="mi">5</span><span class="p">)))</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x1f</span><span class="p">;</span>
+<span class="w">                </span><span class="n">buf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">geoalphabet</span><span class="p">[</span><span class="n">idx</span><span class="p">];</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">            </span><span class="n">buf</span><span class="p">[</span><span class="mi">11</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sc">&#39;\0&#39;</span><span class="p">;</span>
+
+<span class="w">            </span><span class="c1">// 发送回复</span>
+<span class="w">            </span><span class="n">addReplyBulkCBuffer</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">buf</span><span class="p">,</span><span class="mi">11</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="cm">/* GEOPOS key ele1 ele2 ... eleN</span>
+<span class="cm"> *</span>
+<span class="cm"> * Returns an array of two-items arrays representing the x,y position of each</span>
+<span class="cm"> * element specified in the arguments. For missing elements NULL is returned. */</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">geoposCommand</span><span class="p">(</span><span class="n">client</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">j</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* Look up the requested zset */</span>
+<span class="w">    </span><span class="c1">// 获取位置集合对应的有序集合</span>
+<span class="w">    </span><span class="n">robj</span><span class="w"> </span><span class="o">*</span><span class="n">zobj</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">((</span><span class="n">zobj</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lookupKeyReadOrReply</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">shared</span><span class="p">.</span><span class="n">emptymultibulk</span><span class="p">))</span>
+<span class="w">        </span><span class="o">==</span><span class="w"> </span><span class="nb">NULL</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">checkType</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">zobj</span><span class="p">,</span><span class="w"> </span><span class="n">OBJ_ZSET</span><span class="p">))</span><span class="w"> </span><span class="k">return</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* Report elements one after the other, using a null bulk reply for</span>
+<span class="cm">     * missing elements. */</span>
+<span class="w">    </span><span class="c1">// 遍历所有输入的位置</span>
+<span class="w">    </span><span class="n">addReplyMultiBulkLen</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argc</span><span class="mi">-2</span><span class="p">);</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argc</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">score</span><span class="p">;</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">zsetScore</span><span class="p">(</span><span class="n">zobj</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argv</span><span class="p">[</span><span class="n">j</span><span class="p">],</span><span class="w"> </span><span class="o">&amp;</span><span class="n">score</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="c1">// 元素没有分值（位置不存在），返回空值</span>
+<span class="w">            </span><span class="n">addReply</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">shared</span><span class="p">.</span><span class="n">nullmultibulk</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="c1">// 位置存在，根据它的分值解码出经纬度</span>
+<span class="w">            </span><span class="cm">/* Decode... */</span>
+<span class="w">            </span><span class="kt">double</span><span class="w"> </span><span class="n">xy</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">decodeGeohash</span><span class="p">(</span><span class="n">score</span><span class="p">,</span><span class="n">xy</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">addReply</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">shared</span><span class="p">.</span><span class="n">nullmultibulk</span><span class="p">);</span>
+<span class="w">                </span><span class="k">continue</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">            </span><span class="c1">// 返回位置的经度和纬度</span>
+<span class="w">            </span><span class="n">addReplyMultiBulkLen</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="mi">2</span><span class="p">);</span>
+<span class="w">            </span><span class="n">addReplyDouble</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">xy</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+<span class="w">            </span><span class="n">addReplyDouble</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">xy</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="cm">/* GEODIST key ele1 ele2 [unit]</span>
+<span class="cm"> *</span>
+<span class="cm"> * Return the distance, in meters by default, otherwise accordig to &quot;unit&quot;,</span>
+<span class="cm"> * between points ele1 and ele2. If one or more elements are missing NULL</span>
+<span class="cm"> * is returned. */</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">geodistCommand</span><span class="p">(</span><span class="n">client</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">to_meter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* Check if there is the unit to extract, otherwise assume meters. */</span>
+<span class="w">    </span><span class="c1">// 获取用户指定的单位</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argc</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">5</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">to_meter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">extractUnitOrReply</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argv</span><span class="p">[</span><span class="mi">4</span><span class="p">]);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">to_meter</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argc</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">5</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">addReply</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">shared</span><span class="p">.</span><span class="n">syntaxerr</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* Look up the requested zset */</span>
+<span class="w">    </span><span class="c1">// 获取位置集合对应的有序集合</span>
+<span class="w">    </span><span class="n">robj</span><span class="w"> </span><span class="o">*</span><span class="n">zobj</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">((</span><span class="n">zobj</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lookupKeyReadOrReply</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">shared</span><span class="p">.</span><span class="n">emptybulk</span><span class="p">))</span>
+<span class="w">        </span><span class="o">==</span><span class="w"> </span><span class="nb">NULL</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">checkType</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">zobj</span><span class="p">,</span><span class="w"> </span><span class="n">OBJ_ZSET</span><span class="p">))</span><span class="w"> </span><span class="k">return</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* Get the scores. We need both otherwise NULL is returned. */</span>
+<span class="w">    </span><span class="c1">// 获取两个坐标对应的分值，并在任意一个坐标不存在时返回空值</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">score1</span><span class="p">,</span><span class="w"> </span><span class="n">score2</span><span class="p">,</span><span class="w"> </span><span class="n">xyxy</span><span class="p">[</span><span class="mi">4</span><span class="p">];</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">zsetScore</span><span class="p">(</span><span class="n">zobj</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="w"> </span><span class="o">&amp;</span><span class="n">score1</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">C_ERR</span><span class="w"> </span><span class="o">||</span>
+<span class="w">        </span><span class="n">zsetScore</span><span class="p">(</span><span class="n">zobj</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">argv</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span><span class="w"> </span><span class="o">&amp;</span><span class="n">score2</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">C_ERR</span><span class="p">)</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="n">addReply</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">shared</span><span class="p">.</span><span class="n">nullbulk</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* Decode &amp; compute the distance. */</span>
+<span class="w">    </span><span class="c1">// 对两个分值进行解码，得出坐标</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">decodeGeohash</span><span class="p">(</span><span class="n">score1</span><span class="p">,</span><span class="n">xyxy</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="n">decodeGeohash</span><span class="p">(</span><span class="n">score2</span><span class="p">,</span><span class="n">xyxy</span><span class="o">+</span><span class="mi">2</span><span class="p">))</span>
+<span class="w">        </span><span class="n">addReply</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">shared</span><span class="p">.</span><span class="n">nullbulk</span><span class="p">);</span>
+<span class="w">    </span><span class="k">else</span>
+<span class="w">        </span><span class="c1">// 计算距离，并根据单位进行转换</span>
+<span class="w">        </span><span class="n">addReplyDouble</span><span class="p">(</span><span class="n">c</span><span class="p">,</span>
+<span class="w">            </span><span class="n">geohashGetDistance</span><span class="p">(</span><span class="n">xyxy</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">xyxy</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">xyxy</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="n">xyxy</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">to_meter</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2015.8.9</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

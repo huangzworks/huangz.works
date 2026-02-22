@@ -1,0 +1,86 @@
+Go 语言中的 ``switch`` 语句
+=======================================
+
+.. note::
+
+    本文摘录自《Go语言趣学指南》第 3 章，
+    请访问 `gpwgcn.com <http://gpwgcn.com>`_  以获取更多相关信息。
+
+    .. image:: image/gpwgcn.jpg
+       :scale: 80%
+
+
+正如代码清单 3-6 所示，Go 提供了 ``switch``
+语句，它可以将一个值和多个值进行比较。
+
+--------------
+
+代码清单 3-6 ``switch`` 语句： ``concise-switch.go``
+
+.. code-block:: go
+
+    fmt.Println("There is a cavern entrance here and a path to the east.")
+    var command = "go inside"
+
+    switch command {    // 将命令和给定的多个分支进行比较
+    case "go east":
+        fmt.Println("You head further up the mountain.")
+    case "enter cave", "go inside":     // 使用逗号分隔可选值
+        fmt.Println("You find yourself in a dimly lit cavern.")
+    case "read sign":
+        fmt.Println("The sign reads 'No Minors'.")
+    default:
+        fmt.Println("Didn't quite get that.")
+    }
+
+--------------
+
+执行这个程序将产生以下输出：
+
+::
+
+   There is a cavern entrance here and a path to the east.
+   You find yourself in a dimly lit cavern.
+
+.. note::
+
+   除了文字以外， ``switch`` 语句还可以接受数字作为条件。
+
+``switch`` 的另一种用法是像 ``if...else``
+那样，在每个分支中单独设置比较条件。 正如代码清单 3-7 所示，\ ``switch``
+还拥有独特的 ``fallthrough`` 关键字，它可以用于执行下一分支的代码。
+
+--------------
+
+代码清单 3-7 ``switch`` 语句： ``switch.go``
+
+.. code-block:: go
+
+    var room = "lake"
+
+    switch {    // 比较表达式将被放置到单独的分支里面。
+    case room == "cave":
+        fmt.Println("You find yourself in a dimly lit cavern.")
+    case room == "lake":
+        fmt.Println("The ice seems solid enough.")
+        fallthrough    // 下降（fall through）至下一分支。
+    case room == "underwater":
+        fmt.Println("The water is freezing cold.")
+    }
+
+--------------
+
+执行这段代码将产生以下输出：
+
+::
+
+   The ice seems solid enough.
+   The water is freezing cold.
+
+.. note::
+
+   在 C、Java、JavaScript 等语言中， 下降是 ``switch``
+   语句各个分支的默认行为。 Go 对此采取了更为谨慎的做法，
+   用户需要显式地使用 ``fallthrough`` 关键字才会引发下降。
+
+

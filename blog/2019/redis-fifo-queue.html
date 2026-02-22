@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>使用 Redis 构建先进先出队列解决秒杀问题 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">使用 Redis 构建先进先出队列解决秒杀问题</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="redis">
+<h1>使用 Redis 构建先进先出队列解决秒杀问题<a class="headerlink" href="#redis" title="Link to this heading">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>本文摘录自即将出版的《Redis使用手册》，
+详情请见： <a class="reference external" href="http://RedisGuide.com">RedisGuide.com</a> 。</p>
+</div>
+<p>先进先出队列（first in first out queue）是一种非常常见的数据结构，
+一般都会包含入队（enqueue）和出队（dequeue）这两个操作，
+其中入队操作会将一个元素放入到队列中，
+而出队操作则会从队列中移除最先被入队的元素。</p>
+<p>先进先出队列的应用非常广泛，
+它见诸于各式各样的应用程序当中。
+举个例子，
+很多电商网站都会在节日时推出一些秒杀活动，
+这些活动会放出数量有限的商品供用户抢购，
+秒杀系统的一个特点就是在短时间内会有大量用户同时进行相同的购买操作，
+如果使用事务或者锁去实现秒杀程序，
+那么就会因为锁和事务的重试特性而导致性能低下，
+并且由于重试的存在，
+成功购买商品的用户可能并不是最早执行购买操作的用户，
+因此这种秒杀系统实际上是不公平的。</p>
+<p>解决上述问题的其中一个方法就是把用户的购买操作都放入到先进先出队列里面，
+然后以队列方式处理用户的购买操作，
+这样程序就可以在不使用锁或者事务的情况下实现秒杀系统，
+并且得益于先进先出队列的特性，
+这种秒杀系统可以按照用户执行购买操作的顺序来判断哪些用户可以成功执行购买操作，
+因此它是公平的。</p>
+<p>代码清单 4-1 展示了一个使用 Redis 列表实现先进先出队列的方法。</p>
+<hr class="docutils" />
+<p>代码清单 4-1 使用列表实现的先进先出队列：<code class="docutils literal notranslate"><span class="pre">/list/fifo_queue.py</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">FIFOqueue</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">enqueue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        将给定元素放入队列，然后返回队列当前包含的元素数量作为结果。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">rpush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">dequeue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        移除并返回队列目前入队时间最长的元素。</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">lpop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+</pre></div>
+</div>
+<hr class="docutils" />
+<p>作为例子，
+我们可以通过执行以下代码，
+载入并创建一个先进先出队列：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">fifo_queue</span> <span class="kn">import</span> <span class="n">FIFOqueue</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">decode_responses</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">FIFOqueue</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="s2">&quot;buy-request&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>然后通过执行以下代码，
+将三个用户的购买请求依次放入到队列里面：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="s2">&quot;peter-buy-milk&quot;</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="s2">&quot;john-buy-rice&quot;</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">enqueue</span><span class="p">(</span><span class="s2">&quot;david-buy-keyboard&quot;</span><span class="p">)</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+<p>最后，
+按照先进先出顺序，
+依次从队列中弹出相应的购买请求：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">dequeue</span><span class="p">()</span>
+<span class="go">&#39;peter-buy-milk&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">dequeue</span><span class="p">()</span>
+<span class="go">&#39;john-buy-rice&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">dequeue</span><span class="p">()</span>
+<span class="go">&#39;david-buy-keyboard&#39;</span>
+</pre></div>
+</div>
+<p>可以看到，
+队列弹出元素的顺序跟元素入队时的顺序是完全相同的：
+最先是 <code class="docutils literal notranslate"><span class="pre">&quot;peter-buy-milk&quot;</span></code> 元素，
+接着是 <code class="docutils literal notranslate"><span class="pre">&quot;john-buy-rice&quot;</span></code> 元素，
+最后是 <code class="docutils literal notranslate"><span class="pre">&quot;david-buy-keyboard&quot;</span></code> 元素。</p>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

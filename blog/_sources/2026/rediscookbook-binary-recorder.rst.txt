@@ -1,0 +1,30 @@
+《Redis应用实例》书摘（14）：二元操作记录器
+=================================================
+
+
+二元操作记录器用于记录用户是否执行了指定的操作，这种需求的一个典型例子就是实现很多应用中的签到功能：每一天，对于应用中的每个用户来说，他们要么签到了，要么没签到。
+
+代码清单 CODE_BINARY_RECORDER 展示了基于位图实现的二元操作记录器。
+
+--------------
+
+代码清单 CODE_BINARY_RECORDER 二元操作记录器 ``binary_recorder.py``
+
+.. literalinclude:: code/binary_recorder.py
+
+--------------
+
+作为例子，以下代码模拟了如何使用二元操作记录器记录指定用户的签到情况：
+
+.. code:: python
+
+   >>> from redis import Redis
+   >>> from binary_recorder import BinaryRecorder
+   >>> client = Redis(decode_responses=True)
+   >>> recorder = BinaryRecorder(client, "User:256512:sign_in")
+   >>> recorder.setbit(0)  # 签到
+   >>> recorder.setbit(3)
+   >>> recorder.countbits(0, 6)  # 统计签到次数
+   2
+
+.. include:: rediscookbook-promote.rst

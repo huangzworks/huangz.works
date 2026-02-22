@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Valkey源码剖析（15）：对象编码 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Valkey源码剖析（16）：对象编码的转换" href="valkey-object-encoding-convert.html" />
+    <link rel="prev" title="Valkey源码剖析（14）：对象类型" href="valkey-object-type.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Valkey源码剖析（15）：对象编码</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="valkey-object-type.html" title="Previous Chapter: Valkey源码剖析（14）：对象类型"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; Valkey源码剖析（14）：对象类型</span>
+    </a>
+  </li>
+  <li>
+    <a href="valkey-object-encoding-convert.html" title="Next Chapter: Valkey源码剖析（16）：对象编码的转换"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">Valkey源码剖析（16... &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="valkey-15">
+<h1>Valkey源码剖析（15）：对象编码<a class="headerlink" href="#valkey-15" title="Link to this heading">¶</a></h1>
+<p>Valkey中的每个对象都拥有相应的编码，编码决定了对象所使用的数据结构，而数据结构又决定了对象底层存储和表示数据的方式。</p>
+<p>Valkey目前共有12种编码方式，都定义在<code class="docutils literal notranslate"><span class="pre">server.h</span></code>中：</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#define OBJ_ENCODING_RAW 0        </span><span class="cm">/* Raw representation */</span>
+<span class="cp">#define OBJ_ENCODING_INT 1        </span><span class="cm">/* Encoded as integer */</span>
+<span class="cp">#define OBJ_ENCODING_HASHTABLE 2  </span><span class="cm">/* Encoded as a hashtable */</span>
+<span class="cp">#define OBJ_ENCODING_ZIPMAP 3     </span><span class="cm">/* No longer used: old hash encoding. */</span>
+<span class="cp">#define OBJ_ENCODING_LINKEDLIST 4 </span><span class="cm">/* No longer used: old list encoding. */</span>
+<span class="cp">#define OBJ_ENCODING_ZIPLIST 5    </span><span class="cm">/* No longer used: old list/hash/zset encoding. */</span>
+<span class="cp">#define OBJ_ENCODING_INTSET 6     </span><span class="cm">/* Encoded as intset */</span>
+<span class="cp">#define OBJ_ENCODING_SKIPLIST 7   </span><span class="cm">/* Encoded as skiplist */</span>
+<span class="cp">#define OBJ_ENCODING_EMBSTR 8     </span><span class="cm">/* Embedded sds string encoding */</span>
+<span class="cp">#define OBJ_ENCODING_QUICKLIST 9  </span><span class="cm">/* Encoded as linked list of listpacks */</span>
+<span class="cp">#define OBJ_ENCODING_STREAM 10    </span><span class="cm">/* Encoded as a radix tree of listpacks */</span>
+<span class="cp">#define OBJ_ENCODING_LISTPACK 11  </span><span class="cm">/* Encoded as a listpack */</span>
+</pre></div>
+</div>
+<p>目前来说，Valkey中每种类型的对象通常拥有一种至三种编码方式，这些编码方式又可以归为两类：</p>
+<ol class="arabic simple">
+<li><p>紧凑编码——为了节约内存而采取的编码方式，这种编码通常用于存储受限制的、特定类型或者特定大小的数据，并且它们能够支持的操作也相对较少。</p></li>
+<li><p>通用编码——跟紧凑编码相比，通用编码能够容纳更多和更大的数据，并且支持更丰富的操作，但也会带来更多额外的内存消耗。</p></li>
+</ol>
+<p>以集合对象为例，它拥有INTSET、LISTPACK和HASHTABLE三种编码方式：</p>
+<ul class="simple">
+<li><p>其中INTSET和LISTPACK都为紧凑编码，前者只能存储可以被解析为整数的元素，而后者可以存储数字和字符串元素，但这两种编码包含的元素数量都不能超过指定的阈值。</p></li>
+<li><p>至于HASHTABLE编码则为通用编码，它可以存储非常多的数字和字符串元素，并且其支持的集合操作也比前面两种编码要多，当然HASHTABLE编码消耗的额外内存也比前面两种编码要多得多。</p></li>
+</ul>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2026.1.12</div>
+</div>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

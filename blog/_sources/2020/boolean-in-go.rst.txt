@@ -1,0 +1,61 @@
+Go 语言的布尔值
+================================
+
+.. note::
+
+    本文摘录自《Go语言趣学指南》第 3 章，
+    请访问 `gpwgcn.com <http://gpwgcn.com>`_  以获取更多相关信息。
+
+    .. image:: image/gpwgcn.jpg
+       :scale: 80%
+
+在阅读能够自选结局的故事书时，你会碰到类似以下这样的选择：
+
+   如果你选择走出洞穴， 那么请翻到第 21 页。 —— Edward
+   Packard，《时间的洞穴》
+
+在 Go 中，诸如“是否走出洞穴”这样的问题可以用 ``true`` 和 ``false``
+这两个预定义常量来回答。 你可以像这样使用这两个常量：
+
+.. code-block:: go
+
+   var walkOutside = true
+   var takeTheBluePill = false
+
+.. note::
+
+   某些编程语言对于“真”的定义比较宽松。 比如 Python 和 JavaScript
+   就把空文本 ``""`` 和数字零看作是“假”， 但是 Ruby 和 Elixir
+   却把这两个值看作是“真”。 对于 Go 来说， ``true`` 是唯一的真值， 而
+   ``false`` 则是唯一的假值。
+
+为了纪念 19 世纪时的数学家乔治·布尔，我们把“真”和“假”称为\ *布尔*\ 值。
+Go 的标准库里面有好些函数都会返回布尔值。 比如在接下来的代码清单 3-1
+里面，程序就使用了 ``strings`` 包中的 ``Contains`` 函数来检查
+``command``
+变量是否包含单词“outside”，并且由于这一问题的答案为真，所以函数将返回
+``true`` 作为结果。
+
+--------------
+
+代码清单 3-1 返回布尔值的函数： ``contains.go``
+
+.. code-block:: go
+
+    package main
+
+    import (
+        "fmt"
+        "strings"
+    )
+
+    func main() {
+        fmt.Println("You find yourself in a dimly lit cavern.")
+
+        var command = "walk outside"
+        var exit = strings.Contains(command, "outside")
+
+        fmt.Println("You leave the cave:", exit)    // 打印文本“You leave the cave: true”
+     } 
+
+

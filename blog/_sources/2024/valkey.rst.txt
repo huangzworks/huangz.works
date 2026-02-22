@@ -1,0 +1,76 @@
+Linux基金会宣布推出Valkey作为Redis的开源替代方案
+================================================
+
+.. image:: images/valkey.png
+
+..
+
+   本文编译自：\ `Linux基金会网站 <https://www.linuxfoundation.org/press/linux-foundation-launches-open-source-valkey-community>`__
+
+今天，
+Linux 基金会宣布了组建 `Valkey <https://github.com/madolson/placeholderkv>`__\ 的计划，
+它是Redis这一内存数据库兼NoSQL数据存储的开源替代方案。
+项目贡献者迅速聚集了维护者、社区和企业的支持，
+以响应 Redis 公司最近宣布的\ `许可证变更 <https://redis.com/blog/redis-adopts-dual-source-available-licensing/>`__\ ，
+Valkey 将继续在 Redis 7.2.4 上进行开发，
+并将保持该项目在开源 BSD 三条款许可下使用和分发。
+
+自 Redis 项目于 2009 年成立以来，
+数以千计的开源开发人员为其发展和成功做出了重大贡献。
+还有更多开发人员将它用作缓存以及低延迟、高吞吐量的数据存储替代方案，
+将其应用于实时数据分析、会话存储、消息代理和许多其他用例。
+在 `2023 年 Stack Overflow <https://survey.stackoverflow.co/2023/#most-popular-technologies-database-prof>`__ 开发者调查中，
+Redis 被开发人员列为第六大最常用的数据库，
+并且跻身最受推崇数据库的前三名。
+
+为了继续改进这项重要技术并允许不受限制地分发项目，
+社区创建了 Valkey，
+这是一个开源高性能键值存储。
+Valkey 支持 Linux、macOS、OpenBSD、NetBSD 和 FreeBSD 平台。
+此外，
+社区将继续致力于其现有路线图，
+包括新功能，
+例如更可靠的插槽迁移、集群系统的显着可扩展性和稳定性改进、多线程性能改进、触发器、新命令、矢量搜索支持等。
+
+包括 Amazon Web Services （AWS）、Google Cloud、Oracle、Ericsson 和 Snap 公司在内的行业参与者都在支持 Valkey。
+他们专注于为项目的长期健康和可行性做出贡献，
+以便每个人都能从中受益。
+
+   “我为开源 Redis 工作了六年，
+   其中四年作为核心团队成员推动 Redis 开源，
+   直至 7.2 版。
+   我非常关心开源软件，
+   并希望继续做出贡献。
+   通过组建 Valkey，
+   贡献者可以继续我们之前的工作，
+   继续为充满活力的开源社区做出贡献，”
+   前 Redis 维护者、Valkey 联合创始人兼 AWS 首席工程师 Madelyn Olson 说到。
+
+..
+
+   “我很高兴看到 Valkey 项目齐心协力继续真正的开源开发。
+   社区的韧性和对项目的承诺意味着我们可以继续进行用户所钦佩和依赖的创新工作。”
+   前 Redis 贡献者和 Google Cloud 软件工程师 Ping Xie 说到。
+
+..
+
+   “过去几年，
+   我一直是该项目的积极贡献者。
+   我很高兴看到 Valkey 在开放治理下走到一起，
+   继续 Redis 开源社区开始的工作。
+   通过真正的开放合作，
+   该技术将继续发展并为所有用户提供价值。
+   我很自豪能够成为 Valkey 的维护者之一，
+   并希望尽我所能为社区服务，”
+   Valkey 联合维护者、爱立信软件技术高级开源开发人员 Viktor Söderqvist 说到。
+
+在 Linux 基金会，
+Valkey 将遵循开放的治理模式，
+保持社区驱动并欢迎所有用户和贡献者。
+该项目已经组建了一个由几位前 Redis 贡献者组成的技术领导委员会，
+还有数百名社区成员表达了他们支持 Valkey 的意图。
+要了解有关 Valkey 的更多信息，
+请访问 GitHub 上的项目页面：https://github.com/valkey-io/valkey 。
+
+| 见证Redis再次成为开源项目的黄健宏
+| 2024.3.29

@@ -1,0 +1,39 @@
+《Redis应用实例》书摘（12）：唯一计数器（使用HyperLogLog实现）
+=================================================================================
+
+用集合实现的唯一计数器虽然能够满足需求，但它并非完美无缺：这个实现需要将被计数的所有元素都添加到集合里面，当需要计数的元素数量非常多，又或者需要进行大量计数的时候，使用集合实现的唯一计数器将消耗大量内存。
+
+为了解决这个问题，我们可以修改唯一计数器的程序实现，改用HyperLogLog而不是集合作为底层结构。
+代码清单 CODE_HLL_UNIQUE_COUNTER 展示了基于HyperLogLog实现的唯一计数器。
+
+----
+
+代码清单 CODE_HLL_UNIQUE_COUNTER 使用HyperLogLog实现的唯一计数器 ``hll_unique_counter.py``
+
+.. literalinclude:: code/hll_unique_counter.py
+   :lines: 1-26
+
+----
+
+因为HyperLogLog无法撤销对给定元素的计数，所以这个计数器也没有实现相应的\ ``exclude()``\ 方法。
+
+作为例子，以下代码展示了这个计数器程序的使用方法：
+
+.. code:: python
+
+   >>> from redis import Redis
+   >>> from hll_unique_counter import HllUniqueCounter
+   >>> client = Redis(decode_responses=True)
+   >>> counter = HllUniqueCounter(client, "HllVisitCounter")
+   >>> counter.include("Peter")    # 计数元素
+   True
+   >>> counter.include("Jack")
+   True
+   >>> counter.include("Tom")
+   True
+   >>> counter.include("Tom")    # 已计数的元素没有被计数
+   False
+   >>> counter.count()    # 获取当前计数结果
+   3
+
+.. include:: rediscookbook-promote.rst

@@ -1,0 +1,86 @@
+Redis公司宣布即将发布Redis 8、Redis Flex和Redis for AI等多个新产品
+=========================================================================
+
+Redis公司最近在他们的主页上线了\ `一个页面 <https://redis.io/release/>`__\ ，声明他们即将发布多个新产品并对已有的产品进行更新，它们包括：
+
+-  Redis for AI
+
+-  Redis Flex
+
+-  Redis 8
+
+-  Redis Copilot
+
+-  Redis Data Integration（RDI）
+
+这些产品和特性目前基本上都在内测中，具体的发布时间会在之后公布，以下小节将分别对它们进行简单介绍。
+
+|image1|
+
+Redis for AI
+------------
+
+以向量数据库为基础，提供构建AI程序所需工具的程序包，可用于构建基于AI实现的问答机器人、代理和推荐系统等。
+
+Redis的优势在于它能够提供独一无二的速度，在Redis公司公布的\ `基准测试结果 <https://redis.io/blog/benchmarking-results-for-vector-databases/>`__\ 中，Redis是市面上所有提供向量存储的数据库中速度最快的一个。
+
+|image2|
+
+Redis Flex
+----------
+
+Redis提供的固态硬盘与内存的混合存储方案，通过Redis和\ `speedb <https://www.speedb.io/>`__\ 存储引擎实现，后者原本是一个开源的兼容RocksDB的高性能嵌入式键值对存储引擎，于前段时间\ `被Redis公司收购 <https://redis.io/press/redis-acquires-speedb-to-supercharge-end-to-end-application-performance-at-lower-cost/>`__\ 。
+
+Redis公司称Redis
+Flex最高能够将访问成本降低80%，并以相同价格\ `提供5倍以上的缓存容量 <https://redis.io/blog/introducing-another-era-of-fast/>`__\ ，从而实现成本更低的高速数据访问。
+
+|image3|
+
+Redis 8
+-------
+
+Redis数据库的下一个主要版本，通过将之前的Redis(core)和Redis
+Stack合二为一，让Redis获得JSON、向量、时间序列等更多高级数据结构，并支持针对数据的搜索和查询特性，还会通过全新实现的处理引擎来进一步提高命令的执行效率。
+
+Redis公司表示Redis 8将在本季度（秋季）内发布。
+
+|image4|
+
+Redis Copilot
+-------------
+
+免费的虚拟AI助手，回答用户关于Redis、命令文档和数据相关的问题。
+
+Redis Copilot现在通过Redis GUI工具Redis Insight提供。
+
+|image5|
+
+Redis Data Integration（RDI）
+-----------------------------
+
+在Redis
+Cloud中提供针对现有数据的自动同步，可以大大减少导入现有数据所需的繁复工作。
+
+用户可以通过这一功能，简单、快速地将存储在其他数据库系统中的数据迁移至Redis
+Cloud。
+
+|image6|
+
+结语
+----
+
+自Redis\ `摒弃BSD开源协议转向双协议授权 <https://redis.io/blog/redis-adopts-dual-source-available-licensing/>`__\ 以来，出现了很多与Redis竞争的Redis开源分支，甚至社区本身对Redis的未来走向也有很多疑问。
+
+这次Redis公开的产品和更新虽然都还在内测，并未正式发布，但其涉及的大量新特性说明Redis公司将一如既往地投资Redis相关项目。这对于授权协议风波之后，仍然坚持使用Redis而不是其他Redis分支的用户可以说是一针有力的强心剂。
+
+那关于Redis新发布的介绍就到这里结束，我将持续关注这一系列Redis新产品的未来动向，对此感兴趣的朋友别忘了在社交媒体上关注我，另外也请在社交媒体上帮我给这篇文章点赞和转发，谢谢大家~！
+
+| 黄健宏
+| 2024.9.3
+
+.. |image1| image:: images/rr1.png
+.. |image2| image:: images/rr2.png
+.. |image3| image:: images/rr3.png
+.. |image4| image:: images/rr4.png
+.. |image5| image:: images/rr5.png
+.. |image6| image:: images/rr6.png

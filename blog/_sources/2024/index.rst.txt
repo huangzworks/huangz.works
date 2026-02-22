@@ -1,0 +1,22 @@
+2024
+===========
+
+.. toctree::
+   :maxdepth: 2
+
+   redis8-m01
+   valkey8
+   fp
+   redis-release
+   hash-ttl
+   postgresql-for-everything
+   mariadb-vs-mysql
+   mariadb-vs-mongodb
+   mariadb-vs-postgresql
+   learn-postgresql
+   maze
+   valkey-ga-release
+   valkey
+   post-redis-era
+   challenge-me
+   redis-new-licenses

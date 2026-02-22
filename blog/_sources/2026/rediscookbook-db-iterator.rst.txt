@@ -1,0 +1,38 @@
+《Redis应用实例》书摘（17）：数据库迭代器
+=================================================
+
+迭代器是一个非常重要的数据库特性，它可以让用户分批获取数据库中的数据，而不是一次性获取整个数据库的全部数据，因为后一种做法在数据量巨大的时候很容易会造成服务器阻塞。
+
+Redis向用户提供了\ ``SCAN``\ 命令以迭代数据库中的键，但这个命令只有在接收到正确的游标时才会正确地运行，而手动维护和更新游标往往容易造成错误。
+
+为了解决这个问题，本章将构建一个Redis数据库迭代器，由它负责封装和调用\ ``SCAN``\ 命令，并在迭代过程中不断地自动更新游标，使得用户在迭代过程中无需关心游标。
+
+代码清单 CODE_DB_ITERATOR 展示了基于这一原理实现的数据库迭代程序。
+
+----
+
+代码清单 CODE_DB_ITERATOR 数据库迭代器程序 ``db_iterator.py``
+
+.. literalinclude:: code/db_iterator.py
+
+----
+
+作为例子，以下代码展示了如何使用这个迭代程序来迭代整个数据库：
+
+::
+
+        >>> from redis import Redis
+        >>> from db_iterator import DbIterator
+        >>> from random_key_generator import random_key_generator
+        >>> random_key_generator(client, 13)  # 创建13个类型随机的键
+        >>> iterator = DbIterator(client, 5)  # 建议每次迭代获取5个键
+        >>> iterator.next()  # 第一次迭代
+        ['Key:7322915482', 'Key:7546531131', 'Key:2090130470', 'Key:6992086739', 'Key:2298694274', 'Key:8939973113']
+        >>> iterator.next()  # 第二次迭代
+        ['Key:7449569114', 'Key:3325812056', 'Key:0422676670', 'Key:8520951905', 'Key:9120617026']
+        >>> iterator.next()  # 第三次迭代
+        ['Key:5081797988', 'Key:0616761883']
+        >>> iterator.next()  # 迭代完毕
+        >>>
+
+.. include:: rediscookbook-promote.rst

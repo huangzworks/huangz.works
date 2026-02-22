@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>使用 Python 配合 Redis 超越缓存 &#8212; HUANGZ.BLOG</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <script src="../_static/documentation_options.js?v=e343978f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Salvatore Sanfilippo ：Redis 冒险的终点" href="the-end-of-the-redis-adventure.html" />
+    <link rel="prev" title="监控 Mac 的硬件温度" href="monitor-macbook-temperature.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          HUANGZ.BLOG</a>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">全站 <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2020</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">分页 <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">使用 Python 配合 Redis 超越缓存</a><ul>
+<li><a class="reference internal" href="#id2">使用 Redis 构建队列</a></li>
+<li><a class="reference internal" href="#id4">使用 Redis 订阅和发送事件</a></li>
+<li><a class="reference internal" href="#id6">使用 Redis 储存数据流</a></li>
+<li><a class="reference internal" href="#id9">将 Redis 用作搜索引擎</a></li>
+<li><a class="reference internal" href="#id12">使用 Redis 作为主数据库</a></li>
+<li><a class="reference internal" href="#id15">亲手尝试一下</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="monitor-macbook-temperature.html" title="Previous Chapter: 监控 Mac 的硬件温度"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; 监控 Mac 的硬件温度</span>
+    </a>
+  </li>
+  <li>
+    <a href="the-end-of-the-redis-adventure.html" title="Next Chapter: Salvatore Sanfilippo ：Redis 冒险的终点"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">Salvatore San... &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="python-redis">
+<h1>使用 Python 配合 Redis 超越缓存<a class="headerlink" href="#python-redis" title="Link to this heading">¶</a></h1>
+<img alt="../_images/python-code.jpg" src="../_images/python-code.jpg" />
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p><strong>本文由黄健宏翻译自</strong>
+<a class="reference external" href="https://redislabs.com/blog/beyond-the-cache-with-python">RedisLabs.com/blog</a>
+<strong>，首发于</strong>
+<a class="reference external" href="http://blog.huangz.me">blog.huangz.me</a> 。</p>
+<p>如果你是一位 Python 开发者，
+那么你肯定使用过 Redis ，
+并且认为它是一个很棒的缓存。
+虽然你的印象没有错，
+Redis 的确是一个很棒的缓存，
+但使用 Redis 能够解决的问题并不仅限于缓存。</p>
+<p>我们将探索 Redis 和 Redis Enterprise 的一些其他用途。
+为了找点乐子，
+我将使用之前《<a class="reference external" href="https://redislabs.com/blog/tracking-bigfoot-with-redis-and-geospatial-data/">使用 Redis 储存地理位置数据</a>》一文中的大脚兽（Bigfoot）数据。
+此外，
+由于这篇文章的读者都是 Python 开发者，
+所以我将使用 Python 来编写本文的所有代码！</p>
+<p>我在接下来展示的代码中使用了 <a class="reference external" href="https://github.com/aio-libs/aioredis">aioredis</a> 客户端库，
+因为它对 <code class="docutils literal notranslate"><span class="pre">async/await</span></code> 提供了非常棒的支持。
+如果你对 <code class="docutils literal notranslate"><span class="pre">async/await</span></code> 不熟悉的话，
+那么可以去看看<a class="reference external" href="https://redislabs.com/blog/async-await-programming-basics-python-examples/">这篇文章</a>，
+里面提到了 <code class="docutils literal notranslate"><span class="pre">async/await</span></code> 对提升性能的帮助。</p>
+<section id="id2">
+<h2>使用 Redis 构建队列<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>Redis 提供了字符串、哈希、集合和列表等多种数据结构可供使用。
+这些数据结构都是储存数据的好帮手，
+其中列表就可以用作一个非常棒的队列（queue）。</p>
+<p>为了将列表用作队列，
+我们需要使用 <code class="docutils literal notranslate"><span class="pre">RPUSH</span></code> 将新项目推送至列表末尾，
+然后使用 <code class="docutils literal notranslate"><span class="pre">LPOP</span></code> 或者 <code class="docutils literal notranslate"><span class="pre">BLPOP</span></code> 将它们从列表的前面弹出。
+由于 Redis 对数据库的所有修改都是在单个线程里面完成的，
+所以这些操作都是原子的。</p>
+<img alt="../_images/redis-as-queue.png" src="../_images/redis-as-queue.png" />
+<p>作为例子，
+下面这段在队列里面添加了一些大脚兽的踪迹。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span> <span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="linenos"> 2</span> <span class="kn">import</span> <span class="nn">aioredis</span>
+<span class="linenos"> 3</span>
+<span class="linenos"> 4</span> <span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="linenos"> 5</span>
+<span class="linenos"> 6</span>   <span class="n">redis</span> <span class="o">=</span> <span class="k">await</span> <span class="n">aioredis</span><span class="o">.</span><span class="n">create_redis</span><span class="p">(</span><span class="s1">&#39;redis://:foobared@localhost:6379/0&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+<span class="linenos"> 7</span>
+<span class="linenos"> 8</span>   <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span>
+<span class="linenos"> 9</span>     <span class="n">add_to_queue</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="s1">&#39;Possible vocalizations east of Makanda&#39;</span><span class="p">),</span>
+<span class="linenos">10</span>     <span class="n">add_to_queue</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="s1">&#39;Sighting near the Columbia River&#39;</span><span class="p">),</span>
+<span class="linenos">11</span>     <span class="n">add_to_queue</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="s1">&#39;Chased by a tall hairy creature&#39;</span><span class="p">)</span>
+<span class="linenos">12</span>   <span class="p">)</span>
+<span class="linenos">13</span>
+<span class="linenos">14</span>   <span class="n">redis</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="linenos">15</span>   <span class="k">await</span> <span class="n">redis</span><span class="o">.</span><span class="n">wait_closed</span><span class="p">()</span>
+<span class="linenos">16</span>
+<span class="linenos">17</span> <span class="k">def</span> <span class="nf">add_to_queue</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+<span class="linenos">18</span>   <span class="k">return</span> <span class="n">redis</span><span class="o">.</span><span class="n">rpush</span><span class="p">(</span><span class="s1">&#39;bigfoot:sightings:received&#39;</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+<span class="linenos">19</span>
+<span class="linenos">20</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>这个程序非常直接。
+我们只需要在第 18 行调用 <code class="docutils literal notranslate"><span class="pre">redis.rpush</span></code> ，
+就能够将指定的元素推入到队列。
+接下来是从队列另一端读取元素的代码，
+同样非常简单。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span> <span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="linenos"> 2</span> <span class="kn">import</span> <span class="nn">aioredis</span>
+<span class="linenos"> 3</span>
+<span class="linenos"> 4</span> <span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pp</span>
+<span class="linenos"> 5</span>
+<span class="linenos"> 6</span> <span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="linenos"> 7</span>
+<span class="linenos"> 8</span>   <span class="n">redis</span> <span class="o">=</span> <span class="k">await</span> <span class="n">aioredis</span><span class="o">.</span><span class="n">create_redis</span><span class="p">(</span><span class="s1">&#39;redis://:foobared@localhost:6379/0&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+<span class="linenos"> 9</span>
+<span class="linenos">10</span>   <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+<span class="linenos">11</span>     <span class="n">sighting</span> <span class="o">=</span> <span class="k">await</span> <span class="n">redis</span><span class="o">.</span><span class="n">blpop</span><span class="p">(</span><span class="s1">&#39;bigfoot:sightings:received&#39;</span><span class="p">)</span>
+<span class="linenos">12</span>     <span class="n">pp</span><span class="p">(</span><span class="n">sighting</span><span class="p">)</span>
+<span class="linenos">13</span>
+<span class="linenos">14</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>第 11 行和第 12 行的无限循环将等待并且打印被推入至队列中的大脚兽踪迹。
+这里使用了 <code class="docutils literal notranslate"><span class="pre">redis.blpop</span></code> 而不是 <code class="docutils literal notranslate"><span class="pre">redis.lpop</span></code> ，
+因为前者可以阻塞客户端并等待列表中的元素返回。
+比起让 Redis 和 Python 代码之间的网络无休止地轮询并做无用功，
+让客户端阻塞并等待元素出现的做法会高效得多。</p>
+<p>Redis 还有<a class="reference external" href="https://redis.io/commands#list">一些同样很酷的命令</a>，
+它们不仅可以将列表用作队列甚至堆栈。
+我最喜欢的是 <code class="docutils literal notranslate"><span class="pre">BRPOPLPUSH</span></code> ，
+它可以从列表的右侧阻塞并弹出一些元素，
+然后将被弹出的元素推入到另一个列表。
+你可以使用这个命令来将一个队列中的元素传递至另一个队列，
+这是非常棒的一个命令。</p>
+</section>
+<section id="id4">
+<h2>使用 Redis 订阅和发送事件<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>Redis 提供的东西中有些并不是数据结构，
+比如订阅与发布（Pub/Sub）特性就是其中之一。
+这个特性就像它的名字一样，
+是一个内置于 Redis 中的发布与订阅机制。
+得益于这个特性，
+我们只需要<a class="reference external" href="https://redis.io/commands#pubsub">使用一些命令</a>就可以在自己的 Python 应用里面添加强大的订阅与发布机制。</p>
+<p>通过执行订阅操作可以让我们发现事件，
+以下是代码：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span> <span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="linenos"> 2</span> <span class="kn">import</span> <span class="nn">aioredis</span>
+<span class="linenos"> 3</span>
+<span class="linenos"> 4</span> <span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pp</span>
+<span class="linenos"> 5</span>
+<span class="linenos"> 6</span> <span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="linenos"> 7</span>
+<span class="linenos"> 8</span>   <span class="n">redis</span> <span class="o">=</span> <span class="k">await</span> <span class="n">aioredis</span><span class="o">.</span><span class="n">create_redis</span><span class="p">(</span><span class="s1">&#39;redis://:foobared@localhost:6379/0&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+<span class="linenos"> 9</span>
+<span class="linenos">10</span>   <span class="p">[</span><span class="n">channel</span><span class="p">]</span> <span class="o">=</span> <span class="k">await</span> <span class="n">redis</span><span class="o">.</span><span class="n">psubscribe</span><span class="p">(</span><span class="s1">&#39;bigfoot:broadcast:channel:*&#39;</span><span class="p">)</span>
+<span class="linenos">11</span>
+<span class="linenos">12</span>   <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+<span class="linenos">13</span>     <span class="n">message</span> <span class="o">=</span> <span class="k">await</span> <span class="n">channel</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+<span class="linenos">14</span>     <span class="n">pp</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+<span class="linenos">15</span>
+<span class="linenos">16</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>因为我想要接收所有跟大脚兽有关的消息，
+所以我在这段代码的第 10 行使用 <code class="docutils literal notranslate"><span class="pre">redis.psubscribe</span></code> 订阅了一个 Glob 风格的模式，
+通过使用 <code class="docutils literal notranslate"><span class="pre">bigfoot:broadcast:channel:*</span></code> 作为模式，
+客户端将接收到所有以 <code class="docutils literal notranslate"><span class="pre">bigfoot:broadcast:channel:</span></code> 开头的事件。</p>
+<p>用于匹配模式的 <code class="docutils literal notranslate"><span class="pre">redis.psubscribe</span></code> 函数和非模式匹配的 <code class="docutils literal notranslate"><span class="pre">redis.subscribe</span></code> 函数都返回 Python 列表，
+以便包含不定数量的元素。
+程序将解构这个列表（Python 的术语是解包）以获得我想要的通道，
+并在之后使用 <code class="docutils literal notranslate"><span class="pre">.get</span></code> 进行阻塞调用以等待下一条消息。</p>
+<p>发布事件非常简单，
+下面是代码：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span> <span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="linenos"> 2</span> <span class="kn">import</span> <span class="nn">aioredis</span>
+<span class="linenos"> 3</span>
+<span class="linenos"> 4</span> <span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="linenos"> 5</span>
+<span class="linenos"> 6</span>   <span class="n">redis</span> <span class="o">=</span> <span class="k">await</span> <span class="n">aioredis</span><span class="o">.</span><span class="n">create_redis</span><span class="p">(</span><span class="s1">&#39;redis://:foobared@localhost:6379/0&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+<span class="linenos"> 7</span>
+<span class="linenos"> 8</span>   <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span>
+<span class="linenos"> 9</span>     <span class="n">publish</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Possible vocalizations east of Makanda&#39;</span><span class="p">),</span>
+<span class="linenos">10</span>     <span class="n">publish</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;Sighting near the Columbia River&#39;</span><span class="p">),</span>
+<span class="linenos">11</span>     <span class="n">publish</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;Chased by a tall hairy creature&#39;</span><span class="p">)</span>
+<span class="linenos">12</span>   <span class="p">)</span>
+<span class="linenos">13</span>
+<span class="linenos">14</span>   <span class="n">redis</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="linenos">15</span>   <span class="k">await</span> <span class="n">redis</span><span class="o">.</span><span class="n">wait_closed</span><span class="p">()</span>
+<span class="linenos">16</span>
+<span class="linenos">17</span> <span class="k">def</span> <span class="nf">publish</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+<span class="linenos">18</span>   <span class="k">return</span> <span class="n">redis</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;bigfoot:broadcast:channel:</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
+<span class="linenos">19</span>
+<span class="linenos">20</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>这段代码的重点是第 18 行，
+它使用了名字非常直接的 <code class="docutils literal notranslate"><span class="pre">redis.publish</span></code> 来讲消息发布至所需的通道。</p>
+<p>值得注意的是，
+发布与订阅是一个发送即遗忘机制（fire-and-forget）。
+如果代码发布了一个事件但是却没有人监听，
+那么该事件就会消失。
+如果你想让自己的事件持续存在，
+那么可以考虑使用前面提到的队列，
+又或者接下来将要介绍的 Redis 流。</p>
+</section>
+<section id="id6">
+<h2>使用 Redis 储存数据流<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<p>除了发布与订阅之外，
+Redis 还可以使用流来发布和订阅事件。
+<a class="reference external" href="https://redis.io/topics/streams-intro">Redis 流</a>是一个非常大的话题，
+但使用它只需要<a class="reference external" href="https://redis.io/commands#stream">掌握少量命令</a>。
+从 Python 来看，
+这些命令的用法都是非常简单的，
+我将一一向你说明。</p>
+<p>下面的代码将把三次大脚兽的目击事件添加到流里面。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span> <span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="linenos"> 2</span> <span class="kn">import</span> <span class="nn">aioredis</span>
+<span class="linenos"> 3</span>
+<span class="linenos"> 4</span> <span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="linenos"> 5</span>
+<span class="linenos"> 6</span>   <span class="n">redis</span> <span class="o">=</span> <span class="k">await</span> <span class="n">aioredis</span><span class="o">.</span><span class="n">create_redis</span><span class="p">(</span><span class="s1">&#39;redis://:foobared@localhost:6379/0&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+<span class="linenos"> 7</span>
+<span class="linenos"> 8</span>   <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span>
+<span class="linenos"> 9</span>     <span class="n">add_to_stream</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Possible vocalizations east of Makanda&#39;</span><span class="p">,</span> <span class="s1">&#39;Class B&#39;</span><span class="p">),</span>
+<span class="linenos">10</span>     <span class="n">add_to_stream</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;Sighting near the Columbia River&#39;</span><span class="p">,</span> <span class="s1">&#39;Class A&#39;</span><span class="p">),</span>
+<span class="linenos">11</span>     <span class="n">add_to_stream</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;Chased by a tall hairy creature&#39;</span><span class="p">,</span> <span class="s1">&#39;Class A&#39;</span><span class="p">))</span>
+<span class="linenos">12</span>
+<span class="linenos">13</span>   <span class="n">redis</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="linenos">14</span>   <span class="k">await</span> <span class="n">redis</span><span class="o">.</span><span class="n">wait_closed</span><span class="p">()</span>
+<span class="linenos">15</span>
+<span class="linenos">16</span> <span class="k">def</span> <span class="nf">add_to_stream</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">classification</span><span class="p">):</span>
+<span class="linenos">17</span>   <span class="k">return</span> <span class="n">redis</span><span class="o">.</span><span class="n">xadd</span><span class="p">(</span><span class="s1">&#39;bigfoot:sightings:stream&#39;</span><span class="p">,</span> <span class="p">{</span>
+<span class="linenos">18</span>     <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="nb">id</span><span class="p">,</span> <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span> <span class="s1">&#39;classification&#39;</span><span class="p">:</span> <span class="n">classification</span> <span class="p">})</span>
+<span class="linenos">19</span>
+<span class="linenos">20</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>这段代码中最重要的就是第 17 行和第 18 行，
+它使用了 <code class="docutils literal notranslate"><span class="pre">redis.xadd</span></code> 函数将一次目击事件的字段添加到流里面。</p>
+<p>每个新添加的流事件都有一个唯一标识符，
+其中包含自 1970 年开始的时间戳（毫秒）和一个用破折号连接的序列号。
+例如，
+当我写这篇文章的时候，
+1970 年 1 月 1 日（Unix纪元）午夜已经过去了 1,593,120,357,193 毫秒（1.59千兆秒）。
+因此当我运行上面这段代码的时候，
+命令将创建出 ID 为 <code class="docutils literal notranslate"><span class="pre">1593120357193-0</span></code> 的事件。</p>
+<img alt="../_images/event-id.png" src="../_images/event-id.png" />
+<p>我们在添加事件的时候可以使用 <code class="docutils literal notranslate"><span class="pre">*</span></code> 来代替具体的 ID ，
+这样 Redis 就会根据当前时间来自动生成事件的 ID ，
+这也是 <code class="docutils literal notranslate"><span class="pre">redis.xadd</span></code> 函数的默认行为。</p>
+<p>正如接下来的代码所示，
+在读取流元素的时候，
+我们需要设置一个起始 ID 。
+你可以看到，
+在第 10 行，
+程序将变量 <code class="docutils literal notranslate"><span class="pre">last_id</span></code> 设置成了 <code class="docutils literal notranslate"><span class="pre">0-0</span></code> ，
+这个 ID 代表流的起始位置。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span> <span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="linenos"> 2</span> <span class="kn">import</span> <span class="nn">aioredis</span>
+<span class="linenos"> 3</span>
+<span class="linenos"> 4</span> <span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pp</span>
+<span class="linenos"> 5</span>
+<span class="linenos"> 6</span> <span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="linenos"> 7</span>
+<span class="linenos"> 8</span>   <span class="n">redis</span> <span class="o">=</span> <span class="k">await</span> <span class="n">aioredis</span><span class="o">.</span><span class="n">create_redis</span><span class="p">(</span><span class="s1">&#39;redis://:foobared@localhost:6379/0&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf8&#39;</span><span class="p">)</span>
+<span class="linenos"> 9</span>
+<span class="linenos">10</span>   <span class="n">last_id</span> <span class="o">=</span> <span class="s1">&#39;0-0&#39;</span>
+<span class="linenos">11</span>   <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+<span class="linenos">12</span>     <span class="n">events</span> <span class="o">=</span> <span class="k">await</span> <span class="n">redis</span><span class="o">.</span><span class="n">xread</span><span class="p">([</span><span class="s1">&#39;bigfoot:sightings:stream&#39;</span><span class="p">],</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">latest_ids</span><span class="o">=</span><span class="p">[</span><span class="n">last_id</span><span class="p">])</span>
+<span class="linenos">13</span>     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">fields</span> <span class="ow">in</span> <span class="n">events</span><span class="p">:</span>
+<span class="linenos">14</span>       <span class="n">pp</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span>
+<span class="linenos">15</span>       <span class="n">last_id</span> <span class="o">=</span> <span class="nb">id</span>
+<span class="linenos">16</span>
+<span class="linenos">17</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>程序的第 12 行使用 <code class="docutils literal notranslate"><span class="pre">redis.xread</span></code> 函数从流中请求最多 5 个 <code class="docutils literal notranslate"><span class="pre">0-0</span></code> 之后的事件。
+该调用将返回一个列表，
+然后程序将对其进行循环和解构，
+以获得事件的字段和标识符。
+事件的标识符会被储存起来，
+以便将来调用 <code class="docutils literal notranslate"><span class="pre">redis.xread</span></code> 时可以获得新的事件并在有需要时重新读取之前读取过的旧事件。</p>
+</section>
+<section id="id9">
+<h2>将 Redis 用作搜索引擎<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h2>
+<p>Redis 可以通过模块（Module）扩展来增加新的命令和功能。
+有<a class="reference external" href="https://redis.io/modules">大量的模块</a>可以用于 AI 模型服务、图形数据库、时间序列数据库以及本例中的搜索引擎。</p>
+<p><a class="reference external" href="https://oss.redislabs.com/redisearch/">RedisSearch</a> 是一个强大的搜索引擎，
+它摄取数据的速度快得惊人。
+有些人喜欢用它来进行<a class="reference external" href="https://redislabs.com/blog/the-case-for-ephemeral-search/">瞬时搜索</a>，
+但除此之外它也可以用来进行其他搜索。
+下面是使用该模块的一个例子：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span> <span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="linenos"> 2</span> <span class="kn">import</span> <span class="nn">aioredis</span>
+<span class="linenos"> 3</span>
+<span class="linenos"> 4</span> <span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pp</span>
+<span class="linenos"> 5</span>
+<span class="linenos"> 6</span> <span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="linenos"> 7</span>
+<span class="linenos"> 8</span>   <span class="n">redis</span> <span class="o">=</span> <span class="k">await</span> <span class="n">aioredis</span><span class="o">.</span><span class="n">create_redis</span><span class="p">(</span><span class="s1">&#39;redis://:foobared@localhost:6379/0&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+<span class="linenos"> 9</span>
+<span class="linenos">10</span>   <span class="k">await</span> <span class="n">redis</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;FT.DROP&#39;</span><span class="p">,</span> <span class="s1">&#39;bigfoot:sightings:search&#39;</span><span class="p">)</span>
+<span class="linenos">11</span>
+<span class="linenos">12</span>   <span class="k">await</span> <span class="n">redis</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;FT.CREATE&#39;</span><span class="p">,</span> <span class="s1">&#39;bigfoot:sightings:search&#39;</span><span class="p">,</span>
+<span class="linenos">13</span>     <span class="s1">&#39;SCHEMA&#39;</span><span class="p">,</span> <span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="s1">&#39;TEXT&#39;</span><span class="p">,</span> <span class="s1">&#39;classification&#39;</span><span class="p">,</span> <span class="s1">&#39;TEXT&#39;</span><span class="p">)</span>
+<span class="linenos">14</span>
+<span class="linenos">15</span>   <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span>
+<span class="linenos">16</span>     <span class="n">add_document</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Possible vocalizations east of Makanda&#39;</span><span class="p">,</span> <span class="s1">&#39;Class B&#39;</span><span class="p">),</span>
+<span class="linenos">17</span>     <span class="n">add_document</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;Sighting near the Columbia River&#39;</span><span class="p">,</span> <span class="s1">&#39;Class A&#39;</span><span class="p">),</span>
+<span class="linenos">18</span>     <span class="n">add_document</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;Chased by a tall hairy creature&#39;</span><span class="p">,</span> <span class="s1">&#39;Class A&#39;</span><span class="p">))</span>
+<span class="linenos">19</span>
+<span class="linenos">20</span>   <span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">search</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="s1">&#39;chase|east&#39;</span><span class="p">)</span>
+<span class="linenos">21</span>   <span class="n">pp</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+<span class="linenos">22</span>
+<span class="linenos">23</span>   <span class="n">redis</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="linenos">24</span>   <span class="k">await</span> <span class="n">redis</span><span class="o">.</span><span class="n">wait_closed</span><span class="p">()</span>
+<span class="linenos">25</span>
+<span class="linenos">26</span> <span class="k">def</span> <span class="nf">add_document</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">classification</span><span class="p">):</span>
+<span class="linenos">27</span>   <span class="k">return</span> <span class="n">redis</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;FT.ADD&#39;</span><span class="p">,</span> <span class="s1">&#39;bigfoot:sightings:search&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="s1">&#39;1.0&#39;</span><span class="p">,</span>
+<span class="linenos">28</span>     <span class="s1">&#39;FIELDS&#39;</span><span class="p">,</span> <span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="s1">&#39;classification&#39;</span><span class="p">,</span> <span class="n">classification</span><span class="p">)</span>
+<span class="linenos">29</span>
+<span class="linenos">30</span> <span class="k">def</span> <span class="nf">search</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="n">query</span><span class="p">):</span>
+<span class="linenos">31</span>   <span class="k">return</span> <span class="n">redis</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;FT.SEARCH&#39;</span><span class="p">,</span> <span class="s1">&#39;bigfoot:sightings:search&#39;</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+<span class="linenos">32</span>
+<span class="linenos">33</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>在第 12 和第 13 行，
+程序使用 <code class="docutils literal notranslate"><span class="pre">FT.CREATE</span></code> 创建了一个索引。
+索引需要描述程序将要添加的每个文档中的字段的模式。
+在这个例子中，
+程序需要添加大脚兽的目击事件，
+该文档包含一个标题和一个分类，
+并且它们都是文本字段。</p>
+<p>在拥有了索引之后，
+程序就可以向里面添加文档了，
+这一操作发生在程序的第 27 行和第 28 行，
+通过 <code class="docutils literal notranslate"><span class="pre">FT.ADD</span></code> 命令来完成。
+每个文档偶读需要一个唯一 ID 、一个介于 <code class="docutils literal notranslate"><span class="pre">0.0</span></code> 和 <code class="docutils literal notranslate"><span class="pre">1.0</span></code> 之间的权重（rank）以及相应的字段。</p>
+<p>正如程序的第 31 行所示，
+在索引加载文档之后，
+程序就可以使用 <code class="docutils literal notranslate"><span class="pre">FT.SEARCH</span></code> 命令和具体的查询语句来执行查询操作。
+第 20 行的特定查询指示 RedisSearch 在索引中查找包含这些术语之一的文档。
+在这个例子中，
+该查询将返回两个文档。</p>
+</section>
+<section id="id12">
+<h2>使用 Redis 作为主数据库<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h2>
+<p>Redis 可以作为一个速度奇快的内存存储数据库来使用。
+下面的代码使用了哈希来演示这种用法。
+哈希是一种非常棒的数据结构，
+它可以建模你想要储存的记录类型，
+并且能够将数据的主键用作键名的其中一部分。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span> <span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="linenos"> 2</span> <span class="kn">import</span> <span class="nn">aioredis</span>
+<span class="linenos"> 3</span>
+<span class="linenos"> 4</span> <span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pp</span>
+<span class="linenos"> 5</span>
+<span class="linenos"> 6</span> <span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="linenos"> 7</span>
+<span class="linenos"> 8</span>   <span class="n">redis</span> <span class="o">=</span> <span class="k">await</span> <span class="n">aioredis</span><span class="o">.</span><span class="n">create_redis</span><span class="p">(</span><span class="s1">&#39;redis://:foobared@localhost:6379/0&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+<span class="linenos"> 9</span>
+<span class="linenos">10</span>   <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span>
+<span class="linenos">11</span>     <span class="n">add_sighting</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Possible vocalizations east of Makanda&#39;</span><span class="p">,</span> <span class="s1">&#39;Class B&#39;</span><span class="p">),</span>
+<span class="linenos">12</span>     <span class="n">add_sighting</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;Sighting near the Columbia River&#39;</span><span class="p">,</span> <span class="s1">&#39;Class A&#39;</span><span class="p">),</span>
+<span class="linenos">13</span>     <span class="n">add_sighting</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;Chased by a tall hairy creature&#39;</span><span class="p">,</span> <span class="s1">&#39;Class A&#39;</span><span class="p">))</span>
+<span class="linenos">14</span>
+<span class="linenos">15</span>   <span class="n">sightings</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span>
+<span class="linenos">16</span>     <span class="n">read_sighting</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+<span class="linenos">17</span>     <span class="n">read_sighting</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+<span class="linenos">18</span>     <span class="n">read_sighting</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="linenos">19</span>
+<span class="linenos">20</span>   <span class="n">pp</span><span class="p">(</span><span class="n">sightings</span><span class="p">)</span>
+<span class="linenos">21</span>
+<span class="linenos">22</span>   <span class="n">redis</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="linenos">23</span>   <span class="k">await</span> <span class="n">redis</span><span class="o">.</span><span class="n">wait_closed</span><span class="p">()</span>
+<span class="linenos">24</span>
+<span class="linenos">25</span> <span class="k">def</span> <span class="nf">add_sighting</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">classification</span><span class="p">):</span>
+<span class="linenos">26</span>   <span class="k">return</span> <span class="n">redis</span><span class="o">.</span><span class="n">hmset</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;bigfoot:sighting:</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+<span class="linenos">27</span>     <span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="s1">&#39;classification&#39;</span><span class="p">,</span> <span class="n">classification</span><span class="p">)</span>
+<span class="linenos">28</span>
+<span class="linenos">29</span> <span class="k">def</span> <span class="nf">read_sighting</span><span class="p">(</span><span class="n">redis</span><span class="p">,</span> <span class="nb">id</span><span class="p">):</span>
+<span class="linenos">30</span>   <span class="k">return</span> <span class="n">redis</span><span class="o">.</span><span class="n">hgetall</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;bigfoot:sighting:</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="linenos">31</span>
+<span class="linenos">32</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</pre></div>
+</div>
+<img alt="../_images/redis-hash.png" src="../_images/redis-hash.png" />
+<p>你可能会这样想”如果我把服务器关掉了怎么办？如果它崩溃了怎么办？那我就什么数据都没有了！“
+No，不会的！
+你可以修改你的 <code class="docutils literal notranslate"><span class="pre">redis.conf</span></code> 文件，
+<a class="reference external" href="https://redis.io/topics/persistence">用几种不同的方式来持久化内存中的数据</a>。
+此外，
+如果你使用的是 Redis Enterprise ，
+我们也有为你提供<a class="reference external" href="https://redislabs.com/redis-enterprise/technology/durable-redis-2/">相应的解决方案</a>，
+使得你可以直接使用 Redis 而不必担心持久化的问题。</p>
+</section>
+<section id="id15">
+<h2>亲手尝试一下<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h2>
+<p>为了方便你亲手尝试这些例子，
+我把文中涉及的<a class="reference external" href="https://github.com/guyroyse/python-redis-examples">所有代码都放到了 GitHub 上面</a>，
+你可以克隆并开始使用它们。
+如果你是 Docker 用户，
+项目里面也有一个名为 <code class="docutils literal notranslate"><span class="pre">start-redis.sh</span></code> 的 shell 脚本，
+它可以拉取一个镜像，
+然后启动一个能够运行这些例子的 Redis 版本。</p>
+<p>如果你在玩耍完毕之后想要认真地构建一些软件，
+那么可以注册并尝试 <a class="reference external" href="https://redislabs.com/try-free/">Redis Cloud Essentials</a> 。
+它和你所熟悉和喜欢的 Redis 一样，
+唯一的区别就是这种 Redis 由云端进行管理，
+所以你只需要专注于构建你的软件即可。</p>
+<div class="line-block">
+<div class="line">文/Guy Royse · 译/黄健宏</div>
+<div class="line">2020.7.11</div>
+</div>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2026, 黄健宏.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>
