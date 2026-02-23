@@ -1,135 +1,345 @@
 <!DOCTYPE html>
+<html class="no-js" lang="en" data-content_root="../">
+<head>
 
-<html lang="en" data-content_root="../">
-  <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-B0605B07YB"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-B0605B07YB');
+    </script>
+    <!-- end Google tag -->
+
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>如何系统地学习PostgreSQL &#8212; HUANGZ.WORKS/BLOG</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=e9ae6b2d" />
-    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
-    <script src="../_static/documentation_options.js?v=e343978f"></script>
-    <script src="../_static/doctools.js?v=888ff710"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="用文字构筑的迷宫" href="maze.html" />
-    <link rel="prev" title="如何选择合适的数据库（一）：对比MariaDB和PostgreSQL" href="mariadb-vs-postgresql.html" />
-<meta charset='utf-8'>
-<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
-<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
-<meta name="apple-mobile-web-app-capable" content="yes">
-<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js "></script>
-<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
-<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js "></script>
-<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
-
-  </head><body>
-
-  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
-    <div class="container">
-      <div class="navbar-header">
-        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
-        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-        </button>
-        <a class="navbar-brand" href="../index.html">
-          HUANGZ.WORKS/BLOG</a>
-      </div>
-
-        <div class="collapse navbar-collapse nav-collapse">
-          <ul class="nav navbar-nav">
-            
-            
-              <li class="dropdown globaltoc-container">
-  <a role="button"
-     id="dLabelGlobalToc"
-     data-toggle="dropdown"
-     data-target="#"
-     href="../index.html">全站 <b class="caret"></b></a>
-  <ul class="dropdown-menu globaltoc"
-      role="menu"
-      aria-labelledby="dLabelGlobalToc"><ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="index.html">2024</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a></li>
-</ul>
-</ul>
-</li>
-              
-                <li class="dropdown">
-  <a role="button"
-     id="dLabelLocalToc"
-     data-toggle="dropdown"
-     data-target="#"
-     href="#">分页 <b class="caret"></b></a>
-  <ul class="dropdown-menu localtoc"
-      role="menu"
-      aria-labelledby="dLabelLocalToc"><ul>
-<li><a class="reference internal" href="#">如何系统地学习PostgreSQL</a><ul>
-<li><a class="reference internal" href="#sql">学习SQL</a></li>
-<li><a class="reference internal" href="#id1">学习PostgreSQL</a></li>
-<li><a class="reference internal" href="#id2">学习PostgreSQL扩展</a></li>
-<li><a class="reference internal" href="#postgresql-rdbms">学习PostgreSQL/RDBMS实现原理</a></li>
-<li><a class="reference internal" href="#id3">结语</a></li>
-</ul>
-</li>
-</ul>
-</ul>
-</li>
-              
-            
-            
-              
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+        <title>如何系统地学习PostgreSQL &mdash; HUANGZ.WORKS/BLOG</title>
+    
+    <link rel="stylesheet" type="text/css" href="../_static/dist/fontawesome.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/dist/theme.css?v=310cf088" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=44a41c93" />
+            <link rel="index" title="Index" href="../genindex.html" />
+            <link rel="search" title="Search" href="../search.html" />
+            <link rel="top" title="HUANGZ.WORKS/BLOG" href="#" />
+            <link rel="up" title="2024" href="index.html" />
+            <link rel="next" title="用文字构筑的迷宫" href="maze.html" />
+            <link rel="prev" title="如何选择合适的数据库（一）：对比MariaDB和PostgreSQL" href="mariadb-vs-postgresql.html" />
+    </head>
+<body>
+    <script type="text/javascript" src="../_static/dist/blocking.js"></script>
+    <header class="container-fluid bg-primary">
+        <a class="btn btn-sm btn-light skip-to-content-link" href="#main">Skip to content</a>
+        <div class="container-fluid">
+            <div class="navbar navbar-expand-lg navbar-dark font-weight-bold">
+                    <a href="../index.html"
+                        title="Wagtail"
+                        class="logo navbar-brand"
+                    >
+                        <img src="../_static/img/wagtail-logo-circle.svg" width="45" height="59" alt="Wagtail"
+                            class="logo-img"
+                        />
+                        HUANGZ.WORKS/BLOG
+                    </a>
                 
-  <li>
-    <a href="mariadb-vs-postgresql.html" title="Previous Chapter: 如何选择合适的数据库（一）：对比MariaDB和PostgreSQL"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; 如何选择合适的数据库（一）...</span>
-    </a>
-  </li>
-  <li>
-    <a href="maze.html" title="Next Chapter: 用文字构筑的迷宫"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">用文字构筑的迷宫 &raquo;</span>
-    </a>
-  </li>
-              
-            
-            
-            
-          </ul>
-
-          
-            
-<form class="navbar-form navbar-right" action="../search.html" method="get">
- <div class="form-group">
-  <input type="text" name="q" class="form-control" placeholder="Search" />
- </div>
-  <input type="hidden" name="check_keywords" value="yes" />
-  <input type="hidden" name="area" value="default" />
-</form>
-          
+                
+                <button class="navbar-toggler btn btn-primary d-lg-none" type="button" data-toggle="collapse" data-target="#collapseSidebar" aria-expanded="false" aria-controls="collapseExample">
+                    <span class="navbar-toggler-icon"></span>
+                    <span class="sr-only">menu</span>
+                </button>
+            </div>
         </div>
-    </div>
-  </div>
+    </header>
+    <div class="container-fluid">
+        <div class="row">
+            <aside class="col-12 col-lg-3 sidebar-container">
+                <div id="collapseSidebar" class="collapse sticky-top d-lg-block pt-5 pr-lg-4">
+<div id="searchbox" class="searchbox mb-6 px-1" role="search">
+    <form id="search-form" action="../search.html" autocomplete="off" method="get" role="search">
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <div class="input-group-text border-right-0 bg-white py-3 pl-3 pr-2"><span class="fas fa-search"></span></div>
+            </div>
+            <input class="form-control py-3 pr-3 pl-1 h-100 border-left-0" type="search" name="q" placeholder="Search documentation" aria-label="Search documentation" id="searchinput" />
+        </div>
+        <input type="hidden" name="check_keywords" value="yes" />
+        <input type="hidden" name="area" value="default" />
+    </form>
+</div><div class="site-toc">
+    <nav class="toc mt-3" aria-label="Main menu">
+        <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../2026/rediscookbook-digest.html">《Redis应用实例》书摘【连载中：已更新26篇】</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-cache-single-item.html">《Redis应用实例》书摘（1）：缓存单项数据</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-cache-json-item.html">《Redis应用实例》书摘（2）：通过JSON序列化缓存多项数据</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-cache-multi-items.html">《Redis应用实例》书摘（3）：使用哈希键缓存多项数据</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-binary-cache.html">《Redis应用实例》书摘（4）：缓存二进制数据</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-lock.html">《Redis应用实例》书摘（5）：锁</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-identity-lock.html">《Redis应用实例》书摘（6）：带密码保护功能的锁</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-string-id-generator.html">《Redis应用实例》书摘（7）：自动递增数字ID生成器（字符串实现）</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-hash-id-generator.html">《Redis应用实例》书摘（8）：自动递增数字ID生成器（哈希实现）</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-string-counter.html">《Redis应用实例》书摘（9）：计数器（使用字符串实现）</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-hash-counter.html">《Redis应用实例》书摘（10）：计数器（使用哈希实现）</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-set-unique-counter.html">《Redis应用实例》书摘（11）：唯一计数器（使用集合实现）</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-hll-unique-counter.html">《Redis应用实例》书摘（12）：唯一计数器（使用HyperLogLog实现）</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-rate-limiter.html">《Redis应用实例》书摘（13）：速率限制器</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-binary-recorder.html">《Redis应用实例》书摘（14）：二元操作记录器</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-resource-pool.html">《Redis应用实例》书摘（15）：资源池</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-compact-string.html">《Redis应用实例》书摘（16）：紧凑字符串</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-db-iterator.html">《Redis应用实例》书摘（17）：数据库迭代器</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-stream-iterator-xrange.html">《Redis应用实例》书摘（18）：流迭代器（使用XRANGE实现）</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-stream-iterator-xread.html">《Redis应用实例》书摘（19）：流迭代器（使用XREAD实现）</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-fifo-queue.html">《Redis应用实例》书摘（20）：先进先出队列</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-priority-queue.html">《Redis应用实例》书摘（21）：优先队列</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-matrix.html">《Redis应用实例》书摘（22）：矩阵</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-message-queue.html">《Redis应用实例》书摘（23）：消息队列</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-tag.html">《Redis应用实例》书摘（24）：标签系统</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-autocomplete.html">《Redis应用实例》书摘（25）：自动补全</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-pagging.html">《Redis应用实例》书摘（26）：分页</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../2026/valkey-series.html">“Valkey源码剖析”系列文章【连载中：已更新20+篇】</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-lunch-server.html">Valkey源码剖析（1）：启动服务器</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-server-struct.html">Valkey源码剖析（2）：服务器状态表示</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-event-loop.html">Valkey源码剖析（3）：事件主循环</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-event-state.html">Valkey源码剖析（4）：事件状态</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-file-event-struct.html">Valkey源码剖析（5）：文件事件的表示</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-time-event-struct.html">Valkey源码剖析（6）：时间事件的表示</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-file-event-process.html">Valkey源码剖析（7）：文件事件处理流程</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-time-event-process.html">Valkey源码剖析（8）：时间事件处理流程</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-multiplexing.html">Valkey源码剖析（9）：基于多路复用实现的文件事件</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-command-struct.html">Valkey源码剖析（10）：命令的表示</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-command-table.html">Valkey源码剖析（11）：构建命令表</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-lookup-command.html">Valkey源码剖析（12）：查找命令</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-exec-command.html">Valkey源码剖析（13）：执行命令</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-object-type.html">Valkey源码剖析（14）：对象类型</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-object-encoding.html">Valkey源码剖析（15）：对象编码</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-object-encoding-convert.html">Valkey源码剖析（16）：对象编码的转换</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-object-struct.html">Valkey源码剖析（17）：对象的表示</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-object-refcount.html">Valkey源码剖析（18）：对象引用计数</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-shared-objects.html">Valkey源码剖析（19）：共享对象</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-client-struct.html">Valkey源码剖析（20）：客户端表示</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-client-request.html">Valkey源码剖析（21）：命令请求的读取、解析与执行</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-client-response-store.html">Valkey源码剖析（22）：命令回复的存储</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-client-response-write.html">Valkey源码剖析（23）：命令回复的写入</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../2025/index.html">2025</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../2025/cn-pg-book-recommend.html">答网友问：中文PostgreSQL书只选一本的话，推荐哪本？</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2025/redis84-rc1.html">Redis 8.4 RC1 新增字符串命令介绍（DIGEST、DELEX、MSETEX）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2025/peter-zaitsev.html">PostgreSQL人物周刊：Peter Zaitsev</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2025/redis8-ga.html">Redis 8 正式版更新摘要</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2025/redis8-m04.html">Redis 8.0-M04新增命令介绍（HGETDEL 、HSETEX和HGETEX）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2025/sql-interview.html">“SQL的现在与未来”——对话《SQL实战》作者安东尼·德巴罗斯</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2025/direct-install-redis8-milestone.html">在Linux和macOS上直接安装Redis 8.0 Milestone版本</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2024</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="redis8-m01.html">Redis 8.0发布首个预览版，新增多种数据结构以及查询引擎</a></li>
+<li class="toctree-l2"><a class="reference internal" href="valkey8.html">Valkey 8.0发布，性能比之前提高三倍！</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fp.html">函数式编程的正确使用方式</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-release.html">Redis公司宣布即将发布Redis 8、Redis Flex和Redis for AI等多个新产品</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hash-ttl.html">Redis 7.4 RC1发布，支持为哈希字段单独设置过期时间</a></li>
+<li class="toctree-l2"><a class="reference internal" href="postgresql-for-everything.html">使用PostgreSQL简化你的技术栈</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mariadb-vs-mysql.html">如何选择合适的数据库（三）：对比MariaDB和MySQL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mariadb-vs-mongodb.html">如何选择合适的数据库（二）：对比MariaDB和MongoDB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mariadb-vs-postgresql.html">如何选择合适的数据库（一）：对比MariaDB和PostgreSQL</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">如何系统地学习PostgreSQL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="maze.html">用文字构筑的迷宫</a></li>
+<li class="toctree-l2"><a class="reference internal" href="valkey-ga-release.html">Valkey 发布 7.2.5 正式版，今后将与Redis分道扬镳</a></li>
+<li class="toctree-l2"><a class="reference internal" href="valkey.html">Linux基金会宣布推出Valkey作为Redis的开源替代方案</a></li>
+<li class="toctree-l2"><a class="reference internal" href="post-redis-era.html">欢迎进入后Redis时代——关于Redis修改许可之后的问题、现状和未来</a></li>
+<li class="toctree-l2"><a class="reference internal" href="challenge-me.html">我随时接受你的挑战</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-new-licenses.html">全面解读Redis新协议声明</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../2023/shenzhen.html">或许人生和列车一样，都需要奔跑</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2023/hello-hexo.html">将博客系统从Sphinx改为Hexo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2023/logitech-gpw-vs-razer-viper.html">游戏鼠标哪家强：简单对比罗技狗屁王（GPW）和雷蛇毒蝰（VIPER）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2023/working-set-up.html">2023 年电脑设备配置分享</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../2022/index.html">2022</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../2022/go-in-google.html">Go 语言在 Google 中的应用</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2022/introducing-redis-stack.html">Redis Stack 简介</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2022/go-generic-release-note.html">Go 1.18 关于泛型特性的说明</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2022/install-nvidia-driver.html">在 Ubuntu 上安装 Nvidia 专有驱动</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2022/redis7-rc2.html">Redis 7.0 RC2 释出报告</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2022/redis7-admin-commands.html">Redis 7.0 新增管理命令简介</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2022/redis7-rc1.html">Redis 7.0 RC1 释出报告</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../2021/index.html">2021</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../2021/redis-om-tutorial.html">Redis OM 基本教程</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2021/sicp-dedication.html">《SICP》献词个人翻译版本</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2021/huangztalk-002-outline.html">HuangzTalk 002： 《Redis设计与实现》创作回忆录（文字大纲）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2021/huangztalk-001-outline.html">HuangzTalk 001：ThinkPad X1 Nano 使用体验分享（文字大纲）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2021/how-to-read-fast.html">快速阅读的秘诀</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../2020/index.html">2020</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../2020/monitor-macbook-temperature.html">监控 Mac 的硬件温度</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2020/beyond-the-cache-with-python.html">使用 Python 配合 Redis 超越缓存</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2020/the-end-of-the-redis-adventure.html">Salvatore Sanfilippo ：Redis 冒险的终点</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2020/redisraft.html">使用 RedisRaft 构建强一致的 Redis 集群</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2020/hhkb.html">2020 年中设备升级之三：“离经叛道”的 HHKB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2020/ts3plus.html">2020 年中设备升级之二：用 CalDigit TS3+ 掌控“雷电”</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2020/create-ubuntu-usb-stick.html">使用 Etcher 创建可引导系统安装 U 盘</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2020/upended-the-database-market.html">开源构建者的故事：Redis 如何以一己之力颠覆数据库市场</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2020/unprofessional-translator.html">我不是一个专业的译者</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2020/docker-on-linux.html">在 Manjaro Linux 系统使用 Docker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2020/across-the-wall.html">使用 V2Ray 代理访问外网</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2020/windows-subsystem-for-linux.html">通过 Linux 子系统在 Windows 10 上安装 Ubuntu</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2020/change-ubuntu-software-source.html">修改 Ubuntu 软件更新源</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../2019/index.html">2019</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../2019/manjaro-wifi.html">为 Manjaro 18.1.4 配置无线网卡</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2019/gpwgcn-preface.html">《Get Programming with Go》中文版译者序</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2019/redisguide-preface.html">《Redis使用手册》前言</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2019/letter-20190811.html">读者来信：现在读《Redis设计与实现》和《Redis实战》还有用吗？</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../2018/index.html">2018</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../2018/bad-editor.html">记一起失败的合作</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2018/ralph2.html">爱是成全</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2018/redis-cluster-manage-cheatsheet.html">Redis 集群管理常见操作一览</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2018/how-to-shrink-a-book.html">如何精简一本书</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2018/zpopmax-zpopmin-in-redis-5.html">Redis 5 新功能介绍：ZPOPMAX、ZPOPMIN 以及它们的阻塞变种</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../2017/index.html">2017</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../2017/redis-rdb-aof-mixed-persistence.html">Redis 4.0 新功能简介：RDB-AOF 混合持久化</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2017/release-redis-cheatsheet-as-free.html">《Redis 命令速查表》开放免费下载</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2017/redis-streams.html">Redis Streams（流）数据结构简介</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2017/gwpcn-community-cooperation.html">《Go Web 编程》社区合作计划</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2017/memories-of-gwpcn-translation.html">《Go Web 编程》翻译记事</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2017/gwpcn-translation-manuscript.html">《Go Web 编程》翻译手稿集</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2017/qq-group-log-001.html">QQ 群聊天记录 001 号：关于盗版书的讨论</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2017/gastroscope-experience.html">胃镜检查记录</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2017/notes-about-translation-13.html">翻译笔记之十三：慎选原著</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2017/redis-lua-debuger-introduction.html">Redis Lua 脚本调试器用法说明</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2017/notes-about-translation-12.html">翻译笔记之十二：无标准译法词汇的处理办法</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2017/crime-and-punishment.html">自相矛盾的拉斯科尼科夫</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2017/group-guideline.html">技术群讨论指导原则</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2017/how-i-became-a-writer-and-translator.html">技术图书作译者的炼成方法</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2017/redis-reshard-performance-issue.html">重分片对 Redis 集群的性能影响分析</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../2016/index.html">2016</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../2016/notes-about-writing-2.html">写作笔记之二：关于重写</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2016/tools.html">个人工具一览表</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2016/redis-4-outline.html">Redis 4.0 新功能简介</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2016/notes-about-translation-11.html">翻译笔记之十一：简化非必要技术名词</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2016/overwatch-mei-against-offense-heros.html">守望先锋小美对抗突击英雄的经验分享，另附突击英雄对抗小美的 tips</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2016/undisclosed-new-book.html">未公开新书相关信息</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2016/redisguide-status-report.html">《Redis使用教程》进度报告</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2016/riacn-one-year-anniversary.html">《Redis实战》一周年回顾</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2016/notes-about-writing-1.html">写作笔记之一：写作手法的重要性</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2016/visiting-feilai-lake-park.html">清远飞来湖湿地公园游记</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2016/redis-count-online-users.html">使用 Redis 统计在线用户人数</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2016/redis-py-geo-support.html">使用 redis-py 储存地理位置数据</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2016/notes-about-translation-10.html">翻译笔记之十：不要强求一致</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2016/overwatch-pc-configure.html">守望先锋主机配置分享</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2016/how-to-learn-redis.html">Redis 学习路线</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2016/introduction-to-algorithms/section-2-1.html">《算法导论》2.1 节《插入排序》：笔记、代码实现与练习解答</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../2015/index.html">2015</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../2015/jikexueyuan-plagiarized-redisbook.html">极客学院大篇幅抄袭《Redis设计与实现》并以此进行牟利</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2015/redis-usages-in-ria.html">《Redis实战》中的 Redis 应用示例</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2015/comparison-of-redis-and-memcached.html">对比 Redis 与 Memcached</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2015/annotated-redis-geo-source.html">Redis GEO 源码注释</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2015/redis-geo.html">Redis GEO 特性简介</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2015/notes-about-translation-9.html">翻译笔记之九：如何避免被机器翻译取代？</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2015/notes-about-translation-8.html">翻译笔记之八：根据语境选择最合适的翻译</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2015/notes-about-translation-7.html">翻译笔记之七：沿用旧译名而不是创建新译名</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2015/notes-about-translation-6.html">翻译笔记之六：译注有毒</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2015/notes-about-translation-5.html">翻译笔记之五：译文的正确性与流畅性</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2015/memories-of-redis-in-action-translation.html">《Redis in Action》翻译记事</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2015/writing-reference.html">关于编写参考手册的思考</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2015/notes-about-translation-4.html">翻译笔记之四：消除人称代词</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2015/manning-ebook.html">Manning 出版社的买纸书送电子书策略</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2015/overrated-gatsby.html">名不副实的盖茨比</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../2014/index.html">2014</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../2014/postgresql-json-types.html">PostgreSQL 数据库中的 JSON 数据类型</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2014/notes-about-translation-3.html">翻译笔记之三：消除不恰当的括号</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2014/notes-about-translation-2.html">翻译笔记之二：翻译的定义</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2014/notes-about-translation-1.html">翻译笔记之一：关于改动原文的思考</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2014/how-to-read-redis-source-code.html">如何阅读 Redis 源码？</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2014/translation-method.html">我进行翻译的方法</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2014/writing-and-translation.html">写作与翻译</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../2013/index.html">2013</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../2013/reliable_pubsub_in_redis.html">[草稿]在 Redis 中构造可靠的发布与订阅系统</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2013/redis-pubsub-glob-pattern-example.html">Redis 发布与订阅模式匹配符示例</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2013/how-redis-fix-invalid-aof-file.html">Redis 处理和修复不合法 AOF 文件的方法</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2013/tools-for-writing-redisbook.html">编写《Redis 设计与实现》时用到的工具</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2013/another-usage-of-zunionstore-and-zinterstore.html">Redis 的 ZUNIONSTORE 命令和 ZINTERSTORE 命令的另一种用法</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2013/how-to-write-a-better-and-shorter-code-analysis-book.html">怎么样写出更好、也更简短的源码分析书</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../2012/index.html">2012</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../2012/redis-scripting-short-guide.html">Redis 2.6 脚本功能(scripting)简介</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2012/redis-command-reference-26.html">Redis 命令参考 2.6 版本发布</a></li>
+</ul>
+</li>
+</ul>
 
-<div class="container">
-  <div class="row">
-    <div class="body col-md-12 content" role="main">
-      
-  <section id="postgresql">
+    </nav>
+    <template data-toggle-item-template>
+        <button class="btn btn-sm btn-link toctree-expand" type="button">
+            <span class="sr-only">Toggle menu contents</span>
+        </button>
+    </template>
+</div>
+                    <div class="d-lg-none border-bottom">
+                        
+                    </div>
+                </div>
+            </aside>
+            <div class="col-12 col-lg-9 pt-5">
+                <header class="row align-items-baseline">
+                    <div class="col">
+                        <nav aria-label="breadcrumb">
+    <ol class="breadcrumb m-0 p-0 bg-transparent">
+        <li class="breadcrumb-item"><a href="../index.html">首页</a></li>
+            <li class="breadcrumb-item"><a href="index.html">2024</a></li>
+        <li class="breadcrumb-item active" aria-current="page">如何系统地学习PostgreSQL</li>
+    </ol>
+</nav>
+                    </div>
+                    <div class="col-sm-12 col-lg-auto mt-3 mt-lg-3">
+                        <noscript>
+                            <p>JavaScript is required to toggle light/dark mode..</p>
+                        </noscript>
+                        <button id="wagtail-theme" class="btn btn-sm btn-light text-decoration-none" type="button">
+                            <span class="dark-only"><i class="fas fa-sun"></i> Light mode</span>
+                            <span class="light-only"><i class="fas fa-moon"></i> Dark mode</span>
+                        </button>
+                        
+                    </div>
+                </header>
+                <div class="row" >
+                    <div class="col-12">
+                        <hr class="w-100 my-4">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 col-lg-9 order-last order-lg-first rst-content">
+                        <main role="main" id="main">
+    <section id="postgresql">
 <h1>如何系统地学习PostgreSQL<a class="headerlink" href="#postgresql" title="Link to this heading">¶</a></h1>
 <img alt="../_images/pglogo.jpg" src="../_images/pglogo.jpg" />
 <p>最近，有读者群的群友给我发消息，咨询我该如何系统地学习PostgreSQL。</p>
@@ -185,22 +395,72 @@ Database（世上最先进的开源关系数据库）”，PostgreSQL实现了�
 </section>
 </section>
 
+</main>
+                        <nav aria-label="Page navigation" class="py-4 my-5 clearfix font-weight-bold border-top">
+    <a class="float-left" href="mariadb-vs-postgresql.html" title="Previous">
+        <span aria-hidden="true">←&nbsp;</span>如何选择合适的数据库（一）：对比MariaDB和PostgreSQL
+    </a>
+    <a class="float-right" href="maze.html" title="Next">
+        用文字构筑的迷宫 <span aria-hidden="true">&nbsp;→</span>
+    </a>
+</nav>
+                    </div>
+                    
+                    <nav class="col-12 col-lg-3 pb-4">
+                        <div class="sticky-top toc page-toc" aria-labelledby="page-toc-heading">
+                            <p class="font-weight-bold" id="page-toc-heading">Page contents</p>
+                            <ul>
+<li><a class="reference internal" href="#">如何系统地学习PostgreSQL</a><ul>
+<li><a class="reference internal" href="#sql">学习SQL</a></li>
+<li><a class="reference internal" href="#id1">学习PostgreSQL</a></li>
+<li><a class="reference internal" href="#id2">学习PostgreSQL扩展</a></li>
+<li><a class="reference internal" href="#postgresql-rdbms">学习PostgreSQL/RDBMS实现原理</a></li>
+<li><a class="reference internal" href="#id3">结语</a></li>
+</ul>
+</li>
+</ul>
 
+                        </div>
+                    </nav>
+                    
+                </div>
+            </div>
+        </div>
     </div>
-      
-  </div>
-</div>
-<footer class="footer">
-  <div class="container">
-    <p class="pull-right">
-      <a href="#">Back to top</a>
-      
-    </p>
-    <p>
-        &copy; Copyright 2026, 黄健宏.<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
-    </p>
-  </div>
-</footer>
-  </body>
+    <footer class="container-fluid bg-primary text-light">
+        <div class="container">
+            <div class="row">
+        <div class="col p-4">
+            
+            <div class="text-center">
+                    &copy; Copyright 2026, 黄健宏
+            </div>
+            <div class="text-center text-white-50 font-italic mt-3">
+                <small>
+                    Created using
+                    <a class="text-white" href="https://github.com/wagtail/sphinx_wagtail_theme" rel="nofollow" target="_blank">
+                        Sphinx Wagtail Theme 
+                    </a>
+                    and
+                    <a class="text-white" href="https://www.sphinx-doc.org/" rel="nofollow" target="_blank">
+                        Sphinx 7.2.6
+                    </a>
+                </small>
+            </div>
+        </div>
+    </div>
+        </div>
+    </footer>
+        <script src="../_static/documentation_options.js?v=e343978f"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script type="text/javascript" src="../_static/dist/theme.js"></script>
+        <script type="text/javascript" src="../_static/dist/vendor.js"></script>
+        <script type="text/javascript" src="../_static/searchtools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript">
+            document.addEventListener('DOMContentLoaded', function() { Search.loadIndex("../searchindex.js"); });
+        </script>
+        <script type="text/javascript" id="searchindexloader"></script>
+    </body>
 </html>
