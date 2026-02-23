@@ -1,0 +1,5 @@
+.. tip::
+
+    本文摘录自《SQL实战》一书，欢迎访问本书主页以了解更多相关信息：\ `huangz.works/sql/ <https://huangz.works/sql/>`_
+
+    .. image:: images/psqlcn-banner.jpg
