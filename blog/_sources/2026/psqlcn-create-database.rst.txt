@@ -1,0 +1,15 @@
+《SQL实战》书摘（6）：创建数据库
+================================
+
+正如代码清单2-1所示，创建一个数据库只需要一行SQL代码，我们稍后将使用pgAdmin来运行它。你可以通过以下网址，从GitHub上下载到包括这行代码在内的全书所有示例代码：https://www.nostarch.com/practical-sql-2nd-edition/。
+
+.. code:: sql
+
+   CREATE DATABASE analysis;
+
+代码清单2-1：创建名为\ ``analysis``\ 的数据库
+
+这个语句将使用默认的PostgreSQL设置，在你的服务器上创建一个名为\ ``analysis``\ 的数据库。注意这行代码包含了\ ``CREATE``\ 和\ ``DATABASE``\ 两个关键字，至于新数据库的名字则跟在这两个关键字的后面。语句的最后使用了分号，用于表示命令的结束。作为ANSI
+SQL标准的一部分，你必须使用分号来结束每个PostgreSQL语句。在某些情况下，即便省略了分号，查询也会正常执行，但这种情况并不是必然的，所以最好的做法还是使用分号。
+
+.. include:: psqlcn-promote.rst

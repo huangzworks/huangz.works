@@ -1,0 +1,50 @@
+《SQL实战》书摘（5）：什么是表？
+================================
+
+要了解数据库中的数据，首先要做的就是了解表。每次我开始着手处理一个新的数据库时，我首先要做的就是看看里面的表。我会从表的名字以及它们的列结构里面寻找蛛丝马迹。这些表是否包含文本、数字，又或者两者兼有？每张表包含了多少个行？
+
+之后，我会观察数据库中表的数量。最简单的数据库可能只有一个表，而一个处理客户数据或者跟踪航空旅行的完整应用则可能拥有数十甚至数百张表。表的数量不仅让我知道需要分析多少数据，它还是一个提示，告诉我应该探索每张表之间的数据关系。
+
+在深入研究SQL之前，让我们先来看一个例子，了解一下表里面的内容可能是什么样子的。我们将使用一个虚构的数据库来管理学校课程的招生情况；在这个数据库里面，会有几张表用于跟踪学生和他们的课程。第一张表名为\ ``student_enrollment``\ ，它记录了每个课程的报名学生：
+
+.. code:: sql
+
+   student_id   class_id     class_section   semester
+   ----------   ----------   -------------   ---------
+   CHRISPA004   COMPSCI101   3              Fall 2023
+   DAVISHE010   COMPSCI101   3              Fall 2023
+   ABRILDA002   ENG101       40             Fall 2023
+   DAVISHE010   ENG101       40             Fall 2023
+   RILEYPH002   ENG101       40             Fall 2023
+
+从这个表可见，两名学生报名了\ ``COMPSCI101``\ 课程，三名学生报名了\ ``ENG101``\ 课程。但是这个表并未记录每个学生和课程的具体细节。在这个例子中，这些信息被单独储存在名为\ ``students``\ 和\ ``classes``\ 的表里面，并且它们与\ ``student_enrollment``\ 表相互关联，而这正是\ *关系数据库*\ 开始展现威力的地方。
+
+``sutdents``\ 表的前面几行包含以下内容：
+
+.. code:: sql
+
+   student_id   first_name   last_name   dob
+   ----------   ----------   ---------   ----------
+   ABRILDA002   Abril        Davis      2005-01-10
+   CHRISPA004   Chris        Park       1999-04-10
+   DAVISHE010   Davis        Hernandez   2006-09-14
+   RILEYPH002   Riley        Phelps      2005-06-15
+
+``sutdents``\ 表包含了每个学生的详细信息，并使用\ ``student_id``\ 列中的值标识每一个学生。通过把这个值用作连接两个表的唯一\ *键*\ ，你就可以用\ ``student_enrollment``\ 表的\ ``class_id``\ 列，加上\ ``students``\ 表的\ ``first_name``\ 列和\ ``last_name``\ 列，创建出以下这样的行：
+
+.. code:: sql
+
+   class_id     first_name   last_name
+   ----------   ----------   ---------
+   COMPSCI101   Davis        Hernandez
+   COMPSCI101   Chris        Park
+   ENG101       Abril        Davis
+   ENG101       Davis       Hernandez
+   ENG101       Riley       Phelps
+
+``classes``\ 表的工作方式也是类似的，它由一个\ ``class_id``\ 列还有其他几个关于课程信息的列组成。数据库的建设者倾向于为数据库管理的每个主要\ *实体*\ 创建单独的表来组织数据，从而减少冗余数据。在这个例子中，每个学生的名字和出生日期只会被储存一次。即便一个学生像Davis
+Hernandez那样注册了多个课程，我们也只会在\ ``student_enrollment``\ 表中储存他的学生ID，而不必浪费空间在每个他出现的地方都储存一次他的名字。
+
+因为表是每个数据库的核心组成部分，所以在这一章，我们将通过在一个新数据库里面创建表来开始你的SQL编程冒险，并在之后将数据载入至该表，最后再观察整个表。
+
+.. include:: psqlcn-promote.rst

@@ -10,5 +10,11 @@
    psqlcn-why-sql
    psqlcn-why-postgresql
    psqlcn-pgadmin
+   psqlcn-what-is-table
+   psqlcn-create-database
+   psqlcn-create-table
+   psqlcn-insert-row
+   psqlcn-ask-for-help
+   psqlcn-format-code
 
 .. image:: images/psqlcn-banner.jpg

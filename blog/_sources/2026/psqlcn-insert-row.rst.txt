@@ -1,0 +1,28 @@
+《SQL实战》书摘（8）：将行插入表
+================================
+
+有好几种方式可以将数据添加至PostgreSQL的表中。很多时候，我们需要处理数量庞大的行，因此最简单的方法就是从文本文件或者其他数据库直接将数据导入至表。但是在刚开始的时候，我们会使用\ ``INSERT INTO ... VALUES``\ 语句来添加少量行，并在语句中指定目标列以及数据值。然后我们就可以在数据的新家里面观察它们了。
+
+为了将数据插入表，我们首先需要在pgAdmin的查询工具里面擦除刚刚执行过的\ ``CREATE TABLE``\ 语句。然后按照之前创建数据库和表时的相同步骤，将代码清单2-3中的代码复制至查询工具（又或者说，如果你是在查询工具里面打开了GitHub上下载的\ *Chapter_02.sql*\ 文件，那么请高亮选中相应的代码段）。
+
+.. code:: sql
+
+   ➊ INSERT INTO teachers (first_name, last_name, school, hire_date, salary)
+   ➋ VALUES ('Janet', 'Smith', 'F.D. Roosevelt HS', '2011-10-30', 36200),
+             ('Lee', 'Reynolds', 'F.D. Roosevelt HS', '1993-05-22', 65000),
+             ('Samuel', 'Cole', 'Myers Middle School', '2005-08-01', 43500),
+             ('Samantha', 'Bush', 'Myers Middle School', '2011-10-30', 36200),
+             ('Betty', 'Diaz', 'Myers Middle School', '2005-08-30', 43500),
+             ('Kathleen', 'Roush', 'F.D. Roosevelt HS', '2010-10-22', 38500); ➌
+
+代码清单2-3：将数据插入至\ ``teachers``\ 表
+
+这个代码块插入了六位教师的名字和数据。PostgreSQL在这个语句中遵循了ANSI
+SQL标准：跟在\ ``INSERT INTO``\ 关键字后面的是表的名字，而之后被括号包围的则是需要填充的列
+➊
+。紧接着的下一行是\ ``VALUES``\ 关键字，还有将要插入至每一行每一列的数据
+➋
+。每个行的数据都需要用一组括号包围起来，并在括号内使用逗号分隔每个列的值，并且值的顺序必须与表名之后指定的列顺序一致。每个数据行都以逗号结束，除了最后一行，它使用分号代表整个语句结束
+➌ 。
+
+.. include:: psqlcn-promote.rst
