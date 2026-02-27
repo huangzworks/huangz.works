@@ -16,5 +16,11 @@
    psqlcn-insert-row
    psqlcn-ask-for-help
    psqlcn-format-code
+   psqlcn-basic-select
+   psqlcn-partial-col
+   psqlcn-order-by
+   psqlcn-distinct
+   psqlcn-where
+   psqlcn-comparison-operator
 
 .. image:: images/psqlcn-banner.jpg

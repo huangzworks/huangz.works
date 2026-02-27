@@ -1,0 +1,30 @@
+《SQL实战》书摘（15）：使用WHERE过滤行
+======================================
+
+在一些情况下，你可能想要限制查询返回的行，使得它们的一个或多个列符合特定的条件。以\ ``teachers``\ 表为例，你可能会想要找到在特定年份之前雇用的所有教师，又或者收入超过$75000的所有小学教师，而完成这些任务则需要用到\ ``WHERE``\ 子句。
+
+``WHERE``\ 子句允许你基于操作符提出的条件，找到与特定值、特定值区间或者多个值匹配的行，又或者基于条件排除某些行。操作符是一系列关键字，它们能够执行数学运算、比较操作还有逻辑操作。
+
+代码清单3-7展示了一个基础示例。正如这里所示，在标准SQL语法中，\ ``WHERE``\ 子句出现在\ ``FROM``\ 关键字以及被查询表的名字之后。
+
+.. code:: sql
+
+   SELECT last_name, school, hire_date
+   FROM teachers
+   WHERE school = 'Myers Middle School';
+
+代码清单3-7：使用\ ``WHERE``\ 过滤行
+
+这个结果集只会展示在Myers Middle School任职的教师：
+
+.. code:: sql
+
+   last_name   school                  hire_date
+   ---------   -------------------     ----------
+   Cole        Myers Middle School     2005-08-01
+   Bush        Myers Middle School     2011-10-30
+   Diaz        Myers Middle School     2005-08-30
+
+这段代码使用了相等比较操作符查找与给定值完全匹配的行，当然，你也可以使用\ ``WHERE``\ 搭配其他操作符定制你想要的过滤条件。
+
+.. include:: psqlcn-promote.rst

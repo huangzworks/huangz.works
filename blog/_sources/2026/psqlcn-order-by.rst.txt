@@ -1,0 +1,64 @@
+《SQL实战》书摘（13）：通过ORDER BY排序数据
+-------------------------------------------
+
+当数据按照顺序排列而不是乱七八糟地随意排列的时候，它们会更有意义，并且也更容易揭示出相应的模式。
+
+在SQL中，我们使用包含\ ``ORDER BY``\ 关键字的子句对查询结果进行排序，而跟在关键字后面的则是一个或多个被排序列的名字。应用这一子句只会对查询结果产生影响，它不改变原有的表。代码清单3-3展示了一个排序\ ``teachers``\ 表的例子。
+
+.. code:: sql
+
+   SELECT first_name, last_name, salary
+   FROM teachers
+   ORDER BY salary DESC;
+
+代码清单3-3：使用\ ``ORDER BY``\ 对列进行排序
+
+在默认情况下，\ ``ORDER BY``\ 将按值进行升序排序，但这里代码通过添加\ ``DESC``\ 关键字实行了降序排序。（可选的\ ``ASC``\ 关键字可以让排序以升序进行。）现在，通过让\ ``salary``\ 列的值从高到低进行排列，我可以轻而易举地知道哪些教师的薪水是最高的。
+
+.. code:: sql
+
+   first_name  last_name   salary
+   ----------  ---------   ------
+   Lee         Reynolds    65000
+   Samuel      Cole        43500
+   Betty       Diaz        43500
+   Kathleen    Roush       38500
+   Janet       Smith       36200
+   Samantha    Bush        36200
+
+``ORDER BY``\ 子句还允许使用数字来代替列的名字，你只要根据每个列在\ ``SELECT``\ 子句中的位置，用数字标记想要排序的列即可。我们可以通过这一特性来重写代码清单3-3，用数字\ ``3``\ 代表\ ``SELECT``\ 子句中排行第三的\ ``salary``\ 列：
+
+.. code:: sql
+
+   SELECT first_name, last_name, salary
+   FROM teachers
+   ORDER BY 3 DESC;
+
+对查询进行排序的能力，极大地提升了我们在观察和呈现数据时的灵活性。比如说，我们可以对不止一个列进行排序。请键入代码清单3-4中的语句。
+
+.. code:: sql
+
+     SELECT last_name, school, hire_date
+     FROM teachers
+   ➊ ORDER BY school ASC, hire_date DESC;
+
+代码清单 3-4 ：使用\ ``ORDER BY``\ 排序多个列
+
+这段代码检索教师的姓氏、他们执教的学校以及他们被雇用的日期。通过对学校进行升序排序，并对雇用日期进行降序排序
+➊
+，我们创建了一个按学校分组的教师列表，而最近被雇用的教师则排在列表的前面。这样一来，我们就能够看到每间学校最新雇用的教师都有谁。以下是这个查询的结果：
+
+.. code:: sql
+
+   last_name   school                  hire_date
+   ---------   -------------------     ----------
+   Smith       F.D. Roosevelt HS       2011-10-30
+   Roush       F.D. Roosevelt HS       2010-10-22
+   Reynolds    F.D. Roosevelt HS       1993-05-22
+   Bush        Myers Middle School     2011-10-30
+   Diaz        Myers Middle School     2005-08-30
+   Cole        Myers Middle School     2005-08-01
+
+你可以对两个以上的列使用\ ``ORDER BY``\ ，但很快就会到达一个收益递减的点，使得排序的效果难以被察觉。想象一下，如果你在\ ``ORDER BY``\ 子句中加入更多列，比如教师取得的最高学位、他们执教的年级以及他们的出生日期，那么你将很难在短时间内理解结果中的各种排序趋势，更不用说跟别人交流这些排序结果了。当结果只专注于回答一个特定的问题时，消化数据是最容易的；因此，一个更好的策略是限制查询的范围，让它只涉及最重要的列，然后为回答每个问题分别执行多个查询。
+
+.. include:: psqlcn-promote.rst
