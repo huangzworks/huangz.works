@@ -1,0 +1,151 @@
+Redis 8.6版本热键追踪新特性介绍
+===============================
+
+.. tip::
+
+    观看本文的视频版本： https://www.bilibili.com/video/BV1TPASzyEZA/
+
+最近发布的Redis
+8.6版本新增了\ ``HOTKEYS``\ 命令用于实现热键追踪，这个命令可以在指定时间内，根据键的CPU使用时间占比或/和键的使用网络字节数占比为指标，追踪并识别Redis服务器内的热键。
+
+在用户启动热键追踪进程之后，它会根据用户的要求，把服务器运行过程中出现的键的指定指标记录在概率数据结构中，以便用户在之后获取排名前K位的键的指标数据。
+
+相关命令
+--------
+
+``HOTKEYS``\ 命令包含四个子命令，它们的作用分别是：
+
+-  ``HOTKEYS START``
+-  ``HOTKEYS GET``
+-  ``HOTKEYS STOP``
+-  ``HOTKEYS RESET``
+
+首先，也是最重要的\ ``HOTKEYS START``\ 命令用于启动针对指定指标的热键追踪：
+
+::
+
+   HOTKEYS START METRICS count [CPU] [NET] 
+                 [COUNT k] 
+                 [DURATION seconds] 
+                 [SAMPLE ratio] 
+                 [SLOTS count slot [slot ...]]
+
+必需的\ ``count``\ 参数用于指定需要追踪的指标数量，之后紧接着的是要被追踪的指标\ ``CPU``\ 或/和\ ``NET``\ 。
+
+在之后是几个可选项，其中：
+
+-  ``COUNT``\ 用于指定要追踪指标最高的k个键
+-  ``DURATION``\ 用于指定追踪的时长（时间为秒），到时追踪自动终止；若不设置则需要手动终止
+-  ``SAMPLE``\ 用于指定追踪时的采样概率，每个键的概率为1/ratio
+-  ``SLOTS``\ 用于在集群环境中追踪指定的哈希槽
+
+在开启热键追踪之后，接下来就可以使用\ ``HOTKEYS GET``\ 命令获取追踪记录和元数据：
+
+::
+
+   HOTKEYS GET
+
+之后，如果在开启追踪的时候没有设置\ ``DURATION``\ 时长，那么还需要在追踪完毕之后手动执行\ ``HOTKEYS STOP``\ 以停止追踪进程：
+
+::
+
+   HOTKEYS STOP
+
+最后，即使在热键追踪进程停止之后，已有的热键追踪数据仍然会保留在服务器中。为此，需要使用\ ``HOTKEYS RESET``\ 命令以清除相关数据并释放相关的资源：
+
+::
+
+   HOTKEYS RESET
+
+调用\ ``HOTKEYS RESET``\ 之前热键追踪进程必需已停止，否则命令将引发一个错误。
+
+使用实例
+--------
+
+::
+
+   127.0.0.1:6379> HOTKEYS START METRICS 2 CPU NET
+   OK
+   127.0.0.1:6379> HOTKEYS GET
+   1)  1) "tracking-active"
+       2) (integer) 1
+       3) "sample-ratio"
+       4) (integer) 1
+       5) "selected-slots"
+       6) 1) 1) (integer) 0
+             2) (integer) 16383
+       7) "all-commands-all-slots-us"
+       8) (integer) 2407
+       9) "net-bytes-all-commands-all-slots"
+      10) (integer) 39564
+      11) "collection-start-time-unix-ms"
+      12) (integer) 1771994854080
+      13) "collection-duration-ms"
+      14) (integer) 3159914
+      15) "total-cpu-time-user-ms"
+      16) (integer) 3012
+      17) "total-cpu-time-sys-ms"
+      18) (integer) 1620
+      19) "total-net-bytes"
+      20) (integer) 39564
+      21) "by-cpu-time-us"
+      22)  1) "AutoComplete:greetings:\xe4\xbd\xa0"
+           2) (integer) 975
+           3) "Chat:Peter"
+           4) (integer) 684
+           5) "lock"
+           6) (integer) 295
+           7) "recorder"
+           8) (integer) 139
+           9) "matrix:<built-in function id>:0"
+          10) (integer) 106
+          11) "msg"
+          12) (integer) 78
+          13) "redis-logo"
+          14) (integer) 66
+          15) "matrix:<built-in function id>:2"
+          16) (integer) 19
+          17) "matrix:<built-in function id>:1"
+          18) (integer) 14
+          19) "AutoComplete:greetings:\xe4\xbd\xa0\xe5\xa5\xbd"
+          20) (integer) 7
+      23) "by-net-bytes"
+      24)  1) "redis-logo"
+           2) (integer) 29437
+           3) "matrix:<built-in function id>:0"
+           4) (integer) 2991
+           5) "matrix:<built-in function id>:2"
+           6) (integer) 2010
+           7) "matrix:<built-in function id>:1"
+           8) (integer) 2002
+           9) "AutoComplete:greetings:\xe4\xbd\xa0"
+          10) (integer) 834
+          11) "lock"
+          12) (integer) 513
+          13) "recorder"
+          14) (integer) 505
+          15) "msg"
+          16) (integer) 395
+          17) "AutoComplete:greetings:\xe4\xbd\xa0\xe5\xa5\xbd"
+          18) (integer) 374
+          19) "AutoComplete:greetings:\xe4\xbd\xa0\xe5\xa5\xbd\xe5\x91\x80"
+          20) (integer) 137
+   127.0.0.1:6379> HOTKEYS STOP
+   OK
+   127.0.0.1:6379> HOTKEYS RESET
+   OK
+
+延伸阅读
+--------
+
+``HOTKEYS``\ 相关命令：https://redis.io/docs/latest/commands/?name=HOTKEYS
+
+``HOTKEYS``\ 合并PR：https://github.com/redis/redis/pull/14680
+
+Redis
+8.6官方释出博文：https://redis.io/blog/announcing-redis-86-performance-improvements-streams/
+
+Redis 8.6释出日志：https://github.com/redis/redis/releases/tag/8.6.0
+
+| 黄健宏
+| 2026.2.25
