@@ -4,6 +4,7 @@
 .. toctree::
    :maxdepth: 2
 
+   redis-stream-idempotent
    redis-hotkeys
    psqlcn-digest
    rediscookbook-digest
