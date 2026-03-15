@@ -18,7 +18,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-        <title>Redis 8.6版本流的幂等生产机制新特性介绍 &mdash; HUANGZ.WORKS/BLOG</title>
+        <title>Redis 8.6新特性介绍（2）：流的幂等生产机制 &mdash; HUANGZ.WORKS/BLOG</title>
     
     <link rel="stylesheet" type="text/css" href="../_static/dist/fontawesome.css" />
       <link rel="stylesheet" type="text/css" href="../_static/dist/theme.css?v=310cf088" />
@@ -28,7 +28,7 @@
             <link rel="search" title="Search" href="../search.html" />
             <link rel="top" title="HUANGZ.WORKS/BLOG" href="#" />
             <link rel="up" title="2026" href="index.html" />
-            <link rel="next" title="Redis 8.6版本热键追踪新特性介绍" href="redis-hotkeys.html" />
+            <link rel="next" title="Redis 8.6新特性介绍（1）：热键追踪" href="redis-hotkeys.html" />
             <link rel="prev" title="2026" href="index.html" />
     </head>
 <body>
@@ -74,8 +74,8 @@
     <nav class="toc mt-3" aria-label="Main menu">
         <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">2026</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Redis 8.6版本流的幂等生产机制新特性介绍</a></li>
-<li class="toctree-l2"><a class="reference internal" href="redis-hotkeys.html">Redis 8.6版本热键追踪新特性介绍</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Redis 8.6新特性介绍（2）：流的幂等生产机制</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-hotkeys.html">Redis 8.6新特性介绍（1）：热键追踪</a></li>
 <li class="toctree-l2"><a class="reference internal" href="psqlcn-digest.html">【连载】《SQL实战》书摘（已更新16篇）</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="psqlcn-what-is-sql.html">《SQL实战》书摘（1）：什么是SQL？</a></li>
 <li class="toctree-l3"><a class="reference internal" href="psqlcn-why-sql.html">《SQL实战》书摘（2）：为什么选择SQL？</a></li>
@@ -337,7 +337,7 @@
     <ol class="breadcrumb m-0 p-0 bg-transparent">
         <li class="breadcrumb-item"><a href="../index.html">首页</a></li>
             <li class="breadcrumb-item"><a href="index.html">2026</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Redis 8.6版本流的幂等生产机制新特性介绍</li>
+        <li class="breadcrumb-item active" aria-current="page">Redis 8.6新特性介绍（2）：流的幂等生产机制</li>
     </ol>
 </nav>
                     </div>
@@ -360,43 +360,68 @@
                 <div class="row">
                     <div class="col-12 col-lg-9 order-last order-lg-first rst-content">
                         <main role="main" id="main">
-    <section id="redis-8-6">
-<h1>Redis 8.6版本流的幂等生产机制新特性介绍<a class="headerlink" href="#redis-8-6" title="Link to this heading">¶</a></h1>
+    <section id="redis-8-6-2">
+<h1>Redis 8.6新特性介绍（2）：流的幂等生产机制<a class="headerlink" href="#redis-8-6-2" title="Link to this heading">¶</a></h1>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>观看本文的视频版本：<a class="reference external" href="https://www.bilibili.com/video/BV1NVNuzPEQ1/">https://www.bilibili.com/video/BV1NVNuzPEQ1/</a></p>
 </div>
-<p>大家好，我是黄健宏。继上次给大家介绍完Redis
-8.6新引入的<a class="reference external" href="https://huangz.works/blog/2026/redis-hotkeys.html">热键追踪特性</a>之后，今天我继续来给大家介绍Redis
-8.6新引入的另一个特性——流的幂等生产机制。</p>
 <p>在Redis
-8.6之前，如果生产者在调用<code class="docutils literal notranslate"><span class="pre">XADD</span></code>命令之后、收到回复之前断连了，那么它将无法确定该消息是否已成功发送，更无法将该消息判定为已递送。</p>
-<p>在这种情况下，为了确保消息被添加至流中，生产者必须使用相同的消息重新调用<code class="docutils literal notranslate"><span class="pre">XADD</span></code>。但是如果这种生产操作不具备幂等性，那么重新发送可能会导致消息被重复投递，而采用幂等消息处理机制可以保证消息在上述断连情况下最多也只投递一次。</p>
+8.6之前，如果流的生产者客户端在接收到<code class="docutils literal notranslate"><span class="pre">XADD</span></code>命令的返回值之前掉线了，那么它将无法确定命令发送的消息是否成功，而处理这种情况的通常做法是再次发送相同的消息。</p>
+<p>但这样一来，如果服务器之前已经接收到该客户端发送的消息了，只是客户端并未成功接收到服务器返回的回复（消息的ID），那么重复发送相同消息将导致服务器包含两条重复的消息。</p>
 <hr class="docutils" />
-<img alt="../_images/stream-case-1.jpg" src="../_images/stream-case-1.jpg" />
-<p>图1：重复投递的情况（图片引用自Redis官方博客，下同）</p>
-<hr class="docutils" />
-<p>为了实现“同一条消息最多只投递一次”的幂等性保证，Redis
-8.6引入了幂等ID参数，生产者可以在向流中添加每条消息时关联一个唯一且幂等的ID：</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>XADD key … [&lt;IDMP pid iid&gt; | &lt;IDMPAUTO pid&gt;] … &lt;*|id&gt; field value [field value …]
+<div class="highlight-txt notranslate"><div class="highlight"><pre><span></span>+--------+                           +--------+
+|        | -- XADD s * &quot;k1&quot; &quot;v1&quot; --&gt; |        |
+|        |      X-- msg_id_1 ------- |        |
+| Client |                           | Server |
+|        | -- XADD s * &quot;k1&quot; &quot;v1&quot; --&gt; |        |
+|        | &lt;------- msg_id_2 ------- |        |
++--------+                           +--------+
 </pre></div>
 </div>
-<p>其中<code class="docutils literal notranslate"><span class="pre">IDMP</span> <span class="pre">pid</span> <span class="pre">iid</span></code>选项要求生产者显式地提供生产者标识符（pid）和幂等标识符（iid），而<code class="docutils literal notranslate"><span class="pre">IDMPAUTO</span> <span class="pre">pid</span></code>选项则只要求生产者提供自己的生产者标识符，而幂等标识符则根据传入的消息内容自动生成。</p>
+<p>图示：重复发送相同消息的情况</p>
+<hr class="docutils" />
+<p>为了解决这个问题，Redis
+8.6为流添加了幂等生产机制，以此来保证“同一条消息最多只投递一次”。为了启用这种机制，用户需要在执行<code class="docutils literal notranslate"><span class="pre">XADD</span></code>命令的时候，使用可选的<code class="docutils literal notranslate"><span class="pre">IDMP</span></code>选项或是<code class="docutils literal notranslate"><span class="pre">IDMPAUTO</span></code>选项，并提供相应的生产者标识符（pid）和幂等标识符（iid）：</p>
+<div class="highlight-txt notranslate"><div class="highlight"><pre><span></span>XADD key [IDMP pid iid | IDMPAUTO pid]
+         &lt;*|id&gt; field value [field value] [...]
+</pre></div>
+</div>
 <blockquote>
 <div><p><strong>注意</strong></p>
-<p>由于<code class="docutils literal notranslate"><span class="pre">IDMPAUTO</span></code>选项会根据消息内容自动生成幂等标识符，所以使用这一选项的<code class="docutils literal notranslate"><span class="pre">XADD</span></code>命令无法发送内容重复的消息：因为命令会以为你想要重复发送之前已经发送过的消息，并为它生成之前使用的幂等标识符，从而导致相同内容的消息重发失败。</p>
+<p><code class="docutils literal notranslate"><span class="pre">IDMPAUTO</span></code>选项可以根据消息的内容自动生成幂等标识符，但由于该选项对于内容相同的消息总是生成相同的幂等标识符，所以如果你确实有需要发送相同的消息，那么请务必使用<code class="docutils literal notranslate"><span class="pre">IDMP</span></code>选项而不是<code class="docutils literal notranslate"><span class="pre">IDMPAUTO</span></code>选项。</p>
 </div></blockquote>
-<p>与<code class="docutils literal notranslate"><span class="pre">IDMP</span></code>选项和<code class="docutils literal notranslate"><span class="pre">IDMPAUTO</span></code>选项相对应的是，服务器在执行带有这两个选项的<code class="docutils literal notranslate"><span class="pre">XADD</span></code>命令之后，会保存起一定数量的最近接收消息的<code class="docutils literal notranslate"><span class="pre">(pid,</span> <span class="pre">iid)</span></code>对，并在之后每次接收到带有这两个选项的<code class="docutils literal notranslate"><span class="pre">XADD</span></code>命令时，检查是否有已经存在相同的<code class="docutils literal notranslate"><span class="pre">(pid,</span> <span class="pre">iid)</span></code>对：如果是的话那么说明消息已经发送过，服务器就会把它忽略掉，这样一来就解决了同一条消息重复发送的问题。</p>
+<p>与此对应的是，Redis服务器在每次执行带<code class="docutils literal notranslate"><span class="pre">IDMP/IDMPAUTO</span></code>选项的<code class="docutils literal notranslate"><span class="pre">XADD</span></code>命令之后，会将被执行命令的pid和iid存储起来，并在之后每次收到带<code class="docutils literal notranslate"><span class="pre">IDMP/IDMPAUTO</span></code>选项的<code class="docutils literal notranslate"><span class="pre">XADD</span></code>命令时，检查给定的(pid,
+iid)对是否存在：</p>
+<ul class="simple">
+<li><p>如果存在则表示该消息最近已经接收过，服务器将返回对应的已存在消息的ID为结果；</p></li>
+<li><p>如果不存在则表示该消息应该是一条新消息，服务器将为其创建并返回新ID为结果。</p></li>
+</ul>
 <hr class="docutils" />
-<img alt="../_images/stream-case-2.jpg" src="../_images/stream-case-2.jpg" />
-<p>图2：解决同一消息重复投递的方法</p>
-<hr class="docutils" />
-<p>最后，为了控制被记录的<code class="docutils literal notranslate"><span class="pre">(pid,</span> <span class="pre">iid)</span></code>对数量，Redis
-8.6还引入了新的设置命令：</p>
-<div class="highlight-txt notranslate"><div class="highlight"><pre><span></span>XCFGSET key [IDMP-DURATION seconds] [IDMP-MAXSIZE maxsize]
+<div class="highlight-txt notranslate"><div class="highlight"><pre><span></span>+--------+                                          +--------+
+|        | -- XADD s IDMP 10086 123 * &quot;k1&quot; &quot;v1&quot; --&gt; |        |
+|        |                     X-- msg_id_1 ------- |        |
+| Client |                                          | Server | (pid, iid):
+|        | -- XADD s IDMP 10086 123 * &quot;k1&quot; &quot;v1&quot; --&gt; |        | (10086, 123)-&gt;msg_id_1
+|        | &lt;--------------- msg_id_1 -------------- |        |
++--------+                                          +--------+
 </pre></div>
 </div>
-<p>其中<code class="docutils literal notranslate"><span class="pre">IDMP-DURATION</span></code>用于设置每个iid的最长保存秒数，而<code class="docutils literal notranslate"><span class="pre">IDMP-MAXSIZE</span></code>则用于设置每个pid能够保存的最近iid数量。</p>
+<p>图示：未重复发送消息的情况</p>
+<hr class="docutils" />
+<p>最后，为了控制被存储的<code class="docutils literal notranslate"><span class="pre">(pid,</span> <span class="pre">iid)</span></code>对数量，Redis
+8.6还引入了新的设置命令：</p>
+<div class="highlight-txt notranslate"><div class="highlight"><pre><span></span>XCFGSET key [IDMP-DURATION seconds] [IDMP-MAXSIZE num]
+</pre></div>
+</div>
+<p>其中<code class="docutils literal notranslate"><span class="pre">IDMP-DURATION</span></code>用于设置每个iid的最长存储秒数，而<code class="docutils literal notranslate"><span class="pre">IDMP-MAXSIZE</span></code>则用于设置每个客户端（也即是对应每个pid）能够保存的最近iid数量。</p>
+<p>好的，关于Redis
+8.6版本新引入的流的幂等生产机制今天就介绍到这里，感谢大家的观看和阅读~</p>
+<p>喜欢这篇博文/这个视频的话欢迎大家给我点赞和关注，谢谢！</p>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2026.3.15</div>
+</div>
 <blockquote>
 <div><p><strong>扩展阅读</strong></p>
 <p>Redis
@@ -404,13 +429,6 @@
 <p><code class="docutils literal notranslate"><span class="pre">XADD</span></code>命令文档：<a class="reference external" href="https://redis.io/docs/latest/commands/xadd/">https://redis.io/docs/latest/commands/xadd/</a></p>
 <p><code class="docutils literal notranslate"><span class="pre">XCFGSET</span></code>命令文档：<a class="reference external" href="https://redis.io/docs/latest/commands/xcfgset/">https://redis.io/docs/latest/commands/xcfgset/</a></p>
 </div></blockquote>
-<p>好的，关于Redis
-8.6版本新引入的流的幂等生产机制特性就今天介绍到这里，感谢大家的观看和阅读~</p>
-<p>欢迎大家给我点赞和关注，谢谢！</p>
-<div class="line-block">
-<div class="line">黄健宏</div>
-<div class="line">2026.3.7</div>
-</div>
 </section>
 
 </main>
@@ -419,7 +437,7 @@
         <span aria-hidden="true">←&nbsp;</span>2026
     </a>
     <a class="float-right" href="redis-hotkeys.html" title="Next">
-        Redis 8.6版本热键追踪新特性介绍 <span aria-hidden="true">&nbsp;→</span>
+        Redis 8.6新特性介绍（1）：热键追踪 <span aria-hidden="true">&nbsp;→</span>
     </a>
 </nav>
                     </div>
