@@ -135,17 +135,16 @@ Redis 8.6新特性介绍（1）：热键追踪
    127.0.0.1:6379> HOTKEYS RESET
    OK
 
-延伸阅读
---------
-
-``HOTKEYS``\ 相关命令：https://redis.io/docs/latest/commands/?name=HOTKEYS
-
-``HOTKEYS``\ 合并PR：https://github.com/redis/redis/pull/14680
-
-Redis
-8.6官方释出博文：https://redis.io/blog/announcing-redis-86-performance-improvements-streams/
-
-Redis 8.6释出日志：https://github.com/redis/redis/releases/tag/8.6.0
-
 | 黄健宏
 | 2026.2.25
+
+    **延伸阅读**
+
+    ``HOTKEYS``\ 相关命令：https://redis.io/docs/latest/commands/?name=HOTKEYS
+
+    ``HOTKEYS``\ 合并PR：https://github.com/redis/redis/pull/14680
+
+    Redis
+    8.6官方释出博文：https://redis.io/blog/announcing-redis-86-performance-improvements-streams/
+
+    Redis 8.6释出日志：https://github.com/redis/redis/releases/tag/8.6.0

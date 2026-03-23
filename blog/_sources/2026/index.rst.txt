@@ -4,6 +4,7 @@
 .. toctree::
    :maxdepth: 2
 
+   redis-timeseries-nan
    redis-stream-idempotent
    redis-hotkeys
    psqlcn-digest

@@ -1,0 +1,97 @@
+Redis 8.6新特性介绍（3）：时间序列支持NaN值
+===========================================
+
+.. tip::
+
+    观看本文的视频版本： https://www.bilibili.com/video/BV1QoQdBGEzq/
+
+在使用Redis时间序列存储检测数据的时候，可能会遇到数据缺失的情况，比如：
+
+-  气象站可能由于传感器故障或信号传输问题而丢失天气温度读数；
+-  智能手表可能由于使用者短时间的摘下设备或者佩戴姿势不正确而丢失使用者的心跳、血压读数；
+-  从其他SQL数据库中导入数据到时间序列的时候也可能会遇到行中某些列为\ ``NULL``\ 的情况；
+
+诸如此类。
+
+在Redis
+8.6之前，解决这些问题的其中一个办法就是设置一个不可能存在的值作为特殊标识（比如将天气温度设置为1000°C），但这样一来对时间序列数据的聚合计算就会遇上困难，因为数据里面同时包含了正常和不正常的值。
+
+NaN值
+-----
+
+为了解决上述问题，Redis 8.6正式将NaN值（Not a
+Number，非数值）引入时间序列，用于表示数据中的缺失值/空值/无效值，相应的措施包括：
+
+-  ``TS.ADD``\ 和\ ``TS.MADD``\ 都支持NaN值
+-  所有命令的统计报告都允许包含NaN值
+-  所有已有的聚合器（比如\ ``COUNT``\ 、\ ``MIN``\ 、\ ``MAX``\ 、\ ``SUM``\ ）都会忽略NaN值
+
+此外Redis 8.6还引入了两个与NaN相关的聚合器：
+
+-  用于统计NaN值数量的\ ``countNaN``\ 聚合器
+-  用于统计包括数值和NaN值在内所有值数量的\ ``countAll``\ 聚合器
+
+实例演示
+--------
+
+举个例子，通过执行以下5条命令，可以将5个天气温度读数添加到temperatures时间序列中：
+
+.. code:: txt
+
+   127.0.0.1:6379> TS.ADD temperatures * 16.0
+   (integer) 1773157079465
+   127.0.0.1:6379> TS.ADD temperatures * 16.5
+   (integer) 1773157084611
+   127.0.0.1:6379> TS.ADD temperatures * NaN
+   (integer) 1773157090656
+   127.0.0.1:6379> TS.ADD temperatures * 17.0
+   (integer) 1773157094885
+   127.0.0.1:6379> TS.ADD temperatures * 17.0
+   (integer) 1773157095906
+
+执行以下命令以查看读数：
+
+.. code:: txt
+
+   127.0.0.1:6379> TS.RANGE temperatures - +
+   1) 1) (integer) 1773157079465
+      2) 16
+   2) 1) (integer) 1773157084611
+      2) 16.5
+   3) 1) (integer) 1773157090656
+      2) NaN
+   4) 1) (integer) 1773157094885
+      2) 17
+   5) 1) (integer) 1773157095906
+      2) 17
+
+计算它们的平均值：
+
+.. code:: txt
+
+   127.0.0.1:6379> TS.RANGE temperatures - + AGGREGATION avg 1000000
+   1) 1) (integer) 1773157000000
+      2) 16.625
+
+统计NaN值的数量：
+
+.. code:: txt
+
+   127.0.0.1:6379> TS.RANGE temperatures - + AGGREGATIon countnan 1000000
+   1) 1) (integer) 1773157000000
+      2) 1
+
+好的，关于Redis
+8.6版本新引入的时间序列对NaN值的支持今天就介绍到这里，感谢大家的观看和阅读~
+
+如果大家喜欢这篇文章或这个视频的话欢迎给我点赞或关注，谢谢！
+
+| 黄健宏
+| 2026.3.23
+
+   **扩展阅读**
+
+   -  Redis
+      8.6新版发布官方博文：https://redis.io/blog/announcing-redis-86-performance-improvements-streams/
+   -  Redis时间序列数据结构文档：https://redis.io/docs/latest/develop/data-types/timeseries/
+   -  Redis时间序列相关命令文档：https://redis.io/docs/latest/commands/?group=timeseries

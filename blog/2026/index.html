@@ -27,7 +27,7 @@
             <link rel="index" title="Index" href="../genindex.html" />
             <link rel="search" title="Search" href="../search.html" />
             <link rel="top" title="HUANGZ.WORKS/BLOG" href="#" />
-            <link rel="next" title="Redis 8.6新特性介绍（2）：流的幂等生产机制" href="redis-stream-idempotent.html" />
+            <link rel="next" title="Redis 8.6新特性介绍（3）：时间序列支持NaN值" href="redis-timeseries-nan.html" />
             <link rel="prev" title="健宏创作研究" href="../index.html" />
     </head>
 <body>
@@ -73,6 +73,7 @@
     <nav class="toc mt-3" aria-label="Main menu">
         <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">2026</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="redis-timeseries-nan.html">Redis 8.6新特性介绍（3）：时间序列支持NaN值</a></li>
 <li class="toctree-l2"><a class="reference internal" href="redis-stream-idempotent.html">Redis 8.6新特性介绍（2）：流的幂等生产机制</a></li>
 <li class="toctree-l2"><a class="reference internal" href="redis-hotkeys.html">Redis 8.6新特性介绍（1）：热键追踪</a></li>
 <li class="toctree-l2"><a class="reference internal" href="psqlcn-digest.html">【连载】《SQL实战》书摘（已更新16篇）</a><ul>
@@ -362,11 +363,15 @@
 <h1>2026<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
 <div class="toctree-wrapper compound">
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="redis-timeseries-nan.html">Redis 8.6新特性介绍（3）：时间序列支持NaN值</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="redis-timeseries-nan.html#nan">NaN值</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-timeseries-nan.html#id1">实例演示</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="redis-stream-idempotent.html">Redis 8.6新特性介绍（2）：流的幂等生产机制</a></li>
 <li class="toctree-l1"><a class="reference internal" href="redis-hotkeys.html">Redis 8.6新特性介绍（1）：热键追踪</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="redis-hotkeys.html#id1">相关命令</a></li>
 <li class="toctree-l2"><a class="reference internal" href="redis-hotkeys.html#id2">使用实例</a></li>
-<li class="toctree-l2"><a class="reference internal" href="redis-hotkeys.html#id3">延伸阅读</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="psqlcn-digest.html">【连载】《SQL实战》书摘（已更新16篇）</a><ul>
@@ -452,8 +457,8 @@
     <a class="float-left" href="../index.html" title="Previous">
         <span aria-hidden="true">←&nbsp;</span>健宏创作研究
     </a>
-    <a class="float-right" href="redis-stream-idempotent.html" title="Next">
-        Redis 8.6新特性介绍（2）：流的幂等生产机制 <span aria-hidden="true">&nbsp;→</span>
+    <a class="float-right" href="redis-timeseries-nan.html" title="Next">
+        Redis 8.6新特性介绍（3）：时间序列支持NaN值 <span aria-hidden="true">&nbsp;→</span>
     </a>
 </nav>
                     </div>

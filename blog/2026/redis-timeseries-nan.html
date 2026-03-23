@@ -18,7 +18,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-        <title>Linux基金会宣布推出Valkey作为Redis的开源替代方案 &mdash; HUANGZ.WORKS/BLOG</title>
+        <title>Redis 8.6新特性介绍（3）：时间序列支持NaN值 &mdash; HUANGZ.WORKS/BLOG</title>
     
     <link rel="stylesheet" type="text/css" href="../_static/dist/fontawesome.css" />
       <link rel="stylesheet" type="text/css" href="../_static/dist/theme.css?v=310cf088" />
@@ -27,9 +27,9 @@
             <link rel="index" title="Index" href="../genindex.html" />
             <link rel="search" title="Search" href="../search.html" />
             <link rel="top" title="HUANGZ.WORKS/BLOG" href="#" />
-            <link rel="up" title="2024" href="index.html" />
-            <link rel="next" title="欢迎进入后Redis时代——关于Redis修改许可之后的问题、现状和未来" href="post-redis-era.html" />
-            <link rel="prev" title="Valkey 发布 7.2.5 正式版，今后将与Redis分道扬镳" href="valkey-ga-release.html" />
+            <link rel="up" title="2026" href="index.html" />
+            <link rel="next" title="Redis 8.6新特性介绍（2）：流的幂等生产机制" href="redis-stream-idempotent.html" />
+            <link rel="prev" title="2026" href="index.html" />
     </head>
 <body>
     <script type="text/javascript" src="../_static/dist/blocking.js"></script>
@@ -73,82 +73,82 @@
 </div><div class="site-toc">
     <nav class="toc mt-3" aria-label="Main menu">
         <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../2026/index.html">2026</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../2026/redis-timeseries-nan.html">Redis 8.6新特性介绍（3）：时间序列支持NaN值</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../2026/redis-stream-idempotent.html">Redis 8.6新特性介绍（2）：流的幂等生产机制</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../2026/redis-hotkeys.html">Redis 8.6新特性介绍（1）：热键追踪</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../2026/psqlcn-digest.html">【连载】《SQL实战》书摘（已更新16篇）</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../2026/psqlcn-what-is-sql.html">《SQL实战》书摘（1）：什么是SQL？</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/psqlcn-why-sql.html">《SQL实战》书摘（2）：为什么选择SQL？</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/psqlcn-why-postgresql.html">《SQL实战》书摘（3）：为什么选择PostgreSQL？</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/psqlcn-pgadmin.html">《SQL实战》书摘（4）：pgAdmin使用方法简介</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/psqlcn-what-is-table.html">《SQL实战》书摘（5）：什么是表？</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/psqlcn-create-database.html">《SQL实战》书摘（6）：创建数据库</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/psqlcn-create-table.html">《SQL实战》书摘（7）：创建表</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/psqlcn-insert-row.html">《SQL实战》书摘（8）：将行插入表</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/psqlcn-ask-for-help.html">《SQL实战》书摘（9）：在代码出现问题时寻求帮助</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/psqlcn-format-code.html">《SQL实战》书摘（10）：格式化SQL以提高可读性</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/psqlcn-basic-select.html">《SQL实战》书摘（11）：基本SELECT语法</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/psqlcn-partial-col.html">《SQL实战》书摘（12）：查找部分列</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/psqlcn-order-by.html">《SQL实战》书摘（13）：通过ORDER BY排序数据</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/psqlcn-distinct.html">《SQL实战》书摘（14）：使用DISTINCT查找唯一值</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/psqlcn-where.html">《SQL实战》书摘（15）：使用WHERE过滤行</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/psqlcn-comparison-operator.html">《SQL实战》书摘（16）：比较操作符</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2026</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Redis 8.6新特性介绍（3）：时间序列支持NaN值</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-stream-idempotent.html">Redis 8.6新特性介绍（2）：流的幂等生产机制</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-hotkeys.html">Redis 8.6新特性介绍（1）：热键追踪</a></li>
+<li class="toctree-l2"><a class="reference internal" href="psqlcn-digest.html">【连载】《SQL实战》书摘（已更新16篇）</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="psqlcn-what-is-sql.html">《SQL实战》书摘（1）：什么是SQL？</a></li>
+<li class="toctree-l3"><a class="reference internal" href="psqlcn-why-sql.html">《SQL实战》书摘（2）：为什么选择SQL？</a></li>
+<li class="toctree-l3"><a class="reference internal" href="psqlcn-why-postgresql.html">《SQL实战》书摘（3）：为什么选择PostgreSQL？</a></li>
+<li class="toctree-l3"><a class="reference internal" href="psqlcn-pgadmin.html">《SQL实战》书摘（4）：pgAdmin使用方法简介</a></li>
+<li class="toctree-l3"><a class="reference internal" href="psqlcn-what-is-table.html">《SQL实战》书摘（5）：什么是表？</a></li>
+<li class="toctree-l3"><a class="reference internal" href="psqlcn-create-database.html">《SQL实战》书摘（6）：创建数据库</a></li>
+<li class="toctree-l3"><a class="reference internal" href="psqlcn-create-table.html">《SQL实战》书摘（7）：创建表</a></li>
+<li class="toctree-l3"><a class="reference internal" href="psqlcn-insert-row.html">《SQL实战》书摘（8）：将行插入表</a></li>
+<li class="toctree-l3"><a class="reference internal" href="psqlcn-ask-for-help.html">《SQL实战》书摘（9）：在代码出现问题时寻求帮助</a></li>
+<li class="toctree-l3"><a class="reference internal" href="psqlcn-format-code.html">《SQL实战》书摘（10）：格式化SQL以提高可读性</a></li>
+<li class="toctree-l3"><a class="reference internal" href="psqlcn-basic-select.html">《SQL实战》书摘（11）：基本SELECT语法</a></li>
+<li class="toctree-l3"><a class="reference internal" href="psqlcn-partial-col.html">《SQL实战》书摘（12）：查找部分列</a></li>
+<li class="toctree-l3"><a class="reference internal" href="psqlcn-order-by.html">《SQL实战》书摘（13）：通过ORDER BY排序数据</a></li>
+<li class="toctree-l3"><a class="reference internal" href="psqlcn-distinct.html">《SQL实战》书摘（14）：使用DISTINCT查找唯一值</a></li>
+<li class="toctree-l3"><a class="reference internal" href="psqlcn-where.html">《SQL实战》书摘（15）：使用WHERE过滤行</a></li>
+<li class="toctree-l3"><a class="reference internal" href="psqlcn-comparison-operator.html">《SQL实战》书摘（16）：比较操作符</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../2026/rediscookbook-digest.html">【连载】《Redis应用实例》书摘（已更新26篇）</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-cache-single-item.html">《Redis应用实例》书摘（1）：缓存单项数据</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-cache-json-item.html">《Redis应用实例》书摘（2）：通过JSON序列化缓存多项数据</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-cache-multi-items.html">《Redis应用实例》书摘（3）：使用哈希键缓存多项数据</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-binary-cache.html">《Redis应用实例》书摘（4）：缓存二进制数据</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-lock.html">《Redis应用实例》书摘（5）：锁</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-identity-lock.html">《Redis应用实例》书摘（6）：带密码保护功能的锁</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-string-id-generator.html">《Redis应用实例》书摘（7）：自动递增数字ID生成器（字符串实现）</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-hash-id-generator.html">《Redis应用实例》书摘（8）：自动递增数字ID生成器（哈希实现）</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-string-counter.html">《Redis应用实例》书摘（9）：计数器（使用字符串实现）</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-hash-counter.html">《Redis应用实例》书摘（10）：计数器（使用哈希实现）</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-set-unique-counter.html">《Redis应用实例》书摘（11）：唯一计数器（使用集合实现）</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-hll-unique-counter.html">《Redis应用实例》书摘（12）：唯一计数器（使用HyperLogLog实现）</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-rate-limiter.html">《Redis应用实例》书摘（13）：速率限制器</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-binary-recorder.html">《Redis应用实例》书摘（14）：二元操作记录器</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-resource-pool.html">《Redis应用实例》书摘（15）：资源池</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-compact-string.html">《Redis应用实例》书摘（16）：紧凑字符串</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-db-iterator.html">《Redis应用实例》书摘（17）：数据库迭代器</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-stream-iterator-xrange.html">《Redis应用实例》书摘（18）：流迭代器（使用XRANGE实现）</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-stream-iterator-xread.html">《Redis应用实例》书摘（19）：流迭代器（使用XREAD实现）</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-fifo-queue.html">《Redis应用实例》书摘（20）：先进先出队列</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-priority-queue.html">《Redis应用实例》书摘（21）：优先队列</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-matrix.html">《Redis应用实例》书摘（22）：矩阵</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-message-queue.html">《Redis应用实例》书摘（23）：消息队列</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-tag.html">《Redis应用实例》书摘（24）：标签系统</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-autocomplete.html">《Redis应用实例》书摘（25）：自动补全</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/rediscookbook-pagging.html">《Redis应用实例》书摘（26）：分页</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rediscookbook-digest.html">【连载】《Redis应用实例》书摘（已更新26篇）</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-cache-single-item.html">《Redis应用实例》书摘（1）：缓存单项数据</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-cache-json-item.html">《Redis应用实例》书摘（2）：通过JSON序列化缓存多项数据</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-cache-multi-items.html">《Redis应用实例》书摘（3）：使用哈希键缓存多项数据</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-binary-cache.html">《Redis应用实例》书摘（4）：缓存二进制数据</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-lock.html">《Redis应用实例》书摘（5）：锁</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-identity-lock.html">《Redis应用实例》书摘（6）：带密码保护功能的锁</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-string-id-generator.html">《Redis应用实例》书摘（7）：自动递增数字ID生成器（字符串实现）</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-hash-id-generator.html">《Redis应用实例》书摘（8）：自动递增数字ID生成器（哈希实现）</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-string-counter.html">《Redis应用实例》书摘（9）：计数器（使用字符串实现）</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-hash-counter.html">《Redis应用实例》书摘（10）：计数器（使用哈希实现）</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-set-unique-counter.html">《Redis应用实例》书摘（11）：唯一计数器（使用集合实现）</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-hll-unique-counter.html">《Redis应用实例》书摘（12）：唯一计数器（使用HyperLogLog实现）</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-rate-limiter.html">《Redis应用实例》书摘（13）：速率限制器</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-binary-recorder.html">《Redis应用实例》书摘（14）：二元操作记录器</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-resource-pool.html">《Redis应用实例》书摘（15）：资源池</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-compact-string.html">《Redis应用实例》书摘（16）：紧凑字符串</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-db-iterator.html">《Redis应用实例》书摘（17）：数据库迭代器</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-stream-iterator-xrange.html">《Redis应用实例》书摘（18）：流迭代器（使用XRANGE实现）</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-stream-iterator-xread.html">《Redis应用实例》书摘（19）：流迭代器（使用XREAD实现）</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-fifo-queue.html">《Redis应用实例》书摘（20）：先进先出队列</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-priority-queue.html">《Redis应用实例》书摘（21）：优先队列</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-matrix.html">《Redis应用实例》书摘（22）：矩阵</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-message-queue.html">《Redis应用实例》书摘（23）：消息队列</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-tag.html">《Redis应用实例》书摘（24）：标签系统</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-autocomplete.html">《Redis应用实例》书摘（25）：自动补全</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-pagging.html">《Redis应用实例》书摘（26）：分页</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../2026/valkey-series.html">【连载】“Valkey源码剖析”系列文章（已更新20+篇）</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-lunch-server.html">Valkey源码剖析（1）：启动服务器</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-server-struct.html">Valkey源码剖析（2）：服务器状态表示</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-event-loop.html">Valkey源码剖析（3）：事件主循环</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-event-state.html">Valkey源码剖析（4）：事件状态</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-file-event-struct.html">Valkey源码剖析（5）：文件事件的表示</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-time-event-struct.html">Valkey源码剖析（6）：时间事件的表示</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-file-event-process.html">Valkey源码剖析（7）：文件事件处理流程</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-time-event-process.html">Valkey源码剖析（8）：时间事件处理流程</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-multiplexing.html">Valkey源码剖析（9）：基于多路复用实现的文件事件</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-command-struct.html">Valkey源码剖析（10）：命令的表示</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-command-table.html">Valkey源码剖析（11）：构建命令表</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-lookup-command.html">Valkey源码剖析（12）：查找命令</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-exec-command.html">Valkey源码剖析（13）：执行命令</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-object-type.html">Valkey源码剖析（14）：对象类型</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-object-encoding.html">Valkey源码剖析（15）：对象编码</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-object-encoding-convert.html">Valkey源码剖析（16）：对象编码的转换</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-object-struct.html">Valkey源码剖析（17）：对象的表示</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-object-refcount.html">Valkey源码剖析（18）：对象引用计数</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-shared-objects.html">Valkey源码剖析（19）：共享对象</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-client-struct.html">Valkey源码剖析（20）：客户端表示</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-client-request.html">Valkey源码剖析（21）：命令请求的读取、解析与执行</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-client-response-store.html">Valkey源码剖析（22）：命令回复的存储</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../2026/valkey-client-response-write.html">Valkey源码剖析（23）：命令回复的写入</a></li>
+<li class="toctree-l2"><a class="reference internal" href="valkey-series.html">【连载】“Valkey源码剖析”系列文章（已更新20+篇）</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="valkey-lunch-server.html">Valkey源码剖析（1）：启动服务器</a></li>
+<li class="toctree-l3"><a class="reference internal" href="valkey-server-struct.html">Valkey源码剖析（2）：服务器状态表示</a></li>
+<li class="toctree-l3"><a class="reference internal" href="valkey-event-loop.html">Valkey源码剖析（3）：事件主循环</a></li>
+<li class="toctree-l3"><a class="reference internal" href="valkey-event-state.html">Valkey源码剖析（4）：事件状态</a></li>
+<li class="toctree-l3"><a class="reference internal" href="valkey-file-event-struct.html">Valkey源码剖析（5）：文件事件的表示</a></li>
+<li class="toctree-l3"><a class="reference internal" href="valkey-time-event-struct.html">Valkey源码剖析（6）：时间事件的表示</a></li>
+<li class="toctree-l3"><a class="reference internal" href="valkey-file-event-process.html">Valkey源码剖析（7）：文件事件处理流程</a></li>
+<li class="toctree-l3"><a class="reference internal" href="valkey-time-event-process.html">Valkey源码剖析（8）：时间事件处理流程</a></li>
+<li class="toctree-l3"><a class="reference internal" href="valkey-multiplexing.html">Valkey源码剖析（9）：基于多路复用实现的文件事件</a></li>
+<li class="toctree-l3"><a class="reference internal" href="valkey-command-struct.html">Valkey源码剖析（10）：命令的表示</a></li>
+<li class="toctree-l3"><a class="reference internal" href="valkey-command-table.html">Valkey源码剖析（11）：构建命令表</a></li>
+<li class="toctree-l3"><a class="reference internal" href="valkey-lookup-command.html">Valkey源码剖析（12）：查找命令</a></li>
+<li class="toctree-l3"><a class="reference internal" href="valkey-exec-command.html">Valkey源码剖析（13）：执行命令</a></li>
+<li class="toctree-l3"><a class="reference internal" href="valkey-object-type.html">Valkey源码剖析（14）：对象类型</a></li>
+<li class="toctree-l3"><a class="reference internal" href="valkey-object-encoding.html">Valkey源码剖析（15）：对象编码</a></li>
+<li class="toctree-l3"><a class="reference internal" href="valkey-object-encoding-convert.html">Valkey源码剖析（16）：对象编码的转换</a></li>
+<li class="toctree-l3"><a class="reference internal" href="valkey-object-struct.html">Valkey源码剖析（17）：对象的表示</a></li>
+<li class="toctree-l3"><a class="reference internal" href="valkey-object-refcount.html">Valkey源码剖析（18）：对象引用计数</a></li>
+<li class="toctree-l3"><a class="reference internal" href="valkey-shared-objects.html">Valkey源码剖析（19）：共享对象</a></li>
+<li class="toctree-l3"><a class="reference internal" href="valkey-client-struct.html">Valkey源码剖析（20）：客户端表示</a></li>
+<li class="toctree-l3"><a class="reference internal" href="valkey-client-request.html">Valkey源码剖析（21）：命令请求的读取、解析与执行</a></li>
+<li class="toctree-l3"><a class="reference internal" href="valkey-client-response-store.html">Valkey源码剖析（22）：命令回复的存储</a></li>
+<li class="toctree-l3"><a class="reference internal" href="valkey-client-response-write.html">Valkey源码剖析（23）：命令回复的写入</a></li>
 </ul>
 </li>
 </ul>
@@ -163,23 +163,23 @@
 <li class="toctree-l2"><a class="reference internal" href="../2025/direct-install-redis8-milestone.html">在Linux和macOS上直接安装Redis 8.0 Milestone版本</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="reference internal" href="index.html">2024</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="redis8-m01.html">Redis 8.0发布首个预览版，新增多种数据结构以及查询引擎</a></li>
-<li class="toctree-l2"><a class="reference internal" href="valkey8.html">Valkey 8.0发布，性能比之前提高三倍！</a></li>
-<li class="toctree-l2"><a class="reference internal" href="fp.html">函数式编程的正确使用方式</a></li>
-<li class="toctree-l2"><a class="reference internal" href="redis-release.html">Redis公司宣布即将发布Redis 8、Redis Flex和Redis for AI等多个新产品</a></li>
-<li class="toctree-l2"><a class="reference internal" href="hash-ttl.html">Redis 7.4 RC1发布，支持为哈希字段单独设置过期时间</a></li>
-<li class="toctree-l2"><a class="reference internal" href="postgresql-for-everything.html">使用PostgreSQL简化你的技术栈</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mariadb-vs-mysql.html">如何选择合适的数据库（三）：对比MariaDB和MySQL</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mariadb-vs-mongodb.html">如何选择合适的数据库（二）：对比MariaDB和MongoDB</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mariadb-vs-postgresql.html">如何选择合适的数据库（一）：对比MariaDB和PostgreSQL</a></li>
-<li class="toctree-l2"><a class="reference internal" href="learn-postgresql.html">如何系统地学习PostgreSQL</a></li>
-<li class="toctree-l2"><a class="reference internal" href="maze.html">用文字构筑的迷宫</a></li>
-<li class="toctree-l2"><a class="reference internal" href="valkey-ga-release.html">Valkey 发布 7.2.5 正式版，今后将与Redis分道扬镳</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Linux基金会宣布推出Valkey作为Redis的开源替代方案</a></li>
-<li class="toctree-l2"><a class="reference internal" href="post-redis-era.html">欢迎进入后Redis时代——关于Redis修改许可之后的问题、现状和未来</a></li>
-<li class="toctree-l2"><a class="reference internal" href="challenge-me.html">我随时接受你的挑战</a></li>
-<li class="toctree-l2"><a class="reference internal" href="redis-new-licenses.html">全面解读Redis新协议声明</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../2024/index.html">2024</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../2024/redis8-m01.html">Redis 8.0发布首个预览版，新增多种数据结构以及查询引擎</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2024/valkey8.html">Valkey 8.0发布，性能比之前提高三倍！</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2024/fp.html">函数式编程的正确使用方式</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2024/redis-release.html">Redis公司宣布即将发布Redis 8、Redis Flex和Redis for AI等多个新产品</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2024/hash-ttl.html">Redis 7.4 RC1发布，支持为哈希字段单独设置过期时间</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2024/postgresql-for-everything.html">使用PostgreSQL简化你的技术栈</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2024/mariadb-vs-mysql.html">如何选择合适的数据库（三）：对比MariaDB和MySQL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2024/mariadb-vs-mongodb.html">如何选择合适的数据库（二）：对比MariaDB和MongoDB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2024/mariadb-vs-postgresql.html">如何选择合适的数据库（一）：对比MariaDB和PostgreSQL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2024/learn-postgresql.html">如何系统地学习PostgreSQL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2024/maze.html">用文字构筑的迷宫</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2024/valkey-ga-release.html">Valkey 发布 7.2.5 正式版，今后将与Redis分道扬镳</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2024/valkey.html">Linux基金会宣布推出Valkey作为Redis的开源替代方案</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2024/post-redis-era.html">欢迎进入后Redis时代——关于Redis修改许可之后的问题、现状和未来</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2024/challenge-me.html">我随时接受你的挑战</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../2024/redis-new-licenses.html">全面解读Redis新协议声明</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../2023/index.html">2023</a><ul>
@@ -337,8 +337,8 @@
                         <nav aria-label="breadcrumb">
     <ol class="breadcrumb m-0 p-0 bg-transparent">
         <li class="breadcrumb-item"><a href="../index.html">首页</a></li>
-            <li class="breadcrumb-item"><a href="index.html">2024</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Linux基金会宣布推出Valkey作为Redis的开源替代方案</li>
+            <li class="breadcrumb-item"><a href="index.html">2026</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Redis 8.6新特性介绍（3）：时间序列支持NaN值</li>
     </ol>
 </nav>
                     </div>
@@ -361,87 +361,120 @@
                 <div class="row">
                     <div class="col-12 col-lg-9 order-last order-lg-first rst-content">
                         <main role="main" id="main">
-    <section id="linuxvalkeyredis">
-<h1>Linux基金会宣布推出Valkey作为Redis的开源替代方案<a class="headerlink" href="#linuxvalkeyredis" title="Link to this heading">¶</a></h1>
-<img alt="../_images/valkey.png" src="../_images/valkey.png" />
-<blockquote>
-<div><p>本文编译自：<a class="reference external" href="https://www.linuxfoundation.org/press/linux-foundation-launches-open-source-valkey-community">Linux基金会网站</a></p>
-</div></blockquote>
-<p>今天，
-Linux 基金会宣布了组建 <a class="reference external" href="https://github.com/madolson/placeholderkv">Valkey</a>的计划，
-它是Redis这一内存数据库兼NoSQL数据存储的开源替代方案。
-项目贡献者迅速聚集了维护者、社区和企业的支持，
-以响应 Redis 公司最近宣布的<a class="reference external" href="https://redis.com/blog/redis-adopts-dual-source-available-licensing/">许可证变更</a>，
-Valkey 将继续在 Redis 7.2.4 上进行开发，
-并将保持该项目在开源 BSD 三条款许可下使用和分发。</p>
-<p>自 Redis 项目于 2009 年成立以来，
-数以千计的开源开发人员为其发展和成功做出了重大贡献。
-还有更多开发人员将它用作缓存以及低延迟、高吞吐量的数据存储替代方案，
-将其应用于实时数据分析、会话存储、消息代理和许多其他用例。
-在 <a class="reference external" href="https://survey.stackoverflow.co/2023/#most-popular-technologies-database-prof">2023 年 Stack Overflow</a> 开发者调查中，
-Redis 被开发人员列为第六大最常用的数据库，
-并且跻身最受推崇数据库的前三名。</p>
-<p>为了继续改进这项重要技术并允许不受限制地分发项目，
-社区创建了 Valkey，
-这是一个开源高性能键值存储。
-Valkey 支持 Linux、macOS、OpenBSD、NetBSD 和 FreeBSD 平台。
-此外，
-社区将继续致力于其现有路线图，
-包括新功能，
-例如更可靠的插槽迁移、集群系统的显着可扩展性和稳定性改进、多线程性能改进、触发器、新命令、矢量搜索支持等。</p>
-<p>包括 Amazon Web Services （AWS）、Google Cloud、Oracle、Ericsson 和 Snap 公司在内的行业参与者都在支持 Valkey。
-他们专注于为项目的长期健康和可行性做出贡献，
-以便每个人都能从中受益。</p>
-<blockquote>
-<div><p>“我为开源 Redis 工作了六年，
-其中四年作为核心团队成员推动 Redis 开源，
-直至 7.2 版。
-我非常关心开源软件，
-并希望继续做出贡献。
-通过组建 Valkey，
-贡献者可以继续我们之前的工作，
-继续为充满活力的开源社区做出贡献，”
-前 Redis 维护者、Valkey 联合创始人兼 AWS 首席工程师 Madelyn Olson 说到。</p>
-</div></blockquote>
-<blockquote>
-<div><p>“我很高兴看到 Valkey 项目齐心协力继续真正的开源开发。
-社区的韧性和对项目的承诺意味着我们可以继续进行用户所钦佩和依赖的创新工作。”
-前 Redis 贡献者和 Google Cloud 软件工程师 Ping Xie 说到。</p>
-</div></blockquote>
-<blockquote>
-<div><p>“过去几年，
-我一直是该项目的积极贡献者。
-我很高兴看到 Valkey 在开放治理下走到一起，
-继续 Redis 开源社区开始的工作。
-通过真正的开放合作，
-该技术将继续发展并为所有用户提供价值。
-我很自豪能够成为 Valkey 的维护者之一，
-并希望尽我所能为社区服务，”
-Valkey 联合维护者、爱立信软件技术高级开源开发人员 Viktor Söderqvist 说到。</p>
-</div></blockquote>
-<p>在 Linux 基金会，
-Valkey 将遵循开放的治理模式，
-保持社区驱动并欢迎所有用户和贡献者。
-该项目已经组建了一个由几位前 Redis 贡献者组成的技术领导委员会，
-还有数百名社区成员表达了他们支持 Valkey 的意图。
-要了解有关 Valkey 的更多信息，
-请访问 GitHub 上的项目页面：<a class="reference external" href="https://github.com/valkey-io/valkey">https://github.com/valkey-io/valkey</a> 。</p>
-<div class="line-block">
-<div class="line">见证Redis再次成为开源项目的黄健宏</div>
-<div class="line">2024.3.29</div>
+    <section id="redis-8-6-3-nan">
+<h1>Redis 8.6新特性介绍（3）：时间序列支持NaN值<a class="headerlink" href="#redis-8-6-3-nan" title="Link to this heading">¶</a></h1>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>观看本文的视频版本： <a class="reference external" href="https://www.bilibili.com/video/BV1QoQdBGEzq/">https://www.bilibili.com/video/BV1QoQdBGEzq/</a></p>
 </div>
+<p>在使用Redis时间序列存储检测数据的时候，可能会遇到数据缺失的情况，比如：</p>
+<ul class="simple">
+<li><p>气象站可能由于传感器故障或信号传输问题而丢失天气温度读数；</p></li>
+<li><p>智能手表可能由于使用者短时间的摘下设备或者佩戴姿势不正确而丢失使用者的心跳、血压读数；</p></li>
+<li><p>从其他SQL数据库中导入数据到时间序列的时候也可能会遇到行中某些列为<code class="docutils literal notranslate"><span class="pre">NULL</span></code>的情况；</p></li>
+</ul>
+<p>诸如此类。</p>
+<p>在Redis
+8.6之前，解决这些问题的其中一个办法就是设置一个不可能存在的值作为特殊标识（比如将天气温度设置为1000°C），但这样一来对时间序列数据的聚合计算就会遇上困难，因为数据里面同时包含了正常和不正常的值。</p>
+<section id="nan">
+<h2>NaN值<a class="headerlink" href="#nan" title="Link to this heading">¶</a></h2>
+<p>为了解决上述问题，Redis 8.6正式将NaN值（Not a
+Number，非数值）引入时间序列，用于表示数据中的缺失值/空值/无效值，相应的措施包括：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">TS.ADD</span></code>和<code class="docutils literal notranslate"><span class="pre">TS.MADD</span></code>都支持NaN值</p></li>
+<li><p>所有命令的统计报告都允许包含NaN值</p></li>
+<li><p>所有已有的聚合器（比如<code class="docutils literal notranslate"><span class="pre">COUNT</span></code>、<code class="docutils literal notranslate"><span class="pre">MIN</span></code>、<code class="docutils literal notranslate"><span class="pre">MAX</span></code>、<code class="docutils literal notranslate"><span class="pre">SUM</span></code>）都会忽略NaN值</p></li>
+</ul>
+<p>此外Redis 8.6还引入了两个与NaN相关的聚合器：</p>
+<ul class="simple">
+<li><p>用于统计NaN值数量的<code class="docutils literal notranslate"><span class="pre">countNaN</span></code>聚合器</p></li>
+<li><p>用于统计包括数值和NaN值在内所有值数量的<code class="docutils literal notranslate"><span class="pre">countAll</span></code>聚合器</p></li>
+</ul>
+</section>
+<section id="id1">
+<h2>实例演示<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>举个例子，通过执行以下5条命令，可以将5个天气温度读数添加到temperatures时间序列中：</p>
+<div class="highlight-txt notranslate"><div class="highlight"><pre><span></span>127.0.0.1:6379&gt; TS.ADD temperatures * 16.0
+(integer) 1773157079465
+127.0.0.1:6379&gt; TS.ADD temperatures * 16.5
+(integer) 1773157084611
+127.0.0.1:6379&gt; TS.ADD temperatures * NaN
+(integer) 1773157090656
+127.0.0.1:6379&gt; TS.ADD temperatures * 17.0
+(integer) 1773157094885
+127.0.0.1:6379&gt; TS.ADD temperatures * 17.0
+(integer) 1773157095906
+</pre></div>
+</div>
+<p>执行以下命令以查看读数：</p>
+<div class="highlight-txt notranslate"><div class="highlight"><pre><span></span>127.0.0.1:6379&gt; TS.RANGE temperatures - +
+1) 1) (integer) 1773157079465
+   2) 16
+2) 1) (integer) 1773157084611
+   2) 16.5
+3) 1) (integer) 1773157090656
+   2) NaN
+4) 1) (integer) 1773157094885
+   2) 17
+5) 1) (integer) 1773157095906
+   2) 17
+</pre></div>
+</div>
+<p>计算它们的平均值：</p>
+<div class="highlight-txt notranslate"><div class="highlight"><pre><span></span>127.0.0.1:6379&gt; TS.RANGE temperatures - + AGGREGATION avg 1000000
+1) 1) (integer) 1773157000000
+   2) 16.625
+</pre></div>
+</div>
+<p>统计NaN值的数量：</p>
+<div class="highlight-txt notranslate"><div class="highlight"><pre><span></span>127.0.0.1:6379&gt; TS.RANGE temperatures - + AGGREGATIon countnan 1000000
+1) 1) (integer) 1773157000000
+   2) 1
+</pre></div>
+</div>
+<p>好的，关于Redis
+8.6版本新引入的时间序列对NaN值的支持今天就介绍到这里，感谢大家的观看和阅读~</p>
+<p>如果大家喜欢这篇文章或这个视频的话欢迎给我点赞或关注，谢谢！</p>
+<div class="line-block">
+<div class="line">黄健宏</div>
+<div class="line">2026.3.23</div>
+</div>
+<blockquote>
+<div><p><strong>扩展阅读</strong></p>
+<ul class="simple">
+<li><p>Redis
+8.6新版发布官方博文：<a class="reference external" href="https://redis.io/blog/announcing-redis-86-performance-improvements-streams/">https://redis.io/blog/announcing-redis-86-performance-improvements-streams/</a></p></li>
+<li><p>Redis时间序列数据结构文档：<a class="reference external" href="https://redis.io/docs/latest/develop/data-types/timeseries/">https://redis.io/docs/latest/develop/data-types/timeseries/</a></p></li>
+<li><p>Redis时间序列相关命令文档：<a class="reference external" href="https://redis.io/docs/latest/commands/?group=timeseries">https://redis.io/docs/latest/commands/?group=timeseries</a></p></li>
+</ul>
+</div></blockquote>
+</section>
 </section>
 
 </main>
                         <nav aria-label="Page navigation" class="py-4 my-5 clearfix font-weight-bold border-top">
-    <a class="float-left" href="valkey-ga-release.html" title="Previous">
-        <span aria-hidden="true">←&nbsp;</span>Valkey 发布 7.2.5 正式版，今后将与Redis分道扬镳
+    <a class="float-left" href="index.html" title="Previous">
+        <span aria-hidden="true">←&nbsp;</span>2026
     </a>
-    <a class="float-right" href="post-redis-era.html" title="Next">
-        欢迎进入后Redis时代——关于Redis修改许可之后的问题、现状和未来 <span aria-hidden="true">&nbsp;→</span>
+    <a class="float-right" href="redis-stream-idempotent.html" title="Next">
+        Redis 8.6新特性介绍（2）：流的幂等生产机制 <span aria-hidden="true">&nbsp;→</span>
     </a>
 </nav>
                     </div>
+                    
+                    <nav class="col-12 col-lg-3 pb-4">
+                        <div class="sticky-top toc page-toc" aria-labelledby="page-toc-heading">
+                            <p class="font-weight-bold" id="page-toc-heading">Page contents</p>
+                            <ul>
+<li><a class="reference internal" href="#">Redis 8.6新特性介绍（3）：时间序列支持NaN值</a><ul>
+<li><a class="reference internal" href="#nan">NaN值</a></li>
+<li><a class="reference internal" href="#id1">实例演示</a></li>
+</ul>
+</li>
+</ul>
+
+                        </div>
+                    </nav>
                     
                 </div>
             </div>
