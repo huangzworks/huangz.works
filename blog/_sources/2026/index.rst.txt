@@ -4,6 +4,7 @@
 .. toctree::
    :maxdepth: 2
 
+   redis-array-commands
    redis-timeseries-nan
    redis-stream-idempotent
    redis-hotkeys
