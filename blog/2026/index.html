@@ -27,7 +27,7 @@
             <link rel="index" title="Index" href="../genindex.html" />
             <link rel="search" title="Search" href="../search.html" />
             <link rel="top" title="HUANGZ.WORKS/BLOG" href="#" />
-            <link rel="next" title="Redis 8.8数组命令详解" href="redis-array-commands.html" />
+            <link rel="next" title="Redis 8.8新增命令INCREX详解" href="redis-increx.html" />
             <link rel="prev" title="健宏创作研究" href="../index.html" />
     </head>
 <body>
@@ -73,6 +73,7 @@
     <nav class="toc mt-3" aria-label="Main menu">
         <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">2026</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="redis-increx.html">Redis 8.8新增命令INCREX详解</a></li>
 <li class="toctree-l2"><a class="reference internal" href="redis-array-commands.html">Redis 8.8数组命令详解</a></li>
 <li class="toctree-l2"><a class="reference internal" href="redis-timeseries-nan.html">Redis 8.6新特性介绍（3）：时间序列支持NaN值</a></li>
 <li class="toctree-l2"><a class="reference internal" href="redis-stream-idempotent.html">Redis 8.6新特性介绍（2）：流的幂等生产机制</a></li>
@@ -364,6 +365,17 @@
 <h1>2026<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h1>
 <div class="toctree-wrapper compound">
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="redis-increx.html">Redis 8.8新增命令INCREX详解</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="redis-increx.html#id1">基本用法</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-increx.html#id2">指定整数或浮点数增量</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-increx.html#id3">限制边界</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-increx.html#id4">饱和</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-increx.html#id5">设置/移除过期时间</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-increx.html#id6">条件性设置过期时间</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-increx.html#id7">应用实例：实现时间窗口限速器</a></li>
+<li class="toctree-l2"><a class="reference internal" href="redis-increx.html#id8">结语</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="redis-array-commands.html">Redis 8.8数组命令详解</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="redis-array-commands.html#id1">设置元素</a></li>
 <li class="toctree-l2"><a class="reference internal" href="redis-array-commands.html#id2">获取元素</a></li>
@@ -467,8 +479,8 @@
     <a class="float-left" href="../index.html" title="Previous">
         <span aria-hidden="true">←&nbsp;</span>健宏创作研究
     </a>
-    <a class="float-right" href="redis-array-commands.html" title="Next">
-        Redis 8.8数组命令详解 <span aria-hidden="true">&nbsp;→</span>
+    <a class="float-right" href="redis-increx.html" title="Next">
+        Redis 8.8新增命令INCREX详解 <span aria-hidden="true">&nbsp;→</span>
     </a>
 </nav>
                     </div>

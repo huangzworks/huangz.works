@@ -18,7 +18,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-        <title>《Redis应用实例》书摘（17）：数据库迭代器 &mdash; HUANGZ.WORKS/BLOG</title>
+        <title>Redis 8.8新增命令INCREX详解 &mdash; HUANGZ.WORKS/BLOG</title>
     
     <link rel="stylesheet" type="text/css" href="../_static/dist/fontawesome.css" />
       <link rel="stylesheet" type="text/css" href="../_static/dist/theme.css?v=310cf088" />
@@ -27,9 +27,9 @@
             <link rel="index" title="Index" href="../genindex.html" />
             <link rel="search" title="Search" href="../search.html" />
             <link rel="top" title="HUANGZ.WORKS/BLOG" href="#" />
-            <link rel="up" title="【连载】《Redis应用实例》书摘（已更新26篇）" href="rediscookbook-digest.html" />
-            <link rel="next" title="《Redis应用实例》书摘（18）：流迭代器（使用XRANGE实现）" href="rediscookbook-stream-iterator-xrange.html" />
-            <link rel="prev" title="《Redis应用实例》书摘（16）：紧凑字符串" href="rediscookbook-compact-string.html" />
+            <link rel="up" title="2026" href="index.html" />
+            <link rel="next" title="Redis 8.8数组命令详解" href="redis-array-commands.html" />
+            <link rel="prev" title="2026" href="index.html" />
     </head>
 <body>
     <script type="text/javascript" src="../_static/dist/blocking.js"></script>
@@ -74,7 +74,7 @@
     <nav class="toc mt-3" aria-label="Main menu">
         <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">2026</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="redis-increx.html">《Redis 8.8新增命令INCREX详解》</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Redis 8.8新增命令INCREX详解</a></li>
 <li class="toctree-l2"><a class="reference internal" href="redis-array-commands.html">Redis 8.8数组命令详解</a></li>
 <li class="toctree-l2"><a class="reference internal" href="redis-timeseries-nan.html">Redis 8.6新特性介绍（3）：时间序列支持NaN值</a></li>
 <li class="toctree-l2"><a class="reference internal" href="redis-stream-idempotent.html">Redis 8.6新特性介绍（2）：流的幂等生产机制</a></li>
@@ -98,7 +98,7 @@
 <li class="toctree-l3"><a class="reference internal" href="psqlcn-comparison-operator.html">《SQL实战》书摘（16）：比较操作符</a></li>
 </ul>
 </li>
-<li class="toctree-l2 current"><a class="reference internal" href="rediscookbook-digest.html">【连载】《Redis应用实例》书摘（已更新26篇）</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="rediscookbook-digest.html">【连载】《Redis应用实例》书摘（已更新26篇）</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="rediscookbook-cache-single-item.html">《Redis应用实例》书摘（1）：缓存单项数据</a></li>
 <li class="toctree-l3"><a class="reference internal" href="rediscookbook-cache-json-item.html">《Redis应用实例》书摘（2）：通过JSON序列化缓存多项数据</a></li>
 <li class="toctree-l3"><a class="reference internal" href="rediscookbook-cache-multi-items.html">《Redis应用实例》书摘（3）：使用哈希键缓存多项数据</a></li>
@@ -115,7 +115,7 @@
 <li class="toctree-l3"><a class="reference internal" href="rediscookbook-binary-recorder.html">《Redis应用实例》书摘（14）：二元操作记录器</a></li>
 <li class="toctree-l3"><a class="reference internal" href="rediscookbook-resource-pool.html">《Redis应用实例》书摘（15）：资源池</a></li>
 <li class="toctree-l3"><a class="reference internal" href="rediscookbook-compact-string.html">《Redis应用实例》书摘（16）：紧凑字符串</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">《Redis应用实例》书摘（17）：数据库迭代器</a></li>
+<li class="toctree-l3"><a class="reference internal" href="rediscookbook-db-iterator.html">《Redis应用实例》书摘（17）：数据库迭代器</a></li>
 <li class="toctree-l3"><a class="reference internal" href="rediscookbook-stream-iterator-xrange.html">《Redis应用实例》书摘（18）：流迭代器（使用XRANGE实现）</a></li>
 <li class="toctree-l3"><a class="reference internal" href="rediscookbook-stream-iterator-xread.html">《Redis应用实例》书摘（19）：流迭代器（使用XREAD实现）</a></li>
 <li class="toctree-l3"><a class="reference internal" href="rediscookbook-fifo-queue.html">《Redis应用实例》书摘（20）：先进先出队列</a></li>
@@ -340,8 +340,7 @@
     <ol class="breadcrumb m-0 p-0 bg-transparent">
         <li class="breadcrumb-item"><a href="../index.html">首页</a></li>
             <li class="breadcrumb-item"><a href="index.html">2026</a></li>
-            <li class="breadcrumb-item"><a href="rediscookbook-digest.html">【连载】《Redis应用实例》书摘（已更新26篇）</a></li>
-        <li class="breadcrumb-item active" aria-current="page">《Redis应用实例》书摘（17）：数据库迭代器</li>
+        <li class="breadcrumb-item active" aria-current="page">Redis 8.8新增命令INCREX详解</li>
     </ol>
 </nav>
                     </div>
@@ -364,90 +363,263 @@
                 <div class="row">
                     <div class="col-12 col-lg-9 order-last order-lg-first rst-content">
                         <main role="main" id="main">
-    <section id="redis-17">
-<h1>《Redis应用实例》书摘（17）：数据库迭代器<a class="headerlink" href="#redis-17" title="Link to this heading">¶</a></h1>
-<p>迭代器是一个非常重要的数据库特性，它可以让用户分批获取数据库中的数据，而不是一次性获取整个数据库的全部数据，因为后一种做法在数据量巨大的时候很容易会造成服务器阻塞。</p>
-<p>Redis向用户提供了<code class="docutils literal notranslate"><span class="pre">SCAN</span></code>命令以迭代数据库中的键，但这个命令只有在接收到正确的游标时才会正确地运行，而手动维护和更新游标往往容易造成错误。</p>
-<p>为了解决这个问题，本章将构建一个Redis数据库迭代器，由它负责封装和调用<code class="docutils literal notranslate"><span class="pre">SCAN</span></code>命令，并在迭代过程中不断地自动更新游标，使得用户在迭代过程中无需关心游标。</p>
-<p>代码清单 CODE_DB_ITERATOR 展示了基于这一原理实现的数据库迭代程序。</p>
-<hr class="docutils" />
-<p>代码清单 CODE_DB_ITERATOR 数据库迭代器程序 <code class="docutils literal notranslate"><span class="pre">db_iterator.py</span></code></p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DEFAULT_COUNT</span> <span class="o">=</span> <span class="mi">10</span>
-
-<span class="k">class</span> <span class="nc">DbIterator</span><span class="p">:</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="n">DEFAULT_COUNT</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        初始化数据库迭代器。</span>
-<span class="sd">        可选的count参数用于建议迭代器每次返回的键数量。</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">client</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">=</span> <span class="n">count</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span> <span class="o">=</span> <span class="mi">0</span>
-
-    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        迭代数据库，并以列表形式返回本次被迭代的键。</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># 迭代已结束，直接返回None作为标志</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="k">return</span>
-
-        <span class="n">new_cursor</span><span class="p">,</span> <span class="n">keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">count</span><span class="p">)</span>
-        <span class="c1"># 通过命令返回的新游标来判断迭代是否已结束</span>
-        <span class="k">if</span> <span class="n">new_cursor</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="c1"># 迭代已结束</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># 迭代未结束，更新游标</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span> <span class="o">=</span> <span class="n">new_cursor</span>
-
-        <span class="c1"># 返回被迭代的键</span>
-        <span class="k">return</span> <span class="n">keys</span>
-
-    <span class="k">def</span> <span class="nf">rewind</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        重置迭代游标以便从头开始对数据库进行迭代。</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_cursor</span> <span class="o">=</span> <span class="mi">0</span>
+    <section id="redis-8-8increx">
+<h1>Redis 8.8新增命令INCREX详解<a class="headerlink" href="#redis-8-8increx" title="Link to this heading">¶</a></h1>
+<blockquote>
+<div><p>本文有视频版本可供观看：<a class="reference external" href="https://www.bilibili.com/video/BV1hmEq66EVw">bilibili.com/video/BV1hmEq66EVw</a></p>
+</div></blockquote>
+<p>在最近发布的<a class="reference external" href="https://github.com/redis/redis/releases/tag/8.8.0">Redis
+8.8版本</a>中新增了<a class="reference external" href="https://redis.io/docs/latest/commands/increx/">INCREX命令</a>，该命令整合了以下多个命令的功能，以此来在一次命令调用中同时执行“对键自增并处理可能出现的计算溢出”以及“为键设置过期时间”或“移除键的过期时间”等多项操作：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">INCR/DECR</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">INCRBY/DECRBY</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">EXPIRE/PEXPIRE/EXPIREAT/PEXPIREAT</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PERSIST</span></code></p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">INCREX</span></code>命令的具体格式如下：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">INCREX</span> <span class="n">key</span>
+       <span class="p">[</span><span class="o">&lt;</span><span class="n">BYINT</span><span class="o">|</span><span class="n">BYFLOAT</span><span class="o">&gt;</span> <span class="n">increment</span><span class="p">]</span>
+       <span class="p">[</span><span class="n">UBOUND</span> <span class="n">upper</span><span class="o">-</span><span class="n">limit</span><span class="p">]</span> <span class="p">[</span><span class="n">LBOUND</span> <span class="n">lower</span><span class="o">-</span><span class="n">limit</span><span class="p">]</span> <span class="p">[</span><span class="n">SATURATE</span><span class="p">]</span>
+       <span class="p">[</span><span class="n">EX</span> <span class="n">sec</span> <span class="o">|</span> <span class="n">PX</span> <span class="n">ms</span> <span class="o">|</span> <span class="n">EXAT</span> <span class="n">unixtime</span><span class="o">-</span><span class="n">sec</span> <span class="o">|</span> <span class="n">PXAT</span> <span class="n">unixtime</span><span class="o">-</span><span class="n">ms</span> <span class="o">|</span> <span class="n">PERSIST</span><span class="p">]</span>
+       <span class="p">[</span><span class="n">ENX</span><span class="p">]</span>
 </pre></div>
 </div>
-<hr class="docutils" />
-<p>作为例子，以下代码展示了如何使用这个迭代程序来迭代整个数据库：</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">db_iterator</span> <span class="kn">import</span> <span class="n">DbIterator</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">random_key_generator</span> <span class="kn">import</span> <span class="n">random_key_generator</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">random_key_generator</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="mi">13</span><span class="p">)</span>  <span class="c1"># 创建13个类型随机的键</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator</span> <span class="o">=</span> <span class="n">DbIterator</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>  <span class="c1"># 建议每次迭代获取5个键</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>  <span class="c1"># 第一次迭代</span>
-<span class="go">[&#39;Key:7322915482&#39;, &#39;Key:7546531131&#39;, &#39;Key:2090130470&#39;, &#39;Key:6992086739&#39;, &#39;Key:2298694274&#39;, &#39;Key:8939973113&#39;]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>  <span class="c1"># 第二次迭代</span>
-<span class="go">[&#39;Key:7449569114&#39;, &#39;Key:3325812056&#39;, &#39;Key:0422676670&#39;, &#39;Key:8520951905&#39;, &#39;Key:9120617026&#39;]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>  <span class="c1"># 第三次迭代</span>
-<span class="go">[&#39;Key:5081797988&#39;, &#39;Key:0616761883&#39;]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">iterator</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>  <span class="c1"># 迭代完毕</span>
-<span class="gp">&gt;&gt;&gt;</span>
+<p>本文接下来的多个小节将分别对<code class="docutils literal notranslate"><span class="pre">INCREX</span></code>命令的不同使用情形进行介绍，并在最后给出一个使用该命令实现时间窗口限速器的例子。</p>
+<section id="id1">
+<h2>基本用法<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>在不使用任何可选项执行<code class="docutils literal notranslate"><span class="pre">INCREX</span></code>命令的情况下，命令将对给定键执行自增一操作，就像<code class="docutils literal notranslate"><span class="pre">INCR</span></code>命令一样：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">INCREX</span> <span class="n">key</span>
 </pre></div>
 </div>
-<div class="admonition tip">
-<p class="admonition-title">Tip</p>
+<p>命令在执行之后将返回一个包含两个元素的数组：</p>
+<ul class="simple">
+<li><p>第一个元素为自增操作执行之后，键的当前值</p></li>
+<li><p>第二元素为本次自增的<strong>实际</strong>增量</p></li>
+</ul>
+<p>比如以下代码就对<code class="docutils literal notranslate"><span class="pre">counter</span></code>键反复执行了三次<code class="docutils literal notranslate"><span class="pre">INCREX</span></code>命令，将它的值（从键不存在时默认的）0自增为3，并在最后通过执行<code class="docutils literal notranslate"><span class="pre">GET</span></code>命令确认了这一点：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">INCREX</span> <span class="n">counter</span>
+<span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">INCREX</span> <span class="n">counter</span>
+<span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">INCREX</span> <span class="n">counter</span>
+<span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">GET</span> <span class="n">counter</span>
+<span class="s2">&quot;3&quot;</span>
+</pre></div>
+</div>
+<p>命令返回数组的第二个元素表明这三次自增的实际增量都为1。</p>
+</section>
+<section id="id2">
+<h2>指定整数或浮点数增量<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">INCREX</span></code>命令允许通过可选的<code class="docutils literal notranslate"><span class="pre">BYINT</span></code>或<code class="docutils literal notranslate"><span class="pre">BYFLOAT</span></code>选项来指定要执行的具体自增操作及其增量：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">INCREX</span> <span class="n">key</span>
+       <span class="p">[</span><span class="o">&lt;</span><span class="n">BYINT</span><span class="o">|</span><span class="n">BYFLOAT</span><span class="o">&gt;</span> <span class="n">increment</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>当给定<code class="docutils literal notranslate"><span class="pre">BYINT</span></code>选项时，命令执行的是整数自增操作（效果类似<code class="docutils literal notranslate"><span class="pre">INCRBY</span></code>命令），而当给定<code class="docutils literal notranslate"><span class="pre">BYFLOAT</span></code>选项时，命令执行的是浮点数自增操作（效果类似<code class="docutils literal notranslate"><span class="pre">INCRBYFLOAT</span></code>命令）。</p>
+<p>以下两个例子分别展示了这两种情况：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">INCREX</span> <span class="nb">float</span><span class="o">-</span><span class="n">counter</span> <span class="n">BYFLOAT</span> <span class="mf">3.14</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;3.14&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;3.14&quot;</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">INCREX</span> <span class="nb">float</span><span class="o">-</span><span class="n">counter</span> <span class="n">BYFLOAT</span> <span class="mf">2.0</span>
+<span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;5.14&quot;</span>
+<span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;2&quot;</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">INCREX</span> <span class="nb">int</span><span class="o">-</span><span class="n">counter</span> <span class="n">BYINT</span> <span class="mi">256</span>
+<span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">256</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">256</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">INCREX</span> <span class="nb">int</span><span class="o">-</span><span class="n">counter</span> <span class="n">BYINT</span> <span class="mi">100</span>
+<span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">356</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">100</span>
+</pre></div>
+</div>
+<p>此外，虽然Redis没有提供与<code class="docutils literal notranslate"><span class="pre">INCREX</span></code>命令对应的<code class="docutils literal notranslate"><span class="pre">DECREX</span></code>命令，但只要将<code class="docutils literal notranslate"><span class="pre">INCREX</span></code>命令执行时的增量参数设置为负数即可实现对键的自减操作。</p>
+<p>以下是使用<code class="docutils literal notranslate"><span class="pre">INCREX</span></code>命令执行整数自减操作的一个例子：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">minus</span><span class="o">-</span><span class="n">counter</span> <span class="mi">100</span>
+<span class="n">OK</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">INCREX</span> <span class="n">minus</span><span class="o">-</span><span class="n">counter</span> <span class="n">BYINT</span> <span class="o">-</span><span class="mi">32</span>
+<span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">68</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="o">-</span><span class="mi">32</span>
+</pre></div>
+</div>
+</section>
+<section id="id3">
+<h2>限制边界<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">INCREX</span></code>命令允许通过给定<code class="docutils literal notranslate"><span class="pre">UBOUND</span></code>和/或<code class="docutils literal notranslate"><span class="pre">LBOUND</span></code>可选项来为自增/自减操作设置上限值或下限值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">INCREX</span> <span class="n">key</span>
+       <span class="p">[</span><span class="o">&lt;</span><span class="n">BYINT</span><span class="o">|</span><span class="n">BYFLOAT</span><span class="o">&gt;</span> <span class="n">increment</span><span class="p">]</span>
+       <span class="p">[</span><span class="n">UBOUND</span> <span class="n">upper</span><span class="o">-</span><span class="n">limit</span><span class="p">]</span> <span class="p">[</span><span class="n">LBOUND</span> <span class="n">lower</span><span class="o">-</span><span class="n">limit</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>当命令检测到自增/自减操作将超过给定的限制值时，命令将放弃执行自增/自减操作，并返回键的当前值以及0作为本次增量/减量。</p>
+<p>以下是一个使用<code class="docutils literal notranslate"><span class="pre">UBOUND</span></code>可选项来指定自增操作上限值的例子：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">INCREX</span> <span class="n">ub</span><span class="o">-</span><span class="n">counter</span> <span class="n">UBOUND</span> <span class="mi">3</span>
+<span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">INCREX</span> <span class="n">ub</span><span class="o">-</span><span class="n">counter</span> <span class="n">UBOUND</span> <span class="mi">3</span>
+<span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">INCREX</span> <span class="n">ub</span><span class="o">-</span><span class="n">counter</span> <span class="n">UBOUND</span> <span class="mi">3</span>
+<span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">INCREX</span> <span class="n">ub</span><span class="o">-</span><span class="n">counter</span> <span class="n">UBOUND</span> <span class="mi">3</span>
+<span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<p>可以看到，当命令的自增操作到达上限值3之后，它将不再对键值进行自增，只返回该值，还有0作为该操作的自增量。</p>
+<blockquote>
+<div><p><strong>提示</strong></p>
+<p>即使在未设置<code class="docutils literal notranslate"><span class="pre">UBOUND</span></code>/<code class="docutils literal notranslate"><span class="pre">LBOUND</span></code>可选项的情况下，键值的默认取值范围上下界也会由键值类型（整数或浮点数）的最小值/最大值定义，因此也可以认为<code class="docutils literal notranslate"><span class="pre">INCREX</span></code>命令总是带有隐式的<code class="docutils literal notranslate"><span class="pre">UBOUND</span></code>和<code class="docutils literal notranslate"><span class="pre">LBOUND</span></code>可选项。</p>
+</div></blockquote>
+</section>
+<section id="id4">
+<h2>饱和<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>上一节提到，带有<code class="docutils literal notranslate"><span class="pre">UBOUND/LBOUND</span></code>可选项的<code class="docutils literal notranslate"><span class="pre">INCREX</span></code>命令在检测到自增/自减操作将会超过限制时将放弃执行操作，但如果命令在执行时给定了<code class="docutils literal notranslate"><span class="pre">SATURATE</span></code>可选项，那么命令将把键值自增/自减至给定的上限值/下限值，而超过限制的值则作为命令结果数组的第二个元素返回（第一个元素为键的当前值）：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">INCREX</span> <span class="n">key</span>
+       <span class="p">[</span><span class="o">&lt;</span><span class="n">BYINT</span><span class="o">|</span><span class="n">BYFLOAT</span><span class="o">&gt;</span> <span class="n">increment</span><span class="p">]</span>
+       <span class="p">[</span><span class="n">UBOUND</span> <span class="n">upper</span><span class="o">-</span><span class="n">limit</span><span class="p">]</span> <span class="p">[</span><span class="n">LBOUND</span> <span class="n">lower</span><span class="o">-</span><span class="n">limit</span><span class="p">]</span> <span class="p">[</span><span class="n">SATURATE</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>以下是一个直观的对比示例，它展示了同样的超上限计算在不给定<code class="docutils literal notranslate"><span class="pre">SATURATE</span></code>和给定<code class="docutils literal notranslate"><span class="pre">SATURATE</span></code>两种情况下的区别：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">non</span><span class="o">-</span><span class="n">sat</span> <span class="mi">50</span>
+<span class="n">OK</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">INCREX</span> <span class="n">non</span><span class="o">-</span><span class="n">sat</span> <span class="n">BYINT</span> <span class="mi">100</span> <span class="n">UBOUND</span> <span class="mi">100</span>
+<span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">50</span>  <span class="o">--</span> <span class="n">放弃执行自增操作</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>   <span class="o">--</span> <span class="n">本次操作未增加任何增量</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">SET</span> <span class="n">sat</span> <span class="mi">50</span>
+<span class="n">OK</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">INCREX</span> <span class="n">sat</span> <span class="n">BYINT</span> <span class="mi">100</span> <span class="n">UBOUND</span> <span class="mi">100</span> <span class="n">SATURATE</span>
+<span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">100</span>  <span class="o">--</span> <span class="n">键被自增为上限值</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">50</span>   <span class="o">--</span> <span class="n">计算中超过上限的值</span>
+</pre></div>
+</div>
+<p>可以看到，在给定<code class="docutils literal notranslate"><span class="pre">SATURATE</span></code>的情况下，键值将被自增为上限100，而超过上限未被计算在内的值则为50。</p>
+<blockquote>
+<div><p><strong>提示</strong></p>
+<p>如果<code class="docutils literal notranslate"><span class="pre">INCREX</span></code>命令在执行时给定了<code class="docutils literal notranslate"><span class="pre">SATURATE</span></code>可选项，但并未显式地给定<code class="docutils literal notranslate"><span class="pre">UBOUND</span></code>/<code class="docutils literal notranslate"><span class="pre">LBOUND</span></code>可选项，那么命令将根据键值类型的限界值进行饱和计算。</p>
+</div></blockquote>
+</section>
+<section id="id5">
+<h2>设置/移除过期时间<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>跟带有<code class="docutils literal notranslate"><span class="pre">EX</span></code>、<code class="docutils literal notranslate"><span class="pre">PX</span></code>、<code class="docutils literal notranslate"><span class="pre">PERSIST</span></code>等命令的<code class="docutils literal notranslate"><span class="pre">SET</span></code>命令类似，<code class="docutils literal notranslate"><span class="pre">INCREX</span></code>命令也可以通过同样的可选项，在执行自增/自减的同时，为键设置或移除过期时间：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">INCREX</span> <span class="n">key</span>
+       <span class="p">[</span><span class="o">&lt;</span><span class="n">BYINT</span><span class="o">|</span><span class="n">BYFLOAT</span><span class="o">&gt;</span> <span class="n">increment</span><span class="p">]</span>
+       <span class="p">[</span><span class="n">UBOUND</span> <span class="n">upper</span><span class="o">-</span><span class="n">limit</span><span class="p">]</span> <span class="p">[</span><span class="n">LBOUND</span> <span class="n">lower</span><span class="o">-</span><span class="n">limit</span><span class="p">]</span> <span class="p">[</span><span class="n">SATURATE</span><span class="p">]</span>
+       <span class="p">[</span><span class="n">EX</span> <span class="n">sec</span> <span class="o">|</span> <span class="n">PX</span> <span class="n">ms</span> <span class="o">|</span> <span class="n">EXAT</span> <span class="n">unixtime</span><span class="o">-</span><span class="n">sec</span> <span class="o">|</span> <span class="n">PXAT</span> <span class="n">unixtime</span><span class="o">-</span><span class="n">ms</span> <span class="o">|</span> <span class="n">PERSIST</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>比如以下示例就分别通过<code class="docutils literal notranslate"><span class="pre">EX</span></code>可选项和<code class="docutils literal notranslate"><span class="pre">PERSIST</span></code>可选项，先为被自增的键设置了过期时间，然后又为被自增的键移除了过期时间：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">INCREX</span> <span class="n">counter</span><span class="o">-</span><span class="k">with</span><span class="o">-</span><span class="n">ttl</span> <span class="n">EX</span> <span class="mi">1000</span>
+<span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">TTL</span> <span class="n">counter</span><span class="o">-</span><span class="k">with</span><span class="o">-</span><span class="n">ttl</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">996</span>  <span class="o">--</span> <span class="n">剩余生存时间</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">INCREX</span> <span class="n">counter</span><span class="o">-</span><span class="k">with</span><span class="o">-</span><span class="n">ttl</span> <span class="n">PERSIST</span>
+<span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">TTL</span> <span class="n">counter</span><span class="o">-</span><span class="k">with</span><span class="o">-</span><span class="n">ttl</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="o">-</span><span class="mi">1</span>   <span class="o">--</span> <span class="n">键的过期时间已被移除</span>
+</pre></div>
+</div>
+</section>
+<section id="id6">
+<h2>条件性设置过期时间<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<p>如果被设置的键已经带有过期时间，那么带有<code class="docutils literal notranslate"><span class="pre">EX</span></code>等可选项的<code class="docutils literal notranslate"><span class="pre">INCREX</span></code>命令在默认情况下将直接使用新的过期时间去覆盖旧的过期时间，但如果命令在执行时也给定了<code class="docutils literal notranslate"><span class="pre">ENX</span></code>可选项，那么命令将仅在键未有过期时间的情况下为其设置过期时间：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">INCREX</span> <span class="n">key</span>
+       <span class="p">[</span><span class="o">&lt;</span><span class="n">BYINT</span><span class="o">|</span><span class="n">BYFLOAT</span><span class="o">&gt;</span> <span class="n">increment</span><span class="p">]</span>
+       <span class="p">[</span><span class="n">UBOUND</span> <span class="n">upper</span><span class="o">-</span><span class="n">limit</span><span class="p">]</span> <span class="p">[</span><span class="n">LBOUND</span> <span class="n">lower</span><span class="o">-</span><span class="n">limit</span><span class="p">]</span> <span class="p">[</span><span class="n">SATURATE</span><span class="p">]</span>
+       <span class="p">[</span><span class="n">EX</span> <span class="n">sec</span> <span class="o">|</span> <span class="n">PX</span> <span class="n">ms</span> <span class="o">|</span> <span class="n">EXAT</span> <span class="n">unixtime</span><span class="o">-</span><span class="n">sec</span> <span class="o">|</span> <span class="n">PXAT</span> <span class="n">unixtime</span><span class="o">-</span><span class="n">ms</span> <span class="o">|</span> <span class="n">PERSIST</span><span class="p">]</span>
+       <span class="p">[</span><span class="n">ENX</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>比如以下示例就展示了不带<code class="docutils literal notranslate"><span class="pre">ENX</span></code>可选项和带有<code class="docutils literal notranslate"><span class="pre">ENX</span></code>可选项在处理同样带有过期时间的键的区别，其中第二个<code class="docutils literal notranslate"><span class="pre">INCREX</span></code>命令将直接覆盖已有的过期时间，而第三个<code class="docutils literal notranslate"><span class="pre">INCREX</span></code>命令将放弃更新键的过期时间，仅对其执行自增操作：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">INCREX</span> <span class="n">exp</span><span class="o">-</span><span class="n">counter</span> <span class="n">EX</span> <span class="mi">1000</span>
+<span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">TTL</span> <span class="n">exp</span><span class="o">-</span><span class="n">counter</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">997</span>  <span class="o">--</span> <span class="n">设置初始过期时间</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">INCREX</span> <span class="n">exp</span><span class="o">-</span><span class="n">counter</span> <span class="n">EX</span> <span class="mi">3000</span>
+<span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">TTL</span> <span class="n">exp</span><span class="o">-</span><span class="n">counter</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2999</span>  <span class="o">--</span> <span class="n">过期时间已被更新</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">INCREX</span> <span class="n">exp</span><span class="o">-</span><span class="n">counter</span> <span class="n">EX</span> <span class="mi">5000</span> <span class="n">ENX</span>
+<span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">3</span>
+<span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+<span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">TTL</span> <span class="n">exp</span><span class="o">-</span><span class="n">counter</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">2985</span>  <span class="o">--</span> <span class="n">过期时间未被更新</span>
+</pre></div>
+</div>
+</section>
+<section id="id7">
+<h2>应用实例：实现时间窗口限速器<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
+<p>假设我们正在构建一个网上银行应用，这类应用对安全性有极高的要求，其中一项安全措施就是限制每个用户每天允许尝试登录多少次：当登录由于密码错误等原因而失败的次数超过上限时，该用户在当天将无法再尝试登录，甚至账号还会被直接锁定。</p>
+<p>假设应用现在的限制是<strong>1天之内最多只能登录失败5次</strong>，那么为了实现一个记录用户登录失败次数的时间窗口限速器，可以使用以下命令序列（以UID为511500的用户为例）：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">MULTI</span>
+<span class="n">INCR</span> <span class="n">login_fail_limiter</span><span class="p">:</span><span class="mi">511500</span>
+<span class="n">EXPIRE</span> <span class="n">login_fail_limiter</span><span class="p">:</span><span class="mi">511500</span> <span class="mi">86400</span> <span class="n">NX</span>
+<span class="n">EXEC</span>
+</pre></div>
+</div>
+<p>这个命令序列使用<code class="docutils literal notranslate"><span class="pre">INCR</span></code>命令在用户每次登录失败的时候进行一次自增计数，并使用带<code class="docutils literal notranslate"><span class="pre">NX</span></code>可选项的<code class="docutils literal notranslate"><span class="pre">EXPIRE</span></code>命令来确保该计数器在一天（86400秒）的时间窗口内持续存在，并且为了保证上述两条命令在执行时的原子性，还需要使用一个事务来包裹它们。</p>
+<p>以上就是在Redis
+8.8版本以前构建时间窗口限速器的常见做法，对于一些更复杂的情况，可能还需要用到<code class="docutils literal notranslate"><span class="pre">WATCH</span></code>命令以实现检查并设置（check-and-set）操作（又或者直接使用服务器端脚本/函数来实现整个限速器）。但是在Redis
+8.8版本中，通过使用<code class="docutils literal notranslate"><span class="pre">INCREX</span></code>命令，只需要一条命令调用即可实现相同的效果：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">INCREX</span> <span class="n">login_fail_limiter</span><span class="p">:</span><span class="mi">511500</span> <span class="n">EX</span> <span class="mi">86400</span> <span class="n">ENX</span>
+</pre></div>
+</div>
+<p>这条命令同时实现了：</p>
+<ul class="simple">
+<li><p>为<code class="docutils literal notranslate"><span class="pre">login_fail_limiter:511500</span></code>键实现自增一操作</p></li>
+<li><p>仅在该键未设置过期时间的情况下，为其设置86400秒的生存时间</p></li>
+</ul>
+<p>跟旧的实现方法需要用到4条命令相比，新的实现方法只需要1条命令：后者不仅运行更快，而且也更容易让人理解。</p>
+</section>
+<section id="id8">
+<h2>结语<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<p>好的，关于<code class="docutils literal notranslate"><span class="pre">INCREX</span></code>命令的详细介绍到这里就结束！</p>
+<p>欢迎大家<a class="reference external" href="https://space.bilibili.com/240200009">在Bilibili上关注我</a>，观看更多Redis相关视频，或者定期浏览<a class="reference external" href="https://huangz.works/blog/">本人博客</a>，查看更多Redis相关文章。</p>
 <div class="line-block">
-<div class="line">本文摘录自《Redis应用实例》一书。</div>
-<div class="line">欢迎访问书本主页以了解更多Redis使用案例：<a class="reference external" href="https://huangz.works/rediscookbook/">huangz.works/rediscookbook/</a></div>
+<div class="line">黄健宏</div>
+<div class="line">2026.6.11</div>
 </div>
-<img alt="../_images/rediscookbook-banner.png" src="../_images/rediscookbook-banner.png" />
-</div>
+</section>
 </section>
 
 </main>
                         <nav aria-label="Page navigation" class="py-4 my-5 clearfix font-weight-bold border-top">
-    <a class="float-left" href="rediscookbook-compact-string.html" title="Previous">
-        <span aria-hidden="true">←&nbsp;</span>《Redis应用实例》书摘（16）：紧凑字符串
+    <a class="float-left" href="index.html" title="Previous">
+        <span aria-hidden="true">←&nbsp;</span>2026
     </a>
-    <a class="float-right" href="rediscookbook-stream-iterator-xrange.html" title="Next">
-        《Redis应用实例》书摘（18）：流迭代器（使用XRANGE实现） <span aria-hidden="true">&nbsp;→</span>
+    <a class="float-right" href="redis-array-commands.html" title="Next">
+        Redis 8.8数组命令详解 <span aria-hidden="true">&nbsp;→</span>
     </a>
 </nav>
                     </div>
+                    
+                    <nav class="col-12 col-lg-3 pb-4">
+                        <div class="sticky-top toc page-toc" aria-labelledby="page-toc-heading">
+                            <p class="font-weight-bold" id="page-toc-heading">Page contents</p>
+                            <ul>
+<li><a class="reference internal" href="#">Redis 8.8新增命令INCREX详解</a><ul>
+<li><a class="reference internal" href="#id1">基本用法</a></li>
+<li><a class="reference internal" href="#id2">指定整数或浮点数增量</a></li>
+<li><a class="reference internal" href="#id3">限制边界</a></li>
+<li><a class="reference internal" href="#id4">饱和</a></li>
+<li><a class="reference internal" href="#id5">设置/移除过期时间</a></li>
+<li><a class="reference internal" href="#id6">条件性设置过期时间</a></li>
+<li><a class="reference internal" href="#id7">应用实例：实现时间窗口限速器</a></li>
+<li><a class="reference internal" href="#id8">结语</a></li>
+</ul>
+</li>
+</ul>
+
+                        </div>
+                    </nav>
                     
                 </div>
             </div>

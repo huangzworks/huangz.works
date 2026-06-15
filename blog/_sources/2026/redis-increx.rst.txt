@@ -1,0 +1,267 @@
+Redis 8.8新增命令INCREX详解
+===============================
+
+   本文有视频版本可供观看：\ `bilibili.com/video/BV1hmEq66EVw <https://www.bilibili.com/video/BV1hmEq66EVw>`__
+
+在最近发布的\ `Redis
+8.8版本 <https://github.com/redis/redis/releases/tag/8.8.0>`__\ 中新增了\ `INCREX命令 <https://redis.io/docs/latest/commands/increx/>`__\ ，该命令整合了以下多个命令的功能，以此来在一次命令调用中同时执行“对键自增并处理可能出现的计算溢出”以及“为键设置过期时间”或“移除键的过期时间”等多项操作：
+
+-  ``INCR/DECR``
+-  ``INCRBY/DECRBY``
+-  ``INCRBYFLOAT``
+-  ``EXPIRE/PEXPIRE/EXPIREAT/PEXPIREAT``
+-  ``PERSIST``
+
+``INCREX``\ 命令的具体格式如下：
+
+::
+
+   INCREX key
+          [<BYINT|BYFLOAT> increment]
+          [UBOUND upper-limit] [LBOUND lower-limit] [SATURATE]
+          [EX sec | PX ms | EXAT unixtime-sec | PXAT unixtime-ms | PERSIST]
+          [ENX]
+
+本文接下来的多个小节将分别对\ ``INCREX``\ 命令的不同使用情形进行介绍，并在最后给出一个使用该命令实现时间窗口限速器的例子。
+
+基本用法
+--------
+
+在不使用任何可选项执行\ ``INCREX``\ 命令的情况下，命令将对给定键执行自增一操作，就像\ ``INCR``\ 命令一样：
+
+::
+
+   INCREX key
+
+命令在执行之后将返回一个包含两个元素的数组：
+
+-  第一个元素为自增操作执行之后，键的当前值
+-  第二元素为本次自增的\ **实际**\ 增量
+
+比如以下代码就对\ ``counter``\ 键反复执行了三次\ ``INCREX``\ 命令，将它的值（从键不存在时默认的）0自增为3，并在最后通过执行\ ``GET``\ 命令确认了这一点：
+
+::
+
+   127.0.0.1:6379> INCREX counter
+   1) (integer) 1
+   2) (integer) 1
+   127.0.0.1:6379> INCREX counter
+   1) (integer) 2
+   2) (integer) 1
+   127.0.0.1:6379> INCREX counter
+   1) (integer) 3
+   2) (integer) 1
+   127.0.0.1:6379> GET counter
+   "3"
+
+命令返回数组的第二个元素表明这三次自增的实际增量都为1。
+
+指定整数或浮点数增量
+--------------------
+
+``INCREX``\ 命令允许通过可选的\ ``BYINT``\ 或\ ``BYFLOAT``\ 选项来指定要执行的具体自增操作及其增量：
+
+::
+
+   INCREX key
+          [<BYINT|BYFLOAT> increment]
+
+当给定\ ``BYINT``\ 选项时，命令执行的是整数自增操作（效果类似\ ``INCRBY``\ 命令），而当给定\ ``BYFLOAT``\ 选项时，命令执行的是浮点数自增操作（效果类似\ ``INCRBYFLOAT``\ 命令）。
+
+以下两个例子分别展示了这两种情况：
+
+::
+
+   127.0.0.1:6379> INCREX float-counter BYFLOAT 3.14
+   1) "3.14"
+   2) "3.14"
+   127.0.0.1:6379> INCREX float-counter BYFLOAT 2.0
+   1) "5.14"
+   2) "2"
+   127.0.0.1:6379> INCREX int-counter BYINT 256
+   1) (integer) 256
+   2) (integer) 256
+   127.0.0.1:6379> INCREX int-counter BYINT 100
+   1) (integer) 356
+   2) (integer) 100
+
+此外，虽然Redis没有提供与\ ``INCREX``\ 命令对应的\ ``DECREX``\ 命令，但只要将\ ``INCREX``\ 命令执行时的增量参数设置为负数即可实现对键的自减操作。
+
+以下是使用\ ``INCREX``\ 命令执行整数自减操作的一个例子：
+
+::
+
+   127.0.0.1:6379> SET minus-counter 100
+   OK
+   127.0.0.1:6379> INCREX minus-counter BYINT -32
+   1) (integer) 68
+   2) (integer) -32
+
+限制边界
+--------
+
+``INCREX``\ 命令允许通过给定\ ``UBOUND``\ 和/或\ ``LBOUND``\ 可选项来为自增/自减操作设置上限值或下限值：
+
+::
+
+   INCREX key
+          [<BYINT|BYFLOAT> increment]
+          [UBOUND upper-limit] [LBOUND lower-limit]
+
+当命令检测到自增/自减操作将超过给定的限制值时，命令将放弃执行自增/自减操作，并返回键的当前值以及0作为本次增量/减量。
+
+以下是一个使用\ ``UBOUND``\ 可选项来指定自增操作上限值的例子：
+
+::
+
+   127.0.0.1:6379> INCREX ub-counter UBOUND 3
+   1) (integer) 1
+   2) (integer) 1
+   127.0.0.1:6379> INCREX ub-counter UBOUND 3
+   1) (integer) 2
+   2) (integer) 1
+   127.0.0.1:6379> INCREX ub-counter UBOUND 3
+   1) (integer) 3
+   2) (integer) 1
+   127.0.0.1:6379> INCREX ub-counter UBOUND 3
+   1) (integer) 3
+   2) (integer) 0
+
+可以看到，当命令的自增操作到达上限值3之后，它将不再对键值进行自增，只返回该值，还有0作为该操作的自增量。
+
+   **提示**
+
+   即使在未设置\ ``UBOUND``/``LBOUND``\ 可选项的情况下，键值的默认取值范围上下界也会由键值类型（整数或浮点数）的最小值/最大值定义，因此也可以认为\ ``INCREX``\ 命令总是带有隐式的\ ``UBOUND``\ 和\ ``LBOUND``\ 可选项。
+
+饱和
+----
+
+上一节提到，带有\ ``UBOUND/LBOUND``\ 可选项的\ ``INCREX``\ 命令在检测到自增/自减操作将会超过限制时将放弃执行操作，但如果命令在执行时给定了\ ``SATURATE``\ 可选项，那么命令将把键值自增/自减至给定的上限值/下限值，而超过限制的值则作为命令结果数组的第二个元素返回（第一个元素为键的当前值）：
+
+::
+
+   INCREX key
+          [<BYINT|BYFLOAT> increment]
+          [UBOUND upper-limit] [LBOUND lower-limit] [SATURATE]
+
+以下是一个直观的对比示例，它展示了同样的超上限计算在不给定\ ``SATURATE``\ 和给定\ ``SATURATE``\ 两种情况下的区别：
+
+::
+
+   127.0.0.1:6379> SET non-sat 50
+   OK
+   127.0.0.1:6379> INCREX non-sat BYINT 100 UBOUND 100
+   1) (integer) 50  -- 放弃执行自增操作
+   2) (integer) 0   -- 本次操作未增加任何增量
+   127.0.0.1:6379> SET sat 50
+   OK
+   127.0.0.1:6379> INCREX sat BYINT 100 UBOUND 100 SATURATE
+   1) (integer) 100  -- 键被自增为上限值
+   2) (integer) 50   -- 计算中超过上限的值
+
+可以看到，在给定\ ``SATURATE``\ 的情况下，键值将被自增为上限100，而超过上限未被计算在内的值则为50。
+
+   **提示**
+
+   如果\ ``INCREX``\ 命令在执行时给定了\ ``SATURATE``\ 可选项，但并未显式地给定\ ``UBOUND``/``LBOUND``\ 可选项，那么命令将根据键值类型的限界值进行饱和计算。
+
+设置/移除过期时间
+-----------------
+
+跟带有\ ``EX``\ 、\ ``PX``\ 、\ ``PERSIST``\ 等命令的\ ``SET``\ 命令类似，\ ``INCREX``\ 命令也可以通过同样的可选项，在执行自增/自减的同时，为键设置或移除过期时间：
+
+::
+
+   INCREX key
+          [<BYINT|BYFLOAT> increment]
+          [UBOUND upper-limit] [LBOUND lower-limit] [SATURATE]
+          [EX sec | PX ms | EXAT unixtime-sec | PXAT unixtime-ms | PERSIST]
+
+比如以下示例就分别通过\ ``EX``\ 可选项和\ ``PERSIST``\ 可选项，先为被自增的键设置了过期时间，然后又为被自增的键移除了过期时间：
+
+::
+
+   127.0.0.1:6379> INCREX counter-with-ttl EX 1000
+   1) (integer) 1
+   2) (integer) 1
+   127.0.0.1:6379> TTL counter-with-ttl
+   (integer) 996  -- 剩余生存时间
+   127.0.0.1:6379> INCREX counter-with-ttl PERSIST
+   1) (integer) 2
+   2) (integer) 1
+   127.0.0.1:6379> TTL counter-with-ttl
+   (integer) -1   -- 键的过期时间已被移除
+
+条件性设置过期时间
+------------------
+
+如果被设置的键已经带有过期时间，那么带有\ ``EX``\ 等可选项的\ ``INCREX``\ 命令在默认情况下将直接使用新的过期时间去覆盖旧的过期时间，但如果命令在执行时也给定了\ ``ENX``\ 可选项，那么命令将仅在键未有过期时间的情况下为其设置过期时间：
+
+::
+
+   INCREX key
+          [<BYINT|BYFLOAT> increment]
+          [UBOUND upper-limit] [LBOUND lower-limit] [SATURATE]
+          [EX sec | PX ms | EXAT unixtime-sec | PXAT unixtime-ms | PERSIST]
+          [ENX]
+
+比如以下示例就展示了不带\ ``ENX``\ 可选项和带有\ ``ENX``\ 可选项在处理同样带有过期时间的键的区别，其中第二个\ ``INCREX``\ 命令将直接覆盖已有的过期时间，而第三个\ ``INCREX``\ 命令将放弃更新键的过期时间，仅对其执行自增操作：
+
+::
+
+   127.0.0.1:6379> INCREX exp-counter EX 1000
+   1) (integer) 1
+   2) (integer) 1
+   127.0.0.1:6379> TTL exp-counter
+   (integer) 997  -- 设置初始过期时间
+   127.0.0.1:6379> INCREX exp-counter EX 3000
+   1) (integer) 2
+   2) (integer) 1
+   127.0.0.1:6379> TTL exp-counter
+   (integer) 2999  -- 过期时间已被更新
+   127.0.0.1:6379> INCREX exp-counter EX 5000 ENX
+   1) (integer) 3
+   2) (integer) 1
+   127.0.0.1:6379> TTL exp-counter
+   (integer) 2985  -- 过期时间未被更新
+
+应用实例：实现时间窗口限速器
+----------------------------
+
+假设我们正在构建一个网上银行应用，这类应用对安全性有极高的要求，其中一项安全措施就是限制每个用户每天允许尝试登录多少次：当登录由于密码错误等原因而失败的次数超过上限时，该用户在当天将无法再尝试登录，甚至账号还会被直接锁定。
+
+假设应用现在的限制是\ **1天之内最多只能登录失败5次**\ ，那么为了实现一个记录用户登录失败次数的时间窗口限速器，可以使用以下命令序列（以UID为511500的用户为例）：
+
+::
+
+   MULTI
+   INCR login_fail_limiter:511500
+   EXPIRE login_fail_limiter:511500 86400 NX
+   EXEC
+
+这个命令序列使用\ ``INCR``\ 命令在用户每次登录失败的时候进行一次自增计数，并使用带\ ``NX``\ 可选项的\ ``EXPIRE``\ 命令来确保该计数器在一天（86400秒）的时间窗口内持续存在，并且为了保证上述两条命令在执行时的原子性，还需要使用一个事务来包裹它们。
+
+以上就是在Redis
+8.8版本以前构建时间窗口限速器的常见做法，对于一些更复杂的情况，可能还需要用到\ ``WATCH``\ 命令以实现检查并设置（check-and-set）操作（又或者直接使用服务器端脚本/函数来实现整个限速器）。但是在Redis
+8.8版本中，通过使用\ ``INCREX``\ 命令，只需要一条命令调用即可实现相同的效果：
+
+::
+
+   INCREX login_fail_limiter:511500 EX 86400 ENX
+
+这条命令同时实现了：
+
+-  为\ ``login_fail_limiter:511500``\ 键实现自增一操作
+-  仅在该键未设置过期时间的情况下，为其设置86400秒的生存时间
+
+跟旧的实现方法需要用到4条命令相比，新的实现方法只需要1条命令：后者不仅运行更快，而且也更容易让人理解。
+
+结语
+----
+
+好的，关于\ ``INCREX``\ 命令的详细介绍到这里就结束！
+
+欢迎大家\ `在Bilibili上关注我 <https://space.bilibili.com/240200009>`__\ ，观看更多Redis相关视频，或者定期浏览\ `本人博客 <https://huangz.works/blog/>`__\ ，查看更多Redis相关文章。
+
+| 黄健宏
+| 2026.6.11
