@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>EXPIRE &#8212; 《Valkey权威指南》</title>
+    
+  <link href="../_static/css/theme.css" rel="stylesheet">
+  <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-book-theme.css?v=dcf16294" />
+    
+  <link rel="preload" as="script" href="../_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script src="../_static/documentation_options.js?v=bfa25948"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/sphinx-book-theme.12a9622fbb08dcb3a2a40b2c02b83a57.js?v=7c4c3336"></script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+    <link rel="next" title="PEXPIRE" href="pexpire.html" />
+    <link rel="prev" title="《Valkey权威指南》图书主页" href="../index.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="zh-cn">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<div class="col-12 col-md-3 bd-sidebar site-navigation show" id="site-navigation">
+    
+        <div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="../index.html">
+      
+      
+      
+      <h1 class="site-logo" id="site-title">《Valkey权威指南》</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  自动过期
+ </span>
+</p>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   EXPIRE
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="pexpire.html">
+   PEXPIRE
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="expireat.html">
+   EXPIREAT
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="pexpireat.html">
+   PEXPIREAT
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="ttl.html">
+   TTL
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="pttl.html">
+   PTTL
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="expiretime.html">
+   EXPIRETIME
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="pexpiretime.html">
+   PEXPIRETIME
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="persist.html">
+   PERSIST
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  事务
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="multi.html">
+   MULTI
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="exec.html">
+   EXEC
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="discard.html">
+   DISCARD
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="watch.html">
+   WATCH
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="unwatch.html">
+   UNWATCH
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav> <!-- To handle the deprecated key -->
+
+<div class="navbar_extra_footer">
+  Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+</div>
+
+</div>
+
+
+          
+
+
+          
+<main class="col py-md-3 pl-md-4 bd-content overflow-auto" role="main">
+    
+    <div class="topbar container-xl fixed-top">
+    <div class="topbar-contents row">
+        <div class="col-12 col-md-3 bd-topbar-whitespace site-navigation show"></div>
+        <div class="col pl-md-4 topbar-main">
+            
+            <button id="navbar-toggler" class="navbar-toggler ml-0" type="button" data-toggle="collapse"
+                data-toggle="tooltip" data-placement="bottom" data-target=".site-navigation" aria-controls="navbar-menu"
+                aria-expanded="true" aria-label="Toggle navigation" aria-controls="site-navigation"
+                title="Toggle navigation" data-toggle="tooltip" data-placement="left">
+                <i class="fas fa-bars"></i>
+                <i class="fas fa-arrow-left"></i>
+                <i class="fas fa-arrow-up"></i>
+            </button>
+            
+            
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn" aria-label="Download this page"><i
+            class="fas fa-download"></i></button>
+
+    <div class="dropdown-buttons">
+        <!-- ipynb file if we had a myst markdown file -->
+        
+        <!-- Download raw file -->
+        <a class="dropdown-buttons" href="../_sources/v0/expire.rst.txt"><button type="button"
+                class="btn btn-secondary topbarbtn" title="Download source file" data-toggle="tooltip"
+                data-placement="left">.rst</button></a>
+        <!-- Download PDF via print -->
+        <button type="button" id="download-print" class="btn btn-secondary topbarbtn" title="Print to PDF"
+            onClick="window.print()" data-toggle="tooltip" data-placement="left">.pdf</button>
+    </div>
+</div>
+
+            <!-- Source interaction buttons -->
+
+            <!-- Full screen (wrap in <a> to have style consistency -->
+
+<a class="full-screen-button"><button type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip"
+        data-placement="bottom" onclick="toggleFullScreen()" aria-label="Fullscreen mode"
+        title="Fullscreen mode"><i
+            class="fas fa-expand"></i></button></a>
+
+            <!-- Launch buttons -->
+
+        </div>
+
+        <!-- Table of contents -->
+        <div class="d-none d-md-block col-md-2 bd-toc show">
+            
+            <div class="tocsection onthispage pt-5 pb-3">
+                <i class="fas fa-list"></i> Contents
+            </div>
+            <nav id="bd-toc-nav" aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id1">
+   覆盖已有的生存时间
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id2">
+   条件设置
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id3">
+   其他信息
+  </a>
+ </li>
+</ul>
+
+            </nav>
+        </div>
+    </div>
+</div>
+    <div id="main-content" class="row">
+        <div class="col-12 col-md-9 pl-md-3 pr-md-0">
+        
+              <div>
+                
+  <section id="expire">
+<h1>EXPIRE<a class="headerlink" href="#expire" title="Link to this heading">¶</a></h1>
+<p>EXPIRE命令可以为键设置一个指定的秒级生存时间，并在键的生存时间随着服务器时间的流逝而消耗殆尽时自动删除该键：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">EXPIRE</span> <span class="n">key</span> <span class="n">seconds</span>
+</pre></div>
+</div>
+<p>命令在成功设置生存时间时返回1；由于键不存在或给定设置条件不满足而导致设置不成功时返回0。</p>
+<p>举个例子，通过执行以下命令可以让index_cache键在30秒之后自动被移除：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">EXPIRE</span> <span class="n">index_cache</span> <span class="mi">30</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>下表展示了index_cache键从被设置生存时间到自动被移除的整个过程。</p>
+<table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>服务
+器时间</p></th>
+<th class="head"><p>执行命令</p></th>
+<th class="head"><p>index_cache键的剩余生存时间（秒）</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0:0:0</p></td>
+<td><p>EXPIRE index_cache 30</p></td>
+<td><p>30</p></td>
+</tr>
+<tr class="row-odd"><td><p>0:0:1</p></td>
+<td></td>
+<td><p>29</p></td>
+</tr>
+<tr class="row-even"><td><p>0:0:2</p></td>
+<td></td>
+<td><p>28</p></td>
+</tr>
+<tr class="row-odd"><td><p>0:0:3</p></td>
+<td></td>
+<td><p>27</p></td>
+</tr>
+<tr class="row-even"><td><p>……</p></td>
+<td></td>
+<td><p>……</p></td>
+</tr>
+<tr class="row-odd"><td><p>0:0:29</p></td>
+<td></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>0:0:30</p></td>
+<td></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>0:0:31</p></td>
+<td></td>
+<td><p>-1（键已被移除）</p></td>
+</tr>
+</tbody>
+</table>
+<section id="id1">
+<h2>覆盖已有的生存时间<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>EXPIRE命令在给定键已设置生存时间的情况下，默认将使用新的生存时间覆盖旧的生存时间，并让键的生存时间重新开始倒数。</p>
+<p>举个例子，以下代码的首个EXPIRE命令会把index_cache键的生存时间设置为30秒，并且该时间将随着服务器运行时间的流逝而不断减少，但是数秒之后执行的第二个EXPIRE命令将把键的生存时间重新设置为30秒，并让服务器重新开始对键进行删除前的倒数：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>127.0.0.1:6379&gt; EXPIRE index_cache 30
+(integer) 1
+127.0.0.1:6379&gt; -- 等待数秒之后……
+127.0.0.1:6379&gt; EXPIRE index_cache 30
+(integer) 1
+</pre></div>
+</div>
+<p>下表展示了index_cache键在执行上述两个EXPIRE命令之间的状态。</p>
+<table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>服务
+器时间</p></th>
+<th class="head"><p>执行命令</p></th>
+<th class="head"><p>index_cache键的剩余生存时间（秒）</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0:0:0</p></td>
+<td><p>EXPIRE index_cache 30</p></td>
+<td><p>30</p></td>
+</tr>
+<tr class="row-odd"><td><p>0:0:1</p></td>
+<td></td>
+<td><p>29</p></td>
+</tr>
+<tr class="row-even"><td><p>0:0:2</p></td>
+<td></td>
+<td><p>28</p></td>
+</tr>
+<tr class="row-odd"><td><p>0:0:3</p></td>
+<td></td>
+<td><p>27</p></td>
+</tr>
+<tr class="row-even"><td><p>0:0:4</p></td>
+<td></td>
+<td><p>26</p></td>
+</tr>
+<tr class="row-odd"><td><p>0:0:5</p></td>
+<td><p>EXPIRE index_cache 30</p></td>
+<td><p>30</p></td>
+</tr>
+<tr class="row-even"><td><p>0:0:6</p></td>
+<td></td>
+<td><p>29</p></td>
+</tr>
+<tr class="row-odd"><td><p>0:0:7</p></td>
+<td></td>
+<td><p>28</p></td>
+</tr>
+<tr class="row-even"><td><p>……</p></td>
+<td></td>
+<td><p>……</p></td>
+</tr>
+</tbody>
+</table>
+<p>EXPIRE命令的这种覆盖行为具有非常大的潜力：在一个键被自动删除之前，通过使用EXPIRE命令反复为它设置生存时间可以对键产生“自动续期”的效果，使得键的实际生存时间大于EXPIRE命令所给定的单次生存时间，正确地使用这种技巧可以达到“淘汰冷门数据并保留热门数据”的目的。</p>
+</section>
+<section id="id2">
+<h2>条件设置<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>除了默认使用新的生存时间覆盖旧的生存时间之外，EXPIRE命令也允许通过NX、XX等可选项，有条件地对键的生存时间进行设置：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">EXPIRE</span> <span class="n">key</span> <span class="n">seconds</span> <span class="p">[</span><span class="n">NX</span><span class="o">|</span><span class="n">XX</span><span class="o">|</span><span class="n">GT</span><span class="o">|</span><span class="n">LT</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>以下是这几个可选项的具体作用：</p>
+<ul class="simple">
+<li><p>NX：仅在键未有生存时间的情况下为其设置生存时间</p></li>
+<li><p>XX：仅在键已有生存时间的情况下为其设置新的生存时间</p></li>
+<li><p>GT：仅在给定的生存时间大于键已有生存时间的情况下，为键设置新的生存时间</p></li>
+<li><p>LT：仅在给定的生存时间小于键已有生存时间的情况下，为键设置新的生存时间</p></li>
+</ul>
+<p>举个例子，执行以下EXPIRE命令可以确保index_cache键只会在未有生存时间的情况下，被设置30秒的生存时间：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">EXPIRE</span> <span class="n">index_cache</span> <span class="mi">30</span> <span class="n">NX</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>如果在30秒之内再次执行上述EXPIRE命令，那么由于index_cache键已有过期时间，那么命令将返回0，表示设置未成功：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">EXPIRE</span> <span class="n">index_cache</span> <span class="mi">30</span> <span class="n">NX</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">0</span>
+</pre></div>
+</div>
+</section>
+<section id="id3">
+<h2>其他信息<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>EXPIRE命令从Valkey
+1.0版本开始可用，命令的NX、XX等可选项从7.0版本开始可用；命令的复杂度为O(1)。</p>
+</section>
+</section>
+
+
+              </div>
+              
+        
+            <!-- Previous / next buttons -->
+<div class='prev-next-area'> 
+    <a class='left-prev' id="prev-link" href="../index.html" title="上一页 页">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">上一页</p>
+            <p class="prev-next-title">《Valkey权威指南》图书主页</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="pexpire.html" title="下一页 页">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">下一页</p>
+        <p class="prev-next-title">PEXPIRE</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+        
+        </div>
+    </div>
+    <footer class="footer">
+    <div class="container">
+      <p>
+        
+            &copy; Copyright 2026, 黄健宏.<br/>
+      </p>
+    </div>
+  </footer>
+</main>
+
+
+      </div>
+    </div>
+  
+  <script src="../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+
+  </body>
+</html>

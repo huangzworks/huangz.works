@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>《Valkey权威指南》图书主页 &#8212; 《Valkey权威指南》</title>
+    
+  <link href="_static/css/theme.css" rel="stylesheet">
+  <link href="_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-book-theme.css?v=dcf16294" />
+    
+  <link rel="preload" as="script" href="_static/js/index.be7d3bbb2ef33a8344ce.js">
+
+    <script src="_static/documentation_options.js?v=bfa25948"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/sphinx-book-theme.12a9622fbb08dcb3a2a40b2c02b83a57.js?v=7c4c3336"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+    <link rel="next" title="EXPIRE" href="v0/expire.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="zh-cn">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<div class="col-12 col-md-3 bd-sidebar site-navigation show" id="site-navigation">
+    
+        <div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="#">
+      
+      
+      
+      <h1 class="site-logo" id="site-title">《Valkey权威指南》</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  自动过期
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="v0/expire.html">
+   EXPIRE
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="v0/pexpire.html">
+   PEXPIRE
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="v0/expireat.html">
+   EXPIREAT
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="v0/pexpireat.html">
+   PEXPIREAT
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="v0/ttl.html">
+   TTL
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="v0/pttl.html">
+   PTTL
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="v0/expiretime.html">
+   EXPIRETIME
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="v0/pexpiretime.html">
+   PEXPIRETIME
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="v0/persist.html">
+   PERSIST
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  事务
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="v0/multi.html">
+   MULTI
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="v0/exec.html">
+   EXEC
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="v0/discard.html">
+   DISCARD
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="v0/watch.html">
+   WATCH
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="v0/unwatch.html">
+   UNWATCH
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav> <!-- To handle the deprecated key -->
+
+<div class="navbar_extra_footer">
+  Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+</div>
+
+</div>
+
+
+          
+
+
+          
+<main class="col py-md-3 pl-md-4 bd-content overflow-auto" role="main">
+    
+    <div class="topbar container-xl fixed-top">
+    <div class="topbar-contents row">
+        <div class="col-12 col-md-3 bd-topbar-whitespace site-navigation show"></div>
+        <div class="col pl-md-4 topbar-main">
+            
+            <button id="navbar-toggler" class="navbar-toggler ml-0" type="button" data-toggle="collapse"
+                data-toggle="tooltip" data-placement="bottom" data-target=".site-navigation" aria-controls="navbar-menu"
+                aria-expanded="true" aria-label="Toggle navigation" aria-controls="site-navigation"
+                title="Toggle navigation" data-toggle="tooltip" data-placement="left">
+                <i class="fas fa-bars"></i>
+                <i class="fas fa-arrow-left"></i>
+                <i class="fas fa-arrow-up"></i>
+            </button>
+            
+            
+<div class="dropdown-buttons-trigger">
+    <button id="dropdown-buttons-trigger" class="btn btn-secondary topbarbtn" aria-label="Download this page"><i
+            class="fas fa-download"></i></button>
+
+    <div class="dropdown-buttons">
+        <!-- ipynb file if we had a myst markdown file -->
+        
+        <!-- Download raw file -->
+        <a class="dropdown-buttons" href="_sources/index.rst.txt"><button type="button"
+                class="btn btn-secondary topbarbtn" title="Download source file" data-toggle="tooltip"
+                data-placement="left">.rst</button></a>
+        <!-- Download PDF via print -->
+        <button type="button" id="download-print" class="btn btn-secondary topbarbtn" title="Print to PDF"
+            onClick="window.print()" data-toggle="tooltip" data-placement="left">.pdf</button>
+    </div>
+</div>
+
+            <!-- Source interaction buttons -->
+
+            <!-- Full screen (wrap in <a> to have style consistency -->
+
+<a class="full-screen-button"><button type="button" class="btn btn-secondary topbarbtn" data-toggle="tooltip"
+        data-placement="bottom" onclick="toggleFullScreen()" aria-label="Fullscreen mode"
+        title="Fullscreen mode"><i
+            class="fas fa-expand"></i></button></a>
+
+            <!-- Launch buttons -->
+
+        </div>
+
+        <!-- Table of contents -->
+        <div class="d-none d-md-block col-md-2 bd-toc show">
+            
+            <div class="tocsection onthispage pt-5 pb-3">
+                <i class="fas fa-list"></i> Contents
+            </div>
+            <nav id="bd-toc-nav" aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id1">
+   目录大纲
+  </a>
+  <ul class="nav section-nav flex-column">
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id2">
+   作者介绍
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#id3">
+   版权声明
+  </a>
+ </li>
+</ul>
+
+            </nav>
+        </div>
+    </div>
+</div>
+    <div id="main-content" class="row">
+        <div class="col-12 col-md-9 pl-md-3 pr-md-0">
+        
+              <div>
+                
+  <section id="valkey">
+<h1>《Valkey权威指南》图书主页<a class="headerlink" href="#valkey" title="Link to this heading">¶</a></h1>
+<a class="reference internal image-reference" href="_images/cover-mid.png"><img alt="_images/cover-mid.png" class="align-right" src="_images/cover-mid.png" style="width: 229.0px; height: 260.0px;" /></a>
+<p><strong>《Valkey权威指南》综合作者多年来研究和使用RESP数据库的经验，对Valkey的各项主要特性及其用法进行了全面的讲解，旨在帮助读者深入掌握Valkey。</strong></p>
+<p>本书适合各种不同水平的Valkey学习者和使用者阅读：Valkey学习者可以通过本书深入、全面地学习Valkey；Valkey使用者可以把本书用作日常的Valkey参考手册，还可以通过本书了解Valkey 10最新特性。</p>
+<div class="admonition warning">
+<p class="admonition-title">警告</p>
+<p>本书仍在创作中，此处展示的仅为部分章节草稿，不代表最终成书内容</p>
+</div>
+<section id="id1">
+<h2>目录大纲<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p><strong>第一部分：数据结构</strong></p>
+<p>N/A</p>
+<p><strong>第二部分：附加功能</strong></p>
+<div class="toctree-wrapper compound">
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">自动过期</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="v0/expire.html">EXPIRE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="v0/pexpire.html">PEXPIRE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="v0/expireat.html">EXPIREAT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="v0/pexpireat.html">PEXPIREAT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="v0/ttl.html">TTL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="v0/pttl.html">PTTL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="v0/expiretime.html">EXPIRETIME</a></li>
+<li class="toctree-l1"><a class="reference internal" href="v0/pexpiretime.html">PEXPIRETIME</a></li>
+<li class="toctree-l1"><a class="reference internal" href="v0/persist.html">PERSIST</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">事务</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="v0/multi.html">MULTI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="v0/exec.html">EXEC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="v0/discard.html">DISCARD</a></li>
+<li class="toctree-l1"><a class="reference internal" href="v0/watch.html">WATCH</a></li>
+<li class="toctree-l1"><a class="reference internal" href="v0/unwatch.html">UNWATCH</a></li>
+</ul>
+</div>
+<p>更多章节待更新……</p>
+<p><strong>第三部分：多机功能</strong></p>
+<p>N/A</p>
+<p><strong>附录</strong></p>
+<ul class="simple">
+<li><p>安装Valkey服务器</p></li>
+<li><p>安装Valkey客户端</p></li>
+</ul>
+</section>
+<section id="id2">
+<h2>作者介绍<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p><strong>黄健宏</strong>（huangz）是一位计算机技术图书作者和译者，他关注的领域包括数据库、编程语言、操作系统、算法/数据结构和人工智能等。</p>
+<p>除了这本《Valkey权威指南》之外，黄健宏还是《Redis设计与实现》、《Redis实战》、《Redis应用实例》、《SQL实战（原著第2版）》等一系列畅销数据库图书的作者或译者。</p>
+<p>你可以通过<a class="reference external" href="https://huangz.works/">huangz.works</a>访问黄健宏的个人主页，又或者通过在微博<a class="reference external" href="https://weibo.com/u/3219474004">&#64;黄健宏huangz</a>或推特<a class="reference external" href="https://x.com/huangzworks">&#64;huangzworks</a>来联系他。</p>
+</section>
+<section id="id3">
+<h2>版权声明<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<p>本书由黄健宏创作，保留所有权利，请勿在未经允许的情况下将本书内容用于商业用途。</p>
+</section>
+</section>
+
+
+              </div>
+              
+        
+            <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+    <a class='right-next' id="next-link" href="v0/expire.html" title="下一页 页">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">下一页</p>
+        <p class="prev-next-title">EXPIRE</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+        
+        </div>
+    </div>
+    <footer class="footer">
+    <div class="container">
+      <p>
+        
+            &copy; Copyright 2026, 黄健宏.<br/>
+      </p>
+    </div>
+  </footer>
+</main>
+
+
+      </div>
+    </div>
+  
+  <script src="_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+
+  </body>
+</html>
