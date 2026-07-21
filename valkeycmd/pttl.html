@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="zh-cn" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PTTL &mdash; Valkey命令参考  文档</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=86f27845" />
+
+  
+  
+        <script src="_static/jquery.js?v=8dae8fb0"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=ab3e9284"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+    <link rel="next" title="EXPIRETIME" href="expiretime.html" />
+    <link rel="prev" title="TTL" href="ttl.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Valkey命令参考
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="搜索文档" aria-label="搜索文档" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="导航菜单">
+              <p class="caption" role="heading"><span class="caption-text">自动过期</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="expire.html">EXPIRE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pexpire.html">PEXPIRE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="expireat.html">EXPIREAT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pexpireat.html">PEXPIREAT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ttl.html">TTL</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">PTTL</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id1">其他信息</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="expiretime.html">EXPIRETIME</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pexpiretime.html">PEXPIRETIME</a></li>
+<li class="toctree-l1"><a class="reference internal" href="persist.html">PERSIST</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">事务</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="multi.html">MULTI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exec.html">EXEC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="discard.html">DISCARD</a></li>
+<li class="toctree-l1"><a class="reference internal" href="watch.html">WATCH</a></li>
+<li class="toctree-l1"><a class="reference internal" href="unwatch.html">UNWATCH</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">数据库</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="select.html">SELECT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="move.html">MOVE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="swapdb.html">SWAPDB</a></li>
+<li class="toctree-l1"><a class="reference internal" href="randomkey.html">RANDOMKEY</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rename.html">RENAME</a></li>
+<li class="toctree-l1"><a class="reference internal" href="renamenx.html">RENAMENX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="del.html">DEL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="unlink.html">UNLINK</a></li>
+<li class="toctree-l1"><a class="reference internal" href="flushdb.html">FLUSHDB</a></li>
+<li class="toctree-l1"><a class="reference internal" href="flushall.html">FLUSHALL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exists.html">EXISTS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dbsize.html">DBSIZE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="type.html">TYPE</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="移动版导航菜单" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Valkey命令参考</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="页面导航">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">PTTL</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/pttl.rst.txt" rel="nofollow"> 查看页面源码</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pttl">
+<h1>PTTL<a class="headerlink" href="#pttl" title="Link to this heading"></a></h1>
+<p>PTTL命令可以以毫秒精度返回给定键的剩余生存时间，也即是键距离被自动删除还有多少毫秒：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">PTTL</span> <span class="n">key</span>
+</pre></div>
+</div>
+<p>如果给定键并未设置生存时间/过期时间，那么命令将返回-1；返回-2则表示给定键不存在。</p>
+<p>举个例子，通过执行以下命令，可以知道键key_with_pttl将在295350毫秒之后自动被删除：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">127.0.0.1</span><span class="p">:</span><span class="mi">6379</span><span class="o">&gt;</span> <span class="n">PTTL</span> <span class="n">key_with_pttl</span>
+<span class="p">(</span><span class="n">integer</span><span class="p">)</span> <span class="mi">295350</span>
+</pre></div>
+</div>
+<p>关于PTTL命令的更多信息，请参考本书对TTL命令的介绍。</p>
+<section id="id1">
+<h2>其他信息<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<p>PTTL命令从Valkey
+2.6版本开始可用，并从2.8版本开始支持-2回复；命令的复杂度为O(1)。</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="页脚">
+        <a href="ttl.html" class="btn btn-neutral float-left" title="TTL" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> 上一页</a>
+        <a href="expiretime.html" class="btn btn-neutral float-right" title="EXPIRETIME" accesskey="n" rel="next">下一页 <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 版权所有 2026, 黄健宏。</p>
+  </div>
+
+  利用 <a href="https://www.sphinx-doc.org/">Sphinx</a> 构建，使用的 
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">主题</a>
+    由 <a href="https://readthedocs.org">Read the Docs</a> 开发.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
